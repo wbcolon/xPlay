@@ -41,6 +41,7 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     albumList->setSortingEnabled(true);
     trackList = trackList_;
     trackList->setSortingEnabled(true);
+    trackList->setContextMenuPolicy(Qt::CustomContextMenu);
     queueList = queueList_;
     // Setup artistSelector as horizontal list widget with no wrapping. Fix it's height.
     artistSelectorList = artistSelectorList_; // requires since we need to use the member variable;
@@ -70,6 +71,8 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     // Connect queue to main widget
     connect(playerWidget, &xPlayerWidget::currentQueueTrack, this, &xMainWidget::currentQueueTrack);
     connect(queueList, &QListWidget::currentRowChanged, musicPlayer, &xMusicPlayer::play);
+    // Right click
+    connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainWidget::selectSingleTrack);
 }
 
 void xMainWidget::scannedArtists(const std::list<QString>& artists) {
@@ -202,4 +205,23 @@ void xMainWidget::clearQueue() {
     queueList->clear();
 }
 
-
+void xMainWidget::selectSingleTrack(const QPoint& point) {
+    // Currently unused
+    Q_UNUSED(point)
+    // Retrieve currently selected element
+    auto track = trackList->currentRow();
+    qDebug() << "RIGHT_CLICK: " << track;
+    if ((track >= 0) && (track< trackList->count())) {
+        // Retrieve selected artist and album name.
+        auto artistName = artistList->currentItem()->text();
+        auto albumName = albumList->currentItem()->text();
+        // Retrieve only selected track
+        std::vector<QString> trackNames;
+        QString trackName = trackList->item(track)->text();
+        trackNames.push_back(trackName);
+        // Add to the playlist (queue)
+        queueList->addItem(trackName);
+        // Signal the set tracks to be queued by the music player.
+        emit queueTracks(artistName, albumName, trackNames);
+    }
+}

@@ -133,6 +133,8 @@ private slots:
      */
     void clearQueue();
 
+    void selectSingleTrack(const QPoint& point);
+
 private:
     /**
      * Update the list of selectors (and add "none").
