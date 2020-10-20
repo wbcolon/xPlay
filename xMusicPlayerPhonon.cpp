@@ -35,7 +35,6 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
 }
 
 void xMusicPlayerPhonon::currentTrackDuration(qint64 duration) {
-    qDebug() << "TOTAL_TIME_CHANGED: LENGTH: " << duration;
     emit currentTrackLength(duration);
     musicPlayerForTime->stop();
 }
