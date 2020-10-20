@@ -73,37 +73,43 @@ void xMusicLibrary::scanForArtistAndAlbum(const QString& artist, const QString& 
 void xMusicLibrary::scan() {
     // Cleanup before scanning path
     musicFiles.clear();
-    std::list<QString> artistList;
-    for (const auto& artistDir : std::filesystem::directory_iterator(baseDirctory)) {
-        const auto& artistPath = artistDir.path();
-        if (!std::filesystem::is_directory(artistPath)) {
-            // No directory, no artist.
-            continue;
-        }
-        auto artistName = QString::fromStdString(artistPath.filename());
-        std::map<QString,std::list<std::filesystem::path>> artistAlbumMap;
-        // Read all albums for the given artist.
-        for (const auto& albumDir : std::filesystem::directory_iterator(artistPath)) {
-            const auto& albumPath = albumDir.path();
-            if (!std::filesystem::is_directory(albumPath)) {
-                // No directory, no album.
+    try {
+        std::list<QString> artistList;
+        for (const auto& artistDir : std::filesystem::directory_iterator(baseDirctory)) {
+            const auto& artistPath = artistDir.path();
+            if (!std::filesystem::is_directory(artistPath)) {
+                // No directory, no artist.
                 continue;
             }
-            auto albumName = QString::fromStdString(albumPath.filename());
-            qDebug() << "xMusicLibrary::scanLibrary: artist/album: " << artistName << "/" << albumName;
-            // Do not scan the files in each directory as it is too costly.
-            // Instead add the album path as first element element to track list.
-            // It will be later used to read the tracks on demand.
-            std::list<std::filesystem::path> trackList;
-            trackList.push_back(albumPath);
-            artistAlbumMap[albumName] = trackList;
-        }
+            auto artistName = QString::fromStdString(artistPath.filename());
+            std::map<QString, std::list<std::filesystem::path>> artistAlbumMap;
+            // Read all albums for the given artist.
+            for (const auto& albumDir : std::filesystem::directory_iterator(artistPath)) {
+                const auto& albumPath = albumDir.path();
+                if (!std::filesystem::is_directory(albumPath)) {
+                    // No directory, no album.
+                    continue;
+                }
+                auto albumName = QString::fromStdString(albumPath.filename());
+                qDebug() << "xMusicLibrary::scanLibrary: artist/album: " << artistName << "/" << albumName;
+                // Do not scan the files in each directory as it is too costly.
+                // Instead add the album path as first element element to track list.
+                // It will be later used to read the tracks on demand.
+                std::list<std::filesystem::path> trackList;
+                trackList.push_back(albumPath);
+                artistAlbumMap[albumName] = trackList;
+            }
 
-        musicFiles[artistName] = artistAlbumMap;
-        artistList.push_back(artistName);
+            musicFiles[artistName] = artistAlbumMap;
+            artistList.push_back(artistName);
+        }
+        // Update widget
+        emit scannedArtists(artistList);
+    } catch (...) {
+        // Error scanning. Structure may not be as expected.
+        // Clear everything currently scanned.
+        musicFiles.clear();
     }
-    // Update widget
-    emit scannedArtists(artistList);
 }
 
 std::list<std::filesystem::path> xMusicLibrary::scanForAlbumTracks(const std::filesystem::path& albumPath) {
