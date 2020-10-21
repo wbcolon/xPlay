@@ -8,6 +8,12 @@ class xMusicPlayer:public QObject {
     Q_OBJECT
 
 public:
+    enum State {
+        PlayingState,
+        PauseState,
+        StopState
+    };
+
     xMusicPlayer(QObject* parent = nullptr);
     ~xMusicPlayer() = default;
 
@@ -17,6 +23,12 @@ public:
      * @param base the absolute path of the base of the music library.
      */
     void setBaseDirectory(const QString& base);
+    /**
+     * Return the volume for the music player
+     *
+     * @return integer value in between 0 and 100.
+     */
+    virtual int getVolume() = 0;
 
 signals:
     /**
@@ -41,15 +53,26 @@ signals:
      */
     void currentTrackLength(qint64 length);
 
+    /**
+     * Signal the current state of the music player
+     *
+     * @param state the current state
+     */
+    void currentState(xMusicPlayer::State state);
+
 public slots:
-    virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) = 0;
-    virtual void clearQueue() = 0;
     virtual void playPause() = 0;
     virtual void play(int index) = 0;
     virtual void seek(qint64 position) = 0;
     virtual void stop() = 0;
     virtual void prev() = 0;
     virtual void next() = 0;
+
+    virtual void setVolume(int vol) = 0;
+
+    virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) = 0;
+    virtual void dequeTrack(int index) = 0;
+    virtual void clearQueue() = 0;
 
 protected:
     /**

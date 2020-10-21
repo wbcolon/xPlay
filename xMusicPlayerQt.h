@@ -12,6 +12,12 @@ class xMusicPlayerQt:public xMusicPlayer {
 public:
     xMusicPlayerQt(QObject* parent = nullptr);
     ~xMusicPlayerQt() = default;
+    /**
+     * Return the volume for the music player
+     *
+     * @return integer value in between 0 and 100.
+     */
+    virtual int getVolume();
 
 public slots:
     /**
@@ -26,6 +32,12 @@ public slots:
      * @param tracks vector of track names.
      */
     virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks);
+    /**
+     * Remove track from the current playlist
+     *
+     * @param index of the track to be removed.
+     */
+    virtual void dequeTrack(int index);
     /**
      * Clear the playlist and stop the player.
      */
@@ -59,6 +71,12 @@ public slots:
      * Jump to the next track in the playlist.
      */
     virtual void next();
+    /**
+     * Set the volume
+     *
+     * @param vol integer value between 0 (silence) and 100 (full volume)
+     */
+    virtual void setVolume(int vol);
 
 private slots:
     /**

@@ -37,6 +37,11 @@ void xMusicPlayerQt::queueTracks(const QString& artist, const QString& album, co
     }
 }
 
+void xMusicPlayerQt::dequeTrack(int index) {
+    // Remove track from the play list.
+    musicPlaylist->removeMedia(index);
+}
+
 void xMusicPlayerQt::clearQueue() {
     // Clear playlist and musicPlaylistEntries.
     musicPlaylist->clear();
@@ -47,8 +52,10 @@ void xMusicPlayerQt::playPause() {
     // Pause if the media player is in playing state, resume play.
     if (musicPlayer->state() == QMediaPlayer::PlayingState) {
         musicPlayer->pause();
+        emit currentState(State::PauseState);
     } else {
         musicPlayer->play();
+        emit currentState(State::PlayingState);
     }
 }
 
@@ -68,6 +75,7 @@ void xMusicPlayerQt::seek(qint64 position) {
 void xMusicPlayerQt::stop() {
     // Stop the media player.
     musicPlayer->stop();
+    emit currentState(State::StopState);
 }
 
 void xMusicPlayerQt::prev() {
@@ -78,6 +86,14 @@ void xMusicPlayerQt::prev() {
 void xMusicPlayerQt::next() {
     // Jump to the next element in the playlist.
     musicPlaylist->next();
+}
+
+void xMusicPlayerQt::setVolume(int vol) {
+    musicPlayer->setVolume(vol);
+}
+
+int xMusicPlayerQt::getVolume() {
+    return musicPlayer->volume();
 }
 
 void xMusicPlayerQt::currentTrackIndex(int index) {

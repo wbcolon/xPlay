@@ -5,6 +5,7 @@
 
 #include <phonon/MediaObject>
 #include <phonon/MediaSource>
+#include <phonon/AudioOutput>
 #include <QMediaPlayer>
 
 class xMusicPlayerPhonon:public xMusicPlayer {
@@ -13,6 +14,12 @@ class xMusicPlayerPhonon:public xMusicPlayer {
 public:
     xMusicPlayerPhonon(QObject* parent = nullptr);
     ~xMusicPlayerPhonon() = default;
+    /**
+     * Return the volume for the music player
+     *
+     * @return integer value in between 0 and 100.
+     */
+    virtual int getVolume();
 
 public slots:
     /**
@@ -27,6 +34,8 @@ public slots:
      * @param tracks vector of track names.
      */
     virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks);
+
+    virtual void dequeTrack(int index);
     /**
      * Clear the playlist and stop the player.
      */
@@ -60,6 +69,12 @@ public slots:
      * Jump to the next track in the playlist.
      */
     virtual void next();
+    /**
+     * Set the volume
+     *
+     * @param vol integer value between 0 (silence) and 100 (full volume)
+     */
+    virtual void setVolume(int vol);
 
 private slots:
     /**
@@ -77,6 +92,7 @@ private:
     std::vector<std::tuple<QString,QString,QString>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;
     Phonon::MediaObject* musicPlayer;
+    Phonon::AudioOutput* musicOutput;
     // Only required due to track length issues with phonon.
     QMediaPlayer* musicPlayerForTime;
 };

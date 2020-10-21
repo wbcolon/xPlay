@@ -1,9 +1,15 @@
 #include "xMusicPlayerPhonon.h"
 
+#include <cmath>
+
 xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
         xMusicPlayer(parent) {
     // Setup the media player.
-    musicPlayer = Phonon::createPlayer(Phonon::MusicCategory);
+    musicPlayer = new Phonon::MediaObject(this);
+    musicOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
+    Phonon::createPath(musicPlayer, musicOutput);
+    // Alternate setup, but we need the output to change volume.
+    // musicPlayer = Phonon::createPlayer(Phonon::MusicCategory);
     musicPlayer->setTransitionTime(0);
     musicPlayer->setTickInterval(500);
     // Setup the play list.
@@ -14,6 +20,7 @@ xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
     musicPlayerForTime = new QMediaPlayer(this);
     // This player is muted. It is only used to determine the proper duration.
     musicPlayerForTime->setVolume(0);
+    musicPlayerForTime->setMuted(true);
     // Connect musicPlayerForTime.
     connect(musicPlayerForTime, &QMediaPlayer::durationChanged, this, &xMusicPlayerPhonon::currentTrackDuration);
 }
@@ -31,6 +38,41 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
     // Play if autoplay is enabled.
     if (autoPlay) {
         musicPlayer->play();
+        emit currentState(State::PlayingState);
+    }
+}
+
+void xMusicPlayerPhonon::dequeTrack(int index) {
+    // Determine the index of the currently played song.
+    auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
+    // Remove the selected track from the playlist and entries.
+    musicPlaylist.removeAt(index);
+    musicPlaylistEntries.erase(musicPlaylistEntries.begin()+index);
+    // Special handling if the current track is to be removed
+    // This track is not in the music player playlist. It is its
+    // current source. We therefore need to stop and clear everything.
+    if (index == currentIndex) {
+        // Determine the state of the music player.
+        auto state = musicPlayer->state();
+        // We need to stop everything because we are deleting the currently played track
+        musicPlayer->stop();
+        musicPlayer->clear();
+        musicPlayer->clearQueue();
+        // Remaining tracks include the new current one.
+        for (auto i = currentIndex; i < musicPlaylist.size(); ++i) {
+            musicPlayer->enqueue(musicPlaylist[i]);
+        }
+        // We do not need to signal an update on the state because we did not change it overall.
+        if (state == Phonon::PlayingState) {
+            musicPlayer->play();
+        }
+    } else if (index > currentIndex) {
+        // Do not stop, just clear the queue
+        musicPlayer->clearQueue();
+        // Remaining tracks include the current
+        for (auto i = currentIndex+1; i < musicPlaylist.size(); ++i) {
+            musicPlayer->enqueue(musicPlaylist[i]);
+        }
     }
 }
 
@@ -42,6 +84,7 @@ void xMusicPlayerPhonon::currentTrackDuration(qint64 duration) {
 void xMusicPlayerPhonon::clearQueue() {
     // Stop the music player and clear its state (including queue).
     musicPlayer->stop();
+    emit currentState(State::StopState);
     musicPlayer->clear();
     // Remove entries from the play lists.
     musicPlaylistEntries.clear();
@@ -52,8 +95,10 @@ void xMusicPlayerPhonon::playPause() {
     // Pause if the media player is in playing state, resume play.
     if (musicPlayer->state() == Phonon::PlayingState) {
         musicPlayer->pause();
+        emit currentState(State::PauseState);
     } else {
         musicPlayer->play();
+        emit currentState(State::PlayingState);
     }
 }
 
@@ -69,6 +114,7 @@ void xMusicPlayerPhonon::play(int index) {
         }
         // Play.
         musicPlayer->play();
+        emit currentState(State::PlayingState);
     }
 }
 
@@ -80,6 +126,7 @@ void xMusicPlayerPhonon::seek(qint64 position) {
 void xMusicPlayerPhonon::stop() {
     // Stop the media player.
     musicPlayer->stop();
+    emit currentState(State::StopState);
 }
 
 void xMusicPlayerPhonon::prev() {
@@ -95,6 +142,7 @@ void xMusicPlayerPhonon::prev() {
         }
         // Play.
         musicPlayer->play();
+        emit currentState(State::PlayingState);
     }
 }
 
@@ -111,7 +159,21 @@ void xMusicPlayerPhonon::next() {
         }
         // Play.
         musicPlayer->play();
+        emit currentState(State::PlayingState);
     }
+}
+
+void xMusicPlayerPhonon::setVolume(int vol) {
+    if (vol < 0) {
+        vol = 0;
+    } else if (vol > 100) {
+        vol = 100;
+    }
+    musicOutput->setVolume(vol/100.0);
+}
+
+int xMusicPlayerPhonon::getVolume() {
+    return static_cast<int>(std::round(musicOutput->volume()*100.0));
 }
 
 void xMusicPlayerPhonon::currentTrackSource(const Phonon::MediaSource& current) {
