@@ -2,6 +2,7 @@
 
 #include <QGridLayout>
 #include <QDial>
+#include <QIcon>
 
 xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
     QWidget(parent, flags) {
@@ -25,12 +26,13 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     trackSlider->setTickPosition(QSlider::TicksBelow);
     trackSlider->setTracking(false);
     // Create buttons for play/pause and stop
-    playPauseButton = new QPushButton(tr("Play"), this);
-    auto stopButton = new QPushButton(tr("Stop"), this);
+    playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), this);
+    auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), this);
     // Create buttons for playlist control, previous, next and clear queue.
-    auto prevButton = new QPushButton(tr("Prev"), this);
-    auto nextButton = new QPushButton(tr("Next"), this);
-    auto clearButton = new QPushButton(tr("Clear Queue"), this);
+    auto prevButton = new QPushButton(QIcon(":/images/xplay-previous.svg"), tr("Prev"), this);
+    auto nextButton = new QPushButton(QIcon(":/images/xplay-next.svg"), tr("Next"), this);
+    nextButton->setLayoutDirection(Qt::RightToLeft);
+    auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), this);
     auto volumeDial = new QDial(this);
     volumeDial->setRange(0, 100);
     volumeDial->setSingleStep(10);
@@ -132,9 +134,15 @@ void xPlayerWidget::currentTrackPlayed(qint64 played) {
 void xPlayerWidget::currentState(xMusicPlayer::State state) {
     // Update the play/pause button based on the state of the music player.
     switch (state) {
-        case xMusicPlayer::PlayingState: playPauseButton->setText(tr("Pause")); break;
+        case xMusicPlayer::PlayingState: {
+            playPauseButton->setIcon(QIcon(":/images/xplay-pause.svg"));
+            playPauseButton->setText(tr("Pause"));
+        } break;
         case xMusicPlayer::PauseState:
-        case xMusicPlayer::StopState: playPauseButton->setText(tr("Play")); break;
+        case xMusicPlayer::StopState: {
+            playPauseButton->setIcon(QIcon(":/images/xplay-play.svg"));
+            playPauseButton->setText(tr("Play"));
+        } break;
     }
 }
 

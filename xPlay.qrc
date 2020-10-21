@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>images/xplay-play.svg</file>
+    <file>images/xplay-pause.svg</file>
+    <file>images/xplay-next.svg</file>
+    <file>images/xplay-previous.svg</file>
+    <file>images/xplay-stop.svg</file>
+    <file>images/xplay-eject.svg</file>
+</qresource>
+</RCC>

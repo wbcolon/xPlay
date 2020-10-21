@@ -33,8 +33,8 @@ add_executable(xPlay
         xMainWidget.cpp
         xApplication.cpp
         xPlay.cpp
+        xPlay.qrc
 )
-#    resources.qrc
 
 target_link_libraries(xPlay Qt5::Widgets Phonon::phonon4qt5)
 
