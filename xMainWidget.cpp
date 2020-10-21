@@ -43,6 +43,7 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     trackList->setSortingEnabled(true);
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
     queueList = queueList_;
+    queueList->setContextMenuPolicy(Qt::CustomContextMenu);
     // Setup artistSelector as horizontal list widget with no wrapping. Fix it's height.
     artistSelectorList = artistSelectorList_; // requires since we need to use the member variable;
     artistSelectorList->setViewMode(QListView::IconMode);
@@ -65,14 +66,16 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     connect(artistSelectorList, &QListWidget::currentRowChanged, this, &xMainWidget::selectArtistSelector);
     // Connect main widget to music player
     connect(this, &xMainWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
-    connect(this, &xMainWidget::play, musicPlayer, &xMusicPlayer::play);
+    connect(this, &xMainWidget::dequeueTrack, musicPlayer, &xMusicPlayer::dequeTrack);
     // Connect player widget to main widget
     connect(playerWidget, &xPlayerWidget::clearQueue, this, &xMainWidget::clearQueue);
     // Connect queue to main widget
     connect(playerWidget, &xPlayerWidget::currentQueueTrack, this, &xMainWidget::currentQueueTrack);
-    connect(queueList, &QListWidget::currentRowChanged, musicPlayer, &xMusicPlayer::play);
+    connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainWidget::currentQueueTrackClicked);
+    //connect(queueList, &QListWidget::itemDoubleClicked, musicPlayer, &xMusicPlayer::play);
     // Right click
     connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainWidget::selectSingleTrack);
+    connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainWidget::currentQueueTrackRemoved);
 }
 
 void xMainWidget::scannedArtists(const std::list<QString>& artists) {
@@ -193,11 +196,26 @@ void xMainWidget::selectArtistSelector(int selector) {
 }
 
 void xMainWidget::currentQueueTrack(int index) {
-    // We need to disconnect in order to avoid a signal/slot loop
-    disconnect(queueList, &QListWidget::currentRowChanged, musicPlayer, &xMusicPlayer::play);
     queueList->setCurrentRow(index);
-    // Reconnect again.
-    connect(queueList, &QListWidget::currentRowChanged, musicPlayer, &xMusicPlayer::play);
+}
+
+void xMainWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
+    auto track = queueList->row(trackItem);
+    if ((track >= 0) && (track< queueList->count())) {
+        currentQueueTrack(track);
+        emit musicPlayer->play(track);
+    }
+}
+
+void xMainWidget::currentQueueTrackRemoved(const QPoint& point) {
+    // Currently unused
+    Q_UNUSED(point)
+    // Retrieve currently selected element
+    auto track = queueList->currentRow();
+    if ((track >= 0) && (track< queueList->count())) {
+        queueList->takeItem(track);
+        emit dequeueTrack(track);
+    }
 }
 
 void xMainWidget::clearQueue() {
@@ -210,7 +228,6 @@ void xMainWidget::selectSingleTrack(const QPoint& point) {
     Q_UNUSED(point)
     // Retrieve currently selected element
     auto track = trackList->currentRow();
-    qDebug() << "RIGHT_CLICK: " << track;
     if ((track >= 0) && (track< trackList->count())) {
         // Retrieve selected artist and album name.
         auto artistName = artistList->currentItem()->text();

@@ -45,6 +45,13 @@ signals:
      * @param tracks ordered vector of track names.
      */
     void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks);
+
+    /**
+     * Signal the dequeue of a single track
+     *
+     * @param index position of the track in the playlist.
+     */
+    void dequeueTrack(int index);
     /**
      * Signal that a specific track of the playlist will be played.
      *
@@ -114,6 +121,16 @@ private slots:
      */
     void selectTrack(QListWidgetItem* trackItem);
     /**
+     * Append single track to the playlist (queue)
+     *
+     * Function is triggered by a right click to an entry in the list of
+     * tracks. Only the track currently selected (at this position) is added.
+     * (@see selectTrack)
+     *
+     * @param point position of the right-click.
+     */
+    void selectSingleTrack(const QPoint& point);
+    /**
      * Filter the list of artists.
      *
      * Function is triggered whenever an element out of the selectors is selected.
@@ -128,12 +145,18 @@ private slots:
      * @param index position of the track currently played.
      */
     void currentQueueTrack(int index);
+
+    void currentQueueTrackClicked(QListWidgetItem* trackItem);
+    /**
+     *  Remove the current track from the playlist (queue).
+     *
+     * @param point position of the right-click.
+     */
+    void currentQueueTrackRemoved(const QPoint& point);
     /**
      * Clear the list of queued tracks.
      */
     void clearQueue();
-
-    void selectSingleTrack(const QPoint& point);
 
 private:
     /**
