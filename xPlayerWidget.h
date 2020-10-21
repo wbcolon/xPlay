@@ -28,15 +28,7 @@ signals:
 
 private slots:
     /**
-     * Update the play/pause button
-     */
-    void playPause();
-    /**
-     * Reset the play/pause button.
-     */
-    void stop();
-    /**
-     * Reset the play/pause button and the artist/album/track/played/length labels.
+     * Reset the the artist/album/track/played/length labels.
      */
     void clear();
 
@@ -61,6 +53,18 @@ private slots:
      * @param played the amount played of the current track in milliseconds.
      */
     void currentTrackPlayed(qint64 played);
+    /**
+     * Update the player UI based on the player state.
+     *
+     * @param state the current state of the player.
+     */
+    void currentState(xMusicPlayer::State state);
+    /**
+     * Update the volume label.
+     *
+     * @param vol the current vol in between 0 and 100.
+     */
+    void setVolume(int vol);
 
 private:
     /**
@@ -71,6 +75,7 @@ private:
     QLabel* trackName;
     QLabel* trackLength;
     QLabel* trackPlayed;
+    QLabel* volume;
     /**
      * The track slider can be used to seek within the current track.
      */

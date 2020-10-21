@@ -1,8 +1,7 @@
 #include "xPlayerWidget.h"
 
 #include <QGridLayout>
-#include <QMediaControl>
-#include <QMediaService>
+#include <QDial>
 
 xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
     QWidget(parent, flags) {
@@ -24,6 +23,7 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     // Marker every 30 seconds
     trackSlider->setTickInterval(30000);
     trackSlider->setTickPosition(QSlider::TicksBelow);
+    trackSlider->setTracking(false);
     // Create buttons for play/pause and stop
     playPauseButton = new QPushButton(tr("Play"), this);
     auto stopButton = new QPushButton(tr("Stop"), this);
@@ -31,33 +31,44 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     auto prevButton = new QPushButton(tr("Prev"), this);
     auto nextButton = new QPushButton(tr("Next"), this);
     auto clearButton = new QPushButton(tr("Clear Queue"), this);
+    auto volumeDial = new QDial(this);
+    volumeDial->setRange(0, 100);
+    volumeDial->setSingleStep(10);
+    volumeDial->setNotchesVisible(true);
+    volumeDial->setNotchTarget(10);
+    volumeDial->setWrapping(false);
+    volume = new QLabel(this);
+    volume->setAlignment(Qt::AlignRight);
     // Create the basic player widget layout.
     // Add labels, buttons and the slider.
     auto playerLayout = new QGridLayout(this);
     playerLayout->setSpacing(0);
-    playerLayout->addWidget(new QLabel(tr("Artist:"), this), 0, 0);
+    playerLayout->addWidget(new QLabel(tr("Artist"), this), 0, 0);
     playerLayout->addWidget(artistName, 0, 1, 1, 5);
-    playerLayout->addWidget(new QLabel(tr("Album:"), this), 1, 0);
+    playerLayout->addWidget(new QLabel(tr("Album"), this), 1, 0);
     playerLayout->addWidget(albumName, 1, 1, 1, 5);
-    playerLayout->addWidget(new QLabel(tr("Track:"), this), 2, 0);
+    playerLayout->addWidget(new QLabel(tr("Track"), this), 2, 0);
     playerLayout->addWidget(trackName, 2, 1, 1, 5);
     playerLayout->addWidget(trackPlayed, 4, 0);
     playerLayout->addWidget(trackLength, 4, 5);
     playerLayout->addWidget(trackSlider, 4, 1, 1, 4);
     // Create a layout for the music player and playlist control buttons.
     auto controlLayout = new QGridLayout();
-    controlLayout->addWidget(playPauseButton, 0, 0, 1, 2);
-    controlLayout->addWidget(stopButton, 1, 0, 1, 2);
-    controlLayout->addWidget(prevButton, 2, 0, 1, 1);
-    controlLayout->addWidget(nextButton, 2, 1, 1, 1);
-    controlLayout->addWidget(clearButton, 3, 0, 1, 2);
+    controlLayout->addWidget(playPauseButton, 0, 5, 1, 2);
+    controlLayout->addWidget(stopButton, 1, 5, 1, 2);
+    controlLayout->addWidget(prevButton, 2, 5, 1, 1);
+    controlLayout->addWidget(nextButton, 2, 6, 1, 1);
+    controlLayout->addWidget(clearButton, 3, 5, 1, 2);
+    controlLayout->setColumnMinimumWidth(4, 20);
+    controlLayout->addWidget(volumeDial, 0, 0, 3, 4);
+    controlLayout->addWidget(new QLabel(tr("Volume")), 3, 0, 1, 3);
+    controlLayout->addWidget(volume, 3, 3, 1, 1);
     // Add the control layout to the player layout.
-    playerLayout->addLayout(controlLayout, 0, 6, 5, 1);
+    playerLayout->setColumnMinimumWidth(6, 20);
+    playerLayout->addLayout(controlLayout, 0, 7, 5, 1);
     // Connect the buttons to player widget and/or to the music player.
     connect(playPauseButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::playPause);
-    connect(playPauseButton, &QPushButton::pressed, this, &xPlayerWidget::playPause);
     connect(stopButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::stop);
-    connect(stopButton, &QPushButton::pressed, this, &xPlayerWidget::stop);
     connect(prevButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::prev);
     connect(nextButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::next);
     connect(clearButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::clearQueue);
@@ -67,29 +78,21 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xPlayerWidget::currentTrack);
     connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, this, &xPlayerWidget::currentTrackPlayed);
     connect(musicPlayer, &xMusicPlayer::currentTrackLength, this, &xPlayerWidget::currentTrackLength);
-    // Connect the slider to the music player
+    connect(musicPlayer, &xMusicPlayer::currentState, this, &xPlayerWidget::currentState);
+    // Connect the track slider to the music player
     connect(trackSlider, &QSlider::sliderMoved, musicPlayer, &xMusicPlayer::seek);
+    // Connect the volume slider to the music player
+    connect(volumeDial, &QDial::valueChanged, this, &xPlayerWidget::setVolume);
+    connect(volumeDial, &QDial::valueChanged, musicPlayer, &xMusicPlayer::setVolume);
+    //connect(volumeSpin, &QSpinBox::valueChanged, volumeDial, &QDial::setValue);
     // Do not resize the player widget vertically
     setFixedHeight(sizeHint().height());
-}
-
-void xPlayerWidget::playPause() {
-    // Toggle the play/pause button text.
-    if (playPauseButton->text().startsWith(tr("Play"))) {
-        playPauseButton->setText(tr("Pause"));
-    } else {
-        playPauseButton->setText(tr("Play"));
-    }
-}
-
-void xPlayerWidget::stop() {
-    // Reset the play/pause button.
-    playPauseButton->setText(tr("Play"));
+    // Setup volume
+    volumeDial->setValue(musicPlayer->getVolume());
 }
 
 void xPlayerWidget::clear() {
     // Reset the play/pause button and clear all track info.
-    playPauseButton->setText(tr("Play"));
     artistName->clear();
     albumName->clear();
     trackName->clear();
@@ -115,7 +118,7 @@ void xPlayerWidget::currentTrackLength(qint64 length) {
     // Update the length of the current track.
     trackLength->setText(msToFormat(length));
     // Set maximum of slider to the length of the track. Reset the slider position-
-    trackSlider->setMaximum(length);
+    trackSlider->setRange(0, length);
     trackSlider->setSliderPosition(0);
 }
 
@@ -124,4 +127,18 @@ void xPlayerWidget::currentTrackPlayed(qint64 played) {
     trackPlayed->setText(msToFormat(played));
     // Update the slider position.
     trackSlider->setSliderPosition(played);
+}
+
+void xPlayerWidget::currentState(xMusicPlayer::State state) {
+    // Update the play/pause button based on the state of the music player.
+    switch (state) {
+        case xMusicPlayer::PlayingState: playPauseButton->setText(tr("Pause")); break;
+        case xMusicPlayer::PauseState:
+        case xMusicPlayer::StopState: playPauseButton->setText(tr("Play")); break;
+    }
+}
+
+void xPlayerWidget::setVolume(int vol) {
+    // Update volume label with the current value
+    volume->setText(QString::number(vol));
 }
