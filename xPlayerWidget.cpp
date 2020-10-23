@@ -116,15 +116,16 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     controlLayout->addWidget(nextButton, 2, 6, 1, 1);
     controlLayout->addWidget(clearButton, 3, 5, 1, 2);
     controlLayout->setColumnMinimumWidth(4, 20);
-    controlLayout->addWidget(volumeDial, 0, 0, 3, 4);
     // Volume knob/dial layout is different for Qwt and Qt.
 #ifdef USE_QWT
-    // Qwt implementation.
+    // Qwt implementation. Layout here overlap on purpose
+    controlLayout->addWidget(volumeDial, 0, 0, 4, 4);
     auto volumeLabel = new QLabel(tr("Volume"));
     volumeLabel->setAlignment(Qt::AlignCenter);
     controlLayout->addWidget(volumeLabel, 3, 0, 1, 4);
 #else
     // Qt implementation.
+    controlLayout->addWidget(volumeDial, 0, 0, 3, 4);
     controlLayout->addWidget(new QLabel(tr("Volume")), 3, 0, 1, 3);
     controlLayout->addWidget(volume, 3, 3, 1, 1);
 #endif
