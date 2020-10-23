@@ -60,6 +60,15 @@ The file menu has currently two entries. An *Exit* and *Open Music Library* entr
 display a file dialog that allows you to select a base directory for your music library. This directory is stored
 using QSettings and is retrieved on startup of xPlay.
 
+## Requirements
+
+* Qt 5.x
+* Qwt 6.x for Qt5 (optional, deactivate with USE_QWT=OFF)
+* Phonon (optional, deactivate with USE_PHONON=OFF)
+* C++17
+
+With Qwt the UI has a slightly improved volume knop and track slider.
+
 ## Notes
 
 xPlay started out as a little project over the weekend in order to evaluate the Clion C++ IDE.
