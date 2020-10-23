@@ -13,7 +13,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -pedantic -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -ggdb -fno-omit-frame-pointer -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -O3 -DQT_NO_DEBUG_OUTPUT")
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
@@ -30,12 +30,14 @@ add_executable(xPlay
         xMusicPlayerPhonon.cpp
         xMusicLibrary.cpp
         xPlayerWidget.cpp
+        xPlayerWidgetQt.cpp
+        xPlayerWidgetQwt.cpp
         xMainWidget.cpp
         xApplication.cpp
         xPlay.cpp
         xPlay.qrc
 )
 
-target_link_libraries(xPlay Qt5::Widgets Phonon::phonon4qt5)
+target_link_libraries(xPlay qwt-qt5 Qt5::Widgets Phonon::phonon4qt5)
 
 QT5_USE_MODULES(xPlay Multimedia MultimediaWidgets)
