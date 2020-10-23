@@ -2,6 +2,8 @@
 
 #include <QGridLayout>
 #include <QIcon>
+#include <taglib/fileref.h>
+#include <taglib/audioproperties.h>
 
 #ifndef USE_QWT
 #include <QDial>
@@ -37,6 +39,11 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     trackLength->setAlignment(Qt::AlignCenter);
     trackPlayed = new QLabel(this);
     trackPlayed->setAlignment(Qt::AlignCenter);
+    trackSampleRate = new QLabel(this);
+    trackSampleRate->setAlignment(Qt::AlignRight);
+    trackBitrate = new QLabel(this);
+    trackBitrate->setAlignment(Qt::AlignRight);
+
     // Create buttons for play/pause and stop
     playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), this);
     auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), this);
@@ -100,14 +107,23 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     auto playerLayout = new QGridLayout(this);
     playerLayout->setSpacing(0);
     playerLayout->addWidget(new QLabel(tr("Artist"), this), 0, 0);
-    playerLayout->addWidget(artistName, 0, 1, 1, 5);
+    playerLayout->addWidget(artistName, 0, 1, 1, 4);
     playerLayout->addWidget(new QLabel(tr("Album"), this), 1, 0);
-    playerLayout->addWidget(albumName, 1, 1, 1, 5);
+    playerLayout->addWidget(albumName, 1, 1, 1, 4);
     playerLayout->addWidget(new QLabel(tr("Track"), this), 2, 0);
-    playerLayout->addWidget(trackName, 2, 1, 1, 5);
+    playerLayout->addWidget(trackName, 2, 1, 1, 7);
+    auto trackSampleRateLabel = new QLabel(tr("Sample rate"));
+    trackSampleRateLabel->setAlignment(Qt::AlignRight);
+    auto trackBitrateLabel = new QLabel(tr("Bitrate"));
+    trackBitrateLabel->setAlignment(Qt::AlignRight);
+    playerLayout->addWidget(trackSampleRateLabel, 0, 5);
+    playerLayout->addWidget(trackSampleRate, 0, 6);
+    playerLayout->addWidget(trackBitrateLabel, 1, 5);
+    playerLayout->addWidget(trackBitrate, 1, 6);
+
     playerLayout->addWidget(trackPlayed, 4, 0);
-    playerLayout->addWidget(trackLength, 4, 5);
-    playerLayout->addWidget(trackSlider, 4, 1, 1, 4);
+    playerLayout->addWidget(trackLength, 4, 7);
+    playerLayout->addWidget(trackSlider, 4, 1, 1, 6);
     // Create a layout for the music player and playlist control buttons.
     auto controlLayout = new QGridLayout();
     controlLayout->addWidget(playPauseButton, 0, 5, 1, 2);
@@ -130,8 +146,8 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     controlLayout->addWidget(volume, 3, 3, 1, 1);
 #endif
     // Add the control layout to the player layout.
-    playerLayout->setColumnMinimumWidth(6, 20);
-    playerLayout->addLayout(controlLayout, 0, 7, 5, 1);
+    playerLayout->setColumnMinimumWidth(8, 20);
+    playerLayout->addLayout(controlLayout, 0, 9, 5, 1);
     // Connect the buttons to player widget and/or to the music player.
     connect(playPauseButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::playPause);
     connect(stopButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::stop);
@@ -158,13 +174,18 @@ void xPlayerWidget::clear() {
     trackName->clear();
     trackLength->clear();
     trackPlayed->clear();
+    trackSampleRate->clear();
+    trackBitrate->clear();
 }
 
-void xPlayerWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track) {
+void xPlayerWidget::currentTrack(int index, const QString& artist, const QString& album,
+                                 const QString& track, int bitrate, int sampleRate) {
     // Display the current track information (without length)
     artistName->setText(artist);
     albumName->setText(album);
     trackName->setText(track);
+    trackSampleRate->setText(QString("%1 Hz").arg(sampleRate));
+    trackBitrate->setText(QString("%1 kb/s").arg(bitrate));
     // Signal index update to the Queue.
     emit currentQueueTrack(index);
 }

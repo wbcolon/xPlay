@@ -1,8 +1,7 @@
 #ifndef __XMUSICPLAYER_H__
 #define __XMUSICPLAYER_H__
 
-#include <QMediaPlayer>
-#include <QMediaPlaylist>
+#include <QWidget>
 
 class xMusicPlayer:public QObject {
     Q_OBJECT
@@ -38,8 +37,11 @@ signals:
      * @param artist the artist name for the current track.
      * @param album the album name for the current track.
      * @param track the name of the current track.
+     * @param bitrate the bitrate in kb/sec.
+     * @param sampleRate the sample rate in Hz.
      */
-    void currentTrack(int index, const QString& artist, const QString& album, const QString& track);
+    void currentTrack(int index, const QString& artist, const QString& album,
+                      const QString& track, int bitrate, int sampleRate);
     /**
      * Signal the amount played for the current track.
      *
@@ -82,6 +84,7 @@ protected:
      * @return absolute path to the specified track.
      */
     QString pathFromQueueEntry(const std::tuple<QString, QString, QString>& entry);
+    std::pair<int,int> propertiesFromFile(const QString& filename);
 
     QString baseDirectory;
 };

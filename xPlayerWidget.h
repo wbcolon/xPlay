@@ -44,8 +44,11 @@ protected slots:
      * @param artist the artist name for the current track.
      * @param album the album name for the current track.
      * @param track name of the current track.
+     * @param bitrate the bitrate in kb/sec.
+     * @param sampleRate the sample rate in Hz.
      */
-    void currentTrack(int index, const QString& artist, const QString& album, const QString& track);
+    void currentTrack(int index, const QString& artist, const QString& album,
+                      const QString& track, int bitrate, int sampleRate);
     /**
      * Update the length label.
      *
@@ -74,6 +77,8 @@ private:
     QLabel* trackName;
     QLabel* trackLength;
     QLabel* trackPlayed;
+    QLabel* trackSampleRate;
+    QLabel* trackBitrate;
     /**
      * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
      */
