@@ -1,6 +1,5 @@
 #include "xMainWidget.h"
-#include "xPlayerWidgetQt.h"
-#include "xPlayerWidgetQwt.h"
+#include "xPlayerWidget.h"
 
 #include <QGroupBox>
 #include <QGridLayout>
@@ -32,7 +31,7 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     auto [artistSelectorBox, artistSelectorList_] = addGroupBox(tr("ArtistSelector"));
     auto playerBox = new QGroupBox(tr("Player"), this);
     auto playerLayout = new QHBoxLayout();
-    auto playerWidget = new xPlayerWidgetQwt(musicPlayer, this);
+    auto playerWidget = new xPlayerWidget(musicPlayer, this);
     playerLayout->addWidget(playerWidget);
     playerBox->setLayout(playerLayout);
     // Sort entries in artist/album/track

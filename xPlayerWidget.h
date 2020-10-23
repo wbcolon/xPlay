@@ -2,8 +2,15 @@
 #define __XPLAYERWIDGET_H__
 
 #include "xMusicPlayer.h"
+#include "xPlayConfig.h"
 
-#include <QWidget>
+#include <QLabel>
+#include <QPushButton>
+#ifdef USE_QWT
+#include <qwt/qwt_slider.h>
+#else
+#include <QSlider>
+#endif
 
 class xPlayerWidget:public QWidget {
     Q_OBJECT
@@ -28,7 +35,7 @@ protected slots:
     /**
      * Reset the the artist/album/track/played/length labels.
      */
-    virtual void clear() = 0;
+    void clear();
 
     /**
      * Update the player widget with the provided information.
@@ -38,31 +45,47 @@ protected slots:
      * @param album the album name for the current track.
      * @param track name of the current track.
      */
-    virtual void currentTrack(int index, const QString& artist, const QString& album, const QString& track) = 0;
+    void currentTrack(int index, const QString& artist, const QString& album, const QString& track);
     /**
      * Update the length label.
      *
      * @param length the length of the current track in milliseconds.
      */
-    virtual void currentTrackLength(qint64 length) = 0;
+    void currentTrackLength(qint64 length);
     /**
      * Update the played time label.
      *
      * @param played the amount played of the current track in milliseconds.
      */
-    virtual void currentTrackPlayed(qint64 played) = 0;
+    void currentTrackPlayed(qint64 played);
     /**
      * Update the player UI based on the player state.
      *
      * @param state the current state of the player.
      */
-    virtual void currentState(xMusicPlayer::State state) = 0;
+    void currentState(xMusicPlayer::State state);
+
+private:
     /**
-     * Update the volume label.
-     *
-     * @param vol the current vol in between 0 and 100.
+     * Labels to display information about the current track.
      */
-    virtual void setVolume(int vol) = 0;
+    QLabel* artistName;
+    QLabel* albumName;
+    QLabel* trackName;
+    QLabel* trackLength;
+    QLabel* trackPlayed;
+    /**
+     * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
+     */
+    QPushButton* playPauseButton;
+    /**
+     * The track slider can be used to seek within the current track.
+     */
+#ifdef USE_QWT
+    QwtSlider* trackSlider;
+#else
+    QSlider* trackSlider;
+#endif
 };
 
 #endif

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.10)
 
 project(xPlay)
 
@@ -16,6 +16,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -ggdb -fno-omit-frame-pointer -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -O3 -DQT_NO_DEBUG_OUTPUT")
 
+option(USE_PHONON "Use the Phonon based media player instead of Qt" ON)
+option(USE_QWT "Use the Qwt based player widget instead of Qt" ON)
+configure_file(xPlayConfig.h.in xPlayConfig.h)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
 find_package(Qt5MultimediaWidgets REQUIRED)
@@ -24,20 +27,29 @@ find_package(Phonon4Qt5)
 set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 
+if (USE_PHONON)
+    set(XMUSICPLAYER_FILE xMusicPlayerPhonon.cpp)
+else()
+    set(XMUSICPLAYER_FILE xMusicPlayerQt.cpp)
+endif()
+
 add_executable(xPlay
+        xPlayConfig.h
         xMusicPlayer.cpp
-        xMusicPlayerQt.cpp
-        xMusicPlayerPhonon.cpp
+        ${XMUSICPLAYER_FILE}
         xMusicLibrary.cpp
         xPlayerWidget.cpp
-        xPlayerWidgetQt.cpp
-        xPlayerWidgetQwt.cpp
         xMainWidget.cpp
         xApplication.cpp
         xPlay.cpp
         xPlay.qrc
 )
 
-target_link_libraries(xPlay qwt-qt5 Qt5::Widgets Phonon::phonon4qt5)
+target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
+if (USE_QWT)
+    target_link_libraries(xPlay qwt-qt5 Qt5::Widgets Phonon::phonon4qt5)
+else()
+    target_link_libraries(xPlay Qt5::Widgets Phonon::phonon4qt5)
+endif()
 
 QT5_USE_MODULES(xPlay Multimedia MultimediaWidgets)

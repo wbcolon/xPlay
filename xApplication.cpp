@@ -2,8 +2,12 @@
 #include <QFileDialog>
 
 #include "xApplication.h"
-#include "xMusicPlayerQt.h"
+#include "xPlayConfig.h"
+#ifdef USE_PHONON
 #include "xMusicPlayerPhonon.h"
+#else
+#include "xMusicPlayerQt.h"
+#endif
 
 
 const QString ApplicationName = "xPlay";
@@ -13,7 +17,11 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags) {
     // Setup music library.
     musicLibrary = new xMusicLibrary(this);
+#ifdef USE_PHONON
     musicPlayer = new xMusicPlayerPhonon(this);
+#else
+    musicPlayer = new xMusicPlayerQt(this);
+#endif
     // Setup player and main widget
     mainWidget = new xMainWidget(musicPlayer, this);
     // Use main widget as central application widget.
