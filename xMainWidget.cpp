@@ -197,6 +197,12 @@ void xMainWidget::selectArtistSelector(int selector) {
 
 void xMainWidget::currentQueueTrack(int index) {
     queueList->setCurrentRow(index);
+    // Simply remove all icons.
+    for (auto i = 0; i < queueList->count(); ++i) {
+        queueList->item(i)->setIcon(QIcon());
+    }
+    // Set play icon only for currently played one.
+    queueList->item(index)->setIcon(QIcon(":/images/xplay-play.svg"));
 }
 
 void xMainWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
