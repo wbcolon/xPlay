@@ -22,7 +22,8 @@ auto xMainWidget::addGroupBox(const QString& boxLabel) {
 
 xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
-        musicPlayer(player) {
+        musicPlayer(player),
+        playedTrack(0) {
     // Create and group boxes with embedded list widgets.
     auto [artistBox, artistList_] = addGroupBox(tr("Artists"));
     auto [albumBox, albumList_] = addGroupBox(tr("Albums"));
@@ -72,10 +73,11 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     // Connect queue to main widget
     connect(playerWidget, &xPlayerWidget::currentQueueTrack, this, &xMainWidget::currentQueueTrack);
     connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainWidget::currentQueueTrackClicked);
-    //connect(queueList, &QListWidget::itemDoubleClicked, musicPlayer, &xMusicPlayer::play);
-    // Right click
+    // Right click.
     connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainWidget::selectSingleTrack);
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainWidget::currentQueueTrackRemoved);
+    // Connect music player to main widget for queue update.
+    connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainWidget::currentState);
 }
 
 void xMainWidget::scannedArtists(const std::list<QString>& artists) {
@@ -195,14 +197,31 @@ void xMainWidget::selectArtistSelector(int selector) {
     }
 }
 
+void xMainWidget::currentState(xMusicPlayer::State state) {
+    // Update the icon for the played track based on the state of the music player.
+    switch (state) {
+        case xMusicPlayer::PlayingState: {
+            queueList->item(playedTrack)->setIcon(QIcon(":/images/xplay-play.svg"));
+        } break;
+        case xMusicPlayer::PauseState: {
+            queueList->item(playedTrack)->setIcon(QIcon(":/images/xplay-pause.svg"));
+        } break;
+        case xMusicPlayer::StopState: {
+            queueList->item(playedTrack)->setIcon(QIcon(":/images/xplay-stop.svg"));
+        } break;
+        default: {
+            queueList->item(playedTrack)->setIcon(QIcon());
+        } break;
+    }
+}
+
 void xMainWidget::currentQueueTrack(int index) {
     queueList->setCurrentRow(index);
-    // Simply remove all icons.
-    for (auto i = 0; i < queueList->count(); ++i) {
-        queueList->item(i)->setIcon(QIcon());
-    }
-    // Set play icon only for currently played one.
-    queueList->item(index)->setIcon(QIcon(":/images/xplay-play.svg"));
+    // Remove play icon from old track
+    queueList->item(playedTrack)->setIcon(QIcon());
+    // Update played track and set play icon only for currently played one.
+    playedTrack = index;
+    queueList->item(playedTrack)->setIcon(QIcon(":/images/xplay-play.svg"));
 }
 
 void xMainWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {

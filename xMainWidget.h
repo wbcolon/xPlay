@@ -140,12 +140,22 @@ private slots:
      */
     void selectArtistSelector(int selector);
     /**
-     * Select the current track in the playlist (queue).
+     * Update the player UI based on the player state.
      *
-     * @param index position of the track currently played.
+     * @param state the current state of the player.
+     */
+    void currentState(xMusicPlayer::State state);
+    /**
+     * Update the queue based on the currently played song.
+     *
+     * @param index of the track currently played.
      */
     void currentQueueTrack(int index);
-
+    /**
+     * Select the current track in the playlist (queue).
+     *
+     * @param trackItem pointer to the double-clicked item.
+     */
     void currentQueueTrackClicked(QListWidgetItem* trackItem);
     /**
      *  Remove the current track from the playlist (queue).
@@ -187,6 +197,7 @@ private:
     QListWidget* trackList;
     QListWidget* artistSelectorList;
     QListWidget* queueList;
+    int playedTrack;
     /**
      * Store the current list of unfiltered artists for later filtering.
      */
