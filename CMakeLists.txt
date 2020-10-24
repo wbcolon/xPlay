@@ -33,17 +33,26 @@ set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 
 if (USE_PHONON)
-    set(XMUSICPLAYER_FILE xMusicPlayerPhonon.cpp)
+    set(XMUSICPLAYER_FILES xMusicPlayerPhonon.cpp)
 else()
-    set(XMUSICPLAYER_FILE xMusicPlayerQt.cpp)
+    set(XMUSICPLAYER_FILES xMusicPlayerQt.cpp)
+endif()
+
+if (USE_QWT)
+    set(XPLAYERWIDGET_FILES xPlayerSliderWidgetQwt.cpp xPlayerVolumeWidgetQwt.cpp)
+else()
+    set(XPLAYERWIDGET_FILES xPlayerSliderWidgetQt.cpp xPlayerVolumeWidgetQt.cpp)
 endif()
 
 add_executable(xPlay
         xPlayConfig.h
         xMusicPlayer.cpp
-        ${XMUSICPLAYER_FILE}
+        ${XMUSICPLAYER_FILES}
         xMusicLibrary.cpp
         xPlayerWidget.cpp
+        xPlayerVolumeWidget.cpp
+        xPlayerSliderWidget.cpp
+        ${XPLAYERWIDGET_FILES}
         xMainWidget.cpp
         xApplication.cpp
         xPlay.cpp

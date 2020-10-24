@@ -12,33 +12,18 @@
  * GNU General Public License for more details.
  */
 #include "xPlayerWidget.h"
+#ifdef USE_QWT
+#include "xPlayerSliderWidgetQwt.h"
+#include "xPlayerVolumeWidgetQwt.h"
+#else
+#include "xPlayerSliderWidgetQt.h"
+#include "xPlayerVolumeWidgetQt.h"
+#endif
 
 #include <QGridLayout>
 #include <QIcon>
 #include <taglib/fileref.h>
 #include <taglib/audioproperties.h>
-
-#ifndef USE_QWT
-#include <QDial>
-#else
-#include <cmath>
-#include <qwt/qwt_knob.h>
-#include <qwt/qwt_date_scale_draw.h>
-
-/**
- * Helper class in order to adjust the scale labels (only QWT)
- */
-class xPlayerWidgetScaleDraw:public QwtScaleDraw {
-public:
-    xPlayerWidgetScaleDraw() = default;
-    ~xPlayerWidgetScaleDraw() = default;
-
-    virtual QwtText label(double value) const {
-        return QwtText(QString("%1:%2").arg(static_cast<int>(round(value)/60000)).
-                arg((static_cast<int>(round(value))/1000)%60, 2, 10, QChar('0')));
-    }
-};
-#endif
 
 xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
     QWidget(parent, flags) {
@@ -46,12 +31,6 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     artistName = new QLabel(this);
     albumName = new QLabel(this);
     trackName = new QLabel(this);
-    // Create labels for length of the track and time played.
-    // Labels located on the left and right of a slider.
-    trackLength = new QLabel(this);
-    trackLength->setAlignment(Qt::AlignCenter);
-    trackPlayed = new QLabel(this);
-    trackPlayed->setAlignment(Qt::AlignCenter);
     trackSampleRate = new QLabel(this);
     trackSampleRate->setAlignment(Qt::AlignRight);
     trackBitrate = new QLabel(this);
@@ -66,55 +45,20 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     nextButton->setLayoutDirection(Qt::RightToLeft);
     //nextButton->setStyleSheet("padding-left: 20px; padding-right: 20px;");
     auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), this);
-    //
-    // The track slider and the volume knob are different in Qwt and Qt
-    //
 #ifdef USE_QWT
-    // Qwt Implementation.
-    // Create a slider that displays the played time and can be used
-    // to seek within a track.
-    trackSlider = new QwtSlider(Qt::Horizontal, this);
-    // Scale below
-    trackSlider->setScalePosition(QwtSlider::LeadingScale);
-    trackSlider->setTracking(false);
-    trackSlider->setScaleDraw(new xPlayerWidgetScaleDraw());
-    // Slider initially empty
-    trackSlider->setLowerBound(0);
-    trackSlider->setUpperBound(0);
-    trackSlider->setGroove(false);
-    trackSlider->setTrough(false);
-    // Adjust the size of the Handle. A little smaller.
-    trackSlider->setHandleSize(QSize(16, 20));
-    auto volumeDial = new QwtKnob(this);
-    volumeDial->setLowerBound(0);
-    volumeDial->setUpperBound(100);
-    volumeDial->setScaleStepSize(20);
-    volumeDial->setWrapping(false);
-    // Connect the track slider to the music player. Do proper conversion using lambdas.
-    connect(trackSlider, &QwtSlider::sliderMoved, [=](double position) { musicPlayer->seek(static_cast<qint64>(position)); } );
-    // Connect the volume slider to the music player. Do proper conversion using lambdas.
-    connect(volumeDial, &QwtKnob::valueChanged, [=](double volume) { musicPlayer->setVolume(static_cast<int>(volume)); } );
+    // Add track slider and the volume knob for Qwt.
+    xPlayerSliderWidget* sliderWidget = new xPlayerSliderWidgetQwt(this);
+    xPlayerVolumeWidget* volumeWidget = new xPlayerVolumeWidgetQwt(this);
 #else
-    // Qt Implementation.
-    // Create a slider that displays the played time and can be used
-    // to seek within a track.
-    trackSlider = new QSlider(Qt::Horizontal, this);
-    trackSlider->setTickPosition(QSlider::TicksBelow);
-    trackSlider->setTracking(false);
-    auto volumeDial = new QDial(this);
-    volumeDial->setRange(0, 100);
-    volumeDial->setSingleStep(10);
-    volumeDial->setNotchesVisible(true);
-    volumeDial->setNotchTarget(10);
-    volumeDial->setWrapping(false);
-    auto volume = new QLabel(this);
-    volume->setAlignment(Qt::AlignRight);
-    // Connect the track slider to the music player
-    connect(trackSlider, &QSlider::sliderMoved, musicPlayer, &xMusicPlayer::seek);
-    // Connect the volume slider to the music player
-    connect(volumeDial, &QDial::valueChanged, musicPlayer, &xMusicPlayer::setVolume);
-    connect(volumeDial, &QDial::valueChanged, this, [=](int vol) { volume->setText(QString::number(vol)); } );
+    // Add track slider and the volume knob for Qt.
+    xPlayerSliderWidget* sliderWidget = new xPlayerSliderWidgetQt(this);
+    xPlayerVolumeWidget* volumeWidget = new xPlayerVolumeWidgetQt(this);
 #endif
+    // Connect the volume knob and track slider to the music player.
+    connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
+    connect(sliderWidget, &xPlayerSliderWidget::seek, musicPlayer, &xMusicPlayer::seek);
+    connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, sliderWidget, &xPlayerSliderWidget::trackPlayed);
+    connect(musicPlayer, &xMusicPlayer::currentTrackLength, sliderWidget, &xPlayerSliderWidget::trackLength);
     // Create the basic player widget layout.
     // Add labels, buttons and the slider.
     auto playerLayout = new QGridLayout(this);
@@ -133,10 +77,7 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     playerLayout->addWidget(trackSampleRate, 0, 6);
     playerLayout->addWidget(trackBitrateLabel, 1, 5);
     playerLayout->addWidget(trackBitrate, 1, 6);
-
-    playerLayout->addWidget(trackPlayed, 4, 0);
-    playerLayout->addWidget(trackLength, 4, 7);
-    playerLayout->addWidget(trackSlider, 4, 1, 1, 6);
+    playerLayout->addWidget(sliderWidget, 4, 0, 1, 7);
     // Create a layout for the music player and playlist control buttons.
     auto controlLayout = new QGridLayout();
     controlLayout->addWidget(playPauseButton, 0, 5, 1, 2);
@@ -145,19 +86,7 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     controlLayout->addWidget(nextButton, 2, 6, 1, 1);
     controlLayout->addWidget(clearButton, 3, 5, 1, 2);
     controlLayout->setColumnMinimumWidth(4, 20);
-    // Volume knob/dial layout is different for Qwt and Qt.
-#ifdef USE_QWT
-    // Qwt implementation. Layout here overlap on purpose
-    controlLayout->addWidget(volumeDial, 0, 0, 4, 4);
-    auto volumeLabel = new QLabel(tr("Volume"));
-    volumeLabel->setAlignment(Qt::AlignCenter);
-    controlLayout->addWidget(volumeLabel, 3, 0, 1, 4);
-#else
-    // Qt implementation.
-    controlLayout->addWidget(volumeDial, 0, 0, 3, 4);
-    controlLayout->addWidget(new QLabel(tr("Volume")), 3, 0, 1, 3);
-    controlLayout->addWidget(volume, 3, 3, 1, 1);
-#endif
+    controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
     // Add the control layout to the player layout.
     playerLayout->setColumnMinimumWidth(8, 20);
     playerLayout->addLayout(controlLayout, 0, 9, 5, 1);
@@ -171,13 +100,11 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     connect(clearButton, &QPushButton::pressed, this, &xPlayerWidget::clear);
     // Connect the music player to the player widget.
     connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xPlayerWidget::currentTrack);
-    connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, this, &xPlayerWidget::currentTrackPlayed);
-    connect(musicPlayer, &xMusicPlayer::currentTrackLength, this, &xPlayerWidget::currentTrackLength);
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xPlayerWidget::currentState);
     // Do not resize the player widget vertically
     setFixedHeight(sizeHint().height());
     // Setup volume
-    volumeDial->setValue(musicPlayer->getVolume());
+    volumeWidget->setVolume(musicPlayer->getVolume());
 }
 
 void xPlayerWidget::clear() {
@@ -185,10 +112,9 @@ void xPlayerWidget::clear() {
     artistName->clear();
     albumName->clear();
     trackName->clear();
-    trackLength->clear();
-    trackPlayed->clear();
     trackSampleRate->clear();
     trackBitrate->clear();
+    trackSlider->clear();
 }
 
 void xPlayerWidget::currentTrack(int index, const QString& artist, const QString& album,
@@ -201,44 +127,6 @@ void xPlayerWidget::currentTrack(int index, const QString& artist, const QString
     trackBitrate->setText(QString("%1 kb/s").arg(bitrate));
     // Signal index update to the Queue.
     emit currentQueueTrack(index);
-}
-
-// Simple lambda to convert ms into readable time format in QString.
-auto msToFormat = [](qint64 ms) {
-   return QString("%1:%2.%3").arg(ms/60000).arg((ms/1000)%60, 2, 10, QChar('0')).arg(((ms%1000)+5)/10, 2, 10, QChar('0'));
-};
-
-// Little lambda to determine the divider for our track slider.
-auto scaleDivider = [](double length, double sections) {
-    for (auto scaleDivider : { 10000.0, 30000.0, 60000.0, 120000.0, 300000.0, 600000.0, 1200000.0 }) {
-        if ((length / scaleDivider) <= sections) {
-            return scaleDivider;
-        }
-    }
-    return 1200000.0;
-};
-
-void xPlayerWidget::currentTrackLength(qint64 length) {
-    // Update the length of the current track.
-    trackLength->setText(msToFormat(length));
-    // Set maximum of slider to the length of the track. Reset the slider position-
-#ifdef USE_QWT
-    trackSlider->setScaleStepSize(scaleDivider(length, 10.0));
-    trackSlider->setLowerBound(0);
-    trackSlider->setUpperBound(length);
-#else
-    trackSlider->setTickInterval(scaleDivider(length, 20.0));
-    trackSlider->setRange(0, length);
-    trackSlider->setSliderPosition(0);
-#endif
-    trackSlider->setValue(0);
-}
-
-void xPlayerWidget::currentTrackPlayed(qint64 played) {
-    // Update the time played for the current track.
-    trackPlayed->setText(msToFormat(played));
-    // Update the slider position.
-    trackSlider->setValue(played);
 }
 
 void xPlayerWidget::currentState(xMusicPlayer::State state) {

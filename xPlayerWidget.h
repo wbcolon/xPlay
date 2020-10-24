@@ -15,15 +15,11 @@
 #define __XPLAYERWIDGET_H__
 
 #include "xMusicPlayer.h"
+#include "xPlayerSliderWidget.h"
 #include "xPlayConfig.h"
 
 #include <QLabel>
 #include <QPushButton>
-#ifdef USE_QWT
-#include <qwt/qwt_slider.h>
-#else
-#include <QSlider>
-#endif
 
 class xPlayerWidget:public QWidget {
     Q_OBJECT
@@ -63,18 +59,6 @@ protected slots:
     void currentTrack(int index, const QString& artist, const QString& album,
                       const QString& track, int bitrate, int sampleRate);
     /**
-     * Update the length label.
-     *
-     * @param length the length of the current track in milliseconds.
-     */
-    void currentTrackLength(qint64 length);
-    /**
-     * Update the played time label.
-     *
-     * @param played the amount played of the current track in milliseconds.
-     */
-    void currentTrackPlayed(qint64 played);
-    /**
      * Update the player UI based on the player state.
      *
      * @param state the current state of the player.
@@ -88,22 +72,13 @@ private:
     QLabel* artistName;
     QLabel* albumName;
     QLabel* trackName;
-    QLabel* trackLength;
-    QLabel* trackPlayed;
     QLabel* trackSampleRate;
     QLabel* trackBitrate;
     /**
      * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
      */
     QPushButton* playPauseButton;
-    /**
-     * The track slider can be used to seek within the current track.
-     */
-#ifdef USE_QWT
-    QwtSlider* trackSlider;
-#else
-    QSlider* trackSlider;
-#endif
+    xPlayerSliderWidget* trackSlider;
 };
 
 #endif
