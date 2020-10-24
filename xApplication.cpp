@@ -16,12 +16,6 @@
 
 #include "xApplication.h"
 #include "xPlayConfig.h"
-#ifdef USE_PHONON
-#include "xMusicPlayerPhonon.h"
-#else
-#include "xMusicPlayerQt.h"
-#endif
-
 
 const QString ApplicationName = "xPlay";
 const QString OrganisationName = "wbcolon";
@@ -30,11 +24,7 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags) {
     // Setup music library.
     musicLibrary = new xMusicLibrary(this);
-#ifdef USE_PHONON
-    musicPlayer = new xMusicPlayerPhonon(this);
-#else
-    musicPlayer = new xMusicPlayerQt(this);
-#endif
+    musicPlayer = new xMusicPlayerX(this);
     // Setup player and main widget
     mainWidget = new xMainWidget(musicPlayer, this);
     // Use main widget as central application widget.

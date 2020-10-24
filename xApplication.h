@@ -21,7 +21,7 @@
 #include <QAction>
 
 #include "xMusicLibrary.h"
-#include "xMusicPlayer.h"
+#include "xMusicPlayerX.h"
 #include "xMainWidget.h"
 
 class xApplication:public QMainWindow {
@@ -39,7 +39,7 @@ private:
     QSettings* settings;
     QString musicLibraryDirectory;
     xMusicLibrary* musicLibrary;
-    xMusicPlayer* musicPlayer;
+    xMusicPlayerX* musicPlayer;
     xMainWidget* mainWidget;
 };
 

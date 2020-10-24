@@ -12,13 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xPlayerWidget.h"
-#ifdef USE_QWT
-#include "xPlayerSliderWidgetQwt.h"
-#include "xPlayerVolumeWidgetQwt.h"
-#else
-#include "xPlayerSliderWidgetQt.h"
-#include "xPlayerVolumeWidgetQt.h"
-#endif
+#include "xPlayerVolumeWidgetX.h"
 
 #include <QGridLayout>
 #include <QIcon>
@@ -45,15 +39,9 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     nextButton->setLayoutDirection(Qt::RightToLeft);
     //nextButton->setStyleSheet("padding-left: 20px; padding-right: 20px;");
     auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), this);
-#ifdef USE_QWT
     // Add track slider and the volume knob for Qwt.
-    sliderWidget = new xPlayerSliderWidgetQwt(this);
-    xPlayerVolumeWidget* volumeWidget = new xPlayerVolumeWidgetQwt(this);
-#else
-    // Add track slider and the volume knob for Qt.
-    sliderWidget = new xPlayerSliderWidgetQt(this);
-    xPlayerVolumeWidget* volumeWidget = new xPlayerVolumeWidgetQt(this);
-#endif
+    sliderWidget = new xPlayerSliderWidgetX(this);
+    xPlayerVolumeWidgetX* volumeWidget = new xPlayerVolumeWidgetX(this);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
     connect(sliderWidget, &xPlayerSliderWidget::seek, musicPlayer, &xMusicPlayer::seek);

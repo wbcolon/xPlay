@@ -101,5 +101,5 @@ protected:
 
     QString baseDirectory;
 };
-
 #endif
+

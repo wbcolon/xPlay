@@ -21,6 +21,22 @@
 #include <list>
 #include <map>
 
+#if 0
+class xMusicLibraryScanning:public QObject {
+    Q_OBJECT
+
+public:
+    xMusicLibraryScanning(QObject* parent= nullptr);
+    ~xMusicLibraryScanning();
+
+signals:
+    void scannedTracks(const std::list<QString>& tracks);
+
+public slots:
+    void scanForArtistAndAlbum(const QString& artist, const QString& album);
+};
+#endif
+
 class xMusicLibrary:public QObject {
     Q_OBJECT
 

@@ -15,7 +15,7 @@
 #define __XPLAYERWIDGET_H__
 
 #include "xMusicPlayer.h"
-#include "xPlayerSliderWidget.h"
+#include "xPlayerSliderWidgetX.h"
 #include "xPlayConfig.h"
 
 #include <QLabel>
@@ -78,7 +78,7 @@ private:
      * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
      */
     QPushButton* playPauseButton;
-    xPlayerSliderWidget* sliderWidget;
+    xPlayerSliderWidgetX* sliderWidget;
 };
 
 #endif

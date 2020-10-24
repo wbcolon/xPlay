@@ -114,7 +114,8 @@ void xMusicPlayerQt::currentTrackIndex(int index) {
     if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
         // Retrieve info for the currently played track and emit the information.
         auto entry = musicPlaylistEntries[index];
-        auto properties = propertiesFromFile(current.fileName());
+        auto current = baseDirectory+"/"+std::get<0>(entry)+"/"+std::get<1>(entry)+"/"+std::get<2>(entry);
+        auto properties = propertiesFromFile(current);
         emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
                 std::get<2>(entry), properties.first, properties.second);
     }
