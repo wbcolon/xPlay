@@ -60,6 +60,11 @@ The file menu has currently two entries. An *Exit* and *Open Music Library* entr
 display a file dialog that allows you to select a base directory for your music library. This directory is stored
 using QSettings and is retrieved on startup of xPlay.
 
+## Artwork
+
+The media control artwork has been borrowed from Wikipedia.
+(https://en.wikipedia.org/wiki/Media_control_symbols)
+
 ## Requirements
 
 * Qt 5.x
