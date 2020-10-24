@@ -235,10 +235,17 @@ void xMainWidget::currentState(xMusicPlayer::State state) {
 void xMainWidget::currentQueueTrack(int index) {
     queueList->setCurrentRow(index);
     // Remove play icon from old track
-    queueList->item(playedTrack)->setIcon(QIcon());
-    // Update played track and set play icon only for currently played one.
+    auto oldPlayedItem = queueList->item(playedTrack);
+    if (oldPlayedItem) {
+        oldPlayedItem->setIcon(QIcon());
+    }
+    // Update played track.
     playedTrack = index;
-    queueList->item(playedTrack)->setIcon(QIcon(":/images/xplay-play.svg"));
+    // Set play icon only for currently played one.
+    auto playedItem = queueList->item(playedTrack);
+    if (playedItem) {
+        playedItem->setIcon(QIcon(":/images/xplay-play.svg"));
+    }
 }
 
 void xMainWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
