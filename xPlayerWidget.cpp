@@ -47,11 +47,11 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), this);
 #ifdef USE_QWT
     // Add track slider and the volume knob for Qwt.
-    xPlayerSliderWidget* sliderWidget = new xPlayerSliderWidgetQwt(this);
+    sliderWidget = new xPlayerSliderWidgetQwt(this);
     xPlayerVolumeWidget* volumeWidget = new xPlayerVolumeWidgetQwt(this);
 #else
     // Add track slider and the volume knob for Qt.
-    xPlayerSliderWidget* sliderWidget = new xPlayerSliderWidgetQt(this);
+    sliderWidget = new xPlayerSliderWidgetQt(this);
     xPlayerVolumeWidget* volumeWidget = new xPlayerVolumeWidgetQt(this);
 #endif
     // Connect the volume knob and track slider to the music player.
@@ -114,7 +114,7 @@ void xPlayerWidget::clear() {
     trackName->clear();
     trackSampleRate->clear();
     trackBitrate->clear();
-    trackSlider->clear();
+    sliderWidget->clear();
 }
 
 void xPlayerWidget::currentTrack(int index, const QString& artist, const QString& album,

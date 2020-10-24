@@ -212,18 +212,22 @@ void xMainWidget::selectArtistSelector(int selector) {
 
 void xMainWidget::currentState(xMusicPlayer::State state) {
     // Update the icon for the played track based on the state of the music player.
+    auto currentTrack = queueList->item(playedTrack);
+    if (!currentTrack) {
+        return;
+    }
     switch (state) {
         case xMusicPlayer::PlayingState: {
-            queueList->item(playedTrack)->setIcon(QIcon(":/images/xplay-play.svg"));
+            currentTrack->setIcon(QIcon(":/images/xplay-play.svg"));
         } break;
         case xMusicPlayer::PauseState: {
-            queueList->item(playedTrack)->setIcon(QIcon(":/images/xplay-pause.svg"));
+            currentTrack->setIcon(QIcon(":/images/xplay-pause.svg"));
         } break;
         case xMusicPlayer::StopState: {
-            queueList->item(playedTrack)->setIcon(QIcon(":/images/xplay-stop.svg"));
+            currentTrack->setIcon(QIcon(":/images/xplay-stop.svg"));
         } break;
         default: {
-            queueList->item(playedTrack)->setIcon(QIcon());
+            currentTrack->setIcon(QIcon());
         } break;
     }
 }

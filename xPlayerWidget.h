@@ -78,7 +78,7 @@ private:
      * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
      */
     QPushButton* playPauseButton;
-    xPlayerSliderWidget* trackSlider;
+    xPlayerSliderWidget* sliderWidget;
 };
 
 #endif
