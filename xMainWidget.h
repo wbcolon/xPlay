@@ -31,6 +31,8 @@ public:
     xMainWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xMainWidget() = default;
 
+    void connectRotel(const QString& address, int port);
+
 signals:
     /**
      * Signals used for communication with player widget and the music player.
@@ -205,6 +207,7 @@ private:
     auto addGroupBox(const QString& boxLabel);
 
     xMusicPlayer* musicPlayer;
+    xPlayerWidget* playerWidget;
     QListWidget* artistList;
     QListWidget* albumList;
     QListWidget* trackList;

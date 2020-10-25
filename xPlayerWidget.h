@@ -15,6 +15,7 @@
 #define __XPLAYERWIDGET_H__
 
 #include "xMusicPlayer.h"
+#include "xPlayerRotelWidget.h"
 #include "xPlayerSliderWidgetX.h"
 #include "xPlayConfig.h"
 
@@ -27,6 +28,8 @@ class xPlayerWidget:public QWidget {
 public:
     xPlayerWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerWidget() = default;
+
+    void connectRotel(const QString& address, int port);
 
 signals:
     /**
@@ -79,6 +82,7 @@ private:
      */
     QPushButton* playPauseButton;
     xPlayerSliderWidgetX* sliderWidget;
+    xPlayerRotelWidget* controlTabRotel;
 };
 
 #endif

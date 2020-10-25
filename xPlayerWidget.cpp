@@ -13,8 +13,10 @@
  */
 #include "xPlayerWidget.h"
 #include "xPlayerVolumeWidgetX.h"
+#include "xPlayerRotelWidget.h"
 
 #include <QGridLayout>
+#include <QTabWidget>
 #include <QIcon>
 #include <taglib/fileref.h>
 #include <taglib/audioproperties.h>
@@ -29,22 +31,28 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     trackSampleRate->setAlignment(Qt::AlignRight);
     trackBitrate = new QLabel(this);
     trackBitrate->setAlignment(Qt::AlignRight);
-
-    // Create buttons for play/pause and stop
-    playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), this);
-    auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), this);
-    // Create buttons for playlist control, previous, next and clear queue.
-    auto prevButton = new QPushButton(QIcon(":/images/xplay-previous.svg"), tr("Prev"), this);
-    auto nextButton = new QPushButton(QIcon(":/images/xplay-next.svg"), tr("Next"), this);
-    nextButton->setLayoutDirection(Qt::RightToLeft);
-    //nextButton->setStyleSheet("padding-left: 20px; padding-right: 20px;");
-    auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), this);
     // Add track slider and the volume knob for Qwt.
     sliderWidget = new xPlayerSliderWidgetX(this);
-    xPlayerVolumeWidgetX* volumeWidget = new xPlayerVolumeWidgetX(this);
+    connect(sliderWidget, &xPlayerSliderWidget::seek, musicPlayer, &xMusicPlayer::seek);
+    // Add a control tab for player and rotel amp controls
+    auto controlTab = new QTabWidget(this);
+    auto controlTabPlayer = new QWidget(this);
+    controlTabRotel = new xPlayerRotelWidget(this);
+    controlTab->setTabPosition(QTabWidget::West);
+    controlTab->addTab(controlTabPlayer, "xPlay");
+    controlTab->addTab(controlTabRotel, "Rotel");
+    // Create buttons for play/pause and stop
+    playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), controlTabPlayer);
+    auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), controlTabPlayer);
+    // Create buttons for playlist control, previous, next and clear queue.
+    auto prevButton = new QPushButton(QIcon(":/images/xplay-previous.svg"), tr("Prev"), controlTabPlayer);
+    auto nextButton = new QPushButton(QIcon(":/images/xplay-next.svg"), tr("Next"), controlTabPlayer);
+    nextButton->setLayoutDirection(Qt::RightToLeft);
+    //nextButton->setStyleSheet("padding-left: 20px; padding-right: 20px;");
+    auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), controlTabPlayer);
+    xPlayerVolumeWidgetX* volumeWidget = new xPlayerVolumeWidgetX(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
-    connect(sliderWidget, &xPlayerSliderWidget::seek, musicPlayer, &xMusicPlayer::seek);
     connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, sliderWidget, &xPlayerSliderWidget::trackPlayed);
     connect(musicPlayer, &xMusicPlayer::currentTrackLength, sliderWidget, &xPlayerSliderWidget::trackLength);
     // Create the basic player widget layout.
@@ -67,7 +75,7 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     playerLayout->addWidget(trackBitrate, 1, 6);
     playerLayout->addWidget(sliderWidget, 4, 0, 1, 7);
     // Create a layout for the music player and playlist control buttons.
-    auto controlLayout = new QGridLayout();
+    auto controlLayout = new QGridLayout(controlTabPlayer);
     controlLayout->addWidget(playPauseButton, 0, 5, 1, 2);
     controlLayout->addWidget(stopButton, 1, 5, 1, 2);
     controlLayout->addWidget(prevButton, 2, 5, 1, 1);
@@ -75,9 +83,14 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     controlLayout->addWidget(clearButton, 3, 5, 1, 2);
     controlLayout->setColumnMinimumWidth(4, 20);
     controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
-    // Add the control layout to the player layout.
-    playerLayout->setColumnMinimumWidth(8, 20);
-    playerLayout->addLayout(controlLayout, 0, 9, 5, 1);
+    // Fix sizes of the control tab
+    controlTabPlayer->setFixedSize(controlTabPlayer->sizeHint());
+    controlTabRotel->setFixedSize(controlTabPlayer->sizeHint());
+    controlTab->setFixedSize(controlTab->sizeHint());
+    // Add the control tab to the player layout.
+    playerLayout->setColumnMinimumWidth(7, 50);
+    playerLayout->setColumnStretch(7, 0);
+    playerLayout->addWidget(controlTab, 0, 8, 5, 1);
     // Connect the buttons to player widget and/or to the music player.
     connect(playPauseButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::playPause);
     connect(stopButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::stop);
@@ -93,6 +106,11 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     setFixedHeight(sizeHint().height());
     // Setup volume
     volumeWidget->setVolume(musicPlayer->getVolume());
+}
+
+void xPlayerWidget::connectRotel(const QString& address, int port) {
+    // Connect to Rotel AMP.
+    controlTabRotel->connect(address, port);
 }
 
 void xPlayerWidget::clear() {

@@ -30,7 +30,8 @@ public:
     ~xApplication() = default;
 
 private slots:
-    void openMusicLibrary();
+    void selectMusicLibrary();
+    void configureRotelAmp();
 
 private:
     void setMusicLibraryDirectory(const QString& directory);

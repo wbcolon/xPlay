@@ -1,0 +1,147 @@
+/*
+ * This file is part of xPlay.
+ *
+ * xPlay is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * xPlay is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+#include "xPlayerRotelWidget.h"
+#include "xPlayerVolumeWidgetX.h"
+
+#include <QGridLayout>
+#include <QList>
+
+// Valid sources for the Rotel A14 or A12 amp
+const QList<QString> Rotel_Sources {
+    "cd", "coax1", "coax2", "opt1", "opt2", "aux1", "aux2", "tuner", "phono", "usb", "bluetooth", "pcusb"
+};
+
+// Limit the maximal volume.
+const int Rotel_MaximumVolume = 60;
+// Command strings in order to communicate to and from the Rotel A14 or A12 amp.
+// Volume
+const QString Rotel_RequestVolume = "amp:volume?";
+const QString Rotel_ResponsePrefixVolume = "amp:volume=";
+const QString Rotel_SetVolume = "amp:vol_%1!";
+// Input source
+const QString Rotel_RequestSource = "amp:source?";
+const QString Rotel_ResponsePrefixSource = "amp:source=";
+const QString Rotel_SetSource = "amp:%1!";
+
+xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::WindowFlags flags):
+        QWidget(parent, flags) {
+    auto rotelLayout = new QGridLayout(this);
+    // Create a volume knop.
+    rotelVolume = new xPlayerVolumeWidgetX(this);
+    // Create a combo box for the input sources and add valid sources.
+    rotelSource = new QComboBox(this);
+    for (const auto& source : Rotel_Sources) {
+       rotelSource->addItem(source);
+    }
+    rotelSourceLabel = new QLabel(tr("Source"));
+    rotelSourceLabel->setAlignment(Qt::AlignLeft);
+    // Add the volume knob and the source input to the layout
+    rotelLayout->addWidget(rotelVolume, 0, 0, 4, 4);
+    rotelLayout->setColumnMinimumWidth(4, 20);
+    rotelLayout->addWidget(rotelSourceLabel, 0, 5, 1, 4);
+    rotelLayout->addWidget(rotelSource, 1, 5, 1, 4);
+    // Connect the widgets to the amp commands.
+    QObject::connect(rotelVolume, &xPlayerVolumeWidgetX::volume, this, &xPlayerRotelWidget::setVolume);
+    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(setSource(const QString&)));
+    // Create a socket to communicate with the amp.
+    rotelSocket = new QTcpSocket(this);
+    QObject::connect(rotelSocket, &QTcpSocket::connected, this, &xPlayerRotelWidget::connected);
+    QObject::connect(rotelSocket, &QTcpSocket::disconnected, this, &xPlayerRotelWidget::disconnected);
+    // Disable until connected.
+    rotelVolume->setEnabled(false);
+    rotelSource->setEnabled(false);
+    rotelSourceLabel->setEnabled(false);
+}
+
+void xPlayerRotelWidget::connect(const QString& address, int port, bool wait) {
+    if ((address.isEmpty()) || (port <= 0)) {
+        qWarning() << "Rotel: not valid network address given: " << address << ":" << port;
+        return;
+    }
+    rotelSocket->connectToHost(address, port);
+    if (wait) {
+        rotelSocket->waitForConnected();
+    }
+}
+
+void xPlayerRotelWidget::connected() {
+    qDebug() << "Rotel: connected";
+    // Enable all widgets.
+    rotelVolume->setEnabled(true);
+    rotelSource->setEnabled(true);
+    rotelSourceLabel->setEnabled(true);
+    // Initialize.
+    rotelVolume->setVolume(getVolume());
+    auto sourceIndex = Rotel_Sources.indexOf(getSource());
+    rotelSource->setCurrentIndex(sourceIndex);
+}
+
+void xPlayerRotelWidget::disconnected() {
+    qDebug() << "Rotel: disconnected";
+}
+
+void xPlayerRotelWidget::error(QAbstractSocket::SocketError e) {
+    qDebug() << "Rotel: error: " << e;
+}
+
+auto volumeResponseToInt = [] (QString response) {
+    return response.remove(Rotel_ResponsePrefixVolume).remove("$").toInt();
+};
+
+void xPlayerRotelWidget::setVolume(int v) {
+    auto adjVolume = std::max(0, std::min(v, Rotel_MaximumVolume));
+    auto volumeResponse = sendCommand(Rotel_SetVolume.arg(adjVolume, 2, 10, QChar('0')));
+    qDebug() << "Rotel: setVolume: " << volumeResponse;
+}
+
+void xPlayerRotelWidget::setSource(const QString& source) {
+    auto sourceIndex = Rotel_Sources.indexOf(source);
+    if (sourceIndex >= 0) {
+        auto sourceResponse = sendCommand(Rotel_SetSource.arg(source));
+        qDebug() << "Rotel: setSource: " << sourceResponse;
+    }
+}
+
+int xPlayerRotelWidget::getVolume() {
+    QString volumeResponse = sendCommand(Rotel_RequestVolume);
+    qDebug() << "Rotel: getVolume: " << volumeResponse;
+    if (!volumeResponse.isEmpty()) {
+        return volumeResponseToInt(volumeResponse);
+    } else {
+        return -1;
+    }
+}
+
+QString xPlayerRotelWidget::getSource() {
+    auto srcString = sendCommand(Rotel_RequestSource);
+    qDebug() << "Rotel: getSource: " << srcString;
+    if (!srcString.isEmpty()) {
+        return srcString.remove(Rotel_ResponsePrefixSource).remove("$");
+    } else {
+        return "";
+    }
+}
+
+QString xPlayerRotelWidget::sendCommand(const QString& command) {
+    char readBuffer[65] = { 0 };
+    qint64 readBytes = 0;
+    rotelSocket->waitForConnected(500);
+    if (rotelSocket->state() == QAbstractSocket::ConnectedState) {
+        rotelSocket->write(command.toStdString().c_str());
+        rotelSocket->waitForBytesWritten();
+        rotelSocket->waitForReadyRead();
+        readBytes = rotelSocket->read(readBuffer, 64);
+    }
+    return (readBytes > 0) ? QString(readBuffer) : QString();
+}

@@ -13,6 +13,7 @@
  */
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QInputDialog>
 
 #include "xApplication.h"
 #include "xPlayConfig.h"
@@ -42,6 +43,9 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     // Read Settings
     settings = new QSettings(OrganisationName, ApplicationName);
     setMusicLibraryDirectory(settings->value("xPlay/MusicLibraryDirectory", "").toString());
+    auto rotelAddress = settings->value("xPlay/RotelNetworkAddress", "").toString();
+    auto rotelPort = settings->value("xPlay/RotelNetworkPort", "").toInt();
+    mainWidget->connectRotel(rotelAddress, rotelPort);
     // Create Application menus.
     createMenus();
 }
@@ -53,24 +57,45 @@ void xApplication::setMusicLibraryDirectory(const QString& directory) {
 }
 
 void xApplication::createMenus() {
-    auto fileMenuOpenAction = new QAction("&Open Music Library", this);
+    auto fileMenuSelectAction = new QAction("&Select Music Library", this);
+    auto fileMenuRotelAction = new QAction("&Configure Rotel", this);
     auto fileMenuExitAction = new QAction(tr("&Exit"), this);
 
-    connect(fileMenuOpenAction, &QAction::triggered, this, &xApplication::openMusicLibrary);
+    connect(fileMenuSelectAction, &QAction::triggered, this, &xApplication::selectMusicLibrary);
+    connect(fileMenuRotelAction, &QAction::triggered, this, &xApplication::configureRotelAmp);
     connect(fileMenuExitAction, &QAction::triggered, this, &xApplication::close);
 
     auto fileMenu = menuBar()->addMenu(tr("&File"));
-    fileMenu->addAction(fileMenuOpenAction);
+    fileMenu->addAction(fileMenuSelectAction);
+    fileMenu->addAction(fileMenuRotelAction);
     fileMenu->addSeparator();
     fileMenu->addAction(fileMenuExitAction);
 }
 
-void xApplication::openMusicLibrary() {
+void xApplication::selectMusicLibrary() {
     QString newMusicLibraryDirectory =
             QFileDialog::getExistingDirectory(this, tr("Open Music Library"), musicLibraryDirectory,
                                               QFileDialog::ShowDirsOnly|QFileDialog::DontResolveSymlinks);
     if (!newMusicLibraryDirectory.isEmpty()) {
         settings->setValue("xPlay/MusicLibraryDirectory", newMusicLibraryDirectory);
         setMusicLibraryDirectory(newMusicLibraryDirectory);
+    }
+}
+
+void xApplication::configureRotelAmp() {
+    bool okPressed = false;
+    auto oldAddress = settings->value("xPlay/RotelNetworkAddress", "").toString();
+    auto oldPort = settings->value("xPlay/RotelNetworkPort", "").toInt();
+    QString newConnection =
+            QInputDialog::getText(this, tr("Configure Rotel"), tr("Rotel network address (address:port)"),
+                                  QLineEdit::Normal, QString("%1:%2").arg(oldAddress).arg(oldPort), &okPressed);
+    if (okPressed) {
+        auto newConnectionSplit = newConnection.split(":");
+        auto newAddress = newConnectionSplit.value(0);
+        auto newPort = newConnectionSplit.value(1).toInt();
+        settings->setValue("xPlay/RotelNetworkAddress", newAddress);
+        settings->setValue("xPlay/RotelNetworkPort", newPort);
+        qDebug() << "Rotel Connection: " << newAddress << ":" << newPort;
+        mainWidget->connectRotel(newAddress, newPort);
     }
 }

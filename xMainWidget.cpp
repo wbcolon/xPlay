@@ -45,7 +45,7 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     auto [artistSelectorBox, artistSelectorList_] = addGroupBox(tr("ArtistSelector"));
     auto playerBox = new QGroupBox(tr("Player"), this);
     auto playerLayout = new QHBoxLayout();
-    auto playerWidget = new xPlayerWidget(musicPlayer, this);
+    playerWidget = new xPlayerWidget(musicPlayer, this);
     playerLayout->addWidget(playerWidget);
     playerBox->setLayout(playerLayout);
     // Sort entries in artist/album/track
@@ -91,6 +91,11 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainWidget::currentQueueTrackRemoved);
     // Connect music player to main widget for queue update.
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainWidget::currentState);
+}
+
+void xMainWidget::connectRotel(const QString& address, int port) {
+    // Tell the player widget to connect.
+    playerWidget->connectRotel(address, port);
 }
 
 void xMainWidget::scannedArtists(const std::list<QString>& artists) {
