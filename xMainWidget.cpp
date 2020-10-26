@@ -98,7 +98,7 @@ void xMainWidget::connectRotel(const QString& address, int port) {
     playerWidget->connectRotel(address, port);
 }
 
-void xMainWidget::scannedArtists(const std::list<QString>& artists) {
+void xMainWidget::scannedArtists(const QStringList& artists) {
     std::set<QString> selectors;
     unfilteredArtists = artists;
     // Clear artist, album and track lists
@@ -117,7 +117,7 @@ void xMainWidget::scannedArtists(const std::list<QString>& artists) {
     scannedArtistsSelectors(selectors);
 }
 
-void xMainWidget::scannedAlbums(const std::list<QString>& albums) {
+void xMainWidget::scannedAlbums(const QStringList& albums) {
     // Clear album and track lists
     albumList->clear();
     trackList->clear();
@@ -126,7 +126,7 @@ void xMainWidget::scannedAlbums(const std::list<QString>& albums) {
     }
 }
 
-void xMainWidget::scannedTracks(const std::list<QString>& tracks) {
+void xMainWidget::scannedTracks(const QStringList& tracks) {
    // Clear only track list
    trackList->clear();
    for (const auto& track : tracks) {
@@ -143,10 +143,10 @@ void xMainWidget::scannedArtistsSelectors(const std::set<QString> &selectors) {
     }
 }
 
-std::list<QString> xMainWidget::filterArtists(const std::list<QString>& artists) {
+QStringList xMainWidget::filterArtists(const QStringList& artists) {
     // Check if a selector is selected.
     if (artistSelectorList->currentItem()) {
-        std::list<QString> filtered;
+        QStringList filtered;
         QString selected = artistSelectorList->currentItem()->text();
         // Do not filter if we have selector "none" selected.
         if (selected.startsWith(tr("none"))) {

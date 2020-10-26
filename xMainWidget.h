@@ -84,7 +84,7 @@ public slots:
      *
      * @param artists unordered list of artist names.
      */
-    void scannedArtists(const std::list<QString>& artists);
+    void scannedArtists(const QStringList& artists);
     /**
      * Receive the result of the album scan for a given artist.
      *
@@ -93,7 +93,7 @@ public slots:
      *
      * @param albums unordered list of album names.
      */
-    void scannedAlbums(const std::list<QString>& albums);
+    void scannedAlbums(const QStringList& albums);
     /**
      * Receive the result of the track scan for a given artist/album
      *
@@ -102,7 +102,7 @@ public slots:
      *
      * @param tracks unordered list of track names.
      */
-    void scannedTracks(const std::list<QString>& tracks);
+    void scannedTracks(const QStringList& tracks);
 
 private slots:
     /**
@@ -196,7 +196,7 @@ private:
      * @param artists unfiltered list of artists.
      * @return filtered list of artists that start with the selector string.
      */
-    std::list<QString> filterArtists(const std::list<QString>& artists);
+    QStringList filterArtists(const QStringList& artists);
 
     /**
      * Helper function creating a QGroupBox with an QListWidget.
@@ -217,7 +217,7 @@ private:
     /**
      * Store the current list of unfiltered artists for later filtering.
      */
-    std::list<QString> unfilteredArtists;
+    QStringList unfilteredArtists;
 };
 
 #endif

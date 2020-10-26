@@ -16,33 +16,78 @@
 
 #include <QString>
 #include <QObject>
+#include <QThread>
+#include <QMutex>
+#include <QStringList>
 
 #include <filesystem>
 #include <list>
 #include <map>
 
-#if 0
-class xMusicLibraryScanning:public QObject {
+class xMusicLibraryFiles:public QObject {
+public:
+    /**
+     * Constructor
+     *
+     * @param parent pointer to the parent QObject
+     */
+    xMusicLibraryFiles(QObject* parent=nullptr);
+    ~xMusicLibraryFiles() = default;
+
+    void set(const QString& artist, const std::map<QString,std::list<std::filesystem::path>>& albumTracks);
+    void set(const QString& artist, const QString& album, const std::list<std::filesystem::path>& tracks);
+    std::list<std::filesystem::path> get(const QString& artist, const QString& album) const;
+    QStringList get(const QString& artist) const;
+    std::list<std::tuple<QString, QString, std::filesystem::path>> get() const;
+    void clear();
+
+private:
+    std::map<QString, std::map<QString, std::list<std::filesystem::path>>> musicFiles;
+    mutable QMutex musicFilesLock;
+};
+
+class xMusicLibraryScanning:public QThread {
     Q_OBJECT
 
 public:
-    xMusicLibraryScanning(QObject* parent= nullptr);
-    ~xMusicLibraryScanning();
+    xMusicLibraryScanning(xMusicLibraryFiles* lib, const std::filesystem::path& dir, QObject* parent=nullptr);
+    ~xMusicLibraryScanning() = default;
+
+    void run() override;
 
 signals:
-    void scannedTracks(const std::list<QString>& tracks);
+    void scannedArtists(const QStringList& artists);
 
-public slots:
-    void scanForArtistAndAlbum(const QString& artist, const QString& album);
+private:
+    /**
+     * Scan music library
+     *
+     * Assumes that music library has the following directory layout:
+     * * artist/album/track
+     * The function only scans the artist and album directories. The tracks
+     * itself are not scanned. They will be later scanned, but on demand.
+     * Triggers the signal scannedArtists.
+     */
+    void scan();
+
+    xMusicLibraryFiles* musicLibrary;
+    std::filesystem::path baseDirctory;
 };
-#endif
 
 class xMusicLibrary:public QObject {
     Q_OBJECT
 
 public:
+    /**
+     * Scan for all tracks in the giving album path.
+     *
+     * @param albumPath the path to the artist/album directory to scan for tracks.
+     * @return list of paths containing the album path and all tracks.
+     */
+    static std::list<std::filesystem::path> scanForAlbumTracks(const std::filesystem::path& albumPath);
+
     xMusicLibrary(QObject* parent=nullptr);
-    ~xMusicLibrary() = default;
+    ~xMusicLibrary();
 
     /**
      * Set base directory for the music library.
@@ -71,19 +116,19 @@ signals:
      *
      * @param artists list of the artist names.
      */
-    void scannedArtists(const std::list<QString>& artists);
+    void scannedArtists(const QStringList& artists);
     /**
      * Signal the list of scanned albums for the selected artist.
      *
      * @param albums list of the album names.
      */
-    void scannedAlbums(const std::list<QString>& albums);
+    void scannedAlbums(const QStringList& albums);
     /**
      * Signal the list of scanned tracks for the selected artist and album.
      *
      * @param tracks list of the track names.
      */
-    void scannedTracks(const std::list<QString>& tracks);
+    void scannedTracks(const QStringList& tracks);
 
 public slots:
     /**
@@ -109,31 +154,25 @@ public slots:
      */
     void scanForArtistAndAlbum(const QString& artist, const QString& album);
 
+private slots:
+    void scanningFinished();
+
 private:
     /**
-     * Scan music library
-     *
-     * Assumes that music library has the following directory layout:
-     * * artist/album/track
-     * The function only scans the artist and album directories. The tracks
-     * itself are not scanned. They will be later scanned, but on demand.
-     * Triggers the signal scannedArtists.
+     * Scan music library using the xMusicLibraryScanning class.
      */
     void scan();
-    /**
-     * Scan for all tracks in the giving album path.
-     *
-     * @param albumPath the path to the artist/album directory to scan for tracks.
-     * @return list of paths containing the album path and all tracks.
-     */
-    std::list<std::filesystem::path> scanForAlbumTracks(const std::filesystem::path& albumPath);
 
     std::filesystem::path baseDirctory;
     /**
      * The structure that contains the music library. Tracks are cached after they have
      * been read on demand.
      */
-    std::map<QString, std::map<QString, std::list<std::filesystem::path>>> musicFiles;
+    xMusicLibraryFiles* musicLibraryFiles;
+    /**
+     * Scanning thread.
+     */
+    xMusicLibraryScanning* musicLibraryScanning;
 };
 
 #endif
