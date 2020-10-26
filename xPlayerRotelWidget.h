@@ -17,6 +17,7 @@
 #include "xPlayerVolumeWidget.h"
 
 #include <QComboBox>
+#include <QCheckBox>
 #include <QTcpSocket>
 #include <QLabel>
 #include <QWidget>
@@ -38,10 +39,12 @@ private slots:
 
     void setVolume(int vol);
     void setSource(const QString& source);
+    void setMute(bool mute);
 
 private:
     int getVolume();
     QString getSource();
+    bool getMute();
 
     QString sendCommand(const QString& command);
 
@@ -49,6 +52,7 @@ private:
     xPlayerVolumeWidget* rotelVolume;
     QComboBox* rotelSource;
     QLabel* rotelSourceLabel;
+    QCheckBox* rotelMute;
 };
 
 #endif

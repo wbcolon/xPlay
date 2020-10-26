@@ -33,6 +33,10 @@ const QString Rotel_SetVolume = "amp:vol_%1!";
 const QString Rotel_RequestSource = "amp:source?";
 const QString Rotel_ResponsePrefixSource = "amp:source=";
 const QString Rotel_SetSource = "amp:%1!";
+// Mute
+const QString Rotel_RequestMute = "amp:mute?";
+const QString Rotel_ResponsePrefixMute = "amp:mute=";
+const QString Rotel_SetMute = "amp:mute_%1!";
 
 xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags) {
@@ -46,14 +50,17 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::WindowFlags flags):
     }
     rotelSourceLabel = new QLabel(tr("Source"));
     rotelSourceLabel->setAlignment(Qt::AlignLeft);
+    rotelMute = new QCheckBox(tr("Mute"));
     // Add the volume knob and the source input to the layout
     rotelLayout->addWidget(rotelVolume, 0, 0, 4, 4);
     rotelLayout->setColumnMinimumWidth(4, 20);
     rotelLayout->addWidget(rotelSourceLabel, 0, 5, 1, 4);
     rotelLayout->addWidget(rotelSource, 1, 5, 1, 4);
+    rotelLayout->addWidget(rotelMute, 2, 5, 1, 4);
     // Connect the widgets to the amp commands.
     QObject::connect(rotelVolume, &xPlayerVolumeWidgetX::volume, this, &xPlayerRotelWidget::setVolume);
     QObject::connect(rotelSource, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(setSource(const QString&)));
+    QObject::connect(rotelMute, &QCheckBox::clicked, this, &xPlayerRotelWidget::setMute);
     // Create a socket to communicate with the amp.
     rotelSocket = new QTcpSocket(this);
     QObject::connect(rotelSocket, &QTcpSocket::connected, this, &xPlayerRotelWidget::connected);
@@ -85,6 +92,7 @@ void xPlayerRotelWidget::connected() {
     rotelVolume->setVolume(getVolume());
     auto sourceIndex = Rotel_Sources.indexOf(getSource());
     rotelSource->setCurrentIndex(sourceIndex);
+    rotelMute->setChecked(getMute());
 }
 
 void xPlayerRotelWidget::disconnected() {
@@ -113,6 +121,11 @@ void xPlayerRotelWidget::setSource(const QString& source) {
     }
 }
 
+void xPlayerRotelWidget::setMute(bool mute) {
+    auto muteResponse = sendCommand(Rotel_SetMute.arg(mute ? "on" : "off"));
+    qDebug() << "Rotel: setMute: " << muteResponse;
+}
+
 int xPlayerRotelWidget::getVolume() {
     QString volumeResponse = sendCommand(Rotel_RequestVolume);
     qDebug() << "Rotel: getVolume: " << volumeResponse;
@@ -130,6 +143,16 @@ QString xPlayerRotelWidget::getSource() {
         return srcString.remove(Rotel_ResponsePrefixSource).remove("$");
     } else {
         return "";
+    }
+}
+
+bool xPlayerRotelWidget::getMute() {
+    auto muteString = sendCommand(Rotel_RequestMute);
+    qDebug() << "Rotel: getMute: " << muteString;
+    if (!muteString.isEmpty()) {
+        return muteString.remove(Rotel_ResponsePrefixMute).startsWith("on");
+    } else {
+        return false;
     }
 }
 
