@@ -104,7 +104,7 @@ std::list<std::tuple<QString, QString, std::filesystem::path>> xMusicLibraryFile
 xMusicLibraryScanning::xMusicLibraryScanning(xMusicLibraryFiles* lib, const std::filesystem::path& dir, QObject *parent):
         QThread(parent),
         musicLibrary(lib),
-        baseDirctory(dir) {
+        baseDirectory(dir) {
 }
 
 void xMusicLibraryScanning::run() {
@@ -126,7 +126,7 @@ void xMusicLibraryScanning::scan() {
     musicLibrary->clear();
     try {
         QStringList artistList;
-        for (const auto& artistDir : std::filesystem::directory_iterator(baseDirctory)) {
+        for (const auto& artistDir : std::filesystem::directory_iterator(baseDirectory)) {
             const auto& artistPath = artistDir.path();
             if (!std::filesystem::is_directory(artistPath)) {
                 // No directory, no artist.
@@ -186,7 +186,7 @@ std::list<std::filesystem::path> xMusicLibrary::scanForAlbumTracks(const std::fi
 
 xMusicLibrary::xMusicLibrary(QObject* parent):
         QObject(parent),
-        baseDirctory(defaultBaseDirectory),
+        baseDirectory(defaultBaseDirectory),
         musicLibraryScanning(nullptr) {
     musicLibraryFiles = new xMusicLibraryFiles(this);
 }
@@ -200,14 +200,14 @@ xMusicLibrary::~xMusicLibrary() noexcept {
 void xMusicLibrary::setBaseDirectory(const std::filesystem::path& base) {
     // Update only if the given path is a directory
     if (std::filesystem::is_directory(base)) {
-        baseDirctory = base;
+        baseDirectory = base;
         // Scan music library after updated director.
         // Rescan with same base intentional. Miniamal API.
         if (musicLibraryScanning) {
             musicLibraryScanning->quit();
             delete musicLibraryScanning;
         }
-        musicLibraryScanning = new xMusicLibraryScanning(musicLibraryFiles, baseDirctory, this);
+        musicLibraryScanning = new xMusicLibraryScanning(musicLibraryFiles, baseDirectory, this);
         connect(musicLibraryScanning, &xMusicLibraryScanning::finished, this, &xMusicLibrary::scanningFinished);
         connect(musicLibraryScanning, &xMusicLibraryScanning::scannedArtists, this, &xMusicLibrary::scannedArtists);
         musicLibraryScanning->start(QThread::IdlePriority);
@@ -215,7 +215,7 @@ void xMusicLibrary::setBaseDirectory(const std::filesystem::path& base) {
 }
 
 const std::filesystem::path& xMusicLibrary::getBaseDirectory() const {
-    return baseDirctory;
+    return baseDirectory;
 }
 
 void xMusicLibrary::scanForArtist(const QString& artist) {

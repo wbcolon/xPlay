@@ -71,7 +71,7 @@ private:
     void scan();
 
     xMusicLibraryFiles* musicLibrary;
-    std::filesystem::path baseDirctory;
+    std::filesystem::path baseDirectory;
 };
 
 class xMusicLibrary:public QObject {
@@ -163,7 +163,7 @@ private:
      */
     void scan();
 
-    std::filesystem::path baseDirctory;
+    std::filesystem::path baseDirectory;
     /**
      * The structure that contains the music library. Tracks are cached after they have
      * been read on demand.
