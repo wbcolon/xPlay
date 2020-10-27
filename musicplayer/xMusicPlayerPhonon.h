@@ -101,6 +101,9 @@ private slots:
     void currentTrackSource(const Phonon::MediaSource& current);
     void currentTrackDuration(qint64 duration);
 
+    void stateChanged(Phonon::State newState, Phonon::State oldState);
+    void finished();
+
 private:
     std::vector<std::tuple<QString,QString,QString>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;

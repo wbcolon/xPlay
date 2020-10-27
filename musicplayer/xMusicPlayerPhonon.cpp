@@ -29,6 +29,8 @@ xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
     // Connect QMediaPlayer signals to out music player signals.
     connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayerPhonon::currentTrackPlayed);
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayerPhonon::currentTrackSource);
+    connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayerPhonon::stateChanged);
+    connect(musicPlayer, &Phonon::MediaObject::finished, this, &xMusicPlayerPhonon::finished);
     // We only need this one to determine the time due to issues with Phonon
     musicPlayerForTime = new QMediaPlayer(this);
     // This player is muted. It is only used to determine the proper duration.
@@ -42,12 +44,13 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
     // Enable auto play if playlist is currently emtpy.
     bool autoPlay = (musicPlayer->queue().size() == 0);
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
-    for (auto track : tracks) {
+    for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
         musicPlaylistEntries.push_back(queueEntry);
-        musicPlaylist.push_back(QUrl::fromLocalFile(pathFromQueueEntry(queueEntry)));
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(pathFromQueueEntry(queueEntry)));
+        musicPlaylist.push_back(queueSource);
+        musicPlayer->enqueue(queueSource);
     }
-    musicPlayer->enqueue(musicPlaylist);
     // Play if autoplay is enabled.
     if (autoPlay) {
         musicPlayer->play();
@@ -87,11 +90,6 @@ void xMusicPlayerPhonon::dequeTrack(int index) {
             musicPlayer->enqueue(musicPlaylist[i]);
         }
     }
-}
-
-void xMusicPlayerPhonon::currentTrackDuration(qint64 duration) {
-    emit currentTrackLength(duration);
-    musicPlayerForTime->stop();
 }
 
 void xMusicPlayerPhonon::clearQueue() {
@@ -177,16 +175,17 @@ void xMusicPlayerPhonon::next() {
 }
 
 void xMusicPlayerPhonon::setVolume(int vol) {
-    if (vol < 0) {
-        vol = 0;
-    } else if (vol > 100) {
-        vol = 100;
-    }
+    vol = std::clamp(vol, 0, 100);
     musicOutput->setVolume(vol/100.0);
 }
 
 int xMusicPlayerPhonon::getVolume() {
     return static_cast<int>(std::round(musicOutput->volume()*100.0));
+}
+
+void xMusicPlayerPhonon::currentTrackDuration(qint64 duration) {
+    emit currentTrackLength(duration);
+    musicPlayerForTime->stop();
 }
 
 void xMusicPlayerPhonon::currentTrackSource(const Phonon::MediaSource& current) {
@@ -196,7 +195,6 @@ void xMusicPlayerPhonon::currentTrackSource(const Phonon::MediaSource& current) 
         // Retrieve info for the currently played track and emit the information.
         auto entry = musicPlaylistEntries[index];
         auto properties = propertiesFromFile(current.fileName());
-        qDebug() << "BITRATE: " << properties.first << ", SAMPLE: " << properties.second;
         emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
                 std::get<2>(entry), properties.first, properties.second);
         // Use hack to determine the proper total length.
@@ -206,3 +204,20 @@ void xMusicPlayerPhonon::currentTrackSource(const Phonon::MediaSource& current) 
         musicPlayerForTime->play();
     }
 }
+
+void xMusicPlayerPhonon::stateChanged(Phonon::State newState, Phonon::State oldState) {
+    if (newState == Phonon::ErrorState) {
+        qCritical() << "xMusicPlayerPhonon: error: " << musicPlayer->errorString();
+        if (oldState == Phonon::PlayingState) {
+            qInfo() << "xMusicPlayerPhonon: trying to recover...";
+            musicPlayer->play();
+        }
+    }
+}
+
+void xMusicPlayerPhonon::finished() {
+    if (musicPlayer->state() == Phonon::ErrorState) {
+        qCritical() << "xMusicPlayerPhonon: finished: error: " << musicPlayer->errorString();
+    }
+}
+
