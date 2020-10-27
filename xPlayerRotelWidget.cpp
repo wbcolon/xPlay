@@ -108,7 +108,7 @@ auto volumeResponseToInt = [] (QString response) {
 };
 
 void xPlayerRotelWidget::setVolume(int v) {
-    auto adjVolume = std::max(0, std::min(v, Rotel_MaximumVolume));
+    auto adjVolume = std::clamp(v, 0, Rotel_MaximumVolume);
     auto volumeResponse = sendCommand(Rotel_SetVolume.arg(adjVolume, 2, 10, QChar('0')));
     qDebug() << "Rotel: setVolume: " << volumeResponse;
 }
