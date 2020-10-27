@@ -2,5 +2,6 @@ TODO:
 
 - if queue is played and then songs are added then the last song is autoplayed. It should start with the newly added (phonon, verify for qt)
 - if playlist is at the end then the player does not go into the stop state (phonon, verify for qt)
-- player sometimes seems to halt "source ignored..." -> maybe internal issue. -> try to recover.
-- player at last queue song (still playing). Songs added to the queue are not played after last song finished.
+(ERROR HANDLING) - player sometimes seems to halt "source ignored..." -> maybe internal issue. -> try to recover.
+(FIXED) - player at last queue song (still playing). Songs added to the queue are not played after last song finished.
+- the same track in queue twice may confuse the queue UI.

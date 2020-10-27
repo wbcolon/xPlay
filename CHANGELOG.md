@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - 2020-10-27
 
 - Added control for a Rotel A14 amp.
 - Updated library scanning (background scanning of album tracks).
+- Bugfixes
 
 
 ## 0.1.1 - 2020-10-24
