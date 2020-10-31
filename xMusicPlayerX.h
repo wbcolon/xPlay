@@ -15,7 +15,7 @@
 #define __XMUSICPLAYERX_H__
 
 #include "xMusicPlayer.h"
-#include "xPlayConfig.h"
+#include "xPlayerConfig.h"
 
 #ifdef USE_PHONON
 #include "musicplayer/xMusicPlayerPhonon.h"

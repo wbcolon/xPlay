@@ -32,21 +32,33 @@ xMusicPlayerQt::xMusicPlayerQt(QObject* parent):
     // Connect QMediaPlayer signals to out music player signals.
     connect(musicPlayer, &QMediaPlayer::durationChanged, this, &xMusicPlayerQt::currentTrackLength);
     connect(musicPlayer, &QMediaPlayer::positionChanged, this, &xMusicPlayerQt::currentTrackPlayed);
+    connect(musicPlayer, &QMediaPlayer::stateChanged, this, &xMusicPlayerQt::currentStateChanged);
     connect(musicPlaylist, &QMediaPlaylist::currentIndexChanged, this, &xMusicPlayerQt::currentTrackIndex);
 }
 
 void xMusicPlayerQt::queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) {
+    // Do we really add any tracks.
+    if (tracks.size() == 0) {
+        return;
+    }
     // Enable auto play if playlist is currently emtpy.
-    bool autoPlay = (musicPlaylist->mediaCount() == 0);
+    bool autoPlay = (musicPlaylist->mediaCount() == 0) ||
+            ((musicPlaylist->currentIndex() == -1) && (musicPlayer->state() == QMediaPlayer::StoppedState));
+    // Check if do not have files in the general queue.
+    auto queueEntries = musicPlaylistEntries.size();
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
-    for (auto track : tracks) {
+    for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
         musicPlaylistEntries.push_back(queueEntry);
         musicPlaylist->addMedia(QUrl::fromLocalFile(pathFromQueueEntry(queueEntry)));
     }
     // Play if autoplay is enabled.
     if (autoPlay) {
-        playPause();
+        if (queueEntries > 0) {
+            musicPlaylist->setCurrentIndex(queueEntries);
+        }
+        musicPlayer->play();
+        emit currentState(State::PlayingState);
     }
 }
 
@@ -94,11 +106,15 @@ void xMusicPlayerQt::stop() {
 void xMusicPlayerQt::prev() {
     // Jump to the previous element in the playlist.
     musicPlaylist->previous();
+    musicPlayer->play();
+    emit currentState(State::PlayingState);
 }
 
 void xMusicPlayerQt::next() {
     // Jump to the next element in the playlist.
     musicPlaylist->next();
+    musicPlayer->play();
+    emit currentState(State::PlayingState);
 }
 
 void xMusicPlayerQt::setVolume(int vol) {
@@ -119,4 +135,12 @@ void xMusicPlayerQt::currentTrackIndex(int index) {
         emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
                 std::get<2>(entry), properties.first, properties.second);
     }
+}
+
+void xMusicPlayerQt::currentStateChanged(QMediaPlayer::State newState) {
+    if (newState == QMediaPlayer::StoppedState) {
+        musicPlayer->stop();
+        emit currentState(State::StopState);
+    }
+   qDebug() << "xMusicPlayerQt: State: " << newState;
 }

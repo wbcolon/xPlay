@@ -101,6 +101,12 @@ private slots:
      * @param index the position of the current track in the playlist.
      */
     void currentTrackIndex(int index);
+    /**
+     * Observer state changes.
+     *
+     * @param newState the new state the player is in currently.
+     */
+    void currentStateChanged(QMediaPlayer::State newState);
 
 private:
     std::vector<std::tuple<QString,QString,QString>> musicPlaylistEntries;

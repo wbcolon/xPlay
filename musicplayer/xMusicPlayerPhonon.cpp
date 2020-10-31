@@ -43,6 +43,8 @@ xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
 void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) {
     // Enable auto play if playlist is currently emtpy.
     bool autoPlay = (musicPlayer->queue().size() == 0);
+    // Check if do not have files in the general queue.
+    bool queueEmpty = (musicPlaylistEntries.size() == 0);
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
     for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
@@ -53,8 +55,13 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
     }
     // Play if autoplay is enabled.
     if (autoPlay) {
-        musicPlayer->play();
-        emit currentState(State::PlayingState);
+        if (queueEmpty) {
+            musicPlayer->play();
+            emit currentState(State::PlayingState);
+        } else {
+            // Go to next if music player queue is empty but files are in the general queue.
+            next();
+        }
     }
 }
 
@@ -211,7 +218,12 @@ void xMusicPlayerPhonon::stateChanged(Phonon::State newState, Phonon::State oldS
         if (oldState == Phonon::PlayingState) {
             qInfo() << "xMusicPlayerPhonon: trying to recover...";
             musicPlayer->play();
+            emit currentState(xMusicPlayer::PlayingState);
         }
+    }
+    if ((newState == Phonon::StoppedState) && (oldState == Phonon::PlayingState)) {
+        musicPlayer->stop();
+        emit currentState(xMusicPlayer::StopState);
     }
 }
 
