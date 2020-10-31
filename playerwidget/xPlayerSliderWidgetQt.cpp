@@ -34,6 +34,8 @@ xPlayerSliderWidgetQt::xPlayerSliderWidgetQt(QWidget *parent, Qt::WindowFlags fl
     sliderLayout->addWidget(trackSlider, 0, 1, 1, 6);
     // Connect the track slider to the music player
     connect(trackSlider, &QSlider::sliderMoved, [=](int position) { emit seek(static_cast<qint64>(position)); } );
+    // Setup default max sections
+    useScaleSections(20);
 }
 
 void xPlayerSliderWidgetQt::clear() {
@@ -46,16 +48,16 @@ void xPlayerSliderWidgetQt::clear() {
 
 void xPlayerSliderWidgetQt::trackLength(qint64 length) {
     // Update the length of the current track.
-    trackLengthLabel->setText(xPlayerSliderWidget::millisecondsToLabel(length));
+    trackLengthLabel->setText(millisecondsToLabel(length));
     // Set maximum of slider to the length of the track. Reset the slider position-
-    trackSlider->setTickInterval(xPlayerSliderWidget::determineScaleDivider(length, 20));
+    trackSlider->setTickInterval(determineScaleDivider(length));
     trackSlider->setRange(0, length);
     trackSlider->setSliderPosition(0);
 }
 
 void xPlayerSliderWidgetQt::trackPlayed(qint64 played) {
     // Update the time played for the current track.
-    trackPlayedLabel->setText(xPlayerSliderWidget::millisecondsToLabel(played));
+    trackPlayedLabel->setText(millisecondsToLabel(played));
     // Update the slider position.
     trackSlider->setValue(played);
 }

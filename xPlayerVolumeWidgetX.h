@@ -14,7 +14,7 @@
 #ifndef __XPLAYERVOLUMEWIDGETX_H__
 #define __XPLAYERVOLUMEWIDGETX_H__
 
-#include "xPlayConfig.h"
+#include "xPlayerConfig.h"
 
 #ifdef USE_QWT
 #include "playerwidget/xPlayerVolumeWidgetQwt.h"

@@ -14,19 +14,41 @@
 #include "xPlayerSliderWidget.h"
 
 xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags):
-        QWidget(parent, flags) {
+        QWidget(parent, flags),
+        showHours(false) {
+}
+
+bool xPlayerSliderWidget::hourScale() {
+    return showHours;
+}
+
+void xPlayerSliderWidget::useHourScale(bool hourScale) {
+    showHours = hourScale;
+}
+
+void xPlayerSliderWidget::useScaleSections(int scaleSections) {
+    maxScaleSections = scaleSections;
 }
 
 QString xPlayerSliderWidget::millisecondsToLabel(qint64 ms) {
-    return QString("%1:%2.%3").arg(ms/60000).arg((ms/1000)%60, 2, 10, QChar('0')).
-            arg(((ms%1000)+5)/10, 2, 10, QChar('0'));
+
+    if (showHours) {
+        return QString("%1:%2:%3.%4").arg(ms/3600000).
+                arg((ms/60000)%60, 2, 10, QChar('0')).
+                arg((ms/1000)%60, 2, 10, QChar('0')).
+                arg(((ms%1000)+5)/10, 2, 10, QChar('0'));
+    } else {
+        return QString("%1:%2.%3").arg(ms/60000).
+                arg((ms/1000)%60, 2, 10, QChar('0')).
+                arg(((ms%1000)+5)/10, 2, 10, QChar('0'));
+    }
 }
 
-int xPlayerSliderWidget::determineScaleDivider(int length, int sections) {
-    for (auto scaleDivider : { 10000, 30000, 60000, 120000, 300000, 600000, 1200000 }) {
-        if ((length / scaleDivider) <= sections) {
+int xPlayerSliderWidget::determineScaleDivider(int length) {
+    for (auto scaleDivider : { 10000, 30000, 60000, 120000, 300000, 600000, 1200000, 3000000, 6000000 }) {
+        if ((length / scaleDivider) <= maxScaleSections) {
             return scaleDivider;
         }
     }
-    return 1200000;
+    return 6000000;
 }

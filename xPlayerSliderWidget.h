@@ -24,6 +24,8 @@ public:
     xPlayerSliderWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerSliderWidget() = default;
 
+    bool hourScale();
+    int scaleSections();
     /**
      * Clear the state of the slider widget.
      */
@@ -33,6 +35,18 @@ signals:
     void seek(qint64 position);
 
 public slots:
+    /**
+     * Determine the format used for the track slider.
+     *
+     * @param hourScale decide whether to include hours in the time format.
+     */
+    virtual void useHourScale(bool hourScale);
+    /**
+     * Set the maximum number of scale sections (therefore labels) allowed.
+     *
+     * @param scaleSections number of sections.
+     */
+    virtual void useScaleSections(int scaleSections);
     /**
      * Update the length label.
      *
@@ -51,17 +65,19 @@ protected:
      * Convert milliseconds to a format string.
      *
      * @param ms time value in milliseconds.
-     * @return format string "mm:ss.hh".
+     * @return format string "mm:ss.hh" or "hh:mm:ss.hh".
      */
-    static QString millisecondsToLabel(qint64 ms);
+    QString millisecondsToLabel(qint64 ms);
     /**
      * Find a scale layout.
      *
      * @param length current length of the for the track slider.
-     * @param sections maximal number of sections allowed.
      * @return the divider used for the track slider.
      */
-    static int determineScaleDivider(int length, int sections);
+    int determineScaleDivider(int length);
+
+    bool showHours;
+    int maxScaleSections;
 };
 
 #endif

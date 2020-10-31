@@ -14,7 +14,7 @@
 #ifndef __XPLAYERSLIDERWIDGETX_H__
 #define __XPLAYERSLIDERWIDGETX_H__
 
-#include "xPlayConfig.h"
+#include "xPlayerConfig.h"
 
 #ifdef USE_QWT
 #include "playerwidget/xPlayerSliderWidgetQwt.h"
