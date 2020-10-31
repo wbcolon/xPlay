@@ -16,6 +16,7 @@
 
 #include <QEvent>
 #include <QMouseEvent>
+#include <QTimer>
 #include <cmath>
 
 xMoviePlayer::xMoviePlayer(QWidget *parent):
@@ -88,17 +89,6 @@ void xMoviePlayer::availableAudioChannels() {
         audioChannels.push_back(audioChannel);
         qDebug() << "xMoviePlayer: audio channel: " << audioChannel;
     }
-#if 0
-    // Choose first english track if available as default
-    for (auto i = 0; i < audioChannels.size(); ++i) {
-        if (audioChannels[i].contains("en")) {
-            if (currentAudioChannelDescriptions[i].isValid()) {
-                movieControler->setCurrentAudioChannel(currentAudioChannelDescriptions[i]);
-                break;
-            }
-        }
-    }
-#endif
     emit currentAudioChannels(audioChannels);
     qDebug() << "xMoviePlayer: audio channel descriptions: " << currentAudioChannelDescriptions;
 }
@@ -128,9 +118,7 @@ void xMoviePlayer::availableTitles(int titles) {
 }
 
 void xMoviePlayer::selectAudioChannel(int index) {
-    qDebug() << "MOVIE: AUDIO: " << index;
     if ((index >= 0) && (index < currentAudioChannelDescriptions.size())) {
-        qDebug() << "MOVIE: AUDIO: description: " << currentAudioChannelDescriptions[index];
         movieControler->setCurrentAudioChannel(currentAudioChannelDescriptions[index]);
     }
 }
@@ -148,7 +136,10 @@ void xMoviePlayer::stateChanged(Phonon::State newState, Phonon::State oldState) 
 
 void xMoviePlayer::aboutToFinish() {
     qDebug() << "xMoviePlayer: aboutToFinish";
+    // Go to stopping state. End full window mode.
     emit currentState(xMoviePlayer::StoppingState);
+    // Stop the player after 1sec.
+    QTimer::singleShot(1000, [=] { moviePlayer->stop(); emit currentState(xMoviePlayer::StopState); });
 }
 
 void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
@@ -225,7 +216,7 @@ void xMoviePlayer::resetMoviePlayer() {
     // Setup the media player.
     moviePlayer = new Phonon::MediaObject(this);
     // Update each second
-    moviePlayer->setTickInterval(1000);
+    moviePlayer->setTickInterval(500);
     movieControler = new Phonon::MediaController(moviePlayer);
     Phonon::createPath(moviePlayer, audioOutput);
     Phonon::createPath(moviePlayer, this);

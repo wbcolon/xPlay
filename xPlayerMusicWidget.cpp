@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#include "xPlayerWidget.h"
+#include "xPlayerMusicWidget.h"
 #include "xPlayerVolumeWidgetX.h"
 #include "xPlayerRotelWidget.h"
 
@@ -21,7 +21,7 @@
 #include <taglib/fileref.h>
 #include <taglib/audioproperties.h>
 
-xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
+xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
     QWidget(parent, flags) {
     // Create labels for artist, album and track
     artistName = new QLabel(this);
@@ -97,23 +97,24 @@ xPlayerWidget::xPlayerWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::Win
     connect(prevButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::prev);
     connect(nextButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::next);
     connect(clearButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::clearQueue);
-    connect(clearButton, &QPushButton::pressed, this, &xPlayerWidget::clearQueue);
-    connect(clearButton, &QPushButton::pressed, this, &xPlayerWidget::clear);
+    connect(clearButton, &QPushButton::pressed, this, &xPlayerMusicWidget::clearQueue);
+    connect(clearButton, &QPushButton::pressed, this, &xPlayerMusicWidget::clear);
     // Connect the music player to the player widget.
-    connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xPlayerWidget::currentTrack);
-    connect(musicPlayer, &xMusicPlayer::currentState, this, &xPlayerWidget::currentState);
+    connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xPlayerMusicWidget::currentTrack);
+    connect(musicPlayer, &xMusicPlayer::currentState, this, &xPlayerMusicWidget::currentState);
     // Do not resize the player widget vertically
     setFixedHeight(sizeHint().height());
     // Setup volume
     volumeWidget->setVolume(musicPlayer->getVolume());
 }
 
-void xPlayerWidget::connectRotel(const QString& address, int port) {
+xPlayerRotelWidget* xPlayerMusicWidget::connectRotel(const QString& address, int port) {
     // Connect to Rotel AMP.
     controlTabRotel->connect(address, port);
+    return controlTabRotel;
 }
 
-void xPlayerWidget::clear() {
+void xPlayerMusicWidget::clear() {
     // Reset the play/pause button and clear all track info.
     artistName->clear();
     albumName->clear();
@@ -123,8 +124,8 @@ void xPlayerWidget::clear() {
     sliderWidget->clear();
 }
 
-void xPlayerWidget::currentTrack(int index, const QString& artist, const QString& album,
-                                 const QString& track, int bitrate, int sampleRate) {
+void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QString& album,
+                                      const QString& track, int bitrate, int sampleRate) {
     // Display the current track information (without length)
     artistName->setText(artist);
     albumName->setText(album);
@@ -135,7 +136,7 @@ void xPlayerWidget::currentTrack(int index, const QString& artist, const QString
     emit currentQueueTrack(index);
 }
 
-void xPlayerWidget::currentState(xMusicPlayer::State state) {
+void xPlayerMusicWidget::currentState(xMusicPlayer::State state) {
     // Update the play/pause button based on the state of the music player.
     switch (state) {
         case xMusicPlayer::PlayingState: {

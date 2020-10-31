@@ -11,25 +11,24 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#ifndef __XPLAYERWIDGET_H__
-#define __XPLAYERWIDGET_H__
+#ifndef __XPLAYERMUSICWIDGET_H__
+#define __XPLAYERMUSICWIDGET_H__
 
 #include "xMusicPlayer.h"
 #include "xPlayerRotelWidget.h"
 #include "xPlayerSliderWidgetX.h"
-#include "xPlayConfig.h"
 
 #include <QLabel>
 #include <QPushButton>
 
-class xPlayerWidget:public QWidget {
+class xPlayerMusicWidget: public QWidget {
     Q_OBJECT
 
 public:
-    xPlayerWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerWidget() = default;
+    xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerMusicWidget() = default;
 
-    void connectRotel(const QString& address, int port);
+    xPlayerRotelWidget* connectRotel(const QString& address, int port);
 
 signals:
     /**
