@@ -18,7 +18,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -O3 -DQT_NO_DEBUG_OUTPUT")
 
 option(USE_PHONON "Use the Phonon based media player instead of Qt" ON)
 option(USE_QWT "Use the Qwt based player widget instead of Qt" ON)
-configure_file(xPlayConfig.h.in xPlayConfig.h)
+configure_file(xPlayerConfig.h.in xPlayerConfig.h)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
 find_package(Qt5MultimediaWidgets REQUIRED)
@@ -47,16 +47,22 @@ endif()
 include_directories(${PROJECT_SOURCE_DIR})
 
 add_executable(xPlay
-        xPlayConfig.h
-        xMusicPlayer.cpp
-        ${XMUSICPLAYERX}
+        xPlayerConfig.h
+        xPlayerConfiguration.cpp
         xMusicLibrary.cpp
-        xPlayerWidget.cpp
+        xMovieLibrary.cpp
+        xMusicPlayer.cpp
+        xMoviePlayer.cpp
+        ${XMUSICPLAYERX}
+        xPlayerConfigurationDialog.cpp
+        xPlayerMusicWidget.cpp
         xPlayerVolumeWidget.cpp
         xPlayerSliderWidget.cpp
         ${XPLAYERWIDGETX}
         xPlayerRotelWidget.cpp
-        xMainWidget.cpp
+        xPlayerMovieWidget.cpp
+        xMainMusicWidget.cpp
+        xMainMovieWidget.cpp
         xApplication.cpp
         xPlay.cpp
         xPlay.qrc

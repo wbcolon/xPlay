@@ -6,5 +6,7 @@
     <file>images/xplay-previous.svg</file>
     <file>images/xplay-stop.svg</file>
     <file>images/xplay-eject.svg</file>
+    <file>images/xplay-forward.svg</file>
+    <file>images/xplay-rewind.svg</file>
 </qresource>
 </RCC>

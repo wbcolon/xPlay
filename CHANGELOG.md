@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 - 2020-10-31
+
+- Added a movie player view, movie library scanning. 
+- Bugfixes
+
 ## 0.2.0 - 2020-10-27
 
 - Added control for a Rotel A14 amp.
