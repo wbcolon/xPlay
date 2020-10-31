@@ -31,6 +31,7 @@ public:
     ~xPlayerRotelWidget() = default;
 
     void connect(const QString& address, int port, bool wait=false);
+    void connectToParent(xPlayerRotelWidget* rotel);
 
 private slots:
     void connected();
@@ -46,6 +47,9 @@ private:
     QString getSource();
     bool getMute();
 
+    void syncVolume(int vol);
+    void syncSource(const QString& source);
+    void syncMute(bool mute);
     QString sendCommand(const QString& command);
 
     QTcpSocket* rotelSocket;
@@ -53,6 +57,9 @@ private:
     QComboBox* rotelSource;
     QLabel* rotelSourceLabel;
     QCheckBox* rotelMute;
+
+    xPlayerRotelWidget* rotelChild;
+    xPlayerRotelWidget* rotelParent;
 };
 
 #endif
