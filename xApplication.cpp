@@ -16,86 +16,99 @@
 #include <QInputDialog>
 
 #include "xApplication.h"
-#include "xPlayConfig.h"
-
-const QString ApplicationName = "xPlay";
-const QString OrganisationName = "wbcolon";
+#include "xPlayerConfiguration.h"
+#include "xPlayerConfigurationDialog.h"
 
 xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags) {
-    // Setup music library.
+    // Setup music and movie library.
     musicLibrary = new xMusicLibrary(this);
-    musicPlayer = new xMusicPlayerX(this);
-    // Setup player and main widget
-    mainWidget = new xMainWidget(musicPlayer, this);
+    movieLibrary = new xMovieLibrary(this);
+    // Stack for different views.
+    mainView = new QStackedWidget(this);
+    // Setup players and main widgets
+    musicPlayer = new xMusicPlayerX(mainView);
+    moviePlayer = new xMoviePlayer(mainView);
+    mainMusicWidget = new xMainMusicWidget(musicPlayer, mainView);
+    mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
+    // Add to the stack widget
+    mainView->addWidget(new QWidget(mainView));
+    mainView->addWidget(mainMusicWidget);
+    mainView->addWidget(mainMovieWidget);
+    mainView->setCurrentWidget(mainMusicWidget);
     // Use main widget as central application widget.
-    setCentralWidget(mainWidget);
-    // Connect music library with main widget.
+    setCentralWidget(mainView);
+    // Connect music library with main music widget.
     // Commands for the music library.
-    connect(mainWidget, &xMainWidget::scanForArtist, musicLibrary, &xMusicLibrary::scanForArtist);
-    connect(mainWidget, &xMainWidget::scanForArtistAndAlbum, musicLibrary, &xMusicLibrary::scanForArtistAndAlbum);
-    // Results back to the main widget.
-    connect(musicLibrary, &xMusicLibrary::scannedArtists, mainWidget, &xMainWidget::scannedArtists);
-    connect(musicLibrary, &xMusicLibrary::scannedAlbums, mainWidget, &xMainWidget::scannedAlbums);
-    connect(musicLibrary, &xMusicLibrary::scannedTracks, mainWidget, &xMainWidget::scannedTracks);
-    // Do not main widget to music player here. It is done in the main widget
-
+    connect(mainMusicWidget, &xMainMusicWidget::scanForArtist, musicLibrary, &xMusicLibrary::scanForArtist);
+    connect(mainMusicWidget, &xMainMusicWidget::scanForArtistAndAlbum, musicLibrary, &xMusicLibrary::scanForArtistAndAlbum);
+    // Results back to the main music widget.
+    connect(musicLibrary, &xMusicLibrary::scannedArtists, mainMusicWidget, &xMainMusicWidget::scannedArtists);
+    connect(musicLibrary, &xMusicLibrary::scannedAlbums, mainMusicWidget, &xMainMusicWidget::scannedAlbums);
+    connect(musicLibrary, &xMusicLibrary::scannedTracks, mainMusicWidget, &xMainMusicWidget::scannedTracks);
+    // Connect movie library with main movie widget
+    connect(mainMovieWidget, &xMainMovieWidget::scanForTag, movieLibrary, &xMovieLibrary::scanForTag);
+    connect(mainMovieWidget, &xMainMovieWidget::scanForTagAndDirectory, movieLibrary, &xMovieLibrary::scanForTagAndDirectory);
+    connect(mainMovieWidget, &xMainMovieWidget::playMovie, moviePlayer, &xMoviePlayer::setMovie);
+    // Results back to the main movie widget.
+    connect(movieLibrary, &xMovieLibrary::scannedTags, mainMovieWidget, &xMainMovieWidget::scannedTags);
+    connect(movieLibrary, &xMovieLibrary::scannedDirectories, mainMovieWidget, &xMainMovieWidget::scannedDirectories);
+    connect(movieLibrary, &xMovieLibrary::scannedMovies, mainMovieWidget, &xMainMovieWidget::scannedMovies);
+    // Do not connect main widget to music player here. It is done in the main widget
     // Read Settings
-    settings = new QSettings(OrganisationName, ApplicationName);
-    setMusicLibraryDirectory(settings->value("xPlay/MusicLibraryDirectory", "").toString());
-    auto rotelAddress = settings->value("xPlay/RotelNetworkAddress", "").toString();
-    auto rotelPort = settings->value("xPlay/RotelNetworkPort", "").toInt();
-    mainWidget->connectRotel(rotelAddress, rotelPort);
+    configurationUpdate();
     // Create Application menus.
     createMenus();
 }
 void xApplication::setMusicLibraryDirectory(const QString& directory) {
-    musicLibraryDirectory = directory;
-    musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));
-    musicPlayer->setBaseDirectory(musicLibraryDirectory);
-    qInfo() << "Update music library path to " << musicLibraryDirectory;
+    if (musicLibraryDirectory != directory) {
+        musicLibraryDirectory = directory;
+        musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));
+        musicPlayer->setBaseDirectory(musicLibraryDirectory);
+        qInfo() << "Update music library path to " << musicLibraryDirectory;
+    }
 }
 
 void xApplication::createMenus() {
-    auto fileMenuSelectAction = new QAction("&Select Music Library", this);
-    auto fileMenuRotelAction = new QAction("&Configure Rotel", this);
+    // Create actions for file menu.
+    auto fileMenuConfigure = new QAction("&Configure", this);
     auto fileMenuExitAction = new QAction(tr("&Exit"), this);
-
-    connect(fileMenuSelectAction, &QAction::triggered, this, &xApplication::selectMusicLibrary);
-    connect(fileMenuRotelAction, &QAction::triggered, this, &xApplication::configureRotelAmp);
+    // Connect actions from file menu.
+    connect(fileMenuConfigure, &QAction::triggered, this, &xApplication::configure);
     connect(fileMenuExitAction, &QAction::triggered, this, &xApplication::close);
-
+    // Create file menu.
     auto fileMenu = menuBar()->addMenu(tr("&File"));
-    fileMenu->addAction(fileMenuSelectAction);
-    fileMenu->addAction(fileMenuRotelAction);
+    fileMenu->addAction(fileMenuConfigure);
     fileMenu->addSeparator();
     fileMenu->addAction(fileMenuExitAction);
+    // Create actions for view menu.
+    auto viewMenuSelectMusic = new QAction("Select M&usic View", this);
+    auto viewMenuSelectMovie = new QAction("Select M&ovie View", this);
+    // Connect actions from view menu.
+    connect(viewMenuSelectMusic, &QAction::triggered, [=]() { mainView->setCurrentWidget(mainMusicWidget); });
+    connect(viewMenuSelectMovie, &QAction::triggered, [=]() { mainView->setCurrentWidget(mainMovieWidget); });
+    // Create view menu.
+    auto viewMenu = menuBar()->addMenu(tr("&View"));
+    viewMenu->addAction(viewMenuSelectMusic);
+    viewMenu->addAction(viewMenuSelectMovie);
 }
 
-void xApplication::selectMusicLibrary() {
-    QString newMusicLibraryDirectory =
-            QFileDialog::getExistingDirectory(this, tr("Open Music Library"), musicLibraryDirectory,
-                                              QFileDialog::ShowDirsOnly|QFileDialog::DontResolveSymlinks);
-    if (!newMusicLibraryDirectory.isEmpty()) {
-        settings->setValue("xPlay/MusicLibraryDirectory", newMusicLibraryDirectory);
-        setMusicLibraryDirectory(newMusicLibraryDirectory);
+void xApplication::configure() {
+    xPlayerConfigurationDialog configurationDialog;
+
+    configurationDialog.show();
+    auto result = configurationDialog.exec();
+    if (result == QDialog::Accepted) {
+        configurationUpdate();
     }
+}
+void xApplication::configurationUpdate() {
+    // Read Settings
+    setMusicLibraryDirectory(xPlayerConfiguration::getMusicLibraryDirectory());
+    auto rotelAddress = xPlayerConfiguration::getRotelNetworkAddress();
+    auto rotelPort = xPlayerConfiguration::getRotelNetworkPort();
+    auto rotelWidget = mainMusicWidget->connectRotel(rotelAddress, rotelPort);
+    mainMovieWidget->connectToRotel(rotelWidget);
+    movieLibrary->setBaseDirectories(xPlayerConfiguration::getMovieLibraryTagAndDirectoryPath());
 }
 
-void xApplication::configureRotelAmp() {
-    bool okPressed = false;
-    auto oldAddress = settings->value("xPlay/RotelNetworkAddress", "").toString();
-    auto oldPort = settings->value("xPlay/RotelNetworkPort", "").toInt();
-    QString newConnection =
-            QInputDialog::getText(this, tr("Configure Rotel"), tr("Rotel network address (address:port)"),
-                                  QLineEdit::Normal, QString("%1:%2").arg(oldAddress).arg(oldPort), &okPressed);
-    if (okPressed) {
-        auto newConnectionSplit = newConnection.split(":");
-        auto newAddress = newConnectionSplit.value(0);
-        auto newPort = newConnectionSplit.value(1).toInt();
-        settings->setValue("xPlay/RotelNetworkAddress", newAddress);
-        settings->setValue("xPlay/RotelNetworkPort", newPort);
-        qDebug() << "Rotel Connection: " << newAddress << ":" << newPort;
-        mainWidget->connectRotel(newAddress, newPort);
-    }
-}

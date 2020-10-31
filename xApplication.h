@@ -14,15 +14,19 @@
 #ifndef __XAPPLICATION_H__
 #define __XAPPLICATION_H__
 
+#include "xMusicLibrary.h"
+#include "xMusicPlayerX.h"
+#include "xMainMusicWidget.h"
+#include "xMovieLibrary.h"
+#include "xMoviePlayer.h"
+#include "xMainMovieWidget.h"
+
 #include <QSettings>
+#include <QStackedWidget>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
-
-#include "xMusicLibrary.h"
-#include "xMusicPlayerX.h"
-#include "xMainWidget.h"
 
 class xApplication:public QMainWindow {
 public:
@@ -30,18 +34,22 @@ public:
     ~xApplication() = default;
 
 private slots:
-    void selectMusicLibrary();
-    void configureRotelAmp();
+    void configure();
 
 private:
     void setMusicLibraryDirectory(const QString& directory);
     void createMenus();
+    void configurationUpdate();
 
     QSettings* settings;
     QString musicLibraryDirectory;
     xMusicLibrary* musicLibrary;
     xMusicPlayerX* musicPlayer;
-    xMainWidget* mainWidget;
+    xMainMusicWidget* mainMusicWidget;
+    xMovieLibrary* movieLibrary;
+    xMoviePlayer* moviePlayer;
+    xMainMovieWidget* mainMovieWidget;
+    QStackedWidget* mainView;
 };
 
 #endif

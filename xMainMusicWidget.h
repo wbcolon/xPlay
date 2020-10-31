@@ -15,7 +15,7 @@
 #define __XMAINWIDGET_H__
 
 #include "xMusicPlayer.h"
-#include "xPlayerWidget.h"
+#include "xPlayerMusicWidget.h"
 
 #include <QListWidget>
 #include <QString>
@@ -24,14 +24,14 @@
 #include <list>
 #include <set>
 
-class xMainWidget:public QWidget {
+class xMainMusicWidget: public QWidget {
     Q_OBJECT
 
 public:
-    xMainWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xMainWidget() = default;
+    xMainMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xMainMusicWidget() = default;
 
-    void connectRotel(const QString& address, int port);
+    xPlayerRotelWidget* connectRotel(const QString& address, int port);
 
 signals:
     /**
@@ -207,7 +207,7 @@ private:
     auto addGroupBox(const QString& boxLabel);
 
     xMusicPlayer* musicPlayer;
-    xPlayerWidget* playerWidget;
+    xPlayerMusicWidget* playerWidget;
     QListWidget* artistList;
     QListWidget* albumList;
     QListWidget* trackList;

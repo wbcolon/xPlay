@@ -11,8 +11,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#include "xMainWidget.h"
-#include "xPlayerWidget.h"
+#include "xMainMusicWidget.h"
+#include "xPlayerMusicWidget.h"
 
 #include <QGroupBox>
 #include <QGridLayout>
@@ -22,7 +22,7 @@
 #include <QApplication>
 
 // Fuction addGroupBox has to be defined before the constructor due to the auto return.
-auto xMainWidget::addGroupBox(const QString& boxLabel) {
+auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, this);
@@ -33,7 +33,7 @@ auto xMainWidget::addGroupBox(const QString& boxLabel) {
     return std::make_pair(groupBox,list);
 }
 
-xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags flags):
+xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         musicPlayer(player),
         playedTrack(0) {
@@ -45,7 +45,7 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     auto [artistSelectorBox, artistSelectorList_] = addGroupBox(tr("ArtistSelector"));
     auto playerBox = new QGroupBox(tr("Player"), this);
     auto playerLayout = new QHBoxLayout();
-    playerWidget = new xPlayerWidget(musicPlayer, this);
+    playerWidget = new xPlayerMusicWidget(musicPlayer, this);
     playerLayout->addWidget(playerWidget);
     playerBox->setLayout(playerLayout);
     // Sort entries in artist/album/track
@@ -74,31 +74,31 @@ xMainWidget::xMainWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags 
     mainWidgetLayout->addWidget(artistSelectorBox, 8, 1, 1, 2);
     mainWidgetLayout->addWidget(queueBox, 0, 3, 9, 1);
     // Connect artist, album, track and selector widgets
-    connect(artistList, &QListWidget::currentRowChanged, this, &xMainWidget::selectArtist);
-    connect(albumList, &QListWidget::currentRowChanged, this, &xMainWidget::selectAlbum);
-    connect(trackList, &QListWidget::itemDoubleClicked, this, &xMainWidget::selectTrack);
-    connect(artistSelectorList, &QListWidget::currentRowChanged, this, &xMainWidget::selectArtistSelector);
+    connect(artistList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtist);
+    connect(albumList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectAlbum);
+    connect(trackList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::selectTrack);
+    connect(artistSelectorList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtistSelector);
     // Connect main widget to music player
-    connect(this, &xMainWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
-    connect(this, &xMainWidget::dequeueTrack, musicPlayer, &xMusicPlayer::dequeTrack);
+    connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
+    connect(this, &xMainMusicWidget::dequeueTrack, musicPlayer, &xMusicPlayer::dequeTrack);
     // Connect player widget to main widget
-    connect(playerWidget, &xPlayerWidget::clearQueue, this, &xMainWidget::clearQueue);
+    connect(playerWidget, &xPlayerMusicWidget::clearQueue, this, &xMainMusicWidget::clearQueue);
     // Connect queue to main widget
-    connect(playerWidget, &xPlayerWidget::currentQueueTrack, this, &xMainWidget::currentQueueTrack);
-    connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainWidget::currentQueueTrackClicked);
+    connect(playerWidget, &xPlayerMusicWidget::currentQueueTrack, this, &xMainMusicWidget::currentQueueTrack);
+    connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackClicked);
     // Right click.
-    connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainWidget::selectSingleTrack);
-    connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainWidget::currentQueueTrackRemoved);
+    connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::selectSingleTrack);
+    connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRemoved);
     // Connect music player to main widget for queue update.
-    connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainWidget::currentState);
+    connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
 }
 
-void xMainWidget::connectRotel(const QString& address, int port) {
+xPlayerRotelWidget* xMainMusicWidget::connectRotel(const QString& address, int port) {
     // Tell the player widget to connect.
-    playerWidget->connectRotel(address, port);
+    return playerWidget->connectRotel(address, port);
 }
 
-void xMainWidget::scannedArtists(const QStringList& artists) {
+void xMainMusicWidget::scannedArtists(const QStringList& artists) {
     std::set<QString> selectors;
     unfilteredArtists = artists;
     // Clear artist, album and track lists
@@ -117,7 +117,7 @@ void xMainWidget::scannedArtists(const QStringList& artists) {
     scannedArtistsSelectors(selectors);
 }
 
-void xMainWidget::scannedAlbums(const QStringList& albums) {
+void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
     // Clear album and track lists
     albumList->clear();
     trackList->clear();
@@ -126,7 +126,7 @@ void xMainWidget::scannedAlbums(const QStringList& albums) {
     }
 }
 
-void xMainWidget::scannedTracks(const QStringList& tracks) {
+void xMainMusicWidget::scannedTracks(const QStringList& tracks) {
    // Clear only track list
    trackList->clear();
    for (const auto& track : tracks) {
@@ -134,7 +134,7 @@ void xMainWidget::scannedTracks(const QStringList& tracks) {
    }
 }
 
-void xMainWidget::scannedArtistsSelectors(const std::set<QString> &selectors) {
+void xMainMusicWidget::scannedArtistsSelectors(const std::set<QString> &selectors) {
     // Update artist selectors list widget.
     artistSelectorList->clear();
     artistSelectorList->addItem(tr("none"));
@@ -143,7 +143,7 @@ void xMainWidget::scannedArtistsSelectors(const std::set<QString> &selectors) {
     }
 }
 
-QStringList xMainWidget::filterArtists(const QStringList& artists) {
+QStringList xMainMusicWidget::filterArtists(const QStringList& artists) {
     // Check if a selector is selected.
     if (artistSelectorList->currentItem()) {
         QStringList filtered;
@@ -165,7 +165,7 @@ QStringList xMainWidget::filterArtists(const QStringList& artists) {
     return artists;
 }
 
-void xMainWidget::selectArtist(int artist) {
+void xMainMusicWidget::selectArtist(int artist) {
     // Check if artist index is valid.
     if ((artist >= 0) && (artist < artistList->count())) {
         // Retrieve selected artist name and trigger scanForArtist
@@ -174,7 +174,7 @@ void xMainWidget::selectArtist(int artist) {
     }
 }
 
-void xMainWidget::selectAlbum(int album) {
+void xMainMusicWidget::selectAlbum(int album) {
     // Check if album index is valid.
     if ((album >= 0) && (album < albumList->count())) {
         // Retrieve selected artist and album name and
@@ -185,7 +185,7 @@ void xMainWidget::selectAlbum(int album) {
     }
 }
 
-void xMainWidget::selectTrack(QListWidgetItem* trackItem) {
+void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
     // Retrieve index for the selected item and check if it's valid.
     auto track = trackList->row(trackItem);
     if ((track >= 0) && (track< trackList->count())) {
@@ -207,7 +207,7 @@ void xMainWidget::selectTrack(QListWidgetItem* trackItem) {
     }
 }
 
-void xMainWidget::selectArtistSelector(int selector) {
+void xMainMusicWidget::selectArtistSelector(int selector) {
     // Check if index is valid.
     if ((selector >= 0) && (selector < artistSelectorList->count())) {
         // Call with stored list in order to update artist filtering.
@@ -215,7 +215,7 @@ void xMainWidget::selectArtistSelector(int selector) {
     }
 }
 
-void xMainWidget::currentState(xMusicPlayer::State state) {
+void xMainMusicWidget::currentState(xMusicPlayer::State state) {
     // Update the icon for the played track based on the state of the music player.
     auto currentTrack = queueList->item(playedTrack);
     if (!currentTrack) {
@@ -237,7 +237,7 @@ void xMainWidget::currentState(xMusicPlayer::State state) {
     }
 }
 
-void xMainWidget::currentQueueTrack(int index) {
+void xMainMusicWidget::currentQueueTrack(int index) {
     queueList->setCurrentRow(index);
     // Remove play icon from old track
     auto oldPlayedItem = queueList->item(playedTrack);
@@ -253,7 +253,7 @@ void xMainWidget::currentQueueTrack(int index) {
     }
 }
 
-void xMainWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
+void xMainMusicWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
     auto track = queueList->row(trackItem);
     if ((track >= 0) && (track< queueList->count())) {
         currentQueueTrack(track);
@@ -261,7 +261,7 @@ void xMainWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
     }
 }
 
-void xMainWidget::currentQueueTrackRemoved(const QPoint& point) {
+void xMainMusicWidget::currentQueueTrackRemoved(const QPoint& point) {
     // Currently unused
     Q_UNUSED(point)
     // Retrieve currently selected element
@@ -272,12 +272,12 @@ void xMainWidget::currentQueueTrackRemoved(const QPoint& point) {
     }
 }
 
-void xMainWidget::clearQueue() {
+void xMainMusicWidget::clearQueue() {
     // Clear playlist (queue).
     queueList->clear();
 }
 
-void xMainWidget::selectSingleTrack(const QPoint& point) {
+void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
     // Currently unused
     Q_UNUSED(point)
     // Retrieve currently selected element
