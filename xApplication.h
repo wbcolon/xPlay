@@ -35,14 +35,15 @@ public:
 
 private slots:
     void configure();
+    void setMusicLibraryDirectory();
+    void setRotelNetworkAddress();
+    void setMovieLibraryTagsAndDirectories();
 
 private:
-    void setMusicLibraryDirectory(const QString& directory);
     void createMenus();
     void configurationUpdate();
 
     QSettings* settings;
-    QString musicLibraryDirectory;
     xMusicLibrary* musicLibrary;
     xMusicPlayerX* musicPlayer;
     xMainMusicWidget* mainMusicWidget;

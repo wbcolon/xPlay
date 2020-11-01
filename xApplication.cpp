@@ -55,32 +55,51 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(movieLibrary, &xMovieLibrary::scannedDirectories, mainMovieWidget, &xMainMovieWidget::scannedDirectories);
     connect(movieLibrary, &xMovieLibrary::scannedMovies, mainMovieWidget, &xMainMovieWidget::scannedMovies);
     // Do not connect main widget to music player here. It is done in the main widget
-    // Read Settings
-    configurationUpdate();
+    // Connect Settings.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryDirectory,
+            this, &xApplication::setMusicLibraryDirectory);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieLibraryTagsAndDirectories,
+            this, &xApplication::setMovieLibraryTagsAndDirectories);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelNetworkAddress,
+            this, &xApplication::setRotelNetworkAddress);
     // Signal configuration updates.
     xPlayerConfiguration::configuration()->updatedConfiguration();
     // Create Application menus.
     createMenus();
 }
-void xApplication::setMusicLibraryDirectory(const QString& directory) {
-    if (musicLibraryDirectory != directory) {
-        musicLibraryDirectory = directory;
-        musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));
-        musicPlayer->setBaseDirectory(musicLibraryDirectory);
-        qInfo() << "Update music library path to " << musicLibraryDirectory;
-    }
+void xApplication::setMusicLibraryDirectory() {
+    auto musicLibraryDirectory=xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
+    musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));
+    musicPlayer->setBaseDirectory(musicLibraryDirectory);
+    qInfo() << "Update music library path to " << musicLibraryDirectory;
+}
+
+void xApplication::setRotelNetworkAddress() {
+    auto [rotelAddress,rotelPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
+    xPlayerRotelControls::controls()->connect(rotelAddress, rotelPort);
+}
+
+void xApplication::setMovieLibraryTagsAndDirectories() {
+    movieLibrary->setBaseDirectories(xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectoryPath());
 }
 
 void xApplication::createMenus() {
     // Create actions for file menu.
     auto fileMenuConfigure = new QAction("&Configure", this);
+    auto fileMenuRescanMusicLibrary = new QAction("Rescan M&usic Library", this);
+    auto fileMenuRescanMovieLibrary = new QAction("Rescan M&ovie Library", this);
     auto fileMenuExitAction = new QAction(tr("&Exit"), this);
     // Connect actions from file menu.
     connect(fileMenuConfigure, &QAction::triggered, this, &xApplication::configure);
+    connect(fileMenuRescanMusicLibrary, &QAction::triggered, this, &xApplication::setMusicLibraryDirectory);
+    connect(fileMenuRescanMovieLibrary, &QAction::triggered, this, &xApplication::setMovieLibraryTagsAndDirectories);
     connect(fileMenuExitAction, &QAction::triggered, this, &xApplication::close);
     // Create file menu.
     auto fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(fileMenuConfigure);
+    fileMenu->addSeparator();
+    fileMenu->addAction(fileMenuRescanMusicLibrary);
+    fileMenu->addAction(fileMenuRescanMovieLibrary);
     fileMenu->addSeparator();
     fileMenu->addAction(fileMenuExitAction);
     // Create actions for view menu.
@@ -97,18 +116,7 @@ void xApplication::createMenus() {
 
 void xApplication::configure() {
     xPlayerConfigurationDialog configurationDialog;
-
     configurationDialog.show();
-    auto result = configurationDialog.exec();
-    if (result == QDialog::Accepted) {
-        configurationUpdate();
-    }
-}
-void xApplication::configurationUpdate() {
-    // Read Settings
-    setMusicLibraryDirectory(xPlayerConfiguration::configuration()->getMusicLibraryDirectory());
-    auto [rotelAddress,rotelPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
-    xPlayerRotelControls::controls()->connect(rotelAddress, rotelPort);
-    movieLibrary->setBaseDirectories(xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectoryPath());
+    configurationDialog.exec();
 }
 
