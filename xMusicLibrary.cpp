@@ -12,6 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xMusicLibrary.h"
+#include "xPlayerConfiguration.h"
 
 #include <QDebug>
 
@@ -20,6 +21,9 @@
  */
 xMusicLibraryFiles::xMusicLibraryFiles(QObject *parent):
         QObject(parent) {
+    // Connect to configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryExtensions,
+            this, &xMusicLibraryFiles::updateMusicExtensions);
 }
 
 void xMusicLibraryFiles::set(const QString& artist, const std::map<QString,std::list<std::filesystem::path>>& albumTracks) {
@@ -97,14 +101,48 @@ std::list<std::tuple<QString, QString, std::filesystem::path>> xMusicLibraryFile
     return artistAlbumList;
 }
 
+bool xMusicLibraryFiles::isMusicFile(const std::filesystem::path& file) {
+    if (std::filesystem::is_regular_file(file)) {
+        auto extension = QString::fromStdString(file.extension().string());
+        for (const auto& musicExtension : musicExtensions) {
+            if (extension.startsWith(musicExtension, Qt::CaseInsensitive)) {
+                return true;
+            }
+        }
+    }
+    qDebug() << "xMovieLibraryFiles: skipping: " << QString::fromStdString(file.generic_string());
+    return false;
+}
+
+std::list<std::filesystem::path> xMusicLibraryFiles::scanForAlbumTracks(const std::filesystem::path& albumPath) {
+    std::list<std::filesystem::path> trackList;
+    // Add the album path itself
+    trackList.push_back(albumPath);
+    // Add all files in the album path
+    for (const auto& trackFile : std::filesystem::directory_iterator(albumPath)) {
+        if (isMusicFile(trackFile)) {
+            trackList.push_back(trackFile.path());
+        }
+    }
+    return trackList;
+}
+
+void xMusicLibraryFiles::updateMusicExtensions() {
+    musicExtensions = xPlayerConfiguration::configuration()->getMusicLibraryExtensionList();
+    qDebug() << "xMusicLibraryFiles: extensions: " << musicExtensions;
+}
+
 
 /*
  * class xMusicLibraryScanning
  */
-xMusicLibraryScanning::xMusicLibraryScanning(xMusicLibraryFiles* lib, const std::filesystem::path& dir, QObject *parent):
+xMusicLibraryScanning::xMusicLibraryScanning(xMusicLibraryFiles* libFiles, QObject *parent):
         QThread(parent),
-        musicLibrary(lib),
-        baseDirectory(dir) {
+        musicLibraryFiles(libFiles) {
+}
+
+void xMusicLibraryScanning::setBaseDirectory(const std::filesystem::path& dir) {
+    baseDirectory = dir;
 }
 
 void xMusicLibraryScanning::run() {
@@ -113,17 +151,17 @@ void xMusicLibraryScanning::run() {
     scan();
     qDebug() << "xMusicLibraryScanning: scanning each album";
     // Second scan for tracks.
-    auto artistAlbumList = musicLibrary->get();
+    auto artistAlbumList = musicLibraryFiles->get();
     for (auto entry : artistAlbumList) {
-        musicLibrary->set(std::get<0>(entry), std::get<1>(entry),
-                xMusicLibrary::scanForAlbumTracks(std::get<2>(entry)));
+        musicLibraryFiles->set(std::get<0>(entry), std::get<1>(entry),
+                musicLibraryFiles->scanForAlbumTracks(std::get<2>(entry)));
     }
     qDebug() << "xMusicLibraryScanning: finished";
 }
 
 void xMusicLibraryScanning::scan() {
     // Cleanup before scanning path
-    musicLibrary->clear();
+    musicLibraryFiles->clear();
     try {
         QStringList artistList;
         for (const auto& artistDir : std::filesystem::directory_iterator(baseDirectory)) {
@@ -150,7 +188,7 @@ void xMusicLibraryScanning::scan() {
                 trackList.push_back(albumPath);
                 artistAlbumMap[albumName] = trackList;
             }
-            musicLibrary->set(artistName, artistAlbumMap);
+            musicLibraryFiles->set(artistName, artistAlbumMap);
             artistList.push_back(artistName);
         }
         // Update widget
@@ -158,7 +196,7 @@ void xMusicLibraryScanning::scan() {
     } catch (...) {
         // Error scanning. Structure may not be as expected.
         // Clear everything currently scanned.
-        musicLibrary->clear();
+        musicLibraryFiles->clear();
     }
 }
 
@@ -170,46 +208,25 @@ void xMusicLibraryScanning::scan() {
 // Use "/tmp" as default path
 const std::string defaultBaseDirectory{ "/tmp" };
 
-// static function.
-std::list<std::filesystem::path> xMusicLibrary::scanForAlbumTracks(const std::filesystem::path& albumPath) {
-    std::list<std::filesystem::path> trackList;
-    // Add the album path itself
-    trackList.push_back(albumPath);
-    // Add all files in the album path
-    for (const auto& trackFile : std::filesystem::directory_iterator(albumPath)) {
-        if (std::filesystem::is_regular_file(trackFile)) {
-            trackList.push_back(trackFile.path());
-        }
-    }
-    return trackList;
-}
-
 xMusicLibrary::xMusicLibrary(QObject* parent):
         QObject(parent),
-        baseDirectory(defaultBaseDirectory),
-        musicLibraryScanning(nullptr) {
+        baseDirectory(defaultBaseDirectory) {
     musicLibraryFiles = new xMusicLibraryFiles(this);
-}
-
-xMusicLibrary::~xMusicLibrary() noexcept {
-    if (musicLibraryFiles) {
-        delete musicLibraryFiles;
-    }
+    musicLibraryScanning = new xMusicLibraryScanning(musicLibraryFiles, this);
+    connect(musicLibraryScanning, &xMusicLibraryScanning::finished, this, &xMusicLibrary::scanningFinished);
+    connect(musicLibraryScanning, &xMusicLibraryScanning::scannedArtists, this, &xMusicLibrary::scannedArtists);
 }
 
 void xMusicLibrary::setBaseDirectory(const std::filesystem::path& base) {
     // Update only if the given path is a directory
     if (std::filesystem::is_directory(base)) {
         baseDirectory = base;
-        // Scan music library after updated director.
-        // Rescan with same base intentional. Miniamal API.
-        if (musicLibraryScanning) {
+        // Scan music library after updated directory.
+        // Rescan with same base intentional.
+        if (musicLibraryScanning->isRunning()) {
             musicLibraryScanning->quit();
-            delete musicLibraryScanning;
         }
-        musicLibraryScanning = new xMusicLibraryScanning(musicLibraryFiles, baseDirectory, this);
-        connect(musicLibraryScanning, &xMusicLibraryScanning::finished, this, &xMusicLibrary::scanningFinished);
-        connect(musicLibraryScanning, &xMusicLibraryScanning::scannedArtists, this, &xMusicLibrary::scannedArtists);
+        musicLibraryScanning->setBaseDirectory(base);
         musicLibraryScanning->start(QThread::IdlePriority);
     }
 }
@@ -235,7 +252,7 @@ void xMusicLibrary::scanForArtistAndAlbum(const QString& artist, const QString& 
         trackPath.pop_front();
         if (trackPath.empty()) {
             qDebug() << "xMusicLibrary::scanAlbum: read files from disk";
-            trackPath = xMusicLibrary::scanForAlbumTracks(albumPath);
+            trackPath = musicLibraryFiles->scanForAlbumTracks(albumPath);
             musicLibraryFiles->set(artist, album, trackPath);
             // Remove album path again.
             // We do not need it for track list.
@@ -255,12 +272,5 @@ void xMusicLibrary::scanForArtistAndAlbum(const QString& artist, const QString& 
 }
 
 void xMusicLibrary::scanningFinished() {
-    if (musicLibraryScanning) {
-        // Disconnect signals.
-        disconnect(musicLibraryScanning, &xMusicLibraryScanning::finished, this, &xMusicLibrary::scanningFinished);
-        disconnect(musicLibraryScanning, &xMusicLibraryScanning::scannedArtists, this, &xMusicLibrary::scannedArtists);
-        // Delete scanning thread and reset pointer.
-        delete musicLibraryScanning;
-        musicLibraryScanning = nullptr;
-    }
+    qDebug() << "xMusicLibrary: scanning finished.";
 }

@@ -25,6 +25,8 @@
 #include <map>
 
 class xMusicLibraryFiles:public QObject {
+    Q_OBJECT
+
 public:
     /**
      * Constructor
@@ -41,8 +43,28 @@ public:
     std::list<std::tuple<QString, QString, std::filesystem::path>> get() const;
     void clear();
 
+    /**
+     * Scan for all tracks in the giving album path.
+     *
+     * @param albumPath the path to the artist/album directory to scan for tracks.
+     * @return list of paths containing the album path and all tracks.
+     */
+    std::list<std::filesystem::path> scanForAlbumTracks(const std::filesystem::path& albumPath);
+
+private slots:
+    void updateMusicExtensions();
+
 private:
+    /**
+     * Determine if the given file is a music file.
+     *
+     * @param file the path to the file checked.
+     * @return true if the file has a music extension, false otherwise.
+     */
+    bool isMusicFile(const std::filesystem::path& file);
+
     std::map<QString, std::map<QString, std::list<std::filesystem::path>>> musicFiles;
+    QStringList musicExtensions;
     mutable QMutex musicFilesLock;
 };
 
@@ -50,8 +72,10 @@ class xMusicLibraryScanning:public QThread {
     Q_OBJECT
 
 public:
-    xMusicLibraryScanning(xMusicLibraryFiles* lib, const std::filesystem::path& dir, QObject* parent=nullptr);
+    xMusicLibraryScanning(xMusicLibraryFiles* libFiles, QObject* parent=nullptr);
     ~xMusicLibraryScanning() = default;
+
+    void setBaseDirectory(const std::filesystem::path& dir);
 
     void run() override;
 
@@ -70,7 +94,7 @@ private:
      */
     void scan();
 
-    xMusicLibraryFiles* musicLibrary;
+    xMusicLibraryFiles* musicLibraryFiles;
     std::filesystem::path baseDirectory;
 };
 
@@ -78,16 +102,8 @@ class xMusicLibrary:public QObject {
     Q_OBJECT
 
 public:
-    /**
-     * Scan for all tracks in the giving album path.
-     *
-     * @param albumPath the path to the artist/album directory to scan for tracks.
-     * @return list of paths containing the album path and all tracks.
-     */
-    static std::list<std::filesystem::path> scanForAlbumTracks(const std::filesystem::path& albumPath);
-
     xMusicLibrary(QObject* parent=nullptr);
-    ~xMusicLibrary();
+    ~xMusicLibrary() = default;
 
     /**
      * Set base directory for the music library.
