@@ -13,76 +13,54 @@
  */
 
 #include "xMovieLibrary.h"
+#include "xPlayerConfiguration.h"
 
 #include <QDebug>
 
-xMovieLibrary::xMovieLibrary(QObject *parent):
-        QObject(parent) {
+xMovieLibraryScanning::xMovieLibraryScanning(xMovieFiles_t* movie, QObject* parent):
+        QThread(parent),
+        movieFiles(movie) {
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieLibraryExtensions,
+            this, &xMovieLibraryScanning::updateMovieExtensions);
 }
 
-void xMovieLibrary::setBaseDirectories(const std::list<std::pair<QString,std::filesystem::path>>& base) {
+void xMovieLibraryScanning::setBaseDirectories(const std::list<std::pair<QString, std::filesystem::path>>& base) {
     baseDirectories = base;
-    scan();
 }
 
-const std::list<std::pair<QString,std::filesystem::path>>& xMovieLibrary::getBaseDirectories() const {
-    return baseDirectories;
+void xMovieLibraryScanning::updateMovieExtensions() {
+    movieExtensions = xPlayerConfiguration::configuration()->getMovieLibraryExtensionList();
 }
 
-void xMovieLibrary::scanForTag(const QString& tag) {
-    auto tagPos = movieFiles.find(tag);
-    if (tagPos != movieFiles.end()) {
-        QStringList dirList;
-        for (const auto& dirEntry : tagPos->second) {
-            // Ignore the entry for the "." directory.
-            if (dirEntry.first != ".") {
-                dirList.push_back(dirEntry.first);
-            }
-        }
-        // Update UI. List may be empty.
-        emit scannedDirectories(dirList);
-    }
-}
-
-void xMovieLibrary::scanForTagAndDirectory(const QString& tag, const QString& dir) {
-    try {
-        emit scannedMovies(movieFiles[tag][dir]);
-    } catch (...) {
-        // Ignore any error. Do not update UI.
-        qCritical() << "Scanning Error for tag: " << tag << ", directory " << dir;
-    }
-}
-
-bool xMovieLibrary::isMovieFile(const std::filesystem::path& file) {
+bool xMovieLibraryScanning::isMovieFile(const std::filesystem::path& file) {
     if (std::filesystem::is_regular_file(file)) {
         auto extension = QString::fromStdString(file.extension().string());
-        if ((extension.startsWith(".mkv", Qt::CaseInsensitive)) ||
-            (extension.startsWith(".mp4", Qt::CaseInsensitive)) ||
-            (extension.startsWith(".avi", Qt::CaseInsensitive))||
-            (extension.startsWith(".mov", Qt::CaseInsensitive))) {
+        for (const auto& movieExtension : movieExtensions) {
+            if (extension.startsWith(movieExtension, Qt::CaseInsensitive)) {
                 return true;
             }
+        }
     }
     qDebug() << "xMovieLibrary: skipping: " << QString::fromStdString(file.generic_string());
     return false;
 }
 
-void xMovieLibrary::scan() {
+void xMovieLibraryScanning::run() {
     // Remove all movies.
-    movieFiles.clear();
+    movieFiles->clear();
     // Loop over all base directories
     // We assume that the subdirectories names are distinct over all base directories.
     for (const auto& baseDirectory : baseDirectories) {
         qDebug() << "xMovieLibrary: Directory: " << QString::fromStdString(baseDirectory.second.filename());
         qDebug() << "xMovieLibrary: Tag: " << baseDirectory.first;
         auto baseDirectoryTag = baseDirectory.first;
-        auto movieFilesTagPos = movieFiles.find(baseDirectoryTag);
-        if (movieFilesTagPos == movieFiles.end()) {
+        auto movieFilesTagPos = movieFiles->find(baseDirectoryTag);
+        if (movieFilesTagPos == movieFiles->end()) {
             // Create missing TAG directory
-            movieFiles[baseDirectoryTag] = std::map<QString, std::vector<std::pair<QString,QString>>>();
+            (*movieFiles)[baseDirectoryTag] = std::map<QString, std::vector<std::pair<QString,QString>>>();
             // Create entry for "." directory
-            movieFiles[baseDirectoryTag]["."] = std::vector<std::pair<QString,QString>>();
-            movieFilesTagPos = movieFiles.find(baseDirectoryTag);
+            (*movieFiles)[baseDirectoryTag]["."] = std::vector<std::pair<QString,QString>>();
+            movieFilesTagPos = movieFiles->find(baseDirectoryTag);
         }
         // Find "." directory for current TAG. Does exist.
         auto movieFilesMainPos = movieFilesTagPos->second.find(".");
@@ -104,12 +82,12 @@ void xMovieLibrary::scan() {
                             qDebug() << "xMovieLibrary: directory: " << QString::fromStdString(entryPath.filename())
                                      << ", movie: " << QString::fromStdString(directoryEntryPath.filename());
                             movieFilesDirectoryPos->second.emplace_back(QString::fromStdString(directoryEntryPath.filename()),
-                                                                                    QString::fromStdString(directoryEntryPath.generic_string()));
+                                                                        QString::fromStdString(directoryEntryPath.generic_string()));
                         }
                     }
                 } else if (isMovieFile(entryPath)) {
                     movieFilesMainPos->second.emplace_back(QString::fromStdString(entryPath.filename()),
-                                                                       QString::fromStdString(entryPath.generic_string()));
+                                                           QString::fromStdString(entryPath.generic_string()));
                     qDebug() << "xMovieLibrary: movie: " << QString::fromStdString(entryPath.filename());
                 }
             }
@@ -119,7 +97,7 @@ void xMovieLibrary::scan() {
     }
     // Create list of tags. Some debugging output.
     QStringList tagList;
-    for (auto& tag : movieFiles) {
+    for (auto& tag : (*movieFiles)) {
         for (auto& dir : tag.second) {
             std::sort(dir.second.begin(), dir.second.end(), [](const std::pair<QString,QString>& a, const std::pair<QString,QString>& b) { return (a.first < b.first); } );
         }
@@ -128,3 +106,49 @@ void xMovieLibrary::scan() {
     // Update UI.
     emit scannedTags(tagList);
 }
+
+
+xMovieLibrary::xMovieLibrary(QObject *parent):
+        QObject(parent) {
+    // Create movie file structure.
+    movieFiles = new xMovieFiles_t;
+    // Create scanning thread.
+    movieLibraryScanning = new xMovieLibraryScanning(movieFiles, this);
+    connect(movieLibraryScanning, &xMovieLibraryScanning::scannedTags, this, &xMovieLibrary::scannedTags);
+}
+
+xMovieLibrary::~xMovieLibrary() noexcept {
+    if (movieFiles) {
+        delete movieFiles;
+    }
+}
+
+void xMovieLibrary::setBaseDirectories(const std::list<std::pair<QString,std::filesystem::path>>& base) {
+    movieLibraryScanning->setBaseDirectories(base);
+    movieLibraryScanning->start(QThread::IdlePriority);
+}
+
+void xMovieLibrary::scanForTag(const QString& tag) {
+    auto tagPos = movieFiles->find(tag);
+    if (tagPos != movieFiles->end()) {
+        QStringList dirList;
+        for (const auto& dirEntry : tagPos->second) {
+            // Ignore the entry for the "." directory.
+            if (dirEntry.first != ".") {
+                dirList.push_back(dirEntry.first);
+            }
+        }
+        // Update UI. List may be empty.
+        emit scannedDirectories(dirList);
+    }
+}
+
+void xMovieLibrary::scanForTagAndDirectory(const QString& tag, const QString& dir) {
+    try {
+        emit scannedMovies((*movieFiles)[tag][dir]);
+    } catch (...) {
+        // Ignore any error. Do not update UI.
+        qCritical() << "Scanning Error for tag: " << tag << ", directory " << dir;
+    }
+}
+

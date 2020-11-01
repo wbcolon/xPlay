@@ -17,16 +17,45 @@
 
 #include <QObject>
 #include <QStringList>
+#include <QThread>
+#include <QMutex>
 #include <filesystem>
 #include <map>
 #include <vector>
+
+typedef std::map<QString, std::map<QString, std::vector<std::pair<QString,QString>>>> xMovieFiles_t;
+
+class xMovieLibraryScanning:public QThread {
+    Q_OBJECT
+
+public:
+    xMovieLibraryScanning(xMovieFiles_t* movie, QObject* parent=nullptr);
+    ~xMovieLibraryScanning() = default;
+
+    void setBaseDirectories(const std::list<std::pair<QString,std::filesystem::path>>& base);
+
+    void run() override;
+
+signals:
+    void scannedTags(const QStringList& tags);
+
+private slots:
+    void updateMovieExtensions();
+
+private:
+    bool isMovieFile(const std::filesystem::path& file);
+
+    xMovieFiles_t* movieFiles;
+    QStringList movieExtensions;
+    std::list<std::pair<QString,std::filesystem::path>> baseDirectories;
+};
 
 class xMovieLibrary:public QObject {
     Q_OBJECT
 
 public:
     xMovieLibrary(QObject* parent=nullptr);
-    ~xMovieLibrary() = default;
+    ~xMovieLibrary() noexcept;
 
     /**
      * Set base directory for the music library.
@@ -37,12 +66,6 @@ public:
      * @param base directory that contains the music library.
      */
     void setBaseDirectories(const std::list<std::pair<QString,std::filesystem::path>>& base);
-    /**
-     * Retrieve the currently set base directory of the music library.
-     *
-     * @return the base directory currently in use.
-     */
-    const std::list<std::pair<QString,std::filesystem::path>>& getBaseDirectories() const;
 
 signals:
     void scannedTags(const QStringList& tags);
@@ -54,13 +77,10 @@ public slots:
     void scanForTagAndDirectory(const QString& tag, const QString& dir);
 
 private:
-    bool isMovieFile(const std::filesystem::path& file);
-    void scan();
-
     // maps directories and files to an assigned tag
     // movieFiles[tag][directory] = files
-    std::map<QString, std::map<QString, std::vector<std::pair<QString,QString>>>> movieFiles;
-    std::list<std::pair<QString,std::filesystem::path>> baseDirectories;
+    xMovieFiles_t* movieFiles;
+    xMovieLibraryScanning* movieLibraryScanning;
 };
 
 #endif
