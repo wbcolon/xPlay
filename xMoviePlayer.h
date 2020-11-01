@@ -50,6 +50,7 @@ signals:
     void currentTitles(int titles);
     void currentVolume(int vol);
 
+    void scaleAndCropMode(bool mode);
     void toggleFullWindow();
 
     /**
@@ -80,6 +81,7 @@ public slots:
 
     void setVolume(int vol);
     void setMovie(const QString& moviePath);
+    void setScaleAndCropMode(bool mode);
 
     void selectAudioChannel(int index);
     void selectSubtitle(int index);

@@ -50,15 +50,14 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     auto fwdButton = new QPushButton(QIcon(":/images/xplay-forward.svg"), tr("Fwd"), controlTabPlayer);
     fwdButton->setLayoutDirection(Qt::RightToLeft);
     auto fullWindowButton = new QPushButton(tr("Full Window"));
-    //auto prevButton = new QPushButton(QIcon(":/images/xplay-previous.svg"), tr("Prev"), controlTabPlayer);
-    //auto nextButton = new QPushButton(QIcon(":/images/xplay-next.svg"), tr("Next"), controlTabPlayer);
-    //nextButton->setLayoutDirection(Qt::RightToLeft);
     audioChannelBox = new QComboBox(controlTabPlayer);
     auto audioChannelLabel = new QLabel(tr("Audio"), controlTabPlayer);
-    audioChannelLabel->setAlignment(Qt::AlignRight);
+    audioChannelLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
     subtitleBox = new QComboBox(controlTabPlayer);
     auto subtitleLabel = new QLabel(tr("Subtitle"), controlTabPlayer);
-    subtitleLabel->setAlignment(Qt::AlignLeft);
+    subtitleLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
+    auto scaleAndCropCheck = new QCheckBox(tr("Scale and Crop"),controlTabPlayer);
+    scaleAndCropCheck->setChecked(false);
     auto volumeWidget = new xPlayerVolumeWidgetX(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, moviePlayer, &xMoviePlayer::setVolume);
@@ -71,8 +70,6 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     controlLayout->addWidget(rewButton, 2, 5, 1, 1);
     controlLayout->addWidget(fwdButton, 2, 6, 1, 1);
     controlLayout->addWidget(fullWindowButton, 3, 5, 1, 2);
-    //controlLayout->addWidget(prevButton, 3, 5, 1, 1);
-    //controlLayout->addWidget(nextButton, 3, 6, 1, 1);
     controlLayout->setColumnMinimumWidth(4, 20);
     controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
     // Fix sizes of the control tab
@@ -83,10 +80,11 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     auto movieLayout = new QGridLayout(this);
     movieLayout->addWidget(movieLabel, 0, 0, 1, 8);
     movieLayout->addWidget(sliderWidget, 1, 0, 1, 8);
-    movieLayout->addWidget(audioChannelLabel, 3, 0);
-    movieLayout->addWidget(audioChannelBox, 3, 1, 1, 2);
-    movieLayout->addWidget(subtitleLabel, 3, 7);
+    movieLayout->addWidget(audioChannelLabel, 2, 3, 1, 2);
+    movieLayout->addWidget(audioChannelBox, 3, 3, 1, 2);
+    movieLayout->addWidget(subtitleLabel, 2, 5, 1, 2);
     movieLayout->addWidget(subtitleBox, 3, 5, 1, 2);
+    movieLayout->addWidget(scaleAndCropCheck, 3, 1, 1, 2);
     movieLayout->addWidget(controlTab, 0, 9, 4, 1);
     movieLabel->setText("no movie");
     // Connect the buttons to player widget and/or to the music player.
@@ -95,6 +93,9 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     connect(rewButton, &QPushButton::pressed, [=]() { moviePlayer->jump(-60000); });
     connect(fwdButton, &QPushButton::pressed, [=]() { moviePlayer->jump(60000); });
     connect(fullWindowButton, &QPushButton::pressed, this, &xPlayerMovieWidget::toggleFullWindow);
+    // Connect check box.
+    connect(scaleAndCropCheck, &QCheckBox::clicked, moviePlayer, &xMoviePlayer::setScaleAndCropMode);
+    connect(moviePlayer, &xMoviePlayer::scaleAndCropMode, scaleAndCropCheck, &QCheckBox::setChecked);
     // Connect combo boxes.
     connect(audioChannelBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectAudioChannel(int)));
     connect(subtitleBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectSubtitle(int)));

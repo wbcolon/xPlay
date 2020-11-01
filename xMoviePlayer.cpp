@@ -16,6 +16,7 @@
 
 #include <QEvent>
 #include <QMouseEvent>
+#include <QCheckBox>
 #include <QTimer>
 #include <cmath>
 
@@ -24,8 +25,6 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         moviePlayer(nullptr),
         movieControler(nullptr),
         fullWindow(false) {
-    // Configure Video Output
-    //setScaleMode(Phonon::VideoWidget::ScaleAndCrop);
     // Setup the media player.
     audioOutput = new Phonon::AudioOutput(Phonon::VideoCategory, this);
     resetMoviePlayer();
@@ -76,6 +75,10 @@ void xMoviePlayer::setMovie(const QString& moviePath) {
     moviePlayer->setCurrentSource(QUrl::fromLocalFile(moviePath));
     moviePlayer->play();
     emit currentState(xMoviePlayer::PlayingState);
+}
+
+void xMoviePlayer::setScaleAndCropMode(bool mode) {
+    setScaleMode(mode ? Phonon::VideoWidget::ScaleAndCrop : Phonon::VideoWidget::FitInView);
 }
 
 void xMoviePlayer::availableAudioChannels() {
@@ -139,7 +142,7 @@ void xMoviePlayer::aboutToFinish() {
     // Go to stopping state. End full window mode.
     emit currentState(xMoviePlayer::StoppingState);
     // Stop the player after 1sec.
-    QTimer::singleShot(1000, [=] { moviePlayer->stop(); emit currentState(xMoviePlayer::StopState); });
+    QTimer::singleShot(2000, [=] { moviePlayer->stop(); emit currentState(xMoviePlayer::StopState); });
 }
 
 void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
@@ -177,6 +180,11 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
                 moviePlayer->play();
                 emit currentState(xMoviePlayer::PlayingState);
             }
+        } break;
+        case Qt::Key_S: {
+            auto mode = (scaleMode() == Phonon::VideoWidget::FitInView);
+            setScaleAndCropMode(mode);
+            emit scaleAndCropMode(mode);
         } break;
         default: {
             Phonon::VideoWidget::keyPressEvent(keyEvent);
