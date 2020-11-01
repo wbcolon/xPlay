@@ -101,6 +101,10 @@ The media control artwork has been borrowed from Wikipedia.
 
 With Qwt the UI has a slightly improved volume knop and track slider.
 
+## Known Issues
+
+Ending the Application before the scanning thread is finished will result in an abort return code.
+
 ## Notes
 
 xPlay started out as a little project over the weekend in order to evaluate the Clion C++ IDE.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 - 2020-11-01
+
+- Movie library scanning now threaded. Faster startup.
+- Bugfixes
+- Code cleanup and rework
+
 ## 0.3.0 - 2020-10-31
 
 - Added a movie player view, movie library scanning. 
