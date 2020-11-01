@@ -28,48 +28,70 @@ const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryE
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" };
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" };
 
-// App and Organisation.
-const QString xPlayerConfiguration::ApplicationName { "xPlay" };
-const QString xPlayerConfiguration::OrganisationName { "wbcolon" };
+// singleton object.
+xPlayerConfiguration* xPlayerConfiguration::playerConfiguration = nullptr;
 
-// Settings.
-QSettings* xPlayerConfiguration::settings = new QSettings(xPlayerConfiguration::OrganisationName, xPlayerConfiguration::ApplicationName);
+xPlayerConfiguration::xPlayerConfiguration():
+        QObject() {
+    // Settings.
+    settings = new QSettings(xPlayerConfiguration::OrganisationName, xPlayerConfiguration::ApplicationName, this);
+}
+
+xPlayerConfiguration* xPlayerConfiguration::configuration() {
+    // Create and return singleton.
+    if (playerConfiguration == nullptr) {
+        playerConfiguration = new xPlayerConfiguration();
+    }
+    return playerConfiguration;
+}
 
 void xPlayerConfiguration::setMusicLibraryDirectory(const QString& directory) {
-    settings->setValue(xPlayerConfiguration_MusicLibraryDirectory, directory);
-    settings->sync();
+    if (directory != getMusicLibraryDirectory()) {
+        settings->setValue(xPlayerConfiguration_MusicLibraryDirectory, directory);
+        settings->sync();
+        emit updatedMusicLibraryDirectory();
+    }
 }
 
 void xPlayerConfiguration::setMusicLibraryExtensions(const QString& extensions) {
-    settings->setValue(xPlayerConfiguration_MusicLibraryExtensions, extensions);
-    settings->sync();
+    if (extensions != getMusicLibraryExtensions()) {
+        settings->setValue(xPlayerConfiguration_MusicLibraryExtensions, extensions);
+        settings->sync();
+        emit updatedMovieLibraryExtensions();
+    }
 }
 
-void xPlayerConfiguration::setRotelNetworkAddress(const QString& address) {
-    settings->setValue(xPlayerConfiguration_RotelNetworkAddress, address);
-    settings->sync();
-}
-
-void xPlayerConfiguration::setRotelNetworkPort(int port) {
-    settings->setValue(xPlayerConfiguration_RotelNetworkPort, port);
-    settings->sync();
+void xPlayerConfiguration::setRotelNetworkAddress(const QString& address, int port) {
+    auto networkAddress = getRotelNetworkAddress();
+    if ((networkAddress.first != address) || (networkAddress.second != port)) {
+        settings->setValue(xPlayerConfiguration_RotelNetworkAddress, address);
+        settings->setValue(xPlayerConfiguration_RotelNetworkPort, port);
+        settings->sync();
+        emit updatedRotelNetworkAddress();
+    }
 }
 
 void xPlayerConfiguration::setMovieLibraryTagAndDirectory(const QStringList& tagDir) {
-    QString movieLibraryDirectory;
-    if (tagDir.count() > 0) {
-        movieLibraryDirectory = tagDir.at(0);
-        for (int i = 1; i < tagDir.count(); ++i) {
-            movieLibraryDirectory += QString("|") + tagDir.at(i);
+    if (tagDir != getMovieLibraryTagAndDirectory()) {
+        QString movieLibraryDirectory;
+        if (tagDir.count() > 0) {
+            movieLibraryDirectory = tagDir.at(0);
+            for (int i = 1; i < tagDir.count(); ++i) {
+                movieLibraryDirectory += QString("|") + tagDir.at(i);
+            }
         }
+        settings->setValue(xPlayerConfiguration_MovieLibraryDirectory, movieLibraryDirectory);
+        settings->sync();
+        emit updatedMovieLibraryTagsAndDirectories();
     }
-    settings->setValue(xPlayerConfiguration_MovieLibraryDirectory, movieLibraryDirectory);
-    settings->sync();
 }
 
 void xPlayerConfiguration::setMovieLibraryExtensions(const QString& extensions) {
-    settings->setValue(xPlayerConfiguration_MovieLibraryExtensions, extensions);
-    settings->sync();
+    if (extensions != getMovieLibraryExtensions()) {
+        settings->setValue(xPlayerConfiguration_MovieLibraryExtensions, extensions);
+        settings->sync();
+        emit updatedMovieLibraryExtensions();
+    }
 }
 
 QString xPlayerConfiguration::getMusicLibraryDirectory() {
@@ -94,12 +116,10 @@ QStringList xPlayerConfiguration::getMusicLibraryExtensionList() {
     }
 }
 
-QString xPlayerConfiguration::getRotelNetworkAddress() {
-    return settings->value(xPlayerConfiguration_RotelNetworkAddress, "").toString();
-}
+std::pair<QString,int> xPlayerConfiguration::getRotelNetworkAddress() {
+    return std::make_pair(settings->value(xPlayerConfiguration_RotelNetworkAddress, "").toString(),
+                          settings->value(xPlayerConfiguration_RotelNetworkPort, "").toInt());
 
-int xPlayerConfiguration::getRotelNetworkPort() {
-    return settings->value(xPlayerConfiguration_RotelNetworkPort, "").toInt();
 }
 
 QStringList xPlayerConfiguration::getMovieLibraryTagAndDirectory() {
@@ -115,7 +135,7 @@ std::list<std::pair<QString,std::filesystem::path>> xPlayerConfiguration::getMov
     std::list<std::pair<QString,std::filesystem::path>> tagDirList;
     for  (const auto& entry : getMovieLibraryTagAndDirectory()) {
         auto splitEntry = xPlayerConfiguration::splitMovieLibraryTagAndDirectory(entry);
-        tagDirList.push_back(std::make_pair(splitEntry.first, std::filesystem::path(splitEntry.second.toStdString())));
+        tagDirList.emplace_back(splitEntry.first, std::filesystem::path(splitEntry.second.toStdString()));
     }
     return tagDirList;
 }
@@ -123,6 +143,15 @@ std::list<std::pair<QString,std::filesystem::path>> xPlayerConfiguration::getMov
 QString xPlayerConfiguration::getMovieLibraryExtensions() {
     return settings->value(xPlayerConfiguration_MovieLibraryExtensions,
                            xPlayerConfiguration_MovieLibraryExtensions_Default).toString();
+}
+
+QStringList xPlayerConfiguration::getMovieLibraryExtensionList() {
+    auto extensions = getMovieLibraryExtensions();
+    if (extensions.isEmpty()) {
+        return QStringList();
+    } else {
+        return extensions.split(" ");
+    }
 }
 
 std::pair<QString,QString> xPlayerConfiguration::splitMovieLibraryTagAndDirectory(const QString& tagDir) {
@@ -133,4 +162,13 @@ std::pair<QString,QString> xPlayerConfiguration::splitMovieLibraryTagAndDirector
     } else {
         return std::make_pair("","");
     }
+}
+
+void xPlayerConfiguration::updatedConfiguration() {
+    // Fire all update signals.
+    emit updatedMusicLibraryDirectory();
+    emit updatedMusicLibraryExtensions();
+    emit updatedRotelNetworkAddress();
+    emit updatedMovieLibraryTagsAndDirectories();
+    emit updatedMovieLibraryExtensions();
 }

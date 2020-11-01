@@ -106,12 +106,11 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
 }
 
 void xPlayerConfigurationDialog::loadSettings() {
-    auto musicLibraryDirectory = xPlayerConfiguration::getMusicLibraryDirectory();
-    auto musicLibraryExtensions = xPlayerConfiguration::getMusicLibraryExtensions();
-    auto rotelNetworkAddress = xPlayerConfiguration::getRotelNetworkAddress();
-    auto rotelNetworkPort = xPlayerConfiguration::getRotelNetworkPort();
-    auto movieLibraryTagAndDirectory = xPlayerConfiguration::getMovieLibraryTagAndDirectory();
-    auto movieLibraryExtensions = xPlayerConfiguration::getMovieLibraryExtensions();
+    auto musicLibraryDirectory = xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
+    auto musicLibraryExtensions = xPlayerConfiguration::configuration()->getMusicLibraryExtensions();
+    auto [rotelNetworkAddress, rotelNetworkPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
+    auto movieLibraryTagAndDirectory = xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectory();
+    auto movieLibraryExtensions = xPlayerConfiguration::configuration()->getMovieLibraryExtensions();
     // Update the configuration dialog UI.
     musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
     musicLibraryExtensionsWidget->setText(musicLibraryExtensions);
@@ -148,12 +147,11 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryDirectory: " << movieLibraryTagAndDirectory;
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryExtensions: " << movieLibraryExtensions;
     // Save settings.
-    xPlayerConfiguration::setMusicLibraryDirectory(musicLibraryDirectory);
-    xPlayerConfiguration::setMusicLibraryExtensions(musicLibraryExtensions);
-    xPlayerConfiguration::setRotelNetworkAddress(rotelNetworkAddress);
-    xPlayerConfiguration::setRotelNetworkPort(rotelNetworkPort);
-    xPlayerConfiguration::setMovieLibraryTagAndDirectory(movieLibraryTagAndDirectory);
-    xPlayerConfiguration::setMovieLibraryExtensions(movieLibraryExtensions);
+    xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
+    xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
+    xPlayerConfiguration::configuration()->setRotelNetworkAddress(rotelNetworkAddress, rotelNetworkPort);
+    xPlayerConfiguration::configuration()->setMovieLibraryTagAndDirectory(movieLibraryTagAndDirectory);
+    xPlayerConfiguration::configuration()->setMovieLibraryExtensions(movieLibraryExtensions);
     // End dialog.
     accept();
 }
