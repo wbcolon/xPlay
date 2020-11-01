@@ -31,8 +31,6 @@ public:
     xMainMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr);
     ~xMainMovieWidget() = default;
 
-    void connectToRotel(xPlayerRotelWidget* rotel);
-
 signals:
     void scanForTag(const QString& tag);
     void scanForTagAndDirectory(const QString& tag, const QString& directory);

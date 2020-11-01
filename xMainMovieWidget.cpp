@@ -91,11 +91,6 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     setCurrentWidget(mainWidget);
 }
 
-void xMainMovieWidget::connectToRotel(xPlayerRotelWidget* rotel) {
-    // Tell the player widget to connect.
-    moviePlayerWidget->connectToRotel(rotel);
-}
-
 void xMainMovieWidget::toggleFullWindow() {
     // Toggle the mode.
     setFullWindow(!fullWindow);

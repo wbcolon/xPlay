@@ -110,11 +110,6 @@ void xPlayerMovieWidget::currentMovie(const QString& movie) {
     movieLabel->setText(movie);
 }
 
-void xPlayerMovieWidget::connectToRotel(xPlayerRotelWidget* rotel) {
-    // Connect to Rotel AMP.
-    controlTabRotel->connectToParent(rotel);
-}
-
 void xPlayerMovieWidget::currentAudioChannels(const QStringList& audioChannels) {
     updateComboBoxEntries(audioChannelBox, audioChannels);
 }

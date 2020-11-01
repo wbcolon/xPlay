@@ -31,8 +31,6 @@ public:
     xMainMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xMainMusicWidget() = default;
 
-    xPlayerRotelWidget* connectRotel(const QString& address, int port);
-
 signals:
     /**
      * Signals used for communication with player widget and the music player.

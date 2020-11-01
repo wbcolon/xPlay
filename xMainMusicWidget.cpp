@@ -93,11 +93,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
 }
 
-xPlayerRotelWidget* xMainMusicWidget::connectRotel(const QString& address, int port) {
-    // Tell the player widget to connect.
-    return playerWidget->connectRotel(address, port);
-}
-
 void xMainMusicWidget::scannedArtists(const QStringList& artists) {
     std::set<QString> selectors;
     unfilteredArtists = artists;

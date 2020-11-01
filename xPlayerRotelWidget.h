@@ -23,6 +23,42 @@
 #include <QWidget>
 #include <QString>
 
+class xPlayerRotelControls:public QObject {
+    Q_OBJECT
+
+public:
+    static xPlayerRotelControls* controls();
+
+    void connect(const QString& address, int port, bool wait=false);
+
+    void setVolume(int vol);
+    void setSource(const QString& src);
+    void setMute(bool m);
+
+    int getVolume();
+    QString getSource();
+    bool getMute();
+
+signals:
+    void connected();
+    void disconnected();
+
+    void volume(int vol);
+    void source(const QString& src);
+    void mute(bool m);
+
+private:
+    xPlayerRotelControls();
+    ~xPlayerRotelControls() = default;
+
+    void controlsConnected();
+    QString sendCommand(const QString& command);
+
+    QTcpSocket* rotelSocket;
+    static xPlayerRotelControls* rotelControls;
+};
+
+
 class xPlayerRotelWidget:public QWidget {
     Q_OBJECT
 
@@ -30,36 +66,24 @@ public:
     xPlayerRotelWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerRotelWidget() = default;
 
-    void connect(const QString& address, int port, bool wait=false);
-    void connectToParent(xPlayerRotelWidget* rotel);
-
 private slots:
     void connected();
     void disconnected();
-    void error(QAbstractSocket::SocketError e);
+
+    void updateVolume(int vol);
+    void updateSource(const QString& source);
+    void updateMute(bool mute);
 
     void setVolume(int vol);
     void setSource(const QString& source);
     void setMute(bool mute);
 
 private:
-    int getVolume();
-    QString getSource();
-    bool getMute();
-
-    void syncVolume(int vol);
-    void syncSource(const QString& source);
-    void syncMute(bool mute);
-    QString sendCommand(const QString& command);
-
-    QTcpSocket* rotelSocket;
     xPlayerVolumeWidget* rotelVolume;
     QComboBox* rotelSource;
     QLabel* rotelSourceLabel;
     QCheckBox* rotelMute;
-
-    xPlayerRotelWidget* rotelChild;
-    xPlayerRotelWidget* rotelParent;
+    xPlayerRotelControls* rotelControls;
 };
 
 #endif

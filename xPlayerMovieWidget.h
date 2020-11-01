@@ -31,7 +31,6 @@ public:
     ~xPlayerMovieWidget() = default;
 
     void currentMovie(const QString& movie);
-    void connectToRotel(xPlayerRotelWidget* rotel);
 
 signals:
     void toggleFullWindow();

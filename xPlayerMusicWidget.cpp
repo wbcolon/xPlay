@@ -108,12 +108,6 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     volumeWidget->setVolume(musicPlayer->getVolume());
 }
 
-xPlayerRotelWidget* xPlayerMusicWidget::connectRotel(const QString& address, int port) {
-    // Connect to Rotel AMP.
-    controlTabRotel->connect(address, port);
-    return controlTabRotel;
-}
-
 void xPlayerMusicWidget::clear() {
     // Reset the play/pause button and clear all track info.
     artistName->clear();

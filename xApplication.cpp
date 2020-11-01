@@ -57,6 +57,8 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     // Do not connect main widget to music player here. It is done in the main widget
     // Read Settings
     configurationUpdate();
+    // Signal configuration updates.
+    xPlayerConfiguration::configuration()->updatedConfiguration();
     // Create Application menus.
     createMenus();
 }
@@ -104,11 +106,9 @@ void xApplication::configure() {
 }
 void xApplication::configurationUpdate() {
     // Read Settings
-    setMusicLibraryDirectory(xPlayerConfiguration::getMusicLibraryDirectory());
-    auto rotelAddress = xPlayerConfiguration::getRotelNetworkAddress();
-    auto rotelPort = xPlayerConfiguration::getRotelNetworkPort();
-    auto rotelWidget = mainMusicWidget->connectRotel(rotelAddress, rotelPort);
-    mainMovieWidget->connectToRotel(rotelWidget);
-    movieLibrary->setBaseDirectories(xPlayerConfiguration::getMovieLibraryTagAndDirectoryPath());
+    setMusicLibraryDirectory(xPlayerConfiguration::configuration()->getMusicLibraryDirectory());
+    auto [rotelAddress,rotelPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
+    xPlayerRotelControls::controls()->connect(rotelAddress, rotelPort);
+    movieLibrary->setBaseDirectories(xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectoryPath());
 }
 

@@ -28,8 +28,6 @@ public:
     xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerMusicWidget() = default;
 
-    xPlayerRotelWidget* connectRotel(const QString& address, int port);
-
 signals:
     /**
      * Signal the position of the current track.
