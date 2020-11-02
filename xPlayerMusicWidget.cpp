@@ -25,8 +25,11 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     QWidget(parent, flags) {
     // Create labels for artist, album and track
     artistName = new QLabel(this);
+    artistName->setWordWrap(true);
     albumName = new QLabel(this);
+    albumName->setWordWrap(true);
     trackName = new QLabel(this);
+    trackName->setWordWrap(true);
     trackSampleRate = new QLabel(this);
     trackSampleRate->setAlignment(Qt::AlignRight);
     trackBitsPerSample = new QLabel(this);
@@ -66,7 +69,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     playerLayout->addWidget(new QLabel(tr("Album"), this), 1, 0);
     playerLayout->addWidget(albumName, 1, 1, 1, 4);
     playerLayout->addWidget(new QLabel(tr("Track"), this), 2, 0);
-    playerLayout->addWidget(trackName, 2, 1, 1, 7);
+    playerLayout->addWidget(trackName, 2, 1, 1, 4);
     auto trackSampleRateLabel = new QLabel(tr("Sample rate"));
     trackSampleRateLabel->setAlignment(Qt::AlignRight);
     //auto trackBitsPerSampleLabel = new QLabel(tr("Bits per sample"));
