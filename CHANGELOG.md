@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 - 2020-11-02
+
+- Add scale and crop option for movies.
+- Bugfix for phonon music player.
+- Documentation update.
+- Code cleanup.
+
 ## 0.3.1 - 2020-11-01
 
 - Movie library scanning now threaded. Faster startup.
