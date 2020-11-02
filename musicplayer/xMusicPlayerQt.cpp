@@ -132,8 +132,8 @@ void xMusicPlayerQt::currentTrackIndex(int index) {
         auto entry = musicPlaylistEntries[index];
         auto current = baseDirectory+"/"+std::get<0>(entry)+"/"+std::get<1>(entry)+"/"+std::get<2>(entry);
         auto properties = propertiesFromFile(current);
-        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
-                std::get<2>(entry), properties.first, properties.second);
+        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry), std::get<2>(entry),
+                std::get<0>(properties), std::get<1>(properties), std::get<2>(properties));
     }
 }
 

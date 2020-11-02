@@ -29,6 +29,8 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     trackName = new QLabel(this);
     trackSampleRate = new QLabel(this);
     trackSampleRate->setAlignment(Qt::AlignRight);
+    trackBitsPerSample = new QLabel(this);
+    trackBitsPerSample->setAlignment(Qt::AlignRight|Qt::AlignTop);
     trackBitrate = new QLabel(this);
     trackBitrate->setAlignment(Qt::AlignRight);
     // Add track slider and the volume knob for Qwt.
@@ -67,12 +69,16 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     playerLayout->addWidget(trackName, 2, 1, 1, 7);
     auto trackSampleRateLabel = new QLabel(tr("Sample rate"));
     trackSampleRateLabel->setAlignment(Qt::AlignRight);
+    //auto trackBitsPerSampleLabel = new QLabel(tr("Bits per sample"));
+    //trackBitsPerSampleLabel->setAlignment(Qt::AlignRight);
     auto trackBitrateLabel = new QLabel(tr("Bitrate"));
     trackBitrateLabel->setAlignment(Qt::AlignRight);
     playerLayout->addWidget(trackSampleRateLabel, 0, 5);
     playerLayout->addWidget(trackSampleRate, 0, 6);
-    playerLayout->addWidget(trackBitrateLabel, 1, 5);
-    playerLayout->addWidget(trackBitrate, 1, 6);
+    //playerLayout->addWidget(trackBitsPerSampleLabel, 1, 5);
+    playerLayout->addWidget(trackBitrateLabel, 2, 5);
+    playerLayout->addWidget(trackBitsPerSample, 1, 6);
+    playerLayout->addWidget(trackBitrate, 2, 6);
     playerLayout->addWidget(sliderWidget, 4, 0, 1, 7);
     // Create a layout for the music player and playlist control buttons.
     auto controlLayout = new QGridLayout(controlTabPlayer);
@@ -114,18 +120,20 @@ void xPlayerMusicWidget::clear() {
     albumName->clear();
     trackName->clear();
     trackSampleRate->clear();
+    trackBitsPerSample->clear();
     trackBitrate->clear();
     sliderWidget->clear();
 }
 
-void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QString& album,
-                                      const QString& track, int bitrate, int sampleRate) {
+void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track,
+                                      int bitrate, int sampleRate, int bitsPerSample) {
     // Display the current track information (without length)
     artistName->setText(artist);
     albumName->setText(album);
     trackName->setText(track);
-    trackSampleRate->setText(QString("%1 Hz").arg(sampleRate));
-    trackBitrate->setText(QString("%1 kb/s").arg(bitrate));
+    trackSampleRate->setText(QString("%1Hz").arg(sampleRate));
+    trackBitsPerSample->setText(QString("%1-bit").arg(bitsPerSample));
+    trackBitrate->setText(QString("%1 kbit/s").arg(bitrate));
     // Signal index update to the Queue.
     emit currentQueueTrack(index);
 }

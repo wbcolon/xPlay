@@ -13,8 +13,11 @@
  */
 #include "xMusicPlayer.h"
 
+#include <QDebug>
 #include <taglib/fileref.h>
 #include <taglib/audioproperties.h>
+#include <taglib/flacproperties.h>
+#include <taglib/wavpackproperties.h>
 
 xMusicPlayer::xMusicPlayer(QObject* parent):
         QObject(parent) {
@@ -30,9 +33,23 @@ QString xMusicPlayer::pathFromQueueEntry(const std::tuple<QString, QString, QStr
     return baseDirectory+"/"+std::get<0>(elem)+"/"+std::get<1>(elem)+"/"+std::get<2>(elem);
 }
 
-std::pair<int,int> xMusicPlayer::propertiesFromFile(const QString& filename) {
+std::tuple<int,int,int> xMusicPlayer::propertiesFromFile(const QString& filename) {
     // Use taglib to determine the sample rate and bitrate.
     TagLib::FileRef currentTrack(filename.toStdString().c_str());
     TagLib::AudioProperties* currentTrackProperties = currentTrack.audioProperties();
-    return std::make_pair(currentTrackProperties->bitrate(), currentTrackProperties->sampleRate());
+    // Most files do only support 16 bits per sample.
+    int bitsPerSample = 16;
+    try {
+        if (filename.endsWith(".flac", Qt::CaseInsensitive)) {
+            TagLib::FLAC::Properties* currentFlacProperties = dynamic_cast<TagLib::FLAC::Properties*>(currentTrackProperties);
+            bitsPerSample = currentFlacProperties->bitsPerSample();
+        } else if (filename.endsWith(".wv", Qt::CaseInsensitive)) {
+            TagLib::WavPack::Properties* currentWvProperties = dynamic_cast<TagLib::WavPack::Properties*>(currentTrackProperties);
+            bitsPerSample = currentWvProperties->bitsPerSample();
+        }
+    } catch(std::bad_cast& e) {
+        // Ignore error.
+        qCritical() << "xMusicPlayer: unable to determine properties for: " << filename << ", error: " << e.what();
+    }
+    return std::make_tuple(currentTrackProperties->bitrate(), currentTrackProperties->sampleRate(), bitsPerSample);
 }

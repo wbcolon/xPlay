@@ -54,7 +54,7 @@ signals:
      * @param sampleRate the sample rate in Hz.
      */
     void currentTrack(int index, const QString& artist, const QString& album,
-                      const QString& track, int bitrate, int sampleRate);
+                      const QString& track, int bitrate, int sampleRate, int bitsPerSample);
     /**
      * Signal the amount played for the current track.
      *
@@ -140,7 +140,7 @@ protected:
      * @return absolute path to the specified track.
      */
     QString pathFromQueueEntry(const std::tuple<QString, QString, QString>& entry);
-    std::pair<int,int> propertiesFromFile(const QString& filename);
+    std::tuple<int,int,int> propertiesFromFile(const QString& filename);
 
     QString baseDirectory;
 };

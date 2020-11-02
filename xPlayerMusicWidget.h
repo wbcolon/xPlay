@@ -54,9 +54,10 @@ protected slots:
      * @param track name of the current track.
      * @param bitrate the bitrate in kb/sec.
      * @param sampleRate the sample rate in Hz.
+     * @param bitsPerSample the number of bits per sample (mostly 16 of 24).
      */
     void currentTrack(int index, const QString& artist, const QString& album,
-                      const QString& track, int bitrate, int sampleRate);
+                      const QString& track, int bitrate, int sampleRate, int bitsPerSample);
     /**
      * Update the player UI based on the player state.
      *
@@ -73,6 +74,7 @@ private:
     QLabel* trackName;
     QLabel* trackSampleRate;
     QLabel* trackBitrate;
+    QLabel* trackBitsPerSample;
     /**
      * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
      */

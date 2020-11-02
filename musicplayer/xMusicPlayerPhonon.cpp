@@ -202,8 +202,8 @@ void xMusicPlayerPhonon::currentTrackSource(const Phonon::MediaSource& current) 
         // Retrieve info for the currently played track and emit the information.
         auto entry = musicPlaylistEntries[index];
         auto properties = propertiesFromFile(current.fileName());
-        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
-                std::get<2>(entry), properties.first, properties.second);
+        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry), std::get<2>(entry),
+                std::get<0>(properties), std::get<1>(properties), std::get<2>(properties));
         // Use hack to determine the proper total length.
         // We need the muted musicPlayerForTime to play until the total time has been determined
         // and the durationChanged signal was triggered.
