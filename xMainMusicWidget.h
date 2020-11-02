@@ -32,9 +32,9 @@ public:
     ~xMainMusicWidget() = default;
 
 signals:
-    /**
-     * Signals used for communication with player widget and the music player.
-     * The corresponding slots are implemented in the play widget or music
+    /*
+     * Signals used for communication with music player widget and the music player.
+     * The corresponding slots are implemented in the music player widget or music
      * player classes.
      */
     /**
@@ -195,7 +195,6 @@ private:
      * @return filtered list of artists that start with the selector string.
      */
     QStringList filterArtists(const QStringList& artists);
-
     /**
      * Helper function creating a QGroupBox with an QListWidget.
      *

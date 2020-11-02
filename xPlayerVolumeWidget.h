@@ -22,13 +22,27 @@ class xPlayerVolumeWidget:public QWidget {
 public:
     xPlayerVolumeWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerVolumeWidget() = default;
-
+    /**
+     * Retrieve the current volume of displayed in the UI.
+     *
+     * @return the volume as integer in between 0 and 100.
+     */
     int getVolume();
 
 signals:
+    /**
+     * Sinal an update of the volume displayed.
+     *
+     * @param vol the volume as integer in between 0 and 100.
+     */
     void volume(int vol);
 
 public slots:
+    /**
+     * Set the volume displayed in the UI.
+     *
+     * @param vol the volume as integer in between 0 and 100.
+     */
     virtual void setVolume(int vol) = 0;
 
 protected:

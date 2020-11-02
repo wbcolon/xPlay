@@ -16,6 +16,10 @@
 
 #include <QDebug>
 
+
+// singleton
+xMusicLibraryFiles* xMusicLibraryFiles::musicLibraryFiles = nullptr;
+
 /*
  * class xMusicLibraryFiles
  */
@@ -24,6 +28,14 @@ xMusicLibraryFiles::xMusicLibraryFiles(QObject *parent):
     // Connect to configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryExtensions,
             this, &xMusicLibraryFiles::updateMusicExtensions);
+}
+
+xMusicLibraryFiles* xMusicLibraryFiles::files() {
+    // Create and return singleton.
+    if (musicLibraryFiles == nullptr) {
+        musicLibraryFiles = new xMusicLibraryFiles;
+    }
+    return musicLibraryFiles;
 }
 
 void xMusicLibraryFiles::set(const QString& artist, const std::map<QString,std::list<std::filesystem::path>>& albumTracks) {
@@ -136,9 +148,15 @@ void xMusicLibraryFiles::updateMusicExtensions() {
 /*
  * class xMusicLibraryScanning
  */
-xMusicLibraryScanning::xMusicLibraryScanning(xMusicLibraryFiles* libFiles, QObject *parent):
-        QThread(parent),
-        musicLibraryFiles(libFiles) {
+xMusicLibraryScanning::xMusicLibraryScanning(QObject *parent):
+        QThread(parent) {
+    musicLibraryFiles = xMusicLibraryFiles::files();
+}
+
+xMusicLibraryScanning::~xMusicLibraryScanning() noexcept {
+    if (isRunning()) {
+        quit();
+    }
 }
 
 void xMusicLibraryScanning::setBaseDirectory(const std::filesystem::path& dir) {
@@ -211,10 +229,10 @@ const std::string defaultBaseDirectory{ "/tmp" };
 xMusicLibrary::xMusicLibrary(QObject* parent):
         QObject(parent),
         baseDirectory(defaultBaseDirectory) {
-    musicLibraryFiles = new xMusicLibraryFiles(this);
-    musicLibraryScanning = new xMusicLibraryScanning(musicLibraryFiles, this);
+    musicLibraryScanning = new xMusicLibraryScanning(this);
     connect(musicLibraryScanning, &xMusicLibraryScanning::finished, this, &xMusicLibrary::scanningFinished);
     connect(musicLibraryScanning, &xMusicLibraryScanning::scannedArtists, this, &xMusicLibrary::scannedArtists);
+    musicLibraryFiles = xMusicLibraryFiles::files();
 }
 
 void xMusicLibrary::setBaseDirectory(const std::filesystem::path& base) {

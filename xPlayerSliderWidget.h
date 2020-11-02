@@ -24,7 +24,16 @@ public:
     xPlayerSliderWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerSliderWidget() = default;
 
+    /**
+     * Return the state of hour mode.
+     *
+     * @return true if hours are enables in the scale, false otherwise.
+     */
     bool hourScale();
+    /**
+     * Return the maxnumber of sections of the scale.
+     * @return number of sections as integer.
+     */
     int scaleSections();
     /**
      * Clear the state of the slider widget.

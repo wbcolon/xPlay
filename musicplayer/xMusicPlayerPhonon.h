@@ -47,13 +47,16 @@ public slots:
      * @param tracks vector of track names.
      */
     virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks);
-
+    /**
+     * Remove the track from the queue.
+     *
+     * @param index the position of the track in the queue.
+     */
     virtual void dequeTrack(int index);
     /**
      * Clear the playlist and stop the player.
      */
     virtual void clearQueue();
-
     /**
      * Play or pause depending on the current media player state.
      */

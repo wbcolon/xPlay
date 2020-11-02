@@ -92,7 +92,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     connect(stopButton, &QPushButton::pressed, moviePlayer, &xMoviePlayer::stop);
     connect(rewButton, &QPushButton::pressed, [=]() { moviePlayer->jump(-60000); });
     connect(fwdButton, &QPushButton::pressed, [=]() { moviePlayer->jump(60000); });
-    connect(fullWindowButton, &QPushButton::pressed, this, &xPlayerMovieWidget::toggleFullWindow);
+    connect(fullWindowButton, &QPushButton::pressed, this, &xPlayerMovieWidget::fullWindowPressed);
     // Connect check box.
     connect(scaleAndCropCheck, &QCheckBox::clicked, moviePlayer, &xMoviePlayer::setScaleAndCropMode);
     connect(moviePlayer, &xMoviePlayer::scaleAndCropMode, scaleAndCropCheck, &QCheckBox::setChecked);

@@ -22,6 +22,10 @@ bool xPlayerSliderWidget::hourScale() {
     return showHours;
 }
 
+int xPlayerSliderWidget::scaleSections() {
+    return maxScaleSections;
+}
+
 void xPlayerSliderWidget::useHourScale(bool hourScale) {
     showHours = hourScale;
 }

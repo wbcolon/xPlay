@@ -29,21 +29,55 @@ class xPlayerMovieWidget:public QWidget {
 public:
     xPlayerMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerMovieWidget() = default;
-
+    /**
+     * Display the currently played movie.
+     *
+     * @param movie the filename of the movie played.
+     */
     void currentMovie(const QString& movie);
 
 signals:
+    /**
+     * Signal a toggle for enable/disable the full window mode.
+     */
     void toggleFullWindow();
 
 public slots:
+    /**
+     * Retrieve the audio channels for the current movie.
+     *
+     * @param audioChannels the list of strings of audio channels.
+     */
     void currentAudioChannels(const QStringList& audioChannels);
+    /**
+     * Retrieve the subtitles for the current movie.
+     *
+     * @param subtitles the list of strings of subtitles.
+     */
     void currentSubtitles(const QStringList& subtitles);
+    /**
+     * Retrieve the state of the movie player.
+     *
+     * @param state the current state of the movie player.
+     */
     void currentState(xMoviePlayer::State state);
-
+    /**
+     * Retrieve the time played for the current movie.
+     *
+     * @param played the time played in ms.
+     */
     void currentMoviePlayed(qint64 played);
+    /**
+     * Retrieve the length of the current movie.
+     *
+     * @param length the length of the movie in ms.
+     */
     void currentMovieLength(qint64 length);
 
 protected slots:
+    /**
+     * The full window button is pressed.
+     */
     void fullWindowPressed();
 
 private:

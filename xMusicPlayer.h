@@ -76,17 +76,60 @@ signals:
     void currentState(xMusicPlayer::State state);
 
 public slots:
+    /*
+     * A set of slots to be implemented by the derived classes.
+     */
+    /**
+     * Play or pause depending on the current media player state.
+     */
     virtual void playPause() = 0;
+    /**
+     * Play a given entry of the current playlist.
+     *
+     * @param index the position of the track in the playlist.
+     */
     virtual void play(int index) = 0;
+    /**
+     * Move to the given position in the current track.
+     *
+     * @param position the position given in millisecond.
+     */
     virtual void seek(qint64 position) = 0;
+    /**
+     * Stop the media player.
+     */
     virtual void stop() = 0;
+    /**
+     * Jump to the previous track in the playlist.
+     */
     virtual void prev() = 0;
+    /**
+     * Jump to the next track in the playlist.
+     */
     virtual void next() = 0;
-
+    /**
+     * Set the volume
+     *
+     * @param vol integer value between 0 (silence) and 100 (full volume)
+     */
     virtual void setVolume(int vol) = 0;
-
+    /**
+     * Append the given tracks to the current playlist.
+     *
+     * @param artist the artist name for all queued tracks.
+     * @param album the album name for all queued tracks.
+     * @param tracks vector of track names.
+     */
     virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) = 0;
+    /**
+     * Remove the track from the queue.
+     *
+     * @param index the position of the track in the queue.
+     */
     virtual void dequeTrack(int index) = 0;
+    /**
+     * Clear the playlist and stop the player.
+     */
     virtual void clearQueue() = 0;
 
 protected:

@@ -67,6 +67,10 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     // Create Application menus.
     createMenus();
 }
+
+xApplication::~xApplication() noexcept {
+}
+
 void xApplication::setMusicLibraryDirectory() {
     auto musicLibraryDirectory=xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
     musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));

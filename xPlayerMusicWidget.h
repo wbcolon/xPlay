@@ -45,7 +45,6 @@ protected slots:
      * Reset the the artist/album/track/played/length labels.
      */
     void clear();
-
     /**
      * Update the player widget with the provided information.
      *

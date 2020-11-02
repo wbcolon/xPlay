@@ -29,20 +29,51 @@ class xMusicLibraryFiles:public QObject {
 
 public:
     /**
-     * Constructor
+     * Return the music library files object for thread safe access.
      *
-     * @param parent pointer to the parent QObject
+     * @return pointer to a singleton of the music library files object.
      */
-    xMusicLibraryFiles(QObject* parent=nullptr);
-    ~xMusicLibraryFiles() = default;
-
+    static xMusicLibraryFiles* files();
+    /**
+     * Set map of albums with tracks for the given artist.
+     *
+     * @param artist name of the artist as string.
+     * @param albumTracks the tracks for each albums of an artist.
+     */
     void set(const QString& artist, const std::map<QString,std::list<std::filesystem::path>>& albumTracks);
+    /**
+     * Set the tracks for the given artist and album.
+     *
+     * @param artist name of the artist as string.
+     * @param album name of the album for the specified artist as string.
+     * @param tracks the tracks for the given artist and album.
+     */
     void set(const QString& artist, const QString& album, const std::list<std::filesystem::path>& tracks);
+    /**
+     * Retrieve the tracks for the given artist and album.
+     *
+     * @param artist name of the artist as string.
+     * @param album  name of the album for the specified artist as string.
+     * @return a list of filesystem paths for the given artist and album.
+     */
     std::list<std::filesystem::path> get(const QString& artist, const QString& album) const;
+    /**
+     * Retrieve the albums for the given artist.
+     *
+     * @param artist name of the artist as string.
+     * @return a list of strings containing the albums for the specified artist.
+     */
     QStringList get(const QString& artist) const;
+    /**
+     * Retrieve all artists, albums and tracks.
+     *
+     * @return a list of tuples with artist,album and path to the track.
+     */
     std::list<std::tuple<QString, QString, std::filesystem::path>> get() const;
+    /**
+     * Clear the library.
+     */
     void clear();
-
     /**
      * Scan for all tracks in the giving album path.
      *
@@ -52,9 +83,14 @@ public:
     std::list<std::filesystem::path> scanForAlbumTracks(const std::filesystem::path& albumPath);
 
 private slots:
+    /**
+     * Update accepted music file extensions.
+     */
     void updateMusicExtensions();
 
 private:
+    xMusicLibraryFiles(QObject* parent=nullptr);
+    ~xMusicLibraryFiles() = default;
     /**
      * Determine if the given file is a music file.
      *
@@ -66,14 +102,15 @@ private:
     std::map<QString, std::map<QString, std::list<std::filesystem::path>>> musicFiles;
     QStringList musicExtensions;
     mutable QMutex musicFilesLock;
+    static xMusicLibraryFiles* musicLibraryFiles;
 };
 
 class xMusicLibraryScanning:public QThread {
     Q_OBJECT
 
 public:
-    xMusicLibraryScanning(xMusicLibraryFiles* libFiles, QObject* parent=nullptr);
-    ~xMusicLibraryScanning() = default;
+    xMusicLibraryScanning(QObject* parent=nullptr);
+    ~xMusicLibraryScanning();
 
     void setBaseDirectory(const std::filesystem::path& dir);
 
@@ -94,8 +131,8 @@ private:
      */
     void scan();
 
-    xMusicLibraryFiles* musicLibraryFiles;
     std::filesystem::path baseDirectory;
+    xMusicLibraryFiles* musicLibraryFiles;
 };
 
 class xMusicLibrary:public QObject {

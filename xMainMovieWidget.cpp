@@ -171,22 +171,6 @@ void xMainMovieWidget::selectMovie(QListWidgetItem* movieItem) {
     }
 }
 
-void xMainMovieWidget::currentAudioChannels(const QStringList& audioChannels) {
-    moviePlayerWidget->currentAudioChannels(audioChannels);
-}
-
-void xMainMovieWidget::currentSubtitles(const QStringList& subtitles) {
-    moviePlayerWidget->currentSubtitles(subtitles);
-}
-
-void xMainMovieWidget::currentMoviePlayed(qint64 played) {
-    moviePlayerWidget->currentMoviePlayed(played);
-}
-
-void xMainMovieWidget::currentMovieLength(qint64 length) {
-    moviePlayerWidget->currentMovieLength(length);
-}
-
 void xMainMovieWidget::currentState(xMoviePlayer::State state) {
     qDebug() << "xMainMovieWidget: state: " << state;
     switch (state) {

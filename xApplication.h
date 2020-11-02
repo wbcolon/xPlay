@@ -31,19 +31,32 @@
 class xApplication:public QMainWindow {
 public:
     xApplication(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xApplication() = default;
+    ~xApplication() noexcept;
 
 private slots:
+    /**
+     * Display the xPlay configuration dialog.
+     */
     void configure();
+    /**
+     * Set the music library directory if it has been updated.
+     */
     void setMusicLibraryDirectory();
+    /**
+     * Set the Rotel network address/port if its configuration has been updated.
+     */
     void setRotelNetworkAddress();
+    /**
+     * Set the movie library tags and directories if they have been updated.
+     */
     void setMovieLibraryTagsAndDirectories();
 
 private:
+    /**
+     * Generate the File and View menus and connect actions.
+     */
     void createMenus();
-    void configurationUpdate();
 
-    QSettings* settings;
     xMusicLibrary* musicLibrary;
     xMusicPlayerX* musicPlayer;
     xMainMusicWidget* mainMusicWidget;

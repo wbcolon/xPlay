@@ -30,7 +30,6 @@ public:
      * @return pointer to a singleton of the configuration.
      */
     static xPlayerConfiguration* configuration();
-
     /**
      * Set the base path to the music library.
      *
@@ -126,14 +125,20 @@ public:
 
 signals:
     /**
-     * Signal an update of the music library configuration.
+     * Signal an update of the music library directory.
      */
     void updatedMusicLibraryDirectory();
+    /**
+     * Signal an update of the accepted music file extensions.
+     */
     void updatedMusicLibraryExtensions();
     /**
-     * Signal an update of the movie library configuration.
+     * Signal an update of the movie library directory.
      */
     void updatedMovieLibraryTagsAndDirectories();
+    /**
+     * Signal an update of the accepted movie file extensions.
+     */
     void updatedMovieLibraryExtensions();
     /**
      * Signal an update of the Rotel amp configuration.
