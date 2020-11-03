@@ -189,6 +189,12 @@ private slots:
      * The playback of the current movie player is about to end.
      */
     void aboutToFinish();
+    /**
+     * The playback has reached the prefinish mark.
+     *
+     * @param timeLeft time left to play in milliseconds.
+     */
+    void closeToFinish(qint32 timeLeft);
 
 protected:
     /**

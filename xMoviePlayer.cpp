@@ -141,8 +141,13 @@ void xMoviePlayer::aboutToFinish() {
     qDebug() << "xMoviePlayer: aboutToFinish";
     // Go to stopping state. End full window mode.
     emit currentState(xMoviePlayer::StoppingState);
-    // Stop the player after 1sec.
-    QTimer::singleShot(2000, [=] { moviePlayer->stop(); emit currentState(xMoviePlayer::StopState); });
+}
+
+void xMoviePlayer::closeToFinish(qint32 timeLeft) {
+    qDebug() << "xMoviePlayer: closeToFinish: " << timeLeft;
+    // Stop the media player.
+    moviePlayer->stop();
+    emit currentState(xMoviePlayer::StopState);
 }
 
 void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
@@ -219,12 +224,14 @@ void xMoviePlayer::resetMoviePlayer() {
         disconnect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::currentMoviePlayed);
         disconnect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayer::stateChanged);
         disconnect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayer::aboutToFinish);
+        disconnect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayer::closeToFinish);
         delete moviePlayer;
     }
     // Setup the media player.
     moviePlayer = new Phonon::MediaObject(this);
     // Update each second
     moviePlayer->setTickInterval(500);
+    moviePlayer->setPrefinishMark(1500);
     movieControler = new Phonon::MediaController(moviePlayer);
     Phonon::createPath(moviePlayer, audioOutput);
     Phonon::createPath(moviePlayer, this);
@@ -237,4 +244,5 @@ void xMoviePlayer::resetMoviePlayer() {
     connect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::currentMoviePlayed);
     connect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayer::stateChanged);
     connect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayer::aboutToFinish);
+    connect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayer::closeToFinish);
 }
