@@ -12,15 +12,14 @@
  * GNU General Public License for more details.
  */
 #include <QApplication>
-
 #include "xApplication.h"
+
 
 int main(int argc, char* argv[])
 {
     QApplication playApp(argc, argv);
-
     xApplication app;
+    app.resize(1920, 1080);
     app.show();
-
     return playApp.exec();
 }

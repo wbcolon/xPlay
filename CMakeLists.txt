@@ -19,9 +19,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -O3 -DQT_NO_DEBUG_OUTPUT")
 option(USE_PHONON "Use the Phonon based media player instead of Qt" ON)
 option(USE_QWT "Use the Qwt based player widget instead of Qt" ON)
 configure_file(xPlayerConfig.h.in xPlayerConfig.h)
+
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
 find_package(Qt5MultimediaWidgets REQUIRED)
+find_package(Qt5WebEngineWidgets REQUIRED)
 find_package(Phonon4Qt5)
 find_package(PkgConfig REQUIRED)
 
@@ -63,6 +65,7 @@ add_executable(xPlay
         xPlayerMovieWidget.cpp
         xMainMusicWidget.cpp
         xMainMovieWidget.cpp
+        xMainStreamingWidget.cpp
         xApplication.cpp
         xPlay.cpp
         xPlay.qrc
@@ -71,9 +74,9 @@ add_executable(xPlay
 target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
 
 if (USE_QWT)
-    target_link_libraries(xPlay qwt-qt5 Qt5::Widgets Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} )
+    target_link_libraries(xPlay Qt5::WebEngineWidgets qwt-qt5 Qt5::Widgets Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} )
 else()
-    target_link_libraries(xPlay Qt5::Widgets Phonon::phonon4qt5 ${TAGLIB_LIBRARIES})
+    target_link_libraries(xPlay Qt5::WebEngineWidgets Qt5::Widgets Phonon::phonon4qt5 ${TAGLIB_LIBRARIES})
 endif()
 
 QT5_USE_MODULES(xPlay Multimedia MultimediaWidgets)
