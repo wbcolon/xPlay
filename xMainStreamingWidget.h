@@ -1,0 +1,80 @@
+/*
+ * This file is part of xPlay.
+ *
+ * xPlay is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * xPlay is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#ifndef __XMAINSTREAMINGWIDGET_H__
+#define __XMAINSTREAMINGWIDGET_H__
+
+#include <QWidget>
+#include <QUrl>
+#include <QList>
+#include <QWebEngineView>
+#include <QComboBox>
+
+class xMainStreamingWidget:public QWidget {
+    Q_OBJECT
+
+public:
+    xMainStreamingWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xMainStreamingWidget() = default;
+
+    /**
+     * Set the sites accessible within this widget.
+     *
+     * @param sites list of pairs of short name and URL.
+     */
+    void setSites(const QList<std::pair<QString,QUrl>>& sites);
+    /**
+     * Set the default streaming site to be loaded.
+     *
+     * @param site a pair of short name and URL.
+     */
+    void setSitesDefault(const std::pair<QString,QUrl>& site);
+    /**
+     * Retrieve current list of sites.
+     *
+     * @return list of pairs of short name and URL.
+     */
+    const QList<std::pair<QString,QUrl>>& getSites() const;
+    /**
+     * Retrieve current streaming site default.
+     *
+     * @return a pairs of short name and URL.
+     */
+    const std::pair<QString,QUrl>& getSitesDefault() const;
+
+private slots:
+    /**
+     * Update the current site based on the selected entry in the Combo Box.
+     *
+     * @param index the position of the entry currently selected.
+     */
+    void updateCurrentSites(int index);
+    /**
+     * Clear the data for the currently selected site.
+     *
+     * @param history clear history if true.
+     * @param cookies clear cookies if true.
+     * @param cache clear cache if true.
+     */
+    void clearData(bool history, bool cookies, bool cache);
+
+private:
+    QWebEngineView* streamingWebView;
+    QComboBox* sitesCombo;
+    QList<std::pair<QString,QUrl>> streamingSites;
+    std::pair<QString,QUrl> streamingSitesDefault;
+    std::pair<QString,QUrl> currentSite;
+};
+
+#endif
