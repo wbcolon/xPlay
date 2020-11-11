@@ -141,7 +141,7 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
 }
 
 
-xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::WindowFlags flags):
+xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientation, Qt::WindowFlags flags):
         QWidget(parent, flags) {
     auto rotelLayout = new QGridLayout(this);
     // Create a volume knop.
@@ -155,11 +155,19 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::WindowFlags flags):
     rotelSourceLabel->setAlignment(Qt::AlignLeft);
     rotelMute = new QCheckBox(tr("Mute"));
     // Add the volume knob and the source input to the layout
-    rotelLayout->addWidget(rotelVolume, 0, 0, 4, 4);
-    rotelLayout->setColumnMinimumWidth(4, 20);
-    rotelLayout->addWidget(rotelSourceLabel, 0, 5, 1, 4);
-    rotelLayout->addWidget(rotelSource, 1, 5, 1, 4);
-    rotelLayout->addWidget(rotelMute, 2, 5, 1, 4);
+    if (orientation == Qt::Horizontal) {
+        rotelLayout->addWidget(rotelVolume, 0, 0, 4, 4);
+        rotelLayout->setColumnMinimumWidth(4, 20);
+        rotelLayout->addWidget(rotelSourceLabel, 0, 5, 1, 4);
+        rotelLayout->addWidget(rotelSource, 1, 5, 1, 4);
+        rotelLayout->addWidget(rotelMute, 2, 5, 1, 4);
+    } else {
+        rotelLayout->addWidget(rotelSourceLabel, 0, 0, 1, 4);
+        rotelLayout->addWidget(rotelSource, 1, 0, 1, 4);
+        rotelLayout->addWidget(rotelMute, 2, 0, 1, 4);
+        rotelLayout->setRowMinimumHeight(3, 20);
+        rotelLayout->addWidget(rotelVolume, 4, 0, 4, 4);
+    }
     // Connect the widgets to the amp commands.
     QObject::connect(rotelVolume, &xPlayerVolumeWidgetX::volume, this, &xPlayerRotelWidget::setVolume);
     QObject::connect(rotelSource, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(setSource(const QString&)));

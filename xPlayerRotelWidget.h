@@ -134,7 +134,7 @@ class xPlayerRotelWidget:public QWidget {
     Q_OBJECT
 
 public:
-    xPlayerRotelWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    xPlayerRotelWidget(QWidget* parent=nullptr, Qt::Orientation orientation=Qt::Horizontal, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerRotelWidget() = default;
 
 private slots:
