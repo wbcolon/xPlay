@@ -63,6 +63,24 @@ private slots:
      * Remove the selected tag/directory from the movie library list.
      */
     void movieLibraryRemove();
+    /**
+     * Select a name/url from the streaming site list.
+     *
+     * @param item pointer to the selected item.
+     */
+    void selectStreamingSite(QListWidgetItem* item);
+    /**
+     * Add a name/url to the streaming site list.
+     */
+    void streamingSiteAdd();
+    /**
+     * Remove the selected name/url from the streaming site list.
+     */
+    void streamingSiteRemove();
+    /**
+     * Mark selected name/url from the streaming site list as default streaming site.
+     */
+    void streamingSiteDefault();
 
 private:
     /**
@@ -72,15 +90,30 @@ private:
      * @return a pair of tag and directory as string.
      */
     std::pair<QString,QString> splitMovieLibraryEntry(const QString& entry);
+    /**
+     * Split an entry from the streaming sites list into name and url.
+     *
+     * @param entry the string containing name and URL.
+     * @return a pair of name and URL.
+     */
+    std::pair<QString,QUrl> splitStreamingSiteEntry(const QString& entry);
+
+    static bool isEntryInListWidget(QListWidget* list, const QString& first, const QString& second);
+
+    void updateStreamingSitesDefault();
 
     QLineEdit* musicLibraryDirectoryWidget;
     QLineEdit* musicLibraryExtensionsWidget;
     QLineEdit* movieLibraryTagWidget;
     QLineEdit* movieLibraryDirectoryWidget;
     QLineEdit* movieLibraryExtensionsWidget;
+    QLineEdit* streamingNameWidget;
+    QLineEdit* streamingUrlWidget;
     QListWidget* movieLibraryListWidget;
+    QListWidget* streamingSitesListWidget;
     QLineEdit* rotelNetworkAddressWidget;
     QSpinBox* rotelNetworkPortWidget;
+    std::pair<QString,QUrl> streamingSitesDefault;
 };
 
 #endif

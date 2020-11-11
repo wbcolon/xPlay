@@ -17,6 +17,8 @@
 
 #include <QSettings>
 #include <QString>
+#include <QList>
+#include <QUrl>
 #include <filesystem>
 #include <list>
 
@@ -61,6 +63,18 @@ public:
      * @param extensions a space separated list of extensions.
      */
     void setMovieLibraryExtensions(const QString& extensions);
+    /**
+     * Set the list of sites available in the streaming view.
+     *
+     * @param sites list of pairs of short name and URL.
+     */
+    void setStreamingSites(const QList<std::pair<QString,QUrl>>& sites);
+    /**
+     * Set the default streaming site for the streaming view.
+     *
+     * @param site a pairs of short name and URL.
+     */
+    void setStreamingSitesDefault(const std::pair<QString,QUrl>& site);
     /**
      * Get the base directory of the music library.
      *
@@ -115,7 +129,18 @@ public:
      * @return the list of extensions.
      */
     QStringList getMovieLibraryExtensionList();
-
+    /**
+     * Get the list of streaming sites.
+     *
+     * @return list of pair of short name and URL.
+     */
+    QList<std::pair<QString,QUrl>> getStreamingSites();
+    /**
+     * Get the default streaming site.
+     *
+     * @return a pair of short name and URL.
+     */
+    std::pair<QString,QUrl> getStreamingSitesDefault();
     /**
      * Trigger all update configuration signals.
      *
@@ -144,12 +169,21 @@ signals:
      * Signal an update of the Rotel amp configuration.
      */
     void updatedRotelNetworkAddress();
+    /**
+     * Signal an update of the list of streaming sites.
+     */
+    void updatedStreamingSites();
+    /**
+     * Signal an update of the default streaming site.
+     */
+    void updatedStreamingSitesDefault();
 
 private:
     xPlayerConfiguration();
     ~xPlayerConfiguration() = default;
 
     static std::pair<QString,QString> splitMovieLibraryTagAndDirectory(const QString& tagDir);
+    static std::pair<QString,QUrl> splitStreamingShortNameAndUrl(const QString& nameUrl);
 
     const QString ApplicationName = "xPlay";
     const QString OrganisationName = "wbcolon";

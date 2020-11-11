@@ -15,6 +15,8 @@
 #include "xPlayerConfiguration.h"
 #include "xPlayerConfig.h"
 
+#include <QList>
+#include <QUrl>
 #include <QRegularExpression>
 
 // Configuration strings.
@@ -24,9 +26,17 @@ const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddr
 const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" };
 const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDirectory" };
 const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" };
+const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" };
+const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" };
 
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" };
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" };
+
+const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamimgDefaultSites = {
+        { "qobuz", QUrl("https://play.qobuz.com/login") },
+        { "youtube", QUrl("https://www.youtube.com") },
+};
+
 
 // singleton object.
 xPlayerConfiguration* xPlayerConfiguration::playerConfiguration = nullptr;
@@ -73,14 +83,7 @@ void xPlayerConfiguration::setRotelNetworkAddress(const QString& address, int po
 
 void xPlayerConfiguration::setMovieLibraryTagAndDirectory(const QStringList& tagDir) {
     if (tagDir != getMovieLibraryTagAndDirectory()) {
-        QString movieLibraryDirectory;
-        if (tagDir.count() > 0) {
-            movieLibraryDirectory = tagDir.at(0);
-            for (int i = 1; i < tagDir.count(); ++i) {
-                movieLibraryDirectory += QString("|") + tagDir.at(i);
-            }
-        }
-        settings->setValue(xPlayerConfiguration_MovieLibraryDirectory, movieLibraryDirectory);
+        settings->setValue(xPlayerConfiguration_MovieLibraryDirectory, tagDir.join(QChar('|')));
         settings->sync();
         emit updatedMovieLibraryTagsAndDirectories();
     }
@@ -91,6 +94,30 @@ void xPlayerConfiguration::setMovieLibraryExtensions(const QString& extensions) 
         settings->setValue(xPlayerConfiguration_MovieLibraryExtensions, extensions);
         settings->sync();
         emit updatedMovieLibraryExtensions();
+    }
+}
+
+void xPlayerConfiguration::setStreamingSites(const QList<std::pair<QString,QUrl>>& sites) {
+    if ((sites != getStreamingSites()) || (sites == xPlayerConfiguration_StreamimgDefaultSites)) {
+        QString nameUrlString;
+        if (!sites.isEmpty()) {
+            nameUrlString = QString("(%1) - %2").arg(sites.at(0).first).arg(sites.at(0).second.toString());
+            for (int i = 1; i < sites.size(); ++i) {
+                nameUrlString += QString("|(%1) - %2").arg(sites.at(i).first).arg(sites.at(i).second.toString());
+            }
+        }
+        settings->setValue(xPlayerConfiguration_StreamingSites, nameUrlString);
+        settings->sync();
+        emit updatedStreamingSites();
+    }
+}
+
+void xPlayerConfiguration::setStreamingSitesDefault(const std::pair<QString,QUrl>& site) {
+    if (site != getStreamingSitesDefault()) {
+        auto nameUrlString = QString("(%1) - %2").arg(site.first).arg(site.second.toString());
+        settings->setValue(xPlayerConfiguration_StreamingSitesDefault, nameUrlString);
+        settings->sync();
+        emit updatedStreamingSitesDefault();
     }
 }
 
@@ -131,6 +158,30 @@ QStringList xPlayerConfiguration::getMovieLibraryTagAndDirectory() {
     }
 }
 
+QList<std::pair<QString,QUrl>> xPlayerConfiguration::getStreamingSites() {
+    auto streamingSites = settings->value(xPlayerConfiguration_StreamingSites, "").toString();
+    QList<std::pair<QString,QUrl>> streamingList;
+    if (streamingSites.isEmpty()) {
+        // Nothing stored then return default sites.
+        return xPlayerConfiguration_StreamimgDefaultSites;
+    } else {
+        for (const auto& nameUrl : streamingSites.split("|")) {
+            streamingList.push_back(splitStreamingShortNameAndUrl(nameUrl));
+        }
+        return streamingList;
+    }
+}
+
+std::pair<QString,QUrl> xPlayerConfiguration::getStreamingSitesDefault() {
+    auto streamingSitesDefault = settings->value(xPlayerConfiguration_StreamingSitesDefault, "").toString();
+    if (streamingSitesDefault.isEmpty()) {
+        // Nothing stored then return default sites.
+        return std::make_pair("", QUrl(""));
+    } else {
+        return splitStreamingShortNameAndUrl(streamingSitesDefault);
+    }
+}
+
 std::list<std::pair<QString,std::filesystem::path>> xPlayerConfiguration::getMovieLibraryTagAndDirectoryPath() {
     std::list<std::pair<QString,std::filesystem::path>> tagDirList;
     for  (const auto& entry : getMovieLibraryTagAndDirectory()) {
@@ -164,6 +215,16 @@ std::pair<QString,QString> xPlayerConfiguration::splitMovieLibraryTagAndDirector
     }
 }
 
+std::pair<QString,QUrl> xPlayerConfiguration::splitStreamingShortNameAndUrl(const QString& nameUrl) {
+    QRegularExpression regExp("\\((?<name>.*)\\) - (?<url>.*)");
+    QRegularExpressionMatch regExpMatch = regExp.match(nameUrl);
+    if (regExpMatch.hasMatch()) {
+        return std::make_pair(regExpMatch.captured("name"), QUrl(regExpMatch.captured("url")));
+    } else {
+        return std::make_pair("",QUrl(""));
+    }
+}
+
 void xPlayerConfiguration::updatedConfiguration() {
     // Fire all update signals.
     emit updatedMusicLibraryDirectory();
@@ -171,4 +232,6 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedRotelNetworkAddress();
     emit updatedMovieLibraryTagsAndDirectories();
     emit updatedMovieLibraryExtensions();
+    emit updatedStreamingSites();
+    emit updatedStreamingSitesDefault();
 }
