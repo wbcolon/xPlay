@@ -31,10 +31,12 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     moviePlayer = new xMoviePlayer(mainView);
     mainMusicWidget = new xMainMusicWidget(musicPlayer, mainView);
     mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
+    mainStreamingWidget = new xMainStreamingWidget(mainView);
     // Add to the stack widget
     mainView->addWidget(new QWidget(mainView));
     mainView->addWidget(mainMusicWidget);
     mainView->addWidget(mainMovieWidget);
+    mainView->addWidget(mainStreamingWidget);
     mainView->setCurrentWidget(mainMusicWidget);
     // Use main widget as central application widget.
     setCentralWidget(mainView);
@@ -62,6 +64,10 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
             this, &xApplication::setMovieLibraryTagsAndDirectories);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelNetworkAddress,
             this, &xApplication::setRotelNetworkAddress);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSites,
+            this, &xApplication::setStreamingSites);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSitesDefault,
+            this, &xApplication::setStreamingSitesDefault);
     // Signal configuration updates.
     xPlayerConfiguration::configuration()->updatedConfiguration();
     // Create Application menus.
@@ -87,6 +93,14 @@ void xApplication::setMovieLibraryTagsAndDirectories() {
     movieLibrary->setBaseDirectories(xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectoryPath());
 }
 
+void xApplication::setStreamingSites() {
+    mainStreamingWidget->setSites(xPlayerConfiguration::configuration()->getStreamingSites());
+}
+
+void xApplication::setStreamingSitesDefault() {
+    mainStreamingWidget->setSitesDefault(xPlayerConfiguration::configuration()->getStreamingSitesDefault());
+}
+
 void xApplication::createMenus() {
     // Create actions for file menu.
     auto fileMenuConfigure = new QAction("&Configure", this);
@@ -109,13 +123,16 @@ void xApplication::createMenus() {
     // Create actions for view menu.
     auto viewMenuSelectMusic = new QAction("Select M&usic View", this);
     auto viewMenuSelectMovie = new QAction("Select M&ovie View", this);
+    auto viewMenuSelectStreaming = new QAction("Select Str&eaming View", this);
     // Connect actions from view menu.
     connect(viewMenuSelectMusic, &QAction::triggered, [=]() { mainView->setCurrentWidget(mainMusicWidget); });
     connect(viewMenuSelectMovie, &QAction::triggered, [=]() { mainView->setCurrentWidget(mainMovieWidget); });
+    connect(viewMenuSelectStreaming, &QAction::triggered, [=]() { mainView->setCurrentWidget(mainStreamingWidget); });
     // Create view menu.
     auto viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(viewMenuSelectMusic);
     viewMenu->addAction(viewMenuSelectMovie);
+    viewMenu->addAction(viewMenuSelectStreaming);
 }
 
 void xApplication::configure() {

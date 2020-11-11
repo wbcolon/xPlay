@@ -20,6 +20,7 @@
 #include "xMovieLibrary.h"
 #include "xMoviePlayer.h"
 #include "xMainMovieWidget.h"
+#include "xMainStreamingWidget.h"
 
 #include <QSettings>
 #include <QStackedWidget>
@@ -50,6 +51,14 @@ private slots:
      * Set the movie library tags and directories if they have been updated.
      */
     void setMovieLibraryTagsAndDirectories();
+    /**
+     * Set the streaming sites if they have been updated.
+     */
+    void setStreamingSites();
+    /**
+     * Set the streaming sites default if they have been updated.
+     */
+    void setStreamingSitesDefault();
 
 private:
     /**
@@ -63,6 +72,7 @@ private:
     xMovieLibrary* movieLibrary;
     xMoviePlayer* moviePlayer;
     xMainMovieWidget* mainMovieWidget;
+    xMainStreamingWidget* mainStreamingWidget;
     QStackedWidget* mainView;
 };
 
