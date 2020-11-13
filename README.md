@@ -55,8 +55,12 @@ and subtitles.
 ## Usage
 
 xPlay has a simple UI layout with a minimal set on functionalities that I want from my music and movie player. 
-The purpose is to navigate a huge libraries and play the songs or videos. The UI has a music player and a movie
-player view.  
+The purpose is to navigate a huge libraries and play the songs or videos. The UI has a music player, a movie
+player view and a streaming view.  
+
+### Music View 
+
+![Screenshot Music View](screenshots/xplay_screenshot_music_view_00.png)
 
 The main screen of the music player view has four vertical list for the artists, album, tracks and the queue. The 
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select) 
@@ -70,6 +74,11 @@ currently played file. In addition there is player control section with a *play/
 and *clear queue* buttons and a volume dialer. If you double-click on an entry of the queue then the player jumps
 to this track. Right-clicking on a queue entry will remove this track from the queue.
 
+### Movie View 
+
+![Screenshot Movie View](screenshots/xplay_screenshot_movie_view_00.png)
+![Screenshot Movie View (fullwindow)](screenshots/xplay_screenshot_movie_view_01.png)
+
 The main screen of the movie player view has three vertical lists for tags, directories and movies. A tag is a 
 representation of one or more base directories. The directories list contains all sub directories (only level one)
 of each these. An additional entry "." is added for all movies that are not located within a sub directory. The 
@@ -78,14 +87,32 @@ will start the playback.
 
 The player section itself allows for seeking within the movie and selecting the audio channel or subtitle. The
 control section has a *play/pause* and *stop*" buttons. The *rew* and *fwd* buttons jump 60 seconds backward or 
-forward in the movie. The *full window* button maximizes the video output window. The video output window can
-also be toggled by a double-click. In addition you can rewind and forward by 60 seconds using the left and right
-arrow keys. The up and down arrow keys will increase or decrease the volume by one. The ESC key can be used to
-end the full window mode. The full window mode will automatically end if the current movie is about to end.
+forward in the movie. The *full window* button maximizes the video output window. The *scale and crop* checkbox 
+may be usable for some movies that have black borders. The video output window can also be toggled by a double-click. 
+In addition you can rewind and forward by 60 seconds using the left and right arrow keys. The up and down arrow keys 
+will increase or decrease the volume by one. The *S* key will toggle the scale and crop mode. The *ESC* key can be 
+used to end the full window mode. The full window mode will automatically end if the current movie is about to end.
+
+### Streaming View
+
+![Screenshot Streaming View (qobuz)](screenshots/xplay_screenshot_streaming_view_00.png)
+![Screenshot Streaming View (youtube)](screenshots/xplay_screenshot_streaming_view_01.png)
+
+The main screen of the streaming view is basically a simple web browser using the QWebEngine. On the right side
+we have a number of controls. The controls include a combo box which allows us to select in between a set of 
+preset websites (see configuration dialog). Data for the sites, including history, cache and cookies can easily
+be removed. The navigation section allows for a very basic website navigation. A control for the Rotel amp is also
+available. The browser is limited by the capabilities of QWebEngine, e.g., Netflix did not work in my setup. This 
+may change in comming version of QWebEngine.
+
+### Menu
 
 The file menu has currently two entries. An *Exit* and *Configure* entry. The *Configure* will
 display a file dialog that allows you to select a base directory for your music library. This directory is stored
 using QSettings and is retrieved on startup of xPlay.
+
+![Screenshot Configuration Dialog](screenshots/xplay_screenshot_configuration_dialog.png)
+
 
 ## Artwork
 
@@ -108,3 +135,5 @@ Ending the Application before the scanning thread is finished will result in an 
 ## Notes
 
 xPlay started out as a little project over the weekend in order to evaluate the Clion C++ IDE.
+
+**Please support artists by buying their products.**
