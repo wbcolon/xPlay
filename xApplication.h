@@ -21,6 +21,7 @@
 #include "xMoviePlayer.h"
 #include "xMainMovieWidget.h"
 #include "xMainStreamingWidget.h"
+#include "xPlayerDBus.h"
 
 #include <QSettings>
 #include <QStackedWidget>
@@ -60,6 +61,17 @@ private slots:
      */
     void setStreamingSitesDefault();
 
+    void dbus_playPause();
+    void dbus_stop();
+    void dbus_previous();
+    void dbus_next();
+    void dbus_jump(qint64 delta);
+    void dbus_toggleFullWindow();
+    void dbus_toggleScaleAndCrop();
+    void dbus_mute();
+    void dbus_changeVolume(int delta);
+    void dbus_selectView(QString view);
+
 private:
     /**
      * Generate the File and View menus and connect actions.
@@ -73,6 +85,7 @@ private:
     xMoviePlayer* moviePlayer;
     xMainMovieWidget* mainMovieWidget;
     xMainStreamingWidget* mainStreamingWidget;
+    xPlayerDBus* mainDbus;
     QStackedWidget* mainView;
 };
 

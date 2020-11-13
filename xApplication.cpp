@@ -32,6 +32,7 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     mainMusicWidget = new xMainMusicWidget(musicPlayer, mainView);
     mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
     mainStreamingWidget = new xMainStreamingWidget(mainView);
+    mainDbus = new xPlayerDBus(mainView);
     // Add to the stack widget
     mainView->addWidget(new QWidget(mainView));
     mainView->addWidget(mainMusicWidget);
@@ -68,6 +69,17 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
             this, &xApplication::setStreamingSites);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSitesDefault,
             this, &xApplication::setStreamingSitesDefault);
+    // Dbus.
+    connect(mainDbus, &xPlayerDBus::dbus_playPause, this, &xApplication::dbus_playPause);
+    connect(mainDbus, &xPlayerDBus::dbus_stop, this, &xApplication::dbus_stop);
+    connect(mainDbus, &xPlayerDBus::dbus_previous, this, &xApplication::dbus_previous);
+    connect(mainDbus, &xPlayerDBus::dbus_next, this, &xApplication::dbus_next);
+    connect(mainDbus, &xPlayerDBus::dbus_jump, this, &xApplication::dbus_jump);
+    connect(mainDbus, &xPlayerDBus::dbus_toggleFullWindow, this, &xApplication::dbus_toggleFullWindow);
+    connect(mainDbus, &xPlayerDBus::dbus_toggleScaleAndCrop, this, &xApplication::dbus_toggleScaleAndCrop);
+    connect(mainDbus, &xPlayerDBus::dbus_mute, this, &xApplication::dbus_mute);
+    connect(mainDbus, &xPlayerDBus::dbus_changeVolume, this, &xApplication::dbus_changeVolume);
+    connect(mainDbus, &xPlayerDBus::dbus_selectView, this, &xApplication::dbus_selectView);
     // Signal configuration updates.
     xPlayerConfiguration::configuration()->updatedConfiguration();
     // Create Application menus.
@@ -76,6 +88,90 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
 
 xApplication::~xApplication() noexcept {
 }
+
+void xApplication::dbus_playPause() {
+    auto currentWidget = mainView->currentWidget();
+    if (currentWidget == mainMusicWidget) {
+        musicPlayer->playPause();
+    } else if (currentWidget == mainMovieWidget) {
+        moviePlayer->playPause();
+    }
+}
+
+void xApplication::dbus_stop() {
+    auto currentWidget = mainView->currentWidget();
+    if (currentWidget == mainMusicWidget) {
+        musicPlayer->stop();
+    } else if (currentWidget == mainMovieWidget) {
+        moviePlayer->stop();
+    }
+}
+
+void xApplication::dbus_previous() {
+    if (mainView->currentWidget() == mainMusicWidget) {
+        musicPlayer->prev();
+    }
+}
+
+void xApplication::dbus_next() {
+    if (mainView->currentWidget() == mainMusicWidget) {
+        musicPlayer->next();
+    }
+}
+
+void xApplication::dbus_jump(qint64 delta) {
+    if (mainView->currentWidget() == mainMovieWidget) {
+        moviePlayer->jump(delta);
+    }
+}
+
+void xApplication::dbus_toggleFullWindow() {
+    if (mainView->currentWidget() == mainMovieWidget) {
+        emit moviePlayer->toggleFullWindow();
+    }
+}
+
+void xApplication::dbus_toggleScaleAndCrop() {
+    if (mainView->currentWidget() == mainMovieWidget) {
+        moviePlayer->toggleScaleAndCropMode();
+    }
+}
+
+void xApplication::dbus_mute() {
+    // Set the volume to mute and emit the update to the volume widget.
+    auto currentWidget = mainView->currentWidget();
+    if (currentWidget == mainMusicWidget) {
+        musicPlayer->setVolume(0);
+        emit musicPlayer->currentVolume(0);
+    } else if (currentWidget == mainMovieWidget) {
+        moviePlayer->setVolume(0);
+        emit moviePlayer->currentVolume(0);
+    }
+}
+
+void xApplication::dbus_changeVolume(int delta) {
+    // Set the volume and emit the update to the volume widget.
+    auto currentWidget = mainView->currentWidget();
+    if (currentWidget == mainMusicWidget) {
+        musicPlayer->setVolume(musicPlayer->getVolume()+delta);
+        emit musicPlayer->currentVolume( musicPlayer->getVolume());
+    } else if (currentWidget == mainMovieWidget) {
+        moviePlayer->setVolume(moviePlayer->getVolume()+delta);
+        emit moviePlayer->currentVolume( moviePlayer->getVolume());
+    }
+}
+
+void xApplication::dbus_selectView(QString view) {
+    view = view.toLower();
+    if (view == "music") {
+        mainView->setCurrentWidget(mainMusicWidget);
+    } else if (view == "movie") {
+        mainView->setCurrentWidget(mainMovieWidget);
+    } else if (view == "streaming") {
+        mainView->setCurrentWidget(mainStreamingWidget);
+    }
+}
+
 
 void xApplication::setMusicLibraryDirectory() {
     auto musicLibraryDirectory=xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
