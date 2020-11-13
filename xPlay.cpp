@@ -11,13 +11,122 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+
 #include <QApplication>
 #include "xApplication.h"
 
+bool handleCommandLine(QApplication& playApp) {
+    // Commandline handling.
+    QCommandLineParser playAppParser;
+    playAppParser.addOptions( {
+            { {"p", "playpause"},
+              QApplication::translate("xPlay", "Toggle play/pause in the current view.") },
+            { {"s", "stop"},
+              QApplication::translate("xPlay", "Stop the playback in current view.") },
+            { {"P", "prev"},
+              QApplication::translate("xPlay", "Play the previous file in the music view.") },
+            { {"N", "next"},
+              QApplication::translate("xPlay", "Play the next file in the music view.") },
+            { {"J", "jump"},
+              QApplication::translate("xPlay", "Jump relative (in ms) within the movie file."),
+              QApplication::translate("xPlay", "delta") },
+            { {"M", "mute"},
+              QApplication::translate("xPlay", "Mute the audio in the current view.") },
+            { {"C", "changevolume"},
+              QApplication::translate("xPlay", "Change the volume for the current view."),
+              QApplication::translate("xPlay", "delta") },
+            { {"F", "fullwindow"},
+              QApplication::translate("xPlay", "Toggle the full window mode in the movie view.") },
+            { {"S", "scaleandcrop"},
+              QApplication::translate("xPlay", "Toggle the scale and crop mode in the movie view.") },
+            { {"E", "selectview"},
+              QApplication::translate("xPlay", R"(Select a view ("music", "movie" or "streaming").)"),
+              QApplication::translate("xPlay", "view") },
+    } );
+    playAppParser.addHelpOption();
+    playAppParser.addVersionOption();
+    playAppParser.process(playApp);
+    if (!playAppParser.unknownOptionNames().isEmpty()) {
+        // Show help if there are any unknown options.
+        playAppParser.showVersion();
+    }
+    // Do we have any arguments.
+    if (playAppParser.optionNames().isEmpty()) {
+        return false;
+    }
+    // Prepare for DBus commands to be issued.
+    if (!QDBusConnection::sessionBus().isConnected()) {
+        qCritical() << "Cannot connect to the D-Bus session bus.";
+        return true;
+    }
+    QDBusInterface playInterface("org.wbcolon.xPlayer", "/", "", QDBusConnection::sessionBus());
+    if (playInterface.isValid()) {
+        if (playAppParser.isSet("changevolume")) {
+            // Change volume.
+            auto delta = playAppParser.value("changevolume").toInt();
+            QDBusReply<void> reply = playInterface.call("changeVolume", delta);
+            if (!reply.isValid()) {
+                qCritical() << "Unable to run dbus command." << qPrintable(reply.error().message());
+            }
+            return true;
+        } else if (playAppParser.isSet("jump")) {
+            // Jump within the movie file.
+            qint64 delta = static_cast<qint64>(playAppParser.value("jump").toLong());
+            QDBusReply<void> reply = playInterface.call("jump", delta);
+            if (!reply.isValid()) {
+                qCritical() << "Unable to run dbus command." << qPrintable(reply.error().message());
+            }
+            return true;
+        } else if (playAppParser.isSet("selectview")) {
+            // Select view.
+            auto view = playAppParser.value("selectview");
+            QDBusReply<void> reply = playInterface.call("selectView", view);
+            if (!reply.isValid()) {
+                qCritical() << "Unable to run dbus command." << qPrintable(reply.error().message());
+            }
+            return true;
+        } else {
+            // All commands that do not have any arguments.
+            QString command;
+            if (playAppParser.isSet("playpause")) {
+                command = "playPause";
+            } else if (playAppParser.isSet("stop")) {
+                command = "stop";
+            } else if (playAppParser.isSet("prev")) {
+                command = "previous";
+            } else if (playAppParser.isSet("next")) {
+                command = "next";
+            } else if (playAppParser.isSet("mute")) {
+                command = "mute";
+            } else if (playAppParser.isSet("fullwindow")) {
+                command = "toggleFullWindow";
+            } else if (playAppParser.isSet("scaleandcrop")) {
+                command = "toggleScaleAndCrop";
+            } else {
+                // Should not happen.
+                qCritical() << "Unknown dbus command: " << playAppParser.optionNames();
+                return true;
+            }
+            QDBusReply<void> reply = playInterface.call(command);
+            if (!reply.isValid()) {
+                qCritical() << "Unable to run dbus command: " << qPrintable(reply.error().message());
+            }
+        }
+        return true;
+    }
+    return false;
+}
 
 int main(int argc, char* argv[])
 {
     QApplication playApp(argc, argv);
+    QApplication::setApplicationName("xPlay");
+    QApplication::setApplicationVersion("0.4");
+    if (handleCommandLine(playApp)) {
+        // Exit if the command line was handled.
+        return 0;
+    }
+    // Start xPlay.
     xApplication app;
     app.resize(1920, 1080);
     app.show();
