@@ -67,7 +67,12 @@ signals:
      * @param length the length in milliseconds.
      */
     void currentTrackLength(qint64 length);
-
+    /**
+     * Signal the current volume of the music player.
+     *
+     * @param vol the volume as integer in between 0 and 100.
+     */
+    void currentVolume(int vol);
     /**
      * Signal the current state of the music player
      *

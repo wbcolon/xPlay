@@ -81,6 +81,12 @@ void xMoviePlayer::setScaleAndCropMode(bool mode) {
     setScaleMode(mode ? Phonon::VideoWidget::ScaleAndCrop : Phonon::VideoWidget::FitInView);
 }
 
+void xMoviePlayer::toggleScaleAndCropMode() {
+    auto mode = (scaleMode() == Phonon::VideoWidget::FitInView);
+    setScaleAndCropMode(mode);
+    emit scaleAndCropMode(mode);
+}
+
 void xMoviePlayer::availableAudioChannels() {
     currentAudioChannelDescriptions = movieControler->availableAudioChannels();
     QStringList audioChannels;
@@ -187,9 +193,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
             }
         } break;
         case Qt::Key_S: {
-            auto mode = (scaleMode() == Phonon::VideoWidget::FitInView);
-            setScaleAndCropMode(mode);
-            emit scaleAndCropMode(mode);
+            toggleScaleAndCropMode();
         } break;
         default: {
             Phonon::VideoWidget::keyPressEvent(keyEvent);

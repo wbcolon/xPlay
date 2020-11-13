@@ -145,6 +145,10 @@ public slots:
      */
     void setScaleAndCropMode(bool mode);
     /**
+     * Toggle enable/disable of the scale and crop mode.
+     */
+    void toggleScaleAndCropMode();
+    /**
      * Select an audio channel for the current movie.
      *
      * @param index the index of the audio channel.
