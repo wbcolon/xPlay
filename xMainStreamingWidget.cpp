@@ -46,7 +46,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     auto backButton = new QPushButton(tr("Back"), controlBox);
     auto fwdButton = new QPushButton(tr("Fwd"), controlBox);
     auto reloadButton = new QPushButton(tr("Reload"), controlBox);
-    auto muteAudio = new QCheckBox(tr("Mute Site"), controlBox);
+    muteAudio = new QCheckBox(tr("Mute Site"), controlBox);
     // Layout.
     auto controlLayout = new QGridLayout();
     controlLayout->addWidget(homeButton, 0, 0, 1, 2);
@@ -129,6 +129,15 @@ const QList<std::pair<QString,QUrl>>& xMainStreamingWidget::getSites() const {
 
 const std::pair<QString,QUrl>& xMainStreamingWidget::getSitesDefault() const {
     return streamingSitesDefault;
+}
+
+void xMainStreamingWidget::setMuted(bool mute) {
+    // Setting the state for the widget will trigger the signal that sets the audio state.
+    muteAudio->setChecked(mute);
+}
+
+bool xMainStreamingWidget::isMuted() const {
+    return streamingWebView->page()->isAudioMuted();
 }
 
 void xMainStreamingWidget::updateCurrentSites(int index) {

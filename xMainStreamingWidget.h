@@ -20,6 +20,7 @@
 #include <QList>
 #include <QWebEngineView>
 #include <QComboBox>
+#include <QCheckBox>
 
 class xMainStreamingWidget:public QWidget {
     Q_OBJECT
@@ -52,6 +53,20 @@ public:
      * @return a pairs of short name and URL.
      */
     const std::pair<QString,QUrl>& getSitesDefault() const;
+    /**
+     * Return the mute state for webengine.
+     *
+     * @return true if music player is muted, false otherwise.
+     */
+    bool isMuted() const;
+
+public slots:
+    /**
+     * Set the mute mode for the webengine.
+     *
+     * @param mute enable mute if true, disable otherwise.
+     */
+    void setMuted(bool mute);
 
 private slots:
     /**
@@ -72,6 +87,7 @@ private slots:
 private:
     QWebEngineView* streamingWebView;
     QComboBox* sitesCombo;
+    QCheckBox* muteAudio;
     QList<std::pair<QString,QUrl>> streamingSites;
     std::pair<QString,QUrl> streamingSitesDefault;
     std::pair<QString,QUrl> currentSite;
