@@ -17,7 +17,7 @@
 #include "xPlayerVolumeWidget.h"
 
 #include <QComboBox>
-#include <QCheckBox>
+#include <QSpinBox>
 #include <QTcpSocket>
 #include <QLabel>
 #include <QWidget>
@@ -42,29 +42,23 @@ public:
      */
     void connect(const QString& address, int port, bool wait=false);
     /**
-     * Send set volume command to the Rotel amp.
-     *
-     * @param vol the new volume as integer.
-     */
-    void setVolume(int vol);
-    /**
-     * Send set source command to the Rotel amp.
-     *
-     * @param src the new source as string.
-     */
-    void setSource(const QString& src);
-    /**
-     * Send set mute on/off command to the Rotel amp.
-     *
-     * @param m enable mute if true, disable mute otherwise.
-     */
-    void setMute(bool m);
-    /**
      * Send get volume command to the Rotel amp and return retrieved volume.
      *
      * @return the current volume of the Rotel amp.
      */
     int getVolume();
+    /**
+     * Send get bass command to the Rotel amp and return retrieved bass.
+     *
+     * @return the current bass of the Rotel amp.
+     */
+    int getBass();
+    /**
+     * Send get treble command to the Rotel amp and return retrieved treble.
+     *
+     * @return the current treble of the Rotel amp.
+     */
+    int getTreble();
     /**
      * Send get source command to the Rotel amp and return retrieved source.
      *
@@ -76,7 +70,39 @@ public:
      *
      * @return true if the Rotel amp is in mute state, false otherwise.
      */
-    bool getMute();
+    bool isMuted();
+
+public slots:
+    /**
+     * Send set volume command to the Rotel amp.
+     *
+     * @param vol the new volume as integer.
+     */
+    void setVolume(int vol);
+    /**
+     * Send set bass command to the Rotel amp.
+     *
+     * @param b the new bass as integer.
+     */
+    void setBass(int b);
+    /**
+     * Send set treble command to the Rotel amp.
+     *
+     * @param t the new treble as integer.
+     */
+    void setTreble(int t);
+    /**
+     * Send set source command to the Rotel amp.
+     *
+     * @param src the new source as string.
+     */
+    void setSource(const QString& src);
+    /**
+     * Send set mute on/off command to the Rotel amp.
+     *
+     * @param m enable mute if true, disable mute otherwise.
+     */
+    void setMuted(bool m);
 
 signals:
     /**
@@ -94,17 +120,29 @@ signals:
      */
     void volume(int vol);
     /**
+     * Signal emitted if bass is updated by a setBass command.
+     *
+     * @param b the new volume as integer.
+     */
+    void bass(int b);
+    /**
+     * Signal emitted if treble is updated by a setTreble command.
+     *
+     * @param t the new volume as integer.
+     */
+    void treble(int t);
+    /**
      * Signal emitted if source is updated by a setSource command.
      *
      * @param src the new source as string.
      */
     void source(const QString& src);
     /**
-     * Signal emitted if the mute state is updated by a setMute command.
+     * Signal emitted if the mute state is updated by a setMuted command.
      *
      * @param m the new mute state as boolean.
      */
-    void mute(bool m);
+    void muted(bool m);
 
 private:
     xPlayerRotelControls();
@@ -153,6 +191,18 @@ private slots:
      */
     void updateVolume(int vol);
     /**
+     * Update only the spinbox value.
+     *
+     * @param b the new bass as integer.
+     */
+    void updateBass(int b);
+    /**
+     * Update only the spinbox value.
+     *
+     * @param t the new treble as integer.
+     */
+    void updateTreble(int t);
+    /**
      * Update only the combo box containing the sources.
      *
      * @param source the new source as string.
@@ -163,31 +213,15 @@ private slots:
      *
      * @param mute true if mute is enabled, false otherwise.
      */
-    void updateMute(bool mute);
-    /**
-     * Set the volume of the Rotel amp using Rotel controls.
-     *
-     * @param vol the new volume as integer.
-     */
-    void setVolume(int vol);
-    /**
-     * Set the source of the Rotel amp using Rotel controls.
-     *
-     * @param source the new source as string.
-     */
-    void setSource(const QString& source);
-    /**
-     * Set the mute state of the Rotel amp using Rotel controls.
-     *
-     * @param mute true if mute will be enabled, false if it will be disabled.
-     */
-    void setMute(bool mute);
+    void updateMuted(bool mute);
 
 private:
     xPlayerVolumeWidget* rotelVolume;
     QComboBox* rotelSource;
-    QLabel* rotelSourceLabel;
-    QCheckBox* rotelMute;
+    QLabel* rotelBassLabel;
+    QLabel* rotelTrebleLabel;
+    QSpinBox* rotelBass;
+    QSpinBox* rotelTreble;
     xPlayerRotelControls* rotelControls;
 };
 
