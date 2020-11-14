@@ -60,17 +60,68 @@ private slots:
      * Set the streaming sites default if they have been updated.
      */
     void setStreamingSitesDefault();
-
+    /**
+     * Toggle play/pause in current view (music/movie) after dbus call.
+     */
     void dbus_playPause();
+    /**
+     * Stop the playback in current view (music/movie) after dbus call.
+     */
     void dbus_stop();
-    void dbus_previous();
+    /**
+     * Play the previous file in queue of the current view (music) after dbus call.
+     */
+    void dbus_prev();
+    /**
+     * Play the next file in queue of the current view (music) after dbus call.
+     */
     void dbus_next();
+    /**
+     * Jump within the current file of the current view (movie) after dbus call.
+     *
+     * @param delta the delta to the current position in ms.
+     */
     void dbus_jump(qint64 delta);
-    void dbus_toggleFullWindow();
-    void dbus_toggleScaleAndCrop();
+    /**
+     * Toggle the full window mode in the current view (movie) after dbus call.
+     */
+    void dbus_fullWindow();
+    /**
+     * Toggle the scale and crop mode in the current view (movie) after dbus call.
+     */
+    void dbus_scaleAndCrop();
+    /**
+     * Toggle mute the audio of the current view (music/movie) after dbus call.
+     */
     void dbus_mute();
+    /**
+     * Change the volume of the current view (music/movie) after dbus call.
+     *
+     * @param delta the delta to the current volume.
+     */
     void dbus_changeVolume(int delta);
-    void dbus_selectView(QString view);
+    /**
+     * Select the current view.
+     *
+     * @param view the new view as string.
+     */
+    void dbus_selectView(const QString& view);
+    /**
+     * Toggle mute for the connected Rotel amp.
+     */
+    void dbus_muteRotel();
+    /**
+     * Change the volume of the connected Rotel amp.
+     *
+     * @param delta the delta to the current volume.
+     */
+    void dbus_changeRotelVolume(int delta);
+    /**
+     * Select a new source for the connected Rotel amp.
+     *
+     * @param source the new source as string.
+     */
+    void dbus_selectRotelSource(const QString& source);
 
 private:
     /**

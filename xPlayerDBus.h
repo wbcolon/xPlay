@@ -26,18 +26,25 @@ class xPlayerDBus:public QDBusAbstractAdaptor {
                 "<interface name=\"org.wbcolon.xPlayer\">\n"
                 "    <method name=\"playPause\"/>\n"
                 "    <method name=\"stop\"/>\n"
-                "    <method name=\"previous\"/>\n"
+                "    <method name=\"prev\"/>\n"
                 "    <method name=\"next\"/>\n"
                 "    <method name=\"jump\">\n"
                 "      <arg direction=\"in\" type=\"x\" name=\"delta\"/>\n"
                 "    </method>\n"
-                "    <method name=\"toggleFullWindow\"/>\n"
-                "    <method name=\"toggleScaleAndCrop\"/>\n"
+                "    <method name=\"fullWindow\"/>\n"
+                "    <method name=\"scaleAndCrop\"/>\n"
                 "    <method name=\"mute\"/>\n"
                 "    <method name=\"changeVolume\">\n"
                 "      <arg direction=\"in\" type=\"i\" name=\"delta\"/>\n"
                 "    </method>\n"
                 "    <method name=\"selectView\">\n"
+                "      <arg direction=\"in\" type=\"s\" name=\"view\"/>\n"
+                "    </method>\n"
+                "    <method name=\"muteRotel\"/>\n"
+                "    <method name=\"changeRotelVolume\">\n"
+                "      <arg direction=\"in\" type=\"i\" name=\"delta\"/>\n"
+                "    </method>\n"
+                "    <method name=\"selectRotelSource\">\n"
                 "      <arg direction=\"in\" type=\"s\" name=\"view\"/>\n"
                 "    </method>\n"
                 "</interface>\n"
@@ -59,7 +66,7 @@ public Q_SLOTS:
     /**
      * Play previous file in the music view.
      */
-    void previous();
+    void prev();
     /**
      * Play next file in the music view.
      */
@@ -73,13 +80,13 @@ public Q_SLOTS:
     /**
      * Toggle the full window mode in movie view.
      */
-    void toggleFullWindow();
+    void fullWindow();
     /**
      * Toggle the scale and crop mode in the movie view.
      */
-    void toggleScaleAndCrop();
+    void scaleAndCrop();
     /**
-     * Mute the playback in the current view.
+     * Toggle mute of the playback in the current view.
      */
     void mute();
     /**
@@ -93,7 +100,23 @@ public Q_SLOTS:
      *
      * @param view the new view as string.
      */
-    void selectView(QString view);
+    void selectView(const QString& view);
+    /**
+     * Toggle mute for the connected Rotel amp.
+     */
+    void muteRotel();
+    /**
+     * Change the volume for the connected Rotel amp.
+     *
+     * @param delta the delta to the current volume.
+     */
+    void changeRotelVolume(int delta);
+    /**
+     * Select a new source for the connected Rotel amp.
+     *
+     * @param source the new source as string.
+     */
+    void selectRotelSource(const QString& source);
 
 signals:
     /**
@@ -105,9 +128,9 @@ signals:
      */
     void dbus_stop();
     /**
-     * Emitted if previous dbus function is called.
+     * Emitted if prev dbus function is called.
      */
-    void dbus_previous();
+    void dbus_prev();
     /**
      * Emitted if next dbus function is called.
      */
@@ -119,13 +142,13 @@ signals:
      */
     void dbus_jump(qint64 delta);
     /**
-     * Emitted if toggleFullWindow dbus function is called.
+     * Emitted if fullWindow dbus function is called.
      */
-    void dbus_toggleFullWindow();
+    void dbus_fullWindow();
     /**
-     * Emitted if toggleScaleAndCrop dbus function is called.
+     * Emitted if scaleAndCrop dbus function is called.
      */
-    void dbus_toggleScaleAndCrop();
+    void dbus_scaleAndCrop();
     /**
      * Emitted if mute dbus function is called.
      */
@@ -141,7 +164,23 @@ signals:
      *
      * @param view the new view as string.
      */
-    void dbus_selectView(QString view);
+    void dbus_selectView(const QString& view);
+    /**
+     * Emitted if the muteRoel dbus function is called.
+     */
+    void dbus_muteRotel();
+    /**
+     * Emitted if the changeRotelVolume dbus function is called.
+     *
+     * @param delta the delta to the current volume.
+     */
+    void dbus_changeRotelVolume(int delta);
+    /**
+     * Emitted if the selectRotelSource dbus function is called.
+     *
+     * @param source the new source as string.
+     */
+    void dbus_selectRotelSource(const QString& source);
 };
 
 #endif

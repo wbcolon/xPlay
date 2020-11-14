@@ -20,6 +20,7 @@ xPlayerDBus::xPlayerDBus(QObject* obj):QDBusAbstractAdaptor(obj) {
         qCritical() << "DBus error: " << qPrintable(QDBusConnection::sessionBus().lastError().message());
     }
 }
+
 void xPlayerDBus::playPause() {
     emit dbus_playPause();
 }
@@ -28,8 +29,8 @@ void xPlayerDBus::stop() {
     emit dbus_stop();
 }
 
-void xPlayerDBus::previous() {
-    emit dbus_previous();
+void xPlayerDBus::prev() {
+    emit dbus_prev();
 }
 
 void xPlayerDBus::next() {
@@ -40,12 +41,12 @@ void xPlayerDBus::jump(qint64 delta) {
     emit dbus_jump(delta);
 }
 
-void xPlayerDBus::toggleFullWindow() {
-    emit dbus_toggleFullWindow();
+void xPlayerDBus::fullWindow() {
+    emit dbus_fullWindow();
 }
 
-void xPlayerDBus::toggleScaleAndCrop() {
-    emit dbus_toggleScaleAndCrop();
+void xPlayerDBus::scaleAndCrop() {
+    emit dbus_scaleAndCrop();
 }
 
 void xPlayerDBus::mute() {
@@ -55,6 +56,16 @@ void xPlayerDBus::changeVolume(int delta) {
     emit dbus_changeVolume(delta);
 }
 
-void xPlayerDBus::selectView(QString view) {
+void xPlayerDBus::selectView(const QString& view) {
     emit dbus_selectView(view);
+}
+void xPlayerDBus::muteRotel() {
+    emit dbus_muteRotel();
+}
+void xPlayerDBus::changeRotelVolume(int delta) {
+    emit dbus_changeRotelVolume(delta);
+}
+
+void xPlayerDBus::selectRotelSource(const QString& source) {
+    emit dbus_selectRotelSource(source);
 }

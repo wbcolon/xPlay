@@ -27,21 +27,29 @@ bool handleCommandLine(QApplication& playApp) {
               QApplication::translate("xPlay", "Play the previous file in the music view.") },
             { {"N", "next"},
               QApplication::translate("xPlay", "Play the next file in the music view.") },
-            { {"J", "jump"},
+            { {"j", "jump"},
               QApplication::translate("xPlay", "Jump relative (in ms) within the movie file."),
               QApplication::translate("xPlay", "delta") },
-            { {"M", "mute"},
-              QApplication::translate("xPlay", "Mute the audio in the current view.") },
-            { {"C", "changevolume"},
+            { {"m", "mute"},
+              QApplication::translate("xPlay", "Toggle mute the audio in the current view.") },
+            { {"c", "changevolume"},
               QApplication::translate("xPlay", "Change the volume for the current view."),
               QApplication::translate("xPlay", "delta") },
             { {"F", "fullwindow"},
               QApplication::translate("xPlay", "Toggle the full window mode in the movie view.") },
             { {"S", "scaleandcrop"},
               QApplication::translate("xPlay", "Toggle the scale and crop mode in the movie view.") },
-            { {"E", "selectview"},
-              QApplication::translate("xPlay", R"(Select a view ("music", "movie" or "streaming").)"),
-              QApplication::translate("xPlay", "view") },
+            { {"e", "selectview"},
+                    QApplication::translate("xPlay", R"(Select a view ("music", "movie" or "streaming").)"),
+                    QApplication::translate("xPlay", "view") },
+            { {"M", "muterotel"},
+                    QApplication::translate("xPlay", "Toggle mute the audio for the Rotel amp.") },
+            { {"C", "changerotelvolume"},
+                    QApplication::translate("xPlay", "Change the volume of the Rotel amp."),
+                    QApplication::translate("xPlay", "delta") },
+            { {"E", "selectrotelsource"},
+              QApplication::translate("xPlay", R"(Select source for Rotel amp ("aux1", "aux1", "opt1", ...).)"),
+              QApplication::translate("xPlay", "source") },
     } );
     playAppParser.addHelpOption();
     playAppParser.addVersionOption();
@@ -69,6 +77,14 @@ bool handleCommandLine(QApplication& playApp) {
                 qCritical() << "Unable to run dbus command." << qPrintable(reply.error().message());
             }
             return true;
+        } else if (playAppParser.isSet("changerotelvolume")) {
+            // Change volume for Rotel amp.
+            auto delta = playAppParser.value("changerotelvolume").toInt();
+            QDBusReply<void> reply = playInterface.call("changeRotelVolume", delta);
+            if (!reply.isValid()) {
+                qCritical() << "Unable to run dbus command." << qPrintable(reply.error().message());
+            }
+            return true;
         } else if (playAppParser.isSet("jump")) {
             // Jump within the movie file.
             qint64 delta = static_cast<qint64>(playAppParser.value("jump").toLong());
@@ -85,6 +101,14 @@ bool handleCommandLine(QApplication& playApp) {
                 qCritical() << "Unable to run dbus command." << qPrintable(reply.error().message());
             }
             return true;
+        } else if (playAppParser.isSet("selectrotelsource")) {
+            // Select source for Rotel amp.
+            auto source = playAppParser.value("selectrotelsource");
+            QDBusReply<void> reply = playInterface.call("selectRotelSource", source);
+            if (!reply.isValid()) {
+                qCritical() << "Unable to run dbus command." << qPrintable(reply.error().message());
+            }
+            return true;
         } else {
             // All commands that do not have any arguments.
             QString command;
@@ -93,15 +117,17 @@ bool handleCommandLine(QApplication& playApp) {
             } else if (playAppParser.isSet("stop")) {
                 command = "stop";
             } else if (playAppParser.isSet("prev")) {
-                command = "previous";
+                command = "prev";
             } else if (playAppParser.isSet("next")) {
                 command = "next";
             } else if (playAppParser.isSet("mute")) {
                 command = "mute";
             } else if (playAppParser.isSet("fullwindow")) {
-                command = "toggleFullWindow";
+                command = "fullWindow";
             } else if (playAppParser.isSet("scaleandcrop")) {
-                command = "toggleScaleAndCrop";
+                command = "scaleAndCrop";
+            } else if (playAppParser.isSet("muterotel")) {
+                command = "muteRotel";
             } else {
                 // Should not happen.
                 qCritical() << "Unknown dbus command: " << playAppParser.optionNames();
@@ -121,7 +147,7 @@ int main(int argc, char* argv[])
 {
     QApplication playApp(argc, argv);
     QApplication::setApplicationName("xPlay");
-    QApplication::setApplicationVersion("0.4");
+    QApplication::setApplicationVersion("0.4.0");
     if (handleCommandLine(playApp)) {
         // Exit if the command line was handled.
         return 0;
