@@ -15,6 +15,7 @@
 
 #include <QGridLayout>
 #include <QLabel>
+#include <QMouseEvent>
 
 xPlayerVolumeWidgetQwt::xPlayerVolumeWidgetQwt(QWidget *parent, Qt::WindowFlags flags):
         xPlayerVolumeWidget(parent, flags){
@@ -38,3 +39,17 @@ void xPlayerVolumeWidgetQwt::setVolume(int vol) {
     currentVolume = vol;
     volumeKnob->setValue(static_cast<double>(vol));
 }
+
+void xPlayerVolumeWidgetQwt::setMuted(bool mute) {
+    currentMuted = mute;
+    volumeKnob->setDisabled(currentMuted);
+}
+
+void xPlayerVolumeWidgetQwt::mouseDoubleClickEvent(QMouseEvent* event) {
+    // Toggle the muted mode.
+    setMuted(!isMuted());
+    // Tell the rest of the world.
+    emit muted(isMuted());
+    xPlayerVolumeWidget::mouseDoubleClickEvent(event);
+}
+

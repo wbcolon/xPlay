@@ -15,11 +15,16 @@
 
 xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget* parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
-        currentVolume(0) {
+        currentVolume(0),
+        currentMuted(false) {
 }
 
-int xPlayerVolumeWidget::getVolume() {
+int xPlayerVolumeWidget::getVolume() const {
     return currentVolume;
+}
+
+bool xPlayerVolumeWidget::isMuted() const {
+    return currentMuted;
 }
 
 

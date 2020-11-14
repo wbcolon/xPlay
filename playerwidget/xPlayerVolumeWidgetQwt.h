@@ -26,7 +26,26 @@ public:
     ~xPlayerVolumeWidgetQwt() = default;
 
 public slots:
+    /**
+     * Set the volume displayed in the UI.
+     *
+     * @param vol the volume as integer in between 0 and 100.
+     */
     virtual void setVolume(int vol);
+    /**
+     * Set the mute mode.
+     *
+     * @param mute enable mute if true, disable otherwise.
+     */
+    virtual void setMuted(bool mute);
+
+protected:
+    /**
+     * Re-implement mouseDoubleClickEvent in order to implement mute functionality.
+     *
+     * @param event the event passed to the widget.
+     */
+    virtual void mouseDoubleClickEvent(QMouseEvent* event);
 
 private:
     QwtKnob* volumeKnob;

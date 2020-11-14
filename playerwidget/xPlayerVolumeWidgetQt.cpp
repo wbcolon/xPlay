@@ -41,3 +41,17 @@ void xPlayerVolumeWidgetQt::setVolume(int vol) {
     currentVolume = vol;
     volumeDial->setValue(currentVolume);
 }
+
+void xPlayerVolumeWidgetQt::setMuted(bool mute) {
+    currentMuted = mute;
+    volumeDial->setDisabled(currentMuted);
+}
+
+void xPlayerVolumeWidgetQt::mouseDoubleClickEvent(QMouseEvent* event) {
+    // Toggle the muted mode.
+    setMuted(!isMuted());
+    // Tell the rest of the world.
+    emit muted(isMuted());
+    xPlayerVolumeWidget::mouseDoubleClickEvent(event);
+}
+

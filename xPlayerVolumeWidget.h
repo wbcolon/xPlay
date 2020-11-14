@@ -27,7 +27,13 @@ public:
      *
      * @return the volume as integer in between 0 and 100.
      */
-    int getVolume();
+    int getVolume() const;
+    /**
+     * Return the mute state for the volume widget.
+     *
+     * @return true if volume know is disabled, false otherwise.
+     */
+    bool isMuted() const;
 
 signals:
     /**
@@ -36,6 +42,12 @@ signals:
      * @param vol the volume as integer in between 0 and 100.
      */
     void volume(int vol);
+    /**
+     * Sinal an update of the muted state displayed.
+     *
+     * @param mute the state of muted as boolean.
+     */
+    void muted(bool mute);
 
 public slots:
     /**
@@ -44,9 +56,16 @@ public slots:
      * @param vol the volume as integer in between 0 and 100.
      */
     virtual void setVolume(int vol) = 0;
+    /**
+     * Set the mute mode.
+     *
+     * @param mute enable mute if true, disable otherwise.
+     */
+    virtual void setMuted(bool mute) = 0;
 
 protected:
     int currentVolume;
+    bool currentMuted;
 };
 
 #endif
