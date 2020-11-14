@@ -43,7 +43,13 @@ public:
      *
      * @return integer value in between 0 and 100.
      */
-    int getVolume();
+    int getVolume() const;
+    /**
+     * Return the mute state for the movie player
+     *
+     * @return true if music player is muted, false otherwise.
+     */
+    bool isMuted() const;
 
 signals:
     /**
@@ -126,6 +132,12 @@ public slots:
      * Stop the playback of the current movie.
      */
     void stop();
+    /**
+     * Set the mute mode.
+     *
+     * @param mute enable mute if true, disable otherwise.
+     */
+    void setMuted(bool mute);
     /**
      * Set the volume for the movie player.
      *

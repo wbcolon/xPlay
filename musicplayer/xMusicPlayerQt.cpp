@@ -97,6 +97,12 @@ void xMusicPlayerQt::seek(qint64 position) {
     musicPlayer->setPosition(position);
 }
 
+void xMusicPlayerQt::jump(qint64 delta) {
+    // Jump to the current position plus delta (in milliseconds) in the current track.
+    auto jumpPosition = musicPlayer->position()+delta;
+    musicPlayer->setPosition(std::clamp(jumpPosition, static_cast<qint64>(0), musicPlayer->duration()));
+}
+
 void xMusicPlayerQt::stop() {
     // Stop the media player.
     musicPlayer->stop();
@@ -117,11 +123,20 @@ void xMusicPlayerQt::next() {
     emit currentState(State::PlayingState);
 }
 
+void xMusicPlayerQt::setMuted(bool mute) {
+    musicPlayer->setMuted(mute);
+}
+
+bool xMusicPlayerQt::isMuted() const {
+    return musicPlayer->isMuted();
+}
+
+
 void xMusicPlayerQt::setVolume(int vol) {
     musicPlayer->setVolume(vol);
 }
 
-int xMusicPlayerQt::getVolume() {
+int xMusicPlayerQt::getVolume() const {
     return musicPlayer->volume();
 }
 

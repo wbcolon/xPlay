@@ -30,12 +30,20 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     resetMoviePlayer();
 }
 
+void xMoviePlayer::setMuted(bool mute) {
+    audioOutput->setMuted(mute);
+}
+
+bool xMoviePlayer::isMuted() const {
+    return audioOutput->isMuted();
+}
+
 void xMoviePlayer::setVolume(int vol) {
     vol = std::clamp(vol, 0, 100);
     audioOutput->setVolume(vol/100.0);
 }
 
-int xMoviePlayer::getVolume() {
+int xMoviePlayer::getVolume() const {
     return static_cast<int>(std::round(audioOutput->volume()*100.0));
 }
 

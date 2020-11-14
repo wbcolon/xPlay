@@ -40,7 +40,13 @@ public:
      *
      * @return integer value in between 0 and 100.
      */
-    virtual int getVolume() = 0;
+    virtual int getVolume() const = 0;
+    /**
+     * Return the mute state for the music player
+     *
+     * @return true if music player is muted, false otherwise.
+     */
+    virtual bool isMuted() const = 0;
 
 signals:
     /**
@@ -97,9 +103,15 @@ public slots:
     /**
      * Move to the given position in the current track.
      *
-     * @param position the position given in millisecond.
+     * @param position the position given in milliseconds.
      */
     virtual void seek(qint64 position) = 0;
+    /**
+     * Jump relative to the actual position in the current track.
+     *
+     * @param delta the delta to the current position in milliseconds.
+     */
+    virtual void jump(qint64 delta) = 0;
     /**
      * Stop the media player.
      */
@@ -112,6 +124,12 @@ public slots:
      * Jump to the next track in the playlist.
      */
     virtual void next() = 0;
+    /**
+     * Set the mute mode.
+     *
+     * @param mute enable mute if true, disable otherwise.
+     */
+    virtual void setMuted(bool mute) = 0;
     /**
      * Set the volume
      *

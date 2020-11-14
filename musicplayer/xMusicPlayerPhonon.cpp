@@ -141,6 +141,12 @@ void xMusicPlayerPhonon::seek(qint64 position) {
     musicPlayer->seek(position);
 }
 
+void xMusicPlayerPhonon::jump(qint64 delta) {
+    // Jump to the current position plus delta (in milliseconds) in the current track.
+    auto jumpPosition = musicPlayer->currentTime()+delta;
+    musicPlayer->seek(std::clamp(jumpPosition, static_cast<qint64>(0), musicPlayer->totalTime()));
+}
+
 void xMusicPlayerPhonon::stop() {
     // Stop the media player.
     musicPlayer->stop();
@@ -181,12 +187,20 @@ void xMusicPlayerPhonon::next() {
     }
 }
 
+void xMusicPlayerPhonon::setMuted(bool mute) {
+    musicOutput->setMuted(mute);
+}
+
+bool xMusicPlayerPhonon::isMuted() const {
+    return musicOutput->isMuted();
+}
+
 void xMusicPlayerPhonon::setVolume(int vol) {
     vol = std::clamp(vol, 0, 100);
     musicOutput->setVolume(vol/100.0);
 }
 
-int xMusicPlayerPhonon::getVolume() {
+int xMusicPlayerPhonon::getVolume() const {
     return static_cast<int>(std::round(musicOutput->volume()*100.0));
 }
 
