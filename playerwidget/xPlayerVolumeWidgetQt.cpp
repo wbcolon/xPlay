@@ -27,14 +27,17 @@ xPlayerVolumeWidgetQt::xPlayerVolumeWidgetQt(QWidget *parent, Qt::WindowFlags fl
     volumeDial->setWrapping(false);
     auto volumeLabel = new QLabel(this);
     volumeLabel->setAlignment(Qt::AlignRight);
+    volumeMuteButton = new QPushButton(tr("Volume"), this);
+    volumeMuteButton->setFlat(true);
     // Qt implementation.
     volumeLayout->addWidget(volumeDial, 0, 0, 3, 4);
-    volumeLayout->addWidget(new QLabel(tr("Volume")), 3, 0, 1, 3);
+    volumeLayout->addWidget(volumeMuteButton, 3, 0, 1, 3);
     volumeLayout->addWidget(volumeLabel, 3, 3, 1, 1);
     // Connect the volume slider to the music player
     connect(volumeDial, &QDial::valueChanged, this, &xPlayerVolumeWidget::volume);
     connect(volumeDial, &QDial::valueChanged, this, [=](int vol) { currentVolume=vol; } );
     connect(volumeDial, &QDial::valueChanged, this, [=](int vol) { volumeLabel->setText(QString::number(vol)); } );
+    connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
 }
 
 void xPlayerVolumeWidgetQt::setVolume(int vol) {
@@ -45,6 +48,11 @@ void xPlayerVolumeWidgetQt::setVolume(int vol) {
 void xPlayerVolumeWidgetQt::setMuted(bool mute) {
     currentMuted = mute;
     volumeDial->setDisabled(currentMuted);
+    if (currentMuted) {
+        volumeMuteButton->setText(tr("Muted"));
+    } else {
+        volumeMuteButton->setText(tr("Volume"));
+    }
 }
 
 void xPlayerVolumeWidgetQt::mouseDoubleClickEvent(QMouseEvent* event) {

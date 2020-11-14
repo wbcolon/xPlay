@@ -17,6 +17,7 @@
 #include "xPlayerVolumeWidget.h"
 
 #include <QDial>
+#include <QPushButton>
 
 class xPlayerVolumeWidgetQt:public xPlayerVolumeWidget {
     Q_OBJECT
@@ -49,6 +50,7 @@ protected:
 
 private:
     QDial* volumeDial;
+    QPushButton* volumeMuteButton;
 };
 
 #endif

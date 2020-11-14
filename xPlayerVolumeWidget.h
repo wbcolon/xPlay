@@ -62,6 +62,10 @@ public slots:
      * @param mute enable mute if true, disable otherwise.
      */
     virtual void setMuted(bool mute) = 0;
+    /**
+     * Toggle the mute mode.
+     */
+    virtual void toggleMuted();
 
 protected:
     int currentVolume;

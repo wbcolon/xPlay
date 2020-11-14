@@ -15,10 +15,11 @@
 
 #include <QGridLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QMouseEvent>
 
 xPlayerVolumeWidgetQwt::xPlayerVolumeWidgetQwt(QWidget *parent, Qt::WindowFlags flags):
-        xPlayerVolumeWidget(parent, flags){
+        xPlayerVolumeWidget(parent, flags) {
     auto volumeLayout = new QGridLayout(this);
     volumeKnob = new QwtKnob(this);
     volumeKnob->setLowerBound(0);
@@ -27,12 +28,15 @@ xPlayerVolumeWidgetQwt::xPlayerVolumeWidgetQwt(QWidget *parent, Qt::WindowFlags 
     volumeKnob->setWrapping(false);
     // Qwt implementation. Layout here overlap on purpose
     volumeLayout->addWidget(volumeKnob, 0, 0, 4, 4);
-    auto volumeLabel = new QLabel(tr("Volume"));
-    volumeLabel->setAlignment(Qt::AlignCenter);
-    volumeLayout->addWidget(volumeLabel, 3, 0, 1, 4);
+    volumeMuteButton = new QPushButton(tr("Volume"), this);
+    volumeMuteButton->setFlat(true);
+    //auto volumeLabel = new QLabel(tr("Volume"));
+    //volumeLabel->setAlignment(Qt::AlignCenter);
+    volumeLayout->addWidget(volumeMuteButton, 3, 0, 1, 4);
     // Connect the volume slider to the widgets signal. Use lambda to do proper conversion.
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { emit volume(static_cast<int>(vol)); } );
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { currentVolume=static_cast<int>(vol); } );
+    connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
 }
 
 void xPlayerVolumeWidgetQwt::setVolume(int vol) {
@@ -43,13 +47,10 @@ void xPlayerVolumeWidgetQwt::setVolume(int vol) {
 void xPlayerVolumeWidgetQwt::setMuted(bool mute) {
     currentMuted = mute;
     volumeKnob->setDisabled(currentMuted);
-}
-
-void xPlayerVolumeWidgetQwt::mouseDoubleClickEvent(QMouseEvent* event) {
-    // Toggle the muted mode.
-    setMuted(!isMuted());
-    // Tell the rest of the world.
-    emit muted(isMuted());
-    xPlayerVolumeWidget::mouseDoubleClickEvent(event);
+    if (currentMuted) {
+        volumeMuteButton->setText(tr("Muted"));
+    } else {
+        volumeMuteButton->setText(tr("Volume"));
+    }
 }
 

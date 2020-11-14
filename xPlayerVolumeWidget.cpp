@@ -27,4 +27,9 @@ bool xPlayerVolumeWidget::isMuted() const {
     return currentMuted;
 }
 
+void xPlayerVolumeWidget::toggleMuted() {
+    setMuted(!isMuted());
+    emit muted(isMuted());
+}
+
 

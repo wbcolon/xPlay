@@ -16,6 +16,7 @@
 
 #include "xPlayerVolumeWidget.h"
 
+#include <QPushButton>
 #include <qwt/qwt_knob.h>
 
 class xPlayerVolumeWidgetQwt:public xPlayerVolumeWidget {
@@ -39,15 +40,8 @@ public slots:
      */
     virtual void setMuted(bool mute);
 
-protected:
-    /**
-     * Re-implement mouseDoubleClickEvent in order to implement mute functionality.
-     *
-     * @param event the event passed to the widget.
-     */
-    virtual void mouseDoubleClickEvent(QMouseEvent* event);
-
 private:
+    QPushButton* volumeMuteButton;
     QwtKnob* volumeKnob;
 };
 
