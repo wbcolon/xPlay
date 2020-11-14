@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.4.0 (unreleased)
+## 0.4.0 - 2020-11-14
 
 - Add streaming view using QWebEngine based browser.
 - Add simple DBus interface for remote control.
 - Updated configuration and corresponding dialog.
+- Updated volume and Rotel widget.
 - Some bugfixes.
 
 ## 0.3.2 - 2020-11-02
