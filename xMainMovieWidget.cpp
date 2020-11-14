@@ -94,8 +94,6 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
 void xMainMovieWidget::toggleFullWindow() {
     // Toggle the mode.
     setFullWindow(!fullWindow);
-    // Update member variable.
-    fullWindow=!fullWindow;
 }
 
 void xMainMovieWidget::setFullWindow(bool mode) {
@@ -104,6 +102,7 @@ void xMainMovieWidget::setFullWindow(bool mode) {
     if (fullWindow == mode) {
         return;
     }
+    fullWindow = mode;
     if (mode) {
         movieStack->removeWidget(moviePlayer);
         moviePlayer->setParent(this);
@@ -116,6 +115,7 @@ void xMainMovieWidget::setFullWindow(bool mode) {
         movieStack->setCurrentWidget(moviePlayer);
         setCurrentWidget(mainWidget);
     }
+    emit showMenuBar(!fullWindow);
 }
 
 void xMainMovieWidget::scannedTags(const QStringList& tags) {

@@ -38,6 +38,12 @@ signals:
      * movie player classes.
      */
     /**
+     * Signal emitted to notify main widget to show/hide the menu bar.
+     *
+     * @param menu show menu bar if true, hide otherwise.
+     */
+    void showMenuBar(bool menu);
+    /**
      * Signal emitted to scan the movie library for a given tag.
      *
      * @param tag the specified tag as string.
