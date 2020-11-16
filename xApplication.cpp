@@ -169,11 +169,14 @@ void xApplication::dbus_changeVolume(int delta) {
 }
 
 void xApplication::dbus_selectView(const QString& view) {
+    // Change view. Make menu bar visible in music and streaming view.
     if (!view.compare("music", Qt::CaseInsensitive)) {
+        menuBar()->setVisible(true);
         mainView->setCurrentWidget(mainMusicWidget);
     } else if (!view.compare("movie", Qt::CaseInsensitive)) {
         mainView->setCurrentWidget(mainMovieWidget);
     } else if (!view.compare("streaming", Qt::CaseInsensitive)) {
+        menuBar()->setVisible(true);
         mainView->setCurrentWidget(mainStreamingWidget);
     }
 }
