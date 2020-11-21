@@ -89,8 +89,8 @@ private slots:
     void updateMusicExtensions();
 
 private:
-    xMusicLibraryFiles(QObject* parent=nullptr);
-    ~xMusicLibraryFiles() = default;
+    explicit xMusicLibraryFiles(QObject* parent=nullptr);
+    ~xMusicLibraryFiles() override = default;
     /**
      * Determine if the given file is a music file.
      *
@@ -109,8 +109,8 @@ class xMusicLibraryScanning:public QThread {
     Q_OBJECT
 
 public:
-    xMusicLibraryScanning(QObject* parent=nullptr);
-    ~xMusicLibraryScanning();
+    explicit xMusicLibraryScanning(QObject* parent=nullptr);
+    ~xMusicLibraryScanning() noexcept override;
 
     void setBaseDirectory(const std::filesystem::path& dir);
 
@@ -139,8 +139,8 @@ class xMusicLibrary:public QObject {
     Q_OBJECT
 
 public:
-    xMusicLibrary(QObject* parent=nullptr);
-    ~xMusicLibrary() = default;
+    explicit xMusicLibrary(QObject* parent=nullptr);
+    ~xMusicLibrary() override = default;
 
     /**
      * Set base directory for the music library.
@@ -156,7 +156,7 @@ public:
      *
      * @return the base directory currently in use.
      */
-    const std::filesystem::path& getBaseDirectory() const;
+    [[nodiscard]] const std::filesystem::path& getBaseDirectory() const;
 
 signals:
     /**

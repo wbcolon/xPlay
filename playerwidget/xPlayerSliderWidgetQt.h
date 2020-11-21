@@ -23,13 +23,13 @@ class xPlayerSliderWidgetQt:public xPlayerSliderWidget {
     Q_OBJECT
 
 public:
-    xPlayerSliderWidgetQt(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerSliderWidgetQt() = default;
+    explicit xPlayerSliderWidgetQt(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerSliderWidgetQt() override = default;
 
     /**
      * Clear the state of the slider widget.
      */
-    virtual void clear();
+    void clear() override;
 
 public slots:
     /**
@@ -37,13 +37,13 @@ public slots:
      *
      * @param length the length of the current track in milliseconds.
      */
-    virtual void trackLength(qint64 length);
+    void trackLength(qint64 length) override;
     /**
      * Update the played time label.
      *
      * @param played the amount played of the current track in milliseconds.
      */
-    virtual void trackPlayed(qint64 played);
+    void trackPlayed(qint64 played) override;
 
 private:
     QSlider* trackSlider;

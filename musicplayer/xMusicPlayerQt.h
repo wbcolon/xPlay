@@ -23,20 +23,20 @@ class xMusicPlayerQt:public xMusicPlayer {
     Q_OBJECT
 
 public:
-    xMusicPlayerQt(QObject* parent = nullptr);
-    ~xMusicPlayerQt() = default;
+    explicit xMusicPlayerQt(QObject* parent = nullptr);
+    ~xMusicPlayerQt() override = default;
     /**
      * Return the volume for the music player
      *
      * @return integer value in between 0 and 100.
      */
-    virtual int getVolume() const;
+    [[nodiscard]] int getVolume() const override;
     /**
      * Return the mute state for the music player
      *
      * @return true if music player is muted, false otherwise.
      */
-    virtual bool isMuted() const;
+    [[nodiscard]] bool isMuted() const override;
 
 public slots:
     /**
@@ -50,64 +50,64 @@ public slots:
      * @param album the album name for all queued tracks.
      * @param tracks vector of track names.
      */
-    virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks);
+    void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) override;
     /**
      * Remove track from the current playlist
      *
      * @param index of the track to be removed.
      */
-    virtual void dequeTrack(int index);
+    void dequeTrack(int index) override;
     /**
      * Clear the playlist and stop the player.
      */
-    virtual void clearQueue();
+    void clearQueue() override;
 
     /**
      * Play or pause depending on the current media player state.
      */
-    virtual void playPause();
+    void playPause() override;
     /**
      * Play a given entry of the current playlist.
      *
      * @param index the position of the track in the playlist.
      */
-    virtual void play(int index);
+    void play(int index) override;
     /**
      * Move to the given position in the current track.
      *
      * @param position the position given in millisecond.
      */
-    virtual void seek(qint64 position);
+    void seek(qint64 position) override;
     /**
      * Jump relative to the actual position in the current track.
      *
      * @param delta the delta to the current position in milliseconds.
      */
-    virtual void jump(qint64 delta);
+    void jump(qint64 delta) override;
     /**
      * Stop the media player.
      */
-    virtual void stop();
+    void stop() override;
     /**
      * Jump to the previous track in the playlist.
      */
-    virtual void prev();
+    void prev() override;
     /**
      * Jump to the next track in the playlist.
      */
-    virtual void next();
+    void next() override;
     /**
      * Set the mute mode.
      *
      * @param mute enable mute if true, disable otherwise.
      */
-    virtual void setMuted(bool mute);
+    void setMuted(bool mute) override;
     /**
      * Set the volume
      *
      * @param vol integer value between 0 (silence) and 100 (full volume)
      */
-    virtual void setVolume(int vol);
+    void setVolume(int vol) override;
 
 private slots:
     /**

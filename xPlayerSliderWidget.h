@@ -21,20 +21,20 @@ class xPlayerSliderWidget:public QWidget {
     Q_OBJECT
 
 public:
-    xPlayerSliderWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerSliderWidget() = default;
+    explicit xPlayerSliderWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerSliderWidget() override = default;
 
     /**
      * Return the state of hour mode.
      *
      * @return true if hours are enables in the scale, false otherwise.
      */
-    bool hourScale();
+    [[nodiscard]] bool hourScale() const;
     /**
      * Return the maxnumber of sections of the scale.
      * @return number of sections as integer.
      */
-    int scaleSections();
+    [[nodiscard]] int scaleSections() const;
     /**
      * Clear the state of the slider widget.
      */
@@ -76,14 +76,14 @@ protected:
      * @param ms time value in milliseconds.
      * @return format string "mm:ss.hh" or "hh:mm:ss.hh".
      */
-    QString millisecondsToLabel(qint64 ms);
+    [[nodiscard]] QString millisecondsToLabel(qint64 ms) const;
     /**
      * Find a scale layout.
      *
      * @param length current length of the for the track slider.
      * @return the divider used for the track slider.
      */
-    int determineScaleDivider(int length);
+    [[nodiscard]] int determineScaleDivider(int length) const;
 
     bool showHours;
     int maxScaleSections;

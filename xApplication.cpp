@@ -13,7 +13,6 @@
  */
 #include <QMenuBar>
 #include <QFileDialog>
-#include <QInputDialog>
 
 #include "xApplication.h"
 #include "xPlayerConfiguration.h"
@@ -88,9 +87,6 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(mainDbus, &xPlayerDBus::dbus_muteRotel, this, &xApplication::dbus_muteRotel);
     connect(mainDbus, &xPlayerDBus::dbus_changeRotelVolume, this, &xApplication::dbus_changeRotelVolume);
     connect(mainDbus, &xPlayerDBus::dbus_selectRotelSource, this, &xApplication::dbus_selectRotelSource);
-}
-
-xApplication::~xApplication() noexcept {
 }
 
 void xApplication::dbus_playPause() {

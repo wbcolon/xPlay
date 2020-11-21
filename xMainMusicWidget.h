@@ -28,8 +28,8 @@ class xMainMusicWidget: public QWidget {
     Q_OBJECT
 
 public:
-    xMainMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xMainMusicWidget() = default;
+    explicit xMainMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xMainMusicWidget() override = default;
 
 signals:
     /*

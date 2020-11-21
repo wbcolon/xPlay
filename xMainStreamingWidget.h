@@ -26,8 +26,8 @@ class xMainStreamingWidget:public QWidget {
     Q_OBJECT
 
 public:
-    xMainStreamingWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xMainStreamingWidget() = default;
+    explicit xMainStreamingWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xMainStreamingWidget() override = default;
 
     /**
      * Set the sites accessible within this widget.
@@ -46,19 +46,19 @@ public:
      *
      * @return list of pairs of short name and URL.
      */
-    const QList<std::pair<QString,QUrl>>& getSites() const;
+    [[nodiscard]] const QList<std::pair<QString,QUrl>>& getSites() const;
     /**
      * Retrieve current streaming site default.
      *
      * @return a pairs of short name and URL.
      */
-    const std::pair<QString,QUrl>& getSitesDefault() const;
+    [[nodiscard]] const std::pair<QString,QUrl>& getSitesDefault() const;
     /**
      * Return the mute state for webengine.
      *
      * @return true if music player is muted, false otherwise.
      */
-    bool isMuted() const;
+    [[nodiscard]] bool isMuted() const;
 
 public slots:
     /**

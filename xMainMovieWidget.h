@@ -28,8 +28,8 @@ class xMainMovieWidget:public QStackedWidget {
     Q_OBJECT
 
 public:
-    xMainMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr);
-    ~xMainMovieWidget() = default;
+    explicit xMainMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr);
+    ~xMainMovieWidget() override = default;
 
 signals:
     /*

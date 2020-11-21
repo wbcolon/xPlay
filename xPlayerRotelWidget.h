@@ -146,7 +146,7 @@ signals:
 
 private:
     xPlayerRotelControls();
-    ~xPlayerRotelControls() = default;
+    ~xPlayerRotelControls() override = default;
     /**
      * Called if controls are connected to the Rotel amp.
      *
@@ -172,8 +172,8 @@ class xPlayerRotelWidget:public QWidget {
     Q_OBJECT
 
 public:
-    xPlayerRotelWidget(QWidget* parent=nullptr, Qt::Orientation orientation=Qt::Horizontal, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerRotelWidget() = default;
+    explicit xPlayerRotelWidget(QWidget* parent=nullptr, Qt::Orientation orientation=Qt::Horizontal, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerRotelWidget() override = default;
 
 private slots:
     /**

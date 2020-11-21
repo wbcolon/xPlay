@@ -21,7 +21,7 @@ xMusicPlayerQt::xMusicPlayerQt(QObject* parent):
         xMusicPlayer(parent) {
     // Setup the media player.
     musicPlayer = new QMediaPlayer(this, QMediaPlayer::LowLatency);
-    // Setup gapless play (does not seem to work).
+    // Setup gap-less play (does not seem to work).
     auto musicPlayerService = musicPlayer->service();
     auto *musicPlayerControl = static_cast<QMediaGaplessPlaybackControl *>(qobject_cast<QMediaControl*>(musicPlayerService->requestControl("org.qt-project.qt.mediaplayercontrol/5.0")));
     musicPlayerControl->setCrossfadeTime(0);

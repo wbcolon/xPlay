@@ -118,9 +118,7 @@ xMovieLibrary::xMovieLibrary(QObject *parent):
 }
 
 xMovieLibrary::~xMovieLibrary() noexcept {
-    if (movieFiles) {
-        delete movieFiles;
-    }
+    delete movieFiles;
 }
 
 void xMovieLibrary::setBaseDirectories(const std::list<std::pair<QString,std::filesystem::path>>& base) {

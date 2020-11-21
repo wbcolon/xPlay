@@ -180,7 +180,7 @@ signals:
 
 private:
     xPlayerConfiguration();
-    ~xPlayerConfiguration() = default;
+    ~xPlayerConfiguration() override = default;
 
     static std::pair<QString,QString> splitMovieLibraryTagAndDirectory(const QString& tagDir);
     static std::pair<QString,QUrl> splitStreamingShortNameAndUrl(const QString& nameUrl);

@@ -15,14 +15,15 @@
 
 xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
-        showHours(false) {
+        showHours(false),
+        maxScaleSections(0) {
 }
 
-bool xPlayerSliderWidget::hourScale() {
+bool xPlayerSliderWidget::hourScale() const {
     return showHours;
 }
 
-int xPlayerSliderWidget::scaleSections() {
+int xPlayerSliderWidget::scaleSections() const {
     return maxScaleSections;
 }
 
@@ -34,7 +35,7 @@ void xPlayerSliderWidget::useScaleSections(int scaleSections) {
     maxScaleSections = scaleSections;
 }
 
-QString xPlayerSliderWidget::millisecondsToLabel(qint64 ms) {
+QString xPlayerSliderWidget::millisecondsToLabel(qint64 ms) const {
 
     if (showHours) {
         return QString("%1:%2:%3.%4").arg(ms/3600000).
@@ -48,7 +49,7 @@ QString xPlayerSliderWidget::millisecondsToLabel(qint64 ms) {
     }
 }
 
-int xPlayerSliderWidget::determineScaleDivider(int length) {
+int xPlayerSliderWidget::determineScaleDivider(int length) const {
     for (auto scaleDivider : { 10000, 30000, 60000, 120000, 300000, 600000, 1200000, 3000000, 6000000 }) {
         if ((length / scaleDivider) <= maxScaleSections) {
             return scaleDivider;

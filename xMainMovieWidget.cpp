@@ -16,10 +16,8 @@
 
 #include <QGridLayout>
 #include <QGroupBox>
-#include <QComboBox>
-#include <QDebug>
 
-// Fuction addGroupBox has to be defined before the constructor due to the auto return.
+// Function addGroupBox has to be defined before the constructor due to the auto return.
 auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.

@@ -32,8 +32,8 @@ class xMovieLibraryScanning:public QThread {
     Q_OBJECT
 
 public:
-    xMovieLibraryScanning(xMovieFiles_t* movie, QObject* parent=nullptr);
-    ~xMovieLibraryScanning() = default;
+    explicit xMovieLibraryScanning(xMovieFiles_t* movie, QObject* parent=nullptr);
+    ~xMovieLibraryScanning() override = default;
     /**
      * Set the base directories with tags for scanning.
      *
@@ -77,10 +77,10 @@ class xMovieLibrary:public QObject {
     Q_OBJECT
 
 public:
-    xMovieLibrary(QObject* parent=nullptr);
-    ~xMovieLibrary() noexcept;
+    explicit xMovieLibrary(QObject* parent=nullptr);
+    ~xMovieLibrary() noexcept override;
     /**
-     * Set base directores and tags for the movie library.
+     * Set base directories and tags for the movie library.
      *
      * A certain structure of the movie library is expected.
      * The movie library is scanned in a thread using the
@@ -95,7 +95,7 @@ signals:
      * Signal emitted after scanning of the movie library.
      *
      * This signal is connected to the movie library scanning signal
-     * of the same name and triggerd after scanning.
+     * of the same name and triggered after scanning.
      *
      * @param tags the list of strings of tags.
      */
@@ -124,7 +124,7 @@ public slots:
      * Scan the movie library for a specific tag and directory.
      *
      * @param tag the tag as string to search for.
-     * @param dir the correspondig directory for the given tag.
+     * @param dir the corresponding directory for the given tag.
      */
     void scanForTagAndDirectory(const QString& tag, const QString& dir);
 

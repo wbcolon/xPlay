@@ -36,20 +36,20 @@ public:
         StopState
     };
 
-    xMoviePlayer(QWidget* parent=nullptr);
-    ~xMoviePlayer() = default;
+    explicit xMoviePlayer(QWidget* parent=nullptr);
+    ~xMoviePlayer() override = default;
     /**
      * Return the volume for the movie player
      *
      * @return integer value in between 0 and 100.
      */
-    int getVolume() const;
+    [[nodiscard]] int getVolume() const;
     /**
      * Return the mute state for the movie player
      *
      * @return true if music player is muted, false otherwise.
      */
-    bool isMuted() const;
+    [[nodiscard]] bool isMuted() const;
 
 signals:
     /**
@@ -167,7 +167,7 @@ public slots:
      */
     void selectAudioChannel(int index);
     /**
-     * Select a subtile for the current movie.
+     * Select a subtitle for the current movie.
      *
      * @param index the index of the subtitle.
      */
@@ -206,7 +206,7 @@ private slots:
      */
     void aboutToFinish();
     /**
-     * The playback has reached the prefinish mark.
+     * The playback has reached the pre-finish mark.
      *
      * @param timeLeft time left to play in milliseconds.
      */
@@ -243,9 +243,9 @@ private:
     void resetMoviePlayer();
 
     Phonon::MediaObject* moviePlayer;
-    Phonon::MediaController* movieControler;
+    Phonon::MediaController* movieController;
     Phonon::AudioOutput* audioOutput;
-    QList<Phonon::SubtitleDescription> currentSubtiteDescriptions;
+    QList<Phonon::SubtitleDescription> currentSubtitleDescriptions;
     QList<Phonon::AudioChannelDescription> currentAudioChannelDescriptions;
     bool fullWindow;
 };

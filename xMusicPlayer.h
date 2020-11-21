@@ -26,8 +26,8 @@ public:
         StopState
     };
 
-    xMusicPlayer(QObject* parent = nullptr);
-    ~xMusicPlayer() = default;
+    explicit xMusicPlayer(QObject* parent = nullptr);
+    ~xMusicPlayer() override = default;
 
     /**
      * Set the base directory for the music library
@@ -40,13 +40,13 @@ public:
      *
      * @return integer value in between 0 and 100.
      */
-    virtual int getVolume() const = 0;
+    [[nodiscard]] virtual int getVolume() const = 0;
     /**
      * Return the mute state for the music player
      *
      * @return true if music player is muted, false otherwise.
      */
-    virtual bool isMuted() const = 0;
+    [[nodiscard]] virtual bool isMuted() const = 0;
 
 signals:
     /**
@@ -163,7 +163,7 @@ protected:
      * @return absolute path to the specified track.
      */
     QString pathFromQueueEntry(const std::tuple<QString, QString, QString>& entry);
-    std::tuple<int,int,int> propertiesFromFile(const QString& filename);
+    static std::tuple<int,int,int> propertiesFromFile(const QString& filename);
 
     QString baseDirectory;
 };

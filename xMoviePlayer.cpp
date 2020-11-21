@@ -23,7 +23,7 @@
 xMoviePlayer::xMoviePlayer(QWidget *parent):
         Phonon::VideoWidget(parent),
         moviePlayer(nullptr),
-        movieControler(nullptr),
+        movieController(nullptr),
         fullWindow(false) {
     // Setup the media player.
     audioOutput = new Phonon::AudioOutput(Phonon::VideoCategory, this);
@@ -96,7 +96,7 @@ void xMoviePlayer::toggleScaleAndCropMode() {
 }
 
 void xMoviePlayer::availableAudioChannels() {
-    currentAudioChannelDescriptions = movieControler->availableAudioChannels();
+    currentAudioChannelDescriptions = movieController->availableAudioChannels();
     QStringList audioChannels;
     for (const auto& description : currentAudioChannelDescriptions) {
         auto audioChannel = description.name();
@@ -111,9 +111,9 @@ void xMoviePlayer::availableAudioChannels() {
 }
 
 void xMoviePlayer::availableSubtitles() {
-    currentSubtiteDescriptions = movieControler->availableSubtitles();
+    currentSubtitleDescriptions = movieController->availableSubtitles();
     QStringList subtitles;
-    for (const auto& description : currentSubtiteDescriptions) {
+    for (const auto& description : currentSubtitleDescriptions) {
         auto subtitle = description.name();
         if (!description.description().isEmpty()) {
             subtitle += QString(" (%1)").arg(description.description());
@@ -122,8 +122,8 @@ void xMoviePlayer::availableSubtitles() {
     }
     emit currentSubtitles(subtitles);
     // Disable subtitles on default.
-    movieControler->setCurrentSubtitle(currentSubtiteDescriptions[0]);
-    qDebug() << "xMoviePlayer: subtitle track descriptions: " << currentSubtiteDescriptions;
+    movieController->setCurrentSubtitle(currentSubtitleDescriptions[0]);
+    qDebug() << "xMoviePlayer: subtitle track descriptions: " << currentSubtitleDescriptions;
 }
 
 void xMoviePlayer::availableChapters(int chapters) {
@@ -136,12 +136,12 @@ void xMoviePlayer::availableTitles(int titles) {
 
 void xMoviePlayer::selectAudioChannel(int index) {
     if ((index >= 0) && (index < currentAudioChannelDescriptions.size())) {
-        movieControler->setCurrentAudioChannel(currentAudioChannelDescriptions[index]);
+        movieController->setCurrentAudioChannel(currentAudioChannelDescriptions[index]);
     }
 }
 void xMoviePlayer::selectSubtitle(int index) {
-    if ((index >= 0) && (index < currentSubtiteDescriptions.size())) {
-        movieControler->setCurrentSubtitle(currentSubtiteDescriptions[index]);
+    if ((index >= 0) && (index < currentSubtitleDescriptions.size())) {
+        movieController->setCurrentSubtitle(currentSubtitleDescriptions[index]);
     }
 }
 void xMoviePlayer::stateChanged(Phonon::State newState, Phonon::State oldState) {
@@ -224,12 +224,12 @@ void xMoviePlayer::mousePressEvent(QMouseEvent* mouseEvent)
 }
 
 void xMoviePlayer::resetMoviePlayer() {
-    if (movieControler) {
-        disconnect(movieControler, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
-        disconnect(movieControler, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
-        disconnect(movieControler, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
-        disconnect(movieControler, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
-        delete movieControler;
+    if (movieController) {
+        disconnect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
+        disconnect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
+        disconnect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
+        disconnect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
+        delete movieController;
     }
     if (moviePlayer) {
         disconnect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, this, &xMoviePlayer::currentMovieLength);
@@ -244,14 +244,14 @@ void xMoviePlayer::resetMoviePlayer() {
     // Update each second
     moviePlayer->setTickInterval(500);
     moviePlayer->setPrefinishMark(1500);
-    movieControler = new Phonon::MediaController(moviePlayer);
+    movieController = new Phonon::MediaController(moviePlayer);
     Phonon::createPath(moviePlayer, audioOutput);
     Phonon::createPath(moviePlayer, this);
-    // Connect Phono signals to out music player signals.
-    connect(movieControler, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
-    connect(movieControler, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
-    connect(movieControler, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
-    connect(movieControler, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
+    // Connect Phonon signals to out music player signals.
+    connect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
+    connect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
+    connect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
+    connect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
     connect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, this, &xMoviePlayer::currentMovieLength);
     connect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::currentMoviePlayed);
     connect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayer::stateChanged);

@@ -27,8 +27,8 @@ class xPlayerMovieWidget:public QWidget {
     Q_OBJECT
 
 public:
-    xPlayerMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerMovieWidget() = default;
+    explicit xPlayerMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerMovieWidget() override = default;
     /**
      * Display the currently played movie.
      *

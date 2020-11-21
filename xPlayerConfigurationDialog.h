@@ -27,8 +27,8 @@ class xPlayerConfigurationDialog:public QDialog {
     Q_OBJECT
 
 public:
-    xPlayerConfigurationDialog(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerConfigurationDialog() = default;
+    explicit xPlayerConfigurationDialog(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerConfigurationDialog() override = default;
 
 public slots:
     /**
@@ -89,17 +89,26 @@ private:
      * @param entry the string containing tag and directory.
      * @return a pair of tag and directory as string.
      */
-    std::pair<QString,QString> splitMovieLibraryEntry(const QString& entry);
+    static std::pair<QString,QString> splitMovieLibraryEntry(const QString& entry);
     /**
      * Split an entry from the streaming sites list into name and url.
      *
      * @param entry the string containing name and URL.
      * @return a pair of name and URL.
      */
-    std::pair<QString,QUrl> splitStreamingSiteEntry(const QString& entry);
-
+    static std::pair<QString,QUrl> splitStreamingSiteEntry(const QString& entry);
+    /**
+     * Check whether the given pair is part of the given list widget.
+     *
+     * @param list pointer to the list widget to search through.
+     * @param first the first string of the pair.
+     * @param second the second string of the pair.
+     * @return true if the pair of first and second is in the list widget, false otherwise.
+     */
     static bool isEntryInListWidget(QListWidget* list, const QString& first, const QString& second);
-
+    /**
+     * Called upon an update to the streaming list default.
+     */
     void updateStreamingSitesDefault();
 
     QLineEdit* musicLibraryDirectoryWidget;

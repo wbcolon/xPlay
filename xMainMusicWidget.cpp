@@ -21,7 +21,7 @@
 #include <QFontMetrics>
 #include <QApplication>
 
-// Fuction addGroupBox has to be defined before the constructor due to the auto return.
+// Function addGroupBox has to be defined before the constructor due to the auto return.
 auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.

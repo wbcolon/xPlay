@@ -26,14 +26,16 @@
  */
 class xPlayerWidgetScaleDraw:public QwtScaleDraw {
 public:
-    xPlayerWidgetScaleDraw() = default;
-    ~xPlayerWidgetScaleDraw() = default;
+    xPlayerWidgetScaleDraw():
+            QwtScaleDraw(),
+            showHours(false) { }
+    ~xPlayerWidgetScaleDraw() override = default;
 
     void useHourScale(bool hours) {
         showHours = hours;
     }
 
-    virtual QwtText label(double value) const {
+    [[nodiscard]] QwtText label(double value) const override {
         if (showHours) {
             return QwtText(QString("%1:%2:%3").arg(static_cast<int>(round(value)/3600000)).
                     arg(static_cast<int>(round(value)/60000)%60, 2, 10, QChar('0')).
@@ -51,28 +53,28 @@ class xPlayerSliderWidgetQwt:public xPlayerSliderWidget {
     Q_OBJECT
 
 public:
-    xPlayerSliderWidgetQwt(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerSliderWidgetQwt() = default;
+    explicit xPlayerSliderWidgetQwt(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerSliderWidgetQwt() override = default;
 
     /**
      * Clear the state of the slider widget.
      */
-    virtual void clear();
+    void clear() override;
 
 public slots:
-    virtual void useHourScale(bool hours) override;
+    void useHourScale(bool hours) override;
     /**
      * Update the length label.
      *
      * @param length the length of the current track in milliseconds.
      */
-    virtual void trackLength(qint64 length);
+    void trackLength(qint64 length) override;
     /**
      * Update the played time label.
      *
      * @param played the amount played of the current track in milliseconds.
      */
-    virtual void trackPlayed(qint64 length);
+    void trackPlayed(qint64 length) override;
 
 private:
     QwtSlider* trackSlider;

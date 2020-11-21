@@ -19,7 +19,6 @@
 #include <QTabWidget>
 #include <QIcon>
 #include <taglib/fileref.h>
-#include <taglib/audioproperties.h>
 
 xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
     QWidget(parent, flags) {

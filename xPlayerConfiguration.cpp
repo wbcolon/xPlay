@@ -32,7 +32,7 @@ const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSites
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" };
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" };
 
-const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamimgDefaultSites = {
+const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = {
         { "qobuz", QUrl("https://play.qobuz.com/login") },
         { "youtube", QUrl("https://www.youtube.com") },
 };
@@ -98,7 +98,7 @@ void xPlayerConfiguration::setMovieLibraryExtensions(const QString& extensions) 
 }
 
 void xPlayerConfiguration::setStreamingSites(const QList<std::pair<QString,QUrl>>& sites) {
-    if ((sites != getStreamingSites()) || (sites == xPlayerConfiguration_StreamimgDefaultSites)) {
+    if ((sites != getStreamingSites()) || (sites == xPlayerConfiguration_StreamingDefaultSites)) {
         QString nameUrlString;
         if (!sites.isEmpty()) {
             nameUrlString = QString("(%1) - %2").arg(sites.at(0).first).arg(sites.at(0).second.toString());
@@ -163,7 +163,7 @@ QList<std::pair<QString,QUrl>> xPlayerConfiguration::getStreamingSites() {
     QList<std::pair<QString,QUrl>> streamingList;
     if (streamingSites.isEmpty()) {
         // Nothing stored then return default sites.
-        return xPlayerConfiguration_StreamimgDefaultSites;
+        return xPlayerConfiguration_StreamingDefaultSites;
     } else {
         for (const auto& nameUrl : streamingSites.split("|")) {
             streamingList.push_back(splitStreamingShortNameAndUrl(nameUrl));

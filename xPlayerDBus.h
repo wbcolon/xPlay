@@ -51,8 +51,8 @@ class xPlayerDBus:public QDBusAbstractAdaptor {
     )
 
 public:
-    xPlayerDBus(QObject* obj);
-    ~xPlayerDBus() = default;
+    explicit xPlayerDBus(QObject* obj);
+    ~xPlayerDBus() override = default;
 
 public Q_SLOTS:
     /**
@@ -72,7 +72,7 @@ public Q_SLOTS:
      */
     void next();
     /**
-     * Jump relativ within the currently played movie.
+     * Jump relative within the currently played movie.
      *
      * @param delta the delta to the current position in ms.
      */
@@ -166,7 +166,7 @@ signals:
      */
     void dbus_selectView(const QString& view);
     /**
-     * Emitted if the muteRoel dbus function is called.
+     * Emitted if the muteRotel dbus function is called.
      */
     void dbus_muteRotel();
     /**

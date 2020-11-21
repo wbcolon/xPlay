@@ -26,7 +26,8 @@
 
 xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
-        moviePlayer(player) {
+        moviePlayer(player),
+        moviePlayerState(xMoviePlayer::StopState) {
 
     // Slider widget for showing movie length and played time.
     sliderWidget = new xPlayerSliderWidgetX(this);

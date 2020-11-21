@@ -23,8 +23,8 @@ class xPlayerVolumeWidgetQt:public xPlayerVolumeWidget {
     Q_OBJECT
 
 public:
-    xPlayerVolumeWidgetQt(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerVolumeWidgetQt() = default;
+    explicit xPlayerVolumeWidgetQt(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerVolumeWidgetQt() override = default;
 
 public slots:
     /**
@@ -32,13 +32,13 @@ public slots:
      *
      * @param vol the volume as integer in between 0 and 100.
      */
-    virtual void setVolume(int vol);
+    void setVolume(int vol) override;
     /**
      * Set the mute mode.
      *
      * @param mute enable mute if true, disable otherwise.
      */
-    virtual void setMuted(bool mute);
+    void setMuted(bool mute) override;
 
 protected:
     /**
@@ -46,7 +46,7 @@ protected:
      *
      * @param event the event passed to the widget.
      */
-    virtual void mouseDoubleClickEvent(QMouseEvent* event);
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:
     QDial* volumeDial;

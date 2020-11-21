@@ -41,10 +41,10 @@ std::tuple<int,int,int> xMusicPlayer::propertiesFromFile(const QString& filename
     int bitsPerSample = 16;
     try {
         if (filename.endsWith(".flac", Qt::CaseInsensitive)) {
-            TagLib::FLAC::Properties* currentFlacProperties = dynamic_cast<TagLib::FLAC::Properties*>(currentTrackProperties);
+            auto* currentFlacProperties = dynamic_cast<TagLib::FLAC::Properties*>(currentTrackProperties);
             bitsPerSample = currentFlacProperties->bitsPerSample();
         } else if (filename.endsWith(".wv", Qt::CaseInsensitive)) {
-            TagLib::WavPack::Properties* currentWvProperties = dynamic_cast<TagLib::WavPack::Properties*>(currentTrackProperties);
+            auto* currentWvProperties = dynamic_cast<TagLib::WavPack::Properties*>(currentTrackProperties);
             bitsPerSample = currentWvProperties->bitsPerSample();
         }
     } catch(std::bad_cast& e) {

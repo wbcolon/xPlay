@@ -20,30 +20,30 @@ class xPlayerVolumeWidget:public QWidget {
     Q_OBJECT
 
 public:
-    xPlayerVolumeWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
-    ~xPlayerVolumeWidget() = default;
+    explicit xPlayerVolumeWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerVolumeWidget() override = default;
     /**
      * Retrieve the current volume of displayed in the UI.
      *
      * @return the volume as integer in between 0 and 100.
      */
-    int getVolume() const;
+    [[nodiscard]] int getVolume() const;
     /**
      * Return the mute state for the volume widget.
      *
      * @return true if volume know is disabled, false otherwise.
      */
-    bool isMuted() const;
+    [[nodiscard]] bool isMuted() const;
 
 signals:
     /**
-     * Sinal an update of the volume displayed.
+     * Signal an update of the volume displayed.
      *
      * @param vol the volume as integer in between 0 and 100.
      */
     void volume(int vol);
     /**
-     * Sinal an update of the muted state displayed.
+     * Signal an update of the muted state displayed.
      *
      * @param mute the state of muted as boolean.
      */

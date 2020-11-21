@@ -199,7 +199,7 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
 xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientation, Qt::WindowFlags flags):
         QWidget(parent, flags) {
     auto rotelLayout = new QGridLayout(this);
-    // Create a volume knop.
+    // Create a volume knob.
     rotelVolume = new xPlayerVolumeWidgetX(this);
     // Create a combo box for the input sources and add valid sources.
     rotelSource = new QComboBox(this);
