@@ -4,5 +4,7 @@ TODO:
 (FIXED) - if playlist is at the end then the player does not go into the stop state (phonon,qt)
 (ERROR HANDLING) - player sometimes seems to halt "source ignored..." -> maybe internal issue. -> try to recover.
 (FIXED) - player at last queue song (still playing). Songs added to the queue are not played after last song finished.
+(FIXED) - movie files stopping after the end of playback sometimes problematic.
 - the same track in queue twice may confuse the queue UI.
-- movie files stopping after the end of playback sometimes problematic.
+- mute volume directly after startup does not work (verify).
+- rescan of music library while first scan active does not work properly.
