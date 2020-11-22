@@ -13,6 +13,7 @@
  */
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QMessageBox>
 
 #include "xApplication.h"
 #include "xPlayerConfiguration.h"
@@ -252,6 +253,23 @@ void xApplication::createMenus() {
     viewMenu->addAction(viewMenuSelectMusic);
     viewMenu->addAction(viewMenuSelectMovie);
     viewMenu->addAction(viewMenuSelectStreaming);
+    // Create actions for help menu
+    auto helpMenuAboutQt = new QAction("About Qt", this);
+    auto helpMenuAboutQwt = new QAction("About Qwt", this);
+    // Connect actions from view menu.
+    connect(helpMenuAboutQt, &QAction::triggered, [=]() { QMessageBox::aboutQt(this, "About Qt"); });
+    connect(helpMenuAboutQwt, &QAction::triggered, [=]() { QMessageBox::about(this, "About Qwt",
+        // The text for Qwt taken from their website and license.
+        "<p><b>Qwt - Qt Widgets for Technical Applications</b></p>"
+        "<p>The Qwt library contains GUI Components and utility classes which are primarily "
+        "useful for programs with a technical background. Beside a framework for 2D plots it "
+        "provides scales, sliders, dials, compasses, thermometers, wheels and knobs to "
+        "control or display values, arrays, or ranges of type double.</p>"
+        "<p><i>xPlay is based in part on the work of the Qwt project (http://qwt.sf.net).</i></p>"); });
+    // Create help menu.
+    auto helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->addAction(helpMenuAboutQt);
+    helpMenu->addAction(helpMenuAboutQwt);
 }
 
 void xApplication::configure() {

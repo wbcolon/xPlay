@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 - 2020-11-22
+
+- Add queue artist feature. Double-click on artist to queue all albums.
+- Hide menu bar in full window mode.
+- Change mute behavior of volume widget. Single-click to "Volume".
+- Some cleanup (clang-tidy).
+
 ## 0.4.0 - 2020-11-14
 
 - Add streaming view using QWebEngine based browser.

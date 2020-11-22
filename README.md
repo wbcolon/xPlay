@@ -141,9 +141,10 @@ The media control artwork has been borrowed from Wikipedia.
 * Qt 5.x
 * Phonon (use Qt based music view with USE_PHONON=OFF)
 * Qwt 6.x for Qt5 (optional, deactivate with USE_QWT=OFF)
+* taglib
 * C++17
 
-With Qwt the UI has an improved volume knop and track slider.
+With Qwt the UI has an improved volume knob and track slider.
 
 ## Known Issues
 
@@ -153,4 +154,6 @@ Ending the Application before the library scanning threads are finished will res
 
 xPlay started out as a little project over the weekend in order to evaluate the Clion C++ IDE.
 
+xPlay is based in part on the work of the Qwt project (http://qwt.sf.net).
+ 
 **Please support artists by buying their products.**
