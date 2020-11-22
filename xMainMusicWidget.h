@@ -31,6 +31,11 @@ public:
     explicit xMainMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xMainMusicWidget() override = default;
 
+    /**
+     * Clear artist, album, tracks and queue.
+     */
+    void clear();
+
 signals:
     /*
      * Signals used for communication with music player widget and the music player.

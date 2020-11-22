@@ -94,6 +94,15 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
 }
 
+void xMainMusicWidget::clear() {
+    // Clear queue.
+    musicPlayer->clearQueue();
+    playerWidget->clear();
+    clearQueue();
+    // Clear artist (including selector), album and track lists.
+    scannedArtists(QStringList());
+}
+
 void xMainMusicWidget::scannedArtists(const QStringList& artists) {
     std::set<QString> selectors;
     unfilteredArtists = artists;

@@ -131,7 +131,7 @@ bool xMusicLibraryFiles::isMusicFile(const std::filesystem::path& file) {
             }
         }
     }
-    qDebug() << "xMovieLibraryFiles: skipping: " << QString::fromStdString(file.generic_string());
+    qDebug() << "xMusicLibraryFiles: skipping: " << QString::fromStdString(file.generic_string());
     return false;
 }
 

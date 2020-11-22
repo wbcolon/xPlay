@@ -40,11 +40,13 @@ signals:
      */
     void clearQueue();
 
-protected slots:
+public slots:
     /**
      * Reset the the artist/album/track/played/length labels.
      */
     void clear();
+
+protected slots:
     /**
      * Update the player widget with the provided information.
      *

@@ -199,6 +199,7 @@ void xApplication::dbus_selectRotelSource(const QString& source) {
 
 void xApplication::setMusicLibraryDirectory() {
     auto musicLibraryDirectory=xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
+    mainMusicWidget->clear();
     musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));
     musicPlayer->setBaseDirectory(musicLibraryDirectory);
     qInfo() << "Update music library path to " << musicLibraryDirectory;
