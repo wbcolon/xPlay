@@ -75,6 +75,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     mainWidgetLayout->addWidget(queueBox, 0, 3, 9, 1);
     // Connect artist, album, track and selector widgets
     connect(artistList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtist);
+    connect(artistList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueArtist);
     connect(albumList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectAlbum);
     connect(trackList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::selectTrack);
     connect(artistSelectorList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtistSelector);
@@ -129,6 +130,16 @@ void xMainMusicWidget::scannedTracks(const QStringList& tracks) {
    }
 }
 
+void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks) {
+    for (const auto& albumTrack : albumTracks) {
+        for (const auto& track : albumTrack.second) {
+            // Add to the playlist (queue)
+            queueList->addItem(track);
+        }
+        emit queueTracks(artist, albumTrack.first, albumTrack.second);
+    }
+}
+
 void xMainMusicWidget::scannedArtistsSelectors(const std::set<QString> &selectors) {
     // Update artist selectors list widget.
     artistSelectorList->clear();
@@ -166,6 +177,15 @@ void xMainMusicWidget::selectArtist(int artist) {
         // Retrieve selected artist name and trigger scanForArtist
         auto artistName = artistList->item(artist)->text();
         emit scanForArtist(artistName);
+    }
+}
+
+void xMainMusicWidget::queueArtist(QListWidgetItem *artistItem) {
+    // Retrieve index for the selected item and check if it's valid.
+    auto artist = artistList->row(artistItem);
+    if ((artist >= 0) && (artist < artistList->count())) {
+        // Retrieve selected artist name and trigger scanAllAlbumsForArtist
+        emit scanAllAlbumsForArtist(artistItem->text());
     }
 }
 

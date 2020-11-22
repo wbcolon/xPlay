@@ -33,7 +33,7 @@ public:
      *
      * @return pointer to a singleton of the music library files object.
      */
-    static xMusicLibraryFiles* files();
+    [[nodiscard]] static xMusicLibraryFiles* files();
     /**
      * Set map of albums with tracks for the given artist.
      *
@@ -56,20 +56,20 @@ public:
      * @param album  name of the album for the specified artist as string.
      * @return a list of filesystem paths for the given artist and album.
      */
-    std::list<std::filesystem::path> get(const QString& artist, const QString& album) const;
+    [[nodiscard]] std::list<std::filesystem::path> get(const QString& artist, const QString& album);
     /**
      * Retrieve the albums for the given artist.
      *
      * @param artist name of the artist as string.
      * @return a list of strings containing the albums for the specified artist.
      */
-    QStringList get(const QString& artist) const;
+    [[nodiscard]] QStringList get(const QString& artist) const;
     /**
      * Retrieve all artists, albums and tracks.
      *
      * @return a list of tuples with artist,album and path to the track.
      */
-    std::list<std::tuple<QString, QString, std::filesystem::path>> get() const;
+    [[nodiscard]] std::list<std::tuple<QString, QString, std::filesystem::path>> get() const;
     /**
      * Clear the library.
      */
@@ -80,7 +80,7 @@ public:
      * @param albumPath the path to the artist/album directory to scan for tracks.
      * @return list of paths containing the album path and all tracks.
      */
-    std::list<std::filesystem::path> scanForAlbumTracks(const std::filesystem::path& albumPath);
+    [[nodiscard]] std::list<std::filesystem::path> scanForAlbumTracks(const std::filesystem::path& albumPath);
 
 private slots:
     /**
@@ -182,6 +182,12 @@ signals:
      * @param tracks list of the track names.
      */
     void scannedTracks(const QStringList& tracks);
+    /**
+     * Signal the list of scanned album/tracks for the selected artist.
+     *
+     * @param albumTracks list of pairs of album and list of track name (sorted).
+     */
+    void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks);
 
 public slots:
     /**
@@ -206,6 +212,12 @@ public slots:
      * @param album the album name for which we scan for tracks.
      */
     void scanForArtistAndAlbum(const QString& artist, const QString& album);
+    /**
+     * Scan all albums and tracks for the given artist.
+     *
+     * @param artist the artist name for which we can all albums and tracks.
+     */
+    void scanAllAlbumsForArtist(const QString& artist);
 
 private slots:
     void scanningFinished();

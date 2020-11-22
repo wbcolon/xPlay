@@ -51,6 +51,12 @@ signals:
      */
     void scanForArtistAndAlbum(const QString& artist, const QString& album);
     /**
+     * Signal to scan all albums and tracks for the given artist.
+     *
+     * @param artist the artist name for which we can all albums and tracks.
+     */
+    void scanAllAlbumsForArtist(const QString& artist);
+    /**
      * Signal a set of tracks to be queued in the playlist.
      *
      * @param artist the artist name for the tracks.
@@ -101,6 +107,12 @@ public slots:
      * @param tracks unordered list of track names.
      */
     void scannedTracks(const QStringList& tracks);
+    /**
+     * Receive the result of the all album and track scan for a given artist
+     *
+     * @param albumTracks sorted list of pairs of album/list of track names to be queued.
+     */
+    void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks);
 
 private slots:
     /**
@@ -113,6 +125,11 @@ private slots:
      * @param artist index of the artist in the QListWidget.
      */
     void selectArtist(int artist);
+    /**
+     *
+     * @param artistItem pointer to the currently selected row.
+     */
+    void queueArtist(QListWidgetItem* artistItem);
     /**
      * Scan for tracks of the selected artist/album.
      *
@@ -195,6 +212,13 @@ private:
      * @return filtered list of artists that start with the selector string.
      */
     QStringList filterArtists(const QStringList& artists);
+    /**
+     * Emit ScanForArtist for the given artist name.
+     *
+     * @param artistName the given artist name.
+     * @param queue if true then all albums of an artist will be queued.
+     */
+    void selectArtistAndQueue(const QString& artistName, bool queue);
     /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
