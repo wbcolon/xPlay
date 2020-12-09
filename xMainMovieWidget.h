@@ -31,6 +31,11 @@ public:
     explicit xMainMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr);
     ~xMainMovieWidget() override = default;
 
+    /**
+     * Clear tags, directories, movies and player.
+     */
+    void clear();
+
 signals:
     /*
      * Signals used for communication with player widget and the movie player.

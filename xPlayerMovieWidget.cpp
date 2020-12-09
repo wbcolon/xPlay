@@ -109,6 +109,14 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     volumeWidget->setVolume(moviePlayer->getVolume());
 }
 
+void xPlayerMovieWidget::clear() {
+    // Clear the audio/subtitle combo box and reset the movie label.
+    audioChannelBox->clear();
+    subtitleBox->clear();
+    movieLabel->setText("no movie");
+    sliderWidget->clear();
+}
+
 void xPlayerMovieWidget::currentMovie(const QString& movie) {
     movieLabel->setText(movie);
 }

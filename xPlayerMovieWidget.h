@@ -73,6 +73,11 @@ public slots:
      * @param length the length of the movie in ms.
      */
     void currentMovieLength(qint64 length);
+    /**
+     * Reset the the movie/audio/subtitle/scale and crop widgets.
+     */
+    void clear();
+
 
 protected slots:
     /**

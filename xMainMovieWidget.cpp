@@ -89,6 +89,17 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     setCurrentWidget(mainWidget);
 }
 
+void xMainMovieWidget::clear() {
+    setFullWindow(false);
+    // Clear queue.
+    moviePlayer->stop();
+    moviePlayerWidget->clear();
+    // Clear tags, directories and movies lists.
+    scannedTags(QStringList());
+    scannedDirectories(QStringList());
+    scannedMovies(std::vector<std::pair<QString,QString>>());
+}
+
 void xMainMovieWidget::toggleFullWindow() {
     // Toggle the mode.
     setFullWindow(!fullWindow);

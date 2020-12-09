@@ -211,6 +211,7 @@ void xApplication::setRotelNetworkAddress() {
 }
 
 void xApplication::setMovieLibraryTagsAndDirectories() {
+    mainMovieWidget->clear();
     movieLibrary->setBaseDirectories(xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectoryPath());
 }
 
