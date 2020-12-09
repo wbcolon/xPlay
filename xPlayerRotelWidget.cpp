@@ -16,6 +16,7 @@
 
 #include <QGridLayout>
 #include <QList>
+#include <QTimer>
 #include <QSpinBox>
 
 // Valid sources for the Rotel A14 or A12 amp
@@ -50,11 +51,15 @@ const QString Rotel_SetMute = "amp:mute_%1!";
 xPlayerRotelControls* xPlayerRotelControls::rotelControls = nullptr;
 
 xPlayerRotelControls::xPlayerRotelControls():
-        QObject() {
+        QObject(),
+        rotelNetworkPort(0),
+        rotelNetworkAddress() {
     // Create a socket to communicate with the amp.
     rotelSocket = new QTcpSocket(this);
+    rotelSocket->setSocketOption(QTcpSocket::LowDelayOption, true);
+    rotelSocket->setSocketOption(QTcpSocket::KeepAliveOption, true);
     QObject::connect(rotelSocket, &QTcpSocket::connected, this, &xPlayerRotelControls::controlsConnected);
-    QObject::connect(rotelSocket, &QTcpSocket::disconnected, this, &xPlayerRotelControls::disconnected);
+    QObject::connect(rotelSocket, &QTcpSocket::disconnected, this, &xPlayerRotelControls::controlsDisconnected);
 }
 
 xPlayerRotelControls* xPlayerRotelControls::controls() {
@@ -70,9 +75,14 @@ void xPlayerRotelControls::connect(const QString& address, int port, bool wait) 
         qWarning() << "Rotel: not valid network address given: " << address << ":" << port;
         return;
     }
-    rotelSocket->connectToHost(address, port);
+    rotelNetworkPort = port;
+    rotelNetworkAddress = address;
+    rotelSocket->connectToHost(rotelNetworkAddress, rotelNetworkPort);
     if (wait) {
         rotelSocket->waitForConnected();
+    } else {
+        // Check after 60 seconds if the Rotel amp is online.
+        QTimer::singleShot(60000, this, &xPlayerRotelControls::controlsCheckConnection);
     }
 }
 
@@ -182,16 +192,50 @@ void xPlayerRotelControls::controlsConnected() {
     emit connected();
 }
 
+void xPlayerRotelControls::controlsDisconnected() {
+    // Update UI if disconnected.
+    rotelSocket->disconnectFromHost();
+    rotelSocket->abort();
+    emit disconnected();
+    // Check every 60 seconds if the Rotel amp is online.
+    QTimer::singleShot(60000, this, &xPlayerRotelControls::controlsCheckConnection);
+}
+
+void xPlayerRotelControls::controlsCheckConnection() {
+    // Return if we are already connected.
+    if (rotelSocket->state() == QTcpSocket::ConnectedState) {
+        return;
+    }
+    // Try to connect again.
+    rotelSocket->connectToHost(rotelNetworkAddress, rotelNetworkPort);
+    if (!rotelSocket->waitForConnected(1000)) {
+        // Still not connected? Then try again in 60 seconds.
+        QTimer::singleShot(60000, this, &xPlayerRotelControls::controlsCheckConnection);
+    }
+}
+
 QString xPlayerRotelControls::sendCommand(const QString& command) {
     char readBuffer[65] = { 0 };
     qint64 readBytes = 0;
     rotelSocket->waitForConnected(500);
-    if (rotelSocket->state() == QAbstractSocket::ConnectedState) {
+    if (rotelSocket->state() == QTcpSocket::ConnectedState) {
         rotelSocket->write(command.toStdString().c_str());
-        rotelSocket->waitForBytesWritten();
-        rotelSocket->waitForReadyRead();
+        if (!rotelSocket->waitForBytesWritten(500)) {
+            qCritical() << "xPlayerRotelControls::sendCommand: unable to send command. Disconnecting.";
+            controlsDisconnected();
+            return QString();
+        }
+        if (!rotelSocket->waitForReadyRead(2000)) {
+            qCritical() << "xPlayerRotelControls::sendCommand: unable to read reply. Disconnecting.";
+            controlsDisconnected();
+            return QString();
+        }
         readBytes = rotelSocket->read(readBuffer, 64);
+    } else {
+        qCritical() << "xPlayerRotelControls::sendCommand: state is not connected. Disconnecting.";
+        controlsDisconnected();
     }
+
     return (readBytes > 0) ? QString(readBuffer) : QString();
 }
 

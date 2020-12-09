@@ -144,9 +144,7 @@ signals:
      */
     void muted(bool m);
 
-private:
-    xPlayerRotelControls();
-    ~xPlayerRotelControls() override = default;
+private slots:
     /**
      * Called if controls are connected to the Rotel amp.
      *
@@ -156,6 +154,29 @@ private:
      */
     void controlsConnected();
     /**
+     * Called if controls are disconnected from the Rotel amp.
+     *
+     * The disconnect can also be called if one of the sendCommands
+     * to the Rotel amp fails. Try every 60 seconds to reconnect.
+     */
+    void controlsDisconnected();
+    /**
+     * Called every 60 seconds if Rotel amp is disconnected.
+     *
+     * Try to reconnect. If that fails try again in 60 seconds.
+     */
+    void controlsCheckConnection();
+
+private:
+    /**
+     * Constructor. Create socket and connect signals.
+     */
+    xPlayerRotelControls();
+    /**
+     * Destructor. Default.
+     */
+    ~xPlayerRotelControls() override = default;
+    /**
      * Send command to the Rotel amp and retrieve the result.
      *
      * @param command the command send to the Rotel amp.
@@ -164,6 +185,8 @@ private:
     QString sendCommand(const QString& command);
 
     QTcpSocket* rotelSocket;
+    int rotelNetworkPort;
+    QString rotelNetworkAddress;
     static xPlayerRotelControls* rotelControls;
 };
 
