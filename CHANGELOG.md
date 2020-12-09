@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2 - 2020-12-09
+
+- Do a proper UI cleanup on rescanning the movie or music library.
+- Enable or disable the Rotel widget based on the network connection.
+
 ## 0.4.1 - 2020-11-22
 
 - Add queue artist feature. Double-click on artist to queue all albums.
