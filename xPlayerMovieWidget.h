@@ -85,7 +85,7 @@ public slots:
     void clear();
 
 
-protected slots:
+private slots:
     /**
      * The full window button is pressed.
      */

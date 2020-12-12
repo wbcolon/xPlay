@@ -19,6 +19,7 @@
 
 #include <QDialog>
 #include <QSpinBox>
+#include <QPushButton>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QSettings>
@@ -82,6 +83,8 @@ private slots:
      */
     void streamingSiteDefault();
 
+    void toggleRotelWidget();
+
 private:
     /**
      * Split an entry from the movie library list into tag and directory.
@@ -120,6 +123,7 @@ private:
     QLineEdit* streamingUrlWidget;
     QListWidget* movieLibraryListWidget;
     QListWidget* streamingSitesListWidget;
+    QPushButton* rotelEnableWidget;
     QLineEdit* rotelNetworkAddressWidget;
     QSpinBox* rotelNetworkPortWidget;
     std::pair<QString,QUrl> streamingSitesDefault;

@@ -14,6 +14,7 @@
 #include "xPlayerMusicWidget.h"
 #include "xPlayerVolumeWidgetX.h"
 #include "xPlayerRotelWidget.h"
+#include "xPlayerConfiguration.h"
 
 #include <QGridLayout>
 #include <QTabWidget>
@@ -45,6 +46,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     controlTab->setTabPosition(QTabWidget::West);
     controlTab->addTab(controlTabPlayer, "xPlay");
     controlTab->addTab(controlTabRotel, "Rotel");
+    controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     // Create buttons for play/pause and stop
     playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), controlTabPlayer);
     auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), controlTabPlayer);
@@ -54,7 +56,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     nextButton->setLayoutDirection(Qt::RightToLeft);
     //nextButton->setStyleSheet("padding-left: 20px; padding-right: 20px;");
     auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), controlTabPlayer);
-    xPlayerVolumeWidgetX* volumeWidget = new xPlayerVolumeWidgetX(controlTabPlayer);
+    auto volumeWidget = new xPlayerVolumeWidgetX(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, musicPlayer, &xMusicPlayer::setMuted);
@@ -112,6 +114,10 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     // Connect the music player to the player widget.
     connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xPlayerMusicWidget::currentTrack);
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xPlayerMusicWidget::currentState);
+    // Connect Rotel amp widget configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
+        controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
+    } );
     // Do not resize the player widget vertically
     setFixedHeight(sizeHint().height());
     // Setup volume
@@ -156,3 +162,4 @@ void xPlayerMusicWidget::currentState(xMusicPlayer::State state) {
         } break;
     }
 }
+

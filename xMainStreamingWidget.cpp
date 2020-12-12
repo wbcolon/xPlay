@@ -14,6 +14,7 @@
 
 #include "xMainStreamingWidget.h"
 #include "xPlayerRotelWidget.h"
+#include "xPlayerConfiguration.h"
 
 #include <QtWebEngineWidgets/QWebEngineView>
 #include <QtWebEngineWidgets/QWebEngineSettings>
@@ -40,6 +41,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     auto rotelLayout = new QVBoxLayout();
     rotelLayout->addWidget(rotelWidget);
     rotelBox->setLayout(rotelLayout);
+    rotelBox->setEnabled(xPlayerConfiguration::configuration()->rotelWidget());
     // Control box.
     auto controlBox = new QGroupBox("Navigation", this);
     auto homeButton = new QPushButton(tr("Home"), controlBox);
@@ -87,6 +89,10 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     streamingLayout->setRowMinimumHeight(10, 20);
     streamingLayout->setRowStretch(15, 0);
     streamingLayout->addWidget(new QLabel(""), 16, 21, 9, 1);
+    // Connect Rotel amp widget configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
+        rotelBox->setEnabled(xPlayerConfiguration::configuration()->rotelWidget());
+    } );
     // Connect the navigation controls to the QWebEngineView.
     connect(homeButton, &QPushButton::pressed, [=] () { streamingWebView->load(currentSite.second); } );
     connect(backButton, &QPushButton::pressed, streamingWebView, &QWebEngineView::back);

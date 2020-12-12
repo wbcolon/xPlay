@@ -13,8 +13,8 @@
  */
 
 #include "xPlayerMovieWidget.h"
-
 #include "xPlayerVolumeWidgetX.h"
+#include "xPlayerConfiguration.h"
 
 #include <QGridLayout>
 #include <QPushButton>
@@ -44,6 +44,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     controlTab->setTabPosition(QTabWidget::West);
     controlTab->addTab(controlTabPlayer, "xPlay");
     controlTab->addTab(controlTabRotel, "Rotel");
+    controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     // Create buttons for play/pause and stop
     playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), controlTabPlayer);
     auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), controlTabPlayer);
@@ -95,6 +96,10 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     movieLayout->addWidget(subtitleBox, 3, 6, 1, 2);
     movieLayout->addWidget(controlTab, 0, 10, 4, 1);
     movieLabel->setText("no movie");
+    // Connect Rotel amp widget configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
+        controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
+    } );
     // Connect the buttons to player widget and/or to the music player.
     connect(playPauseButton, &QPushButton::pressed, moviePlayer, &xMoviePlayer::playPause);
     connect(stopButton, &QPushButton::pressed, moviePlayer, &xMoviePlayer::stop);

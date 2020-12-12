@@ -18,7 +18,6 @@
 #include <QGroupBox>
 #include <QFileDialog>
 #include <QDialogButtonBox>
-#include <QPushButton>
 #include <QLabel>
 #include <QRegularExpression>
 #include <QDebug>
@@ -77,10 +76,12 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     rotelNetworkAddressWidget = new QLineEdit(rotelBox);
     rotelNetworkPortWidget = new QSpinBox(rotelBox);
     rotelNetworkPortWidget->setRange(0, 10000);
-    rotelLayout->addWidget(rotelNetworkAddressLabel, 0, 0, 1, 4);
-    rotelLayout->addWidget(rotelNetworkAddressWidget, 1, 0, 1, 4);
-    rotelLayout->addWidget(rotelNetworkPortLabel, 0, 4);
-    rotelLayout->addWidget(rotelNetworkPortWidget, 1, 4);
+    rotelEnableWidget = new QPushButton(tr("disable"), rotelBox);
+    rotelLayout->addWidget(rotelNetworkAddressLabel, 0, 0, 1, 3);
+    rotelLayout->addWidget(rotelNetworkAddressWidget, 1, 0, 1, 3);
+    rotelLayout->addWidget(rotelNetworkPortLabel, 0, 3);
+    rotelLayout->addWidget(rotelNetworkPortWidget, 1, 3);
+    rotelLayout->addWidget(rotelEnableWidget, 1, 4, 1, 1);
     // Setup streaming sites with URL and short name.
     auto streamingSitesLayout = new QGridLayout(streamingSitesBox);
     auto streamingNameLabel = new QLabel(tr("Name"), streamingSitesBox);
@@ -107,6 +108,8 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     configurationLayout->setRowMinimumHeight(6, 50);
     configurationLayout->setRowStretch(6, 0);
     configurationLayout->addWidget(configurationButtons, 7, 4, 1, 4);
+    // Connect rotel button
+    connect(rotelEnableWidget, &QPushButton::pressed, this, &xPlayerConfigurationDialog::toggleRotelWidget);
     // Connect dialog buttons.
     connect(musicLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMusicLibraryDirectory);
     connect(movieLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMovieLibraryDirectory);
@@ -132,6 +135,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
 void xPlayerConfigurationDialog::loadSettings() {
     auto musicLibraryDirectory = xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
     auto musicLibraryExtensions = xPlayerConfiguration::configuration()->getMusicLibraryExtensions();
+    auto rotelWidget = xPlayerConfiguration::configuration()->rotelWidget();
     auto [rotelNetworkAddress, rotelNetworkPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
     auto movieLibraryTagAndDirectory = xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectory();
     auto movieLibraryExtensions = xPlayerConfiguration::configuration()->getMovieLibraryExtensions();
@@ -142,6 +146,11 @@ void xPlayerConfigurationDialog::loadSettings() {
     musicLibraryExtensionsWidget->setText(musicLibraryExtensions);
     rotelNetworkAddressWidget->setText(rotelNetworkAddress);
     rotelNetworkPortWidget->setValue(rotelNetworkPort);
+    if (!rotelWidget) {
+        rotelNetworkAddressWidget->setEnabled(false);
+        rotelNetworkPortWidget->setEnabled(false);
+        rotelEnableWidget->setText(tr("enable"));
+    }
     movieLibraryExtensionsWidget->setText(movieLibraryExtensions);
     movieLibraryListWidget->clear();
     if (movieLibraryTagAndDirectory.count() > 0) {
@@ -184,6 +193,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     // Debug output
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryDirectory: " << musicLibraryDirectory;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryExtensions: " << musicLibraryExtensions;
+    qDebug() << "xPlayerConfigurationDialog: save: rotelEnableWidget: " << rotelEnableWidget->isEnabled();
     qDebug() << "xPlayerConfigurationDialog: save: rotelNetworkAddress: " << rotelNetworkAddress;
     qDebug() << "xPlayerConfigurationDialog: save: rotelNetworkPort: " << rotelNetworkPort;
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryDirectory: " << movieLibraryTagAndDirectory;
@@ -193,6 +203,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     // Save settings.
     xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
     xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
+    xPlayerConfiguration::configuration()->setRotelWidget(rotelNetworkAddressWidget->isEnabled());
     xPlayerConfiguration::configuration()->setRotelNetworkAddress(rotelNetworkAddress, rotelNetworkPort);
     xPlayerConfiguration::configuration()->setMovieLibraryTagAndDirectory(movieLibraryTagAndDirectory);
     xPlayerConfiguration::configuration()->setMovieLibraryExtensions(movieLibraryExtensions);
@@ -200,6 +211,18 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setStreamingSitesDefault(streamingSitesDefault);
     // End dialog.
     accept();
+}
+
+void xPlayerConfigurationDialog::toggleRotelWidget() {
+    if (rotelNetworkAddressWidget->isEnabled()) {
+        rotelNetworkAddressWidget->setEnabled(false);
+        rotelNetworkPortWidget->setEnabled(false);
+        rotelEnableWidget->setText(tr("enable"));
+    } else {
+        rotelNetworkAddressWidget->setEnabled(true);
+        rotelNetworkPortWidget->setEnabled(true);
+        rotelEnableWidget->setText(tr("disable"));
+    }
 }
 
 void xPlayerConfigurationDialog::selectMovieLibrary(QListWidgetItem* item) {

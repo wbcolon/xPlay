@@ -13,6 +13,7 @@
  */
 #include "xPlayerRotelWidget.h"
 #include "xPlayerVolumeWidgetX.h"
+#include "xPlayerConfiguration.h"
 
 #include <QGridLayout>
 #include <QList>
@@ -71,12 +72,19 @@ xPlayerRotelControls* xPlayerRotelControls::controls() {
 }
 
 void xPlayerRotelControls::connect(const QString& address, int port, bool wait) {
+    // Do we have a valid address.
     if ((address.isEmpty()) || (port <= 0)) {
         qWarning() << "Rotel: not valid network address given: " << address << ":" << port;
         return;
     }
+    // Save current network address and port.
     rotelNetworkPort = port;
     rotelNetworkAddress = address;
+    // We do not connect if the widget is disabled.
+    if (!xPlayerConfiguration::configuration()->rotelWidget()) {
+        qInfo() << "Rotel: not connecting, widget is disabled.";
+        return;
+    }
     rotelSocket->connectToHost(rotelNetworkAddress, rotelNetworkPort);
     if (wait) {
         rotelSocket->waitForConnected();
@@ -215,6 +223,11 @@ void xPlayerRotelControls::controlsCheckConnection() {
 }
 
 QString xPlayerRotelControls::sendCommand(const QString& command) {
+    // We do ignore commands if the corresponding widget is disabled.
+    if (!xPlayerConfiguration::configuration()->rotelWidget()) {
+        qInfo() << "xPlayerRotelControls::sendcommand: ignore command, widget disabled.";
+        return QString();
+    }
     char readBuffer[65] = { 0 };
     qint64 readBytes = 0;
     rotelSocket->waitForConnected(500);
@@ -235,7 +248,6 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
         qCritical() << "xPlayerRotelControls::sendCommand: state is not connected. Disconnecting.";
         controlsDisconnected();
     }
-
     return (readBytes > 0) ? QString(readBuffer) : QString();
 }
 

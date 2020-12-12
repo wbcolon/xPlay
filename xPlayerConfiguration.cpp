@@ -22,6 +22,7 @@
 // Configuration strings.
 const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" };
 const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" };
+const QString xPlayerConfiguration_RotelWidget { "xPlay/RotelWidget" };
 const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddress" };
 const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" };
 const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDirectory" };
@@ -68,6 +69,18 @@ void xPlayerConfiguration::setMusicLibraryExtensions(const QString& extensions) 
         settings->setValue(xPlayerConfiguration_MusicLibraryExtensions, extensions);
         settings->sync();
         emit updatedMovieLibraryExtensions();
+    }
+}
+
+void xPlayerConfiguration::setRotelWidget(bool enable) {
+    if (enable != rotelWidget()) {
+        settings->setValue(xPlayerConfiguration_RotelWidget, enable);
+        settings->sync();
+        emit updatedRotelWidget();
+        // Trigger the network connect if the widget is enabled again.
+        if (enable) {
+            emit updatedRotelNetworkAddress();
+        }
     }
 }
 
@@ -141,6 +154,10 @@ QStringList xPlayerConfiguration::getMusicLibraryExtensionList() {
     } else {
         return extensions.split(" ");
     }
+}
+
+bool xPlayerConfiguration::rotelWidget() {
+    return settings->value(xPlayerConfiguration_RotelWidget, true).toBool();
 }
 
 std::pair<QString,int> xPlayerConfiguration::getRotelNetworkAddress() {

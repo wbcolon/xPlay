@@ -46,7 +46,7 @@ public slots:
      */
     void clear();
 
-protected slots:
+private slots:
     /**
      * Update the player widget with the provided information.
      *

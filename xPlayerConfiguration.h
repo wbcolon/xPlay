@@ -45,6 +45,12 @@ public:
      */
     void setMusicLibraryExtensions(const QString& extensions);
     /**
+     * Set availability of the Rotel amp widget.
+     *
+     * @param enabled show Rotel widget after restart if true, disable otherwise.
+     */
+    void setRotelWidget(bool enabled);
+    /**
      * Set the network address and port used to connect the Rotel amp.
      *
      * @param address the IP address of dns name as string.
@@ -99,6 +105,12 @@ public:
      * @return the list of extensions.
      */
     QStringList getMusicLibraryExtensionList();
+    /**
+     * Return the availability of the Rotel amp widget.
+     *
+     * @return true if the Rotel amp widget is displayed, false otherwise.
+     */
+    bool rotelWidget();
     /**
      * Get the network configuration for the Rotel amp.
      *
@@ -165,6 +177,10 @@ signals:
      * Signal an update of the accepted movie file extensions.
      */
     void updatedMovieLibraryExtensions();
+    /**
+     * Signal an update of the visibility of the Rotel amp widget.
+     */
+    void updatedRotelWidget();
     /**
      * Signal an update of the Rotel amp configuration.
      */
