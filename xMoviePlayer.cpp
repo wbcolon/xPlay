@@ -77,12 +77,22 @@ void xMoviePlayer::stop() {
     emit currentState(State::StopState);
 }
 
-void xMoviePlayer::setMovie(const QString& moviePath) {
-    qDebug() << "xMoviePlayer: play: " << moviePath;
+void xMoviePlayer::setMovie(const QString& path, const QString& name) {
     resetMoviePlayer();
-    moviePlayer->setCurrentSource(QUrl::fromLocalFile(moviePath));
+    moviePlayer->setCurrentSource(QUrl::fromLocalFile(path));
     moviePlayer->play();
+    qDebug() << "xMoviePlayer: play: " << path;
+    emit currentMovieName(name);
+    emit currentMoviePath(path);
     emit currentState(xMoviePlayer::PlayingState);
+}
+
+void xMoviePlayer::setMovieQueue(const QList<std::pair<QString,QString>>& queue) {
+    movieQueue = queue;
+}
+
+void xMoviePlayer::clearMovieQueue() {
+    movieQueue.clear();
 }
 
 void xMoviePlayer::setScaleAndCropMode(bool mode) {
@@ -103,6 +113,10 @@ void xMoviePlayer::availableAudioChannels() {
         if (!description.description().isEmpty()) {
             audioChannel += QString(" (%1)").arg(description.description());
         }
+        // Shorten a few audio descriptions.
+        audioChannel.replace("Free Lossless Audio Codec (FLAC)", "FLAC");
+        audioChannel.replace("PCM audio", "PCM");
+        audioChannel.replace("Uncompressed ", "");
         audioChannels.push_back(audioChannel);
         qDebug() << "xMoviePlayer: audio channel: " << audioChannel;
     }
@@ -152,16 +166,24 @@ void xMoviePlayer::stateChanged(Phonon::State newState, Phonon::State oldState) 
 }
 
 void xMoviePlayer::aboutToFinish() {
-    qDebug() << "xMoviePlayer: aboutToFinish";
-    // Go to stopping state. End full window mode.
-    emit currentState(xMoviePlayer::StoppingState);
+    if (movieQueue.isEmpty()) {
+        qDebug() << "xMoviePlayer: aboutToFinish";
+        // Go to stopping state. End full window mode.
+        emit currentState(xMoviePlayer::StoppingState);
+    }
 }
 
 void xMoviePlayer::closeToFinish(qint32 timeLeft) {
-    qDebug() << "xMoviePlayer: closeToFinish: " << timeLeft;
-    // Stop the media player.
-    moviePlayer->stop();
-    emit currentState(xMoviePlayer::StopState);
+    if (movieQueue.isEmpty()) {
+        qDebug() << "xMoviePlayer: closeToFinish: " << timeLeft;
+        // Stop the media player.
+        moviePlayer->stop();
+        emit currentState(xMoviePlayer::StopState);
+    } else {
+        // Take next movie out of the queue.
+        auto nextMovie = movieQueue.takeFirst();
+        setMovie(nextMovie.first, nextMovie.second);
+    }
 }
 
 void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)

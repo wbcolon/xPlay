@@ -21,6 +21,7 @@
 
 #include <QStackedWidget>
 #include <QListWidget>
+#include <QCheckBox>
 #include <QWidget>
 #include <vector>
 
@@ -64,9 +65,20 @@ signals:
     /**
      * Signal emitted in order to play a movie.
      *
-     * @param moviePath the absolute path of the movie as string.
+     * @param path the absolute path of the movie as string.
+     * @param name the name displayed for the movie.
      */
-    void playMovie(const QString& moviePath);
+    void setMovie(const QString& path, const QString& name);
+    /**
+     * Signal emitted in order to set the movie queue.
+     *
+     * @param queue
+     */
+    void setMovieQueue(const QList<std::pair<QString,QString>>& queue);
+    /**
+     * Signal emitted in order to clear the movie queue;
+     */
+    void clearMovieQueue();
 
 public slots:
     /**
@@ -127,8 +139,26 @@ private slots:
      * @param item the pointer to the selected item.
      */
     void selectMovie(QListWidgetItem* item);
+    /**
+     * Select an entry in the movie list widget based on its path.
+     *
+     * @param path the path of the currently played movie.
+     */
+    void updateSelectedMovie(const QString& path);
+    /**
+     * Set the autoplay next mode and update/clear the movie queue.
+     *
+     * @param mode clear the queue if true, else update queue.
+     */
+    void setAutoPlayNextMovie(bool mode);
 
 private:
+    /**
+     * Create movie queue and emit the queue to the player.
+     *
+     * @param index the index of the currently selected (played) movie.
+     */
+    void updateMovieQueue(int index);
     /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
@@ -146,6 +176,7 @@ private:
     xPlayerMovieWidget* moviePlayerWidget;
     QWidget* mainWidget;
     bool fullWindow;
+    bool autoPlayNextMovie;
 };
 
 #endif

@@ -56,7 +56,6 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     // Connect movie library with main movie widget
     connect(mainMovieWidget, &xMainMovieWidget::scanForTag, movieLibrary, &xMovieLibrary::scanForTag);
     connect(mainMovieWidget, &xMainMovieWidget::scanForTagAndDirectory, movieLibrary, &xMovieLibrary::scanForTagAndDirectory);
-    connect(mainMovieWidget, &xMainMovieWidget::playMovie, moviePlayer, &xMoviePlayer::setMovie);
     connect(mainMovieWidget, &xMainMovieWidget::showMenuBar, menuBar(), &QMenuBar::setVisible);
     // Results back to the main movie widget.
     connect(movieLibrary, &xMovieLibrary::scannedTags, mainMovieWidget, &xMainMovieWidget::scannedTags);

@@ -33,7 +33,8 @@ auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
 xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
         QStackedWidget(parent),
         moviePlayer(player),
-        fullWindow(false) {
+        fullWindow(false),
+        autoPlayNextMovie(false) {
     // main widget with controls.
     mainWidget = new QWidget(parent);
     // Create group boxes for tags, directories and movies.
@@ -60,20 +61,24 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     movieStack->setCurrentIndex(0);
     // Layout for the main movie widget.
     auto movieLayout = new QGridLayout(mainWidget);
-    movieLayout->addWidget(moviePlayerBox, 0, 0, 1, 5);
-    movieLayout->addWidget(movieStack, 1, 0, 4, 5);
-    movieLayout->addWidget(tagBox, 0, 5, 1, 2);
-    movieLayout->addWidget(directoryBox, 1, 5, 1, 2);
-    movieLayout->addWidget(movieBox, 2, 5, 3, 2);
+    movieLayout->addWidget(moviePlayerBox, 0, 0, 2, 5);
+    movieLayout->addWidget(movieStack, 2, 0, 8, 5);
+    movieLayout->addWidget(tagBox, 0, 5, 2, 2);
+    movieLayout->addWidget(directoryBox, 2, 5, 2, 2);
+    movieLayout->addWidget(movieBox, 4, 5, 6, 2);
     movieLayout->setColumnStretch(0, 6);
     movieLayout->setColumnStretch(6, 2);
-    movieLayout->setRowStretch(4, 2);
+    movieLayout->setRowStretch(8, 2);
     // Connect signals.
     connect(tagList, &QListWidget::currentRowChanged, this, &xMainMovieWidget::selectTag);
     connect(directoryList, &QListWidget::currentRowChanged, this, &xMainMovieWidget::selectDirectory);
     connect(movieList, &QListWidget::itemDoubleClicked, this, &xMainMovieWidget::selectMovie);
     // Connect to movie player.
-    connect(this, &xMainMovieWidget::playMovie, moviePlayer, &xMoviePlayer::setMovie);
+    connect(this, &xMainMovieWidget::setMovie, moviePlayer, &xMoviePlayer::setMovie);
+    connect(this, &xMainMovieWidget::setMovieQueue, moviePlayer, &xMoviePlayer::setMovieQueue);
+    connect(this, &xMainMovieWidget::clearMovieQueue, moviePlayer, &xMoviePlayer::clearMovieQueue);
+    connect(moviePlayer, &xMoviePlayer::currentMoviePath, this, &xMainMovieWidget::updateSelectedMovie);
+    connect(moviePlayer, &xMoviePlayer::currentMovieName, moviePlayerWidget, &xPlayerMovieWidget::currentMovie);
     connect(moviePlayer, &xMoviePlayer::currentMovieLength, moviePlayerWidget, &xPlayerMovieWidget::currentMovieLength);
     connect(moviePlayer, &xMoviePlayer::currentMoviePlayed, moviePlayerWidget, &xPlayerMovieWidget::currentMoviePlayed);
     connect(moviePlayer, &xMoviePlayer::currentSubtitles, moviePlayerWidget, &xPlayerMovieWidget::currentSubtitles);
@@ -84,6 +89,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     // Connect full window.
     connect(moviePlayerWidget, &xPlayerMovieWidget::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
     connect(moviePlayer, &xMoviePlayer::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
+    connect(moviePlayerWidget, &xPlayerMovieWidget::autoPlayNextMovie, this, &xMainMovieWidget::setAutoPlayNextMovie);
     // Prepare Stack
     addWidget(mainWidget);
     setCurrentWidget(mainWidget);
@@ -152,7 +158,7 @@ void xMainMovieWidget::scannedMovies(const std::vector<std::pair<QString,QString
         movieList->addItem(movie.first);
         currentMovies.push_back(movie.second);
     }
-    qDebug() << "MOVIES SIZE: " << movies.size();
+    qDebug() << "xMainMovieWidget: no of scanned movies: " << movies.size();
 }
 
 void xMainMovieWidget::selectTag(int index) {
@@ -175,8 +181,39 @@ void xMainMovieWidget::selectDirectory(int index) {
 void xMainMovieWidget::selectMovie(QListWidgetItem* movieItem) {
     auto movieIndex = movieList->row(movieItem);
     if ((movieIndex >= 0) && (movieIndex < currentMovies.size())) {
-        emit playMovie(currentMovies[movieIndex]);
-        moviePlayerWidget->currentMovie(movieItem->text());
+        updateMovieQueue(movieIndex);
+        emit setMovie(currentMovies[movieIndex], movieItem->text());
+    }
+}
+
+void xMainMovieWidget::updateSelectedMovie(const QString& path) {
+    auto movieIndex = movieList->currentRow();
+    auto pathIndex = currentMovies.indexOf(path);
+    // Update selection only if pathIndex is valid and not the currently selected index.
+    if ((pathIndex != movieIndex) && (pathIndex >= 0) && (pathIndex < movieList->count())) {
+        movieList->setCurrentItem(movieList->item(pathIndex));
+    }
+}
+
+void xMainMovieWidget::setAutoPlayNextMovie(bool mode) {
+    autoPlayNextMovie = mode;
+    updateMovieQueue(movieList->currentRow());
+}
+
+void xMainMovieWidget::updateMovieQueue(int index) {
+    if ((index >= 0) && (index < currentMovies.size())) {
+        if (autoPlayNextMovie) {
+            QList<std::pair<QString,QString>> queue;
+            for (auto i = index+1; i < currentMovies.size(); ++i) {
+                qDebug() << "QUEUE: " << movieList->item(i)->text();
+                queue.push_back(std::make_pair(currentMovies[i], movieList->item(i)->text()));
+            }
+            emit setMovieQueue(queue);
+        } else {
+            emit clearMovieQueue();
+        }
+    } else {
+        emit clearMovieQueue();
     }
 }
 

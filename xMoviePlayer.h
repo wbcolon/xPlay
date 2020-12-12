@@ -93,6 +93,18 @@ signals:
      */
     void toggleFullWindow();
     /**
+     * Signal the name of the currently played movie.
+     *
+     * @param name the name of the currently played movie.
+     */
+    void currentMovieName(const QString& name);
+    /**
+     * Signal the path of the currently played movie.
+     *
+     * @param path the absolute path of the currently played movie.
+     */
+    void currentMoviePath(const QString& path);
+    /**
      * Signal the amount played for the current movie.
      *
      * @param played the amount played in milliseconds.
@@ -147,9 +159,13 @@ public slots:
     /**
      * Set the movie to be played.
      *
-     * @param moviePath absolute path to the movie to be played.
+     * @param path absolute path to the movie to be played.
+     * @param name the name of the movie displayed.
      */
-    void setMovie(const QString& moviePath);
+    void setMovie(const QString& path, const QString& name);
+
+    void setMovieQueue(const QList<std::pair<QString,QString>>& queue);
+    void clearMovieQueue();
     /**
      * Enable or disable the scale and crop mode.
      *
@@ -247,6 +263,7 @@ private:
     Phonon::AudioOutput* audioOutput;
     QList<Phonon::SubtitleDescription> currentSubtitleDescriptions;
     QList<Phonon::AudioChannelDescription> currentAudioChannelDescriptions;
+    QList<std::pair<QString,QString>> movieQueue;
     bool fullWindow;
 };
 

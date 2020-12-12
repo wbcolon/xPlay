@@ -29,20 +29,26 @@ class xPlayerMovieWidget:public QWidget {
 public:
     explicit xPlayerMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerMovieWidget() override = default;
-    /**
-     * Display the currently played movie.
-     *
-     * @param movie the filename of the movie played.
-     */
-    void currentMovie(const QString& movie);
 
 signals:
     /**
      * Signal a toggle for enable/disable the full window mode.
      */
     void toggleFullWindow();
+    /**
+     * Signal a change in the autoplay next setting.
+     *
+     * @param mode the current state of autoplay.
+     */
+    void autoPlayNextMovie(bool mode);
 
 public slots:
+    /**
+     * Display the currently played movie.
+     *
+     * @param movie the filename of the movie played.
+     */
+    void currentMovie(const QString& movie);
     /**
      * Retrieve the audio channels for the current movie.
      *
@@ -93,13 +99,6 @@ private:
      * @param entries list of new entries to update combo box.
      */
     void updateComboBoxEntries(QComboBox* comboBox, const QStringList& entries);
-    /**
-     * Helper function creating a QGroupBox with an QListWidget.
-     *
-     * @param boxLabel contains the label for the surrounding groupbox.
-     * @return pair of pointer to the created QGroupBox and QListWidget.
-     */
-    auto addGroupBox(const QString& boxLabel);
 
     QComboBox* subtitleBox;
     QComboBox* audioChannelBox;
