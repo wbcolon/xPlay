@@ -78,6 +78,7 @@ xPlay has a music view, a movie view and a streaming view.
 ### Music View 
 
 ![Screenshot Music View](screenshots/xplay_screenshot_music_view_00.png)
+![Screenshot Music View](screenshots/xplay_screenshot_music_view_01.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The 
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select) 
@@ -90,6 +91,9 @@ The player itself displays the artist, album and track currently played. It incl
 currently played file. In addition there is player control section with a *play/pause*, *stop*, *prev*, *next*
 and *clear queue* buttons and a volume dialer. If you double-click on an entry of the queue then the player jumps
 to this track. Right-clicking on a queue entry will remove this track from the queue.
+
+The Rotel widget allows to control a Rotel A12 or A14 amp via a network connection. The volume can be adjusted 
+(maximum of 60) and the input can be selected. The values for bass and treble can be adjusted (from -10 to +10).
 
 ### Movie View 
 
@@ -109,6 +113,8 @@ may be usable for some movies that have black borders. The video output window c
 In addition you can rewind and forward by 60 seconds using the left and right arrow keys. The up and down arrow keys 
 will increase or decrease the volume by one. The *S* key will toggle the scale and crop mode. The *ESC* key can be 
 used to end the full window mode. The full window mode will automatically end if the current movie is about to end.
+If the *Autoplay Next* checkbox is enabled then the next movie in the movie list will be played as soon as the 
+current movie has ended. The player will stay in fill window mode until the last movie of the list is finished.
 
 ### Streaming View
 
@@ -124,9 +130,17 @@ may change for coming versions of QWebEngine.
 
 ### Menu
 
-The file menu has currently two entries. An *Exit* and *Configure* entry. The *Configure* will
-display a file dialog that allows you to select a base directory for your music library. This directory is stored
-using QSettings and is retrieved on startup of xPlay.
+The menu has three entries *File*, *View* and *Help*. The *File* menu has four entries. The *Configure* entry 
+will open configuration dialog (see below). The entries *Rescan Music Library* and *Rescan Movie Library* trigger
+a rescan of the currently configured music or movie library. The entries *View* menu allows to switch between
+the *Music View*, *Movie View* or *Streaming View*. The *Help* menu has two entries displaying copyright 
+information about the used Qt and Qwt libraries.
+
+#### Configuration Dialog
+
+The configuration dialog is using QSettings to load and store the xPlay configuration. The directory and 
+extensions for the music and the movie library can be configured as well as the sites for the streaming view.
+The Rotel widget can be enabled or disabled and its network configuration can be configured.
 
 ![Screenshot Configuration Dialog](screenshots/xplay_screenshot_configuration_dialog.png)
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.3 - 2020-12-12
+
+- Add autoplay next movie feature. Updated movie player UI.
+- Allow enable/disable of Rotel widget in configuration dialog.
+
 ## 0.4.2 - 2020-12-09
 
 - Do a proper UI cleanup on rescanning the movie or music library.
