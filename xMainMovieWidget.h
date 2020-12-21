@@ -31,7 +31,10 @@ class xMainMovieWidget:public QStackedWidget {
 public:
     explicit xMainMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr);
     ~xMainMovieWidget() override = default;
-
+    /**
+     * Perform initial commands required when switching to this view.
+     */
+    void initializeView();
     /**
      * Clear tags, directories, movies and player.
      */
@@ -43,6 +46,12 @@ signals:
      * The corresponding slots are implemented in the movie player widget or
      * movie player classes.
      */
+    /**
+     * Signal emitted to notify main widget to update the window title.
+     *
+     * @param title the new window title as string.
+     */
+    void showWindowTitle(const QString& title);
     /**
      * Signal emitted to notify main widget to show/hide the menu bar.
      *
@@ -160,6 +169,12 @@ private:
      */
     void updateMovieQueue(int index);
     /**
+     * Emit signal to initiate update of window title with new currently playing movie.
+     *
+     * @param name the displayed name of the currently playing movie.
+     */
+    void updateWindowTitle(const QString& name);
+    /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
      * @param boxLabel contains the label for the surrounding groupbox.
@@ -171,6 +186,7 @@ private:
     QListWidget* directoryList;
     QListWidget* movieList;
     QStringList currentMovies;
+    QString currentMovieName;
     xMoviePlayer* moviePlayer;
     QStackedWidget* movieStack;
     xPlayerMovieWidget* moviePlayerWidget;

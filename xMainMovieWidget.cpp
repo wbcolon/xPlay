@@ -16,6 +16,7 @@
 
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QApplication>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
 auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
@@ -32,6 +33,7 @@ auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
 
 xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
         QStackedWidget(parent),
+        currentMovieName(),
         moviePlayer(player),
         fullWindow(false),
         autoPlayNextMovie(false) {
@@ -79,6 +81,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     connect(this, &xMainMovieWidget::clearMovieQueue, moviePlayer, &xMoviePlayer::clearMovieQueue);
     connect(moviePlayer, &xMoviePlayer::currentMoviePath, this, &xMainMovieWidget::updateSelectedMovie);
     connect(moviePlayer, &xMoviePlayer::currentMovieName, moviePlayerWidget, &xPlayerMovieWidget::currentMovie);
+    connect(moviePlayer, &xMoviePlayer::currentMovieName, this, &xMainMovieWidget::updateWindowTitle);
     connect(moviePlayer, &xMoviePlayer::currentMovieLength, moviePlayerWidget, &xPlayerMovieWidget::currentMovieLength);
     connect(moviePlayer, &xMoviePlayer::currentMoviePlayed, moviePlayerWidget, &xPlayerMovieWidget::currentMoviePlayed);
     connect(moviePlayer, &xMoviePlayer::currentSubtitles, moviePlayerWidget, &xPlayerMovieWidget::currentSubtitles);
@@ -93,6 +96,11 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     // Prepare Stack
     addWidget(mainWidget);
     setCurrentWidget(mainWidget);
+}
+
+void xMainMovieWidget::initializeView() {
+    updateWindowTitle(currentMovieName);
+    emit showMenuBar(!fullWindow);
 }
 
 void xMainMovieWidget::clear() {
@@ -117,12 +125,14 @@ void xMainMovieWidget::setFullWindow(bool mode) {
     if (fullWindow == mode) {
         return;
     }
+    auto title = QApplication::applicationName();
     fullWindow = mode;
     if (mode) {
         movieStack->removeWidget(moviePlayer);
         moviePlayer->setParent(this);
         addWidget(moviePlayer);
         setCurrentWidget(moviePlayer);
+        title += " - " + currentMovieName;
     } else {
         removeWidget(moviePlayer);
         moviePlayer->setParent(mainWidget);
@@ -130,6 +140,7 @@ void xMainMovieWidget::setFullWindow(bool mode) {
         movieStack->setCurrentWidget(moviePlayer);
         setCurrentWidget(mainWidget);
     }
+    emit showWindowTitle(title);
     emit showMenuBar(!fullWindow);
 }
 
@@ -214,6 +225,13 @@ void xMainMovieWidget::updateMovieQueue(int index) {
         }
     } else {
         emit clearMovieQueue();
+    }
+}
+
+void xMainMovieWidget::updateWindowTitle(const QString& name) {
+    currentMovieName = name;
+    if (fullWindow) {
+        emit showWindowTitle(QApplication::applicationName()+" - "+currentMovieName);
     }
 }
 

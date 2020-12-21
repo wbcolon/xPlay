@@ -30,7 +30,10 @@ class xMainMusicWidget: public QWidget {
 public:
     explicit xMainMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xMainMusicWidget() override = default;
-
+    /**
+     * Perform initial commands required when switching to this view.
+     */
+    void initializeView();
     /**
      * Clear artist, album, tracks and queue.
      */
@@ -42,6 +45,18 @@ signals:
      * The corresponding slots are implemented in the music player widget or music
      * player classes.
      */
+    /**
+     * Signal emitted to notify main widget to update the window title.
+     *
+     * @param title the new window title as string.
+     */
+    void showWindowTitle(const QString& title);
+    /**
+     * Signal emitted to notify main widget to show/hide the menu bar.
+     *
+     * @param menu show menu bar if true, hide otherwise.
+     */
+    void showMenuBar(bool menu);
     /**
      * Signal to scan albums for an artist.
      *

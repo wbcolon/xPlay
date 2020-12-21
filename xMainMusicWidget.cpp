@@ -93,6 +93,10 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Connect music player to main widget for queue update.
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
 }
+void xMainMusicWidget::initializeView() {
+    emit showWindowTitle(QApplication::applicationName());
+    emit showMenuBar(true);
+}
 
 void xMainMusicWidget::clear() {
     // Clear queue.

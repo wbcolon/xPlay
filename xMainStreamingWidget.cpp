@@ -26,6 +26,7 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QApplication>
 
 xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flags):
     QWidget(parent, flags) {
@@ -106,6 +107,11 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     connect(sitesCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(updateCurrentSites(int)));
     // Set user agent to firefox.
     streamingWebView->page()->profile()->setHttpUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0");
+}
+
+void xMainStreamingWidget::initializeView() {
+    emit showWindowTitle(QApplication::applicationName());
+    emit showMenuBar(true);
 }
 
 void xMainStreamingWidget::setSites(const QList<std::pair<QString,QUrl>>& sites) {

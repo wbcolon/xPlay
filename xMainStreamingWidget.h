@@ -28,6 +28,10 @@ class xMainStreamingWidget:public QWidget {
 public:
     explicit xMainStreamingWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xMainStreamingWidget() override = default;
+    /**
+     * Perform initial commands required when switching to this view.
+     */
+    void initializeView();
 
     /**
      * Set the sites accessible within this widget.
@@ -67,6 +71,20 @@ public slots:
      * @param mute enable mute if true, disable otherwise.
      */
     void setMuted(bool mute);
+
+signals:
+    /**
+     * Signal emitted to notify main widget to update the window title.
+     *
+     * @param title the new window title as string.
+     */
+    void showWindowTitle(const QString& title);
+    /**
+     * Signal emitted to notify main widget to show/hide the menu bar.
+     *
+     * @param menu show menu bar if true, hide otherwise.
+     */
+    void showMenuBar(bool menu);
 
 private slots:
     /**

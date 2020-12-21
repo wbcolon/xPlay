@@ -14,6 +14,7 @@
 #include <QMenuBar>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QApplication>
 
 #include "xApplication.h"
 #include "xPlayerConfiguration.h"
@@ -56,11 +57,17 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     // Connect movie library with main movie widget
     connect(mainMovieWidget, &xMainMovieWidget::scanForTag, movieLibrary, &xMovieLibrary::scanForTag);
     connect(mainMovieWidget, &xMainMovieWidget::scanForTagAndDirectory, movieLibrary, &xMovieLibrary::scanForTagAndDirectory);
-    connect(mainMovieWidget, &xMainMovieWidget::showMenuBar, menuBar(), &QMenuBar::setVisible);
     // Results back to the main movie widget.
     connect(movieLibrary, &xMovieLibrary::scannedTags, mainMovieWidget, &xMainMovieWidget::scannedTags);
     connect(movieLibrary, &xMovieLibrary::scannedDirectories, mainMovieWidget, &xMainMovieWidget::scannedDirectories);
     connect(movieLibrary, &xMovieLibrary::scannedMovies, mainMovieWidget, &xMainMovieWidget::scannedMovies);
+    // Connect window title and menu bar to main widgets.
+    connect(mainMusicWidget, &xMainMusicWidget::showMenuBar, menuBar(), &QMenuBar::setVisible);
+    connect(mainMusicWidget, &xMainMusicWidget::showWindowTitle, this, &xApplication::setWindowTitle);
+    connect(mainMovieWidget, &xMainMovieWidget::showMenuBar, menuBar(), &QMenuBar::setVisible);
+    connect(mainMovieWidget, &xMainMovieWidget::showWindowTitle, this, &xApplication::setWindowTitle);
+    connect(mainStreamingWidget, &xMainStreamingWidget::showMenuBar, menuBar(), &QMenuBar::setVisible);
+    connect(mainStreamingWidget, &xMainStreamingWidget::showWindowTitle, this, &xApplication::setWindowTitle);
     // Do not connect main widget to music player here. It is done in the main widget
     // Connect Settings.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryDirectory,
@@ -89,6 +96,8 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(mainDbus, &xPlayerDBus::dbus_muteRotel, this, &xApplication::dbus_muteRotel);
     connect(mainDbus, &xPlayerDBus::dbus_changeRotelVolume, this, &xApplication::dbus_changeRotelVolume);
     connect(mainDbus, &xPlayerDBus::dbus_selectRotelSource, this, &xApplication::dbus_selectRotelSource);
+    // Set title and connect signal from movie view.
+    setWindowTitle(QApplication::applicationName());
 }
 
 void xApplication::dbus_playPause() {
@@ -167,15 +176,16 @@ void xApplication::dbus_changeVolume(int delta) {
 }
 
 void xApplication::dbus_selectView(const QString& view) {
-    // Change view. Make menu bar visible in music and streaming view.
+    // Change and initialize view.
     if (!view.compare("music", Qt::CaseInsensitive)) {
-        menuBar()->setVisible(true);
         mainView->setCurrentWidget(mainMusicWidget);
+        mainMusicWidget->initializeView();
     } else if (!view.compare("movie", Qt::CaseInsensitive)) {
         mainView->setCurrentWidget(mainMovieWidget);
+        mainMovieWidget->initializeView();
     } else if (!view.compare("streaming", Qt::CaseInsensitive)) {
-        menuBar()->setVisible(true);
         mainView->setCurrentWidget(mainStreamingWidget);
+        mainStreamingWidget->initializeView();
     }
 }
 
@@ -246,9 +256,18 @@ void xApplication::createMenus() {
     auto viewMenuSelectMovie = new QAction("Select M&ovie View", this);
     auto viewMenuSelectStreaming = new QAction("Select Str&eaming View", this);
     // Connect actions from view menu.
-    connect(viewMenuSelectMusic, &QAction::triggered, [=]() { mainView->setCurrentWidget(mainMusicWidget); });
-    connect(viewMenuSelectMovie, &QAction::triggered, [=]() { mainView->setCurrentWidget(mainMovieWidget); });
-    connect(viewMenuSelectStreaming, &QAction::triggered, [=]() { mainView->setCurrentWidget(mainStreamingWidget); });
+    connect(viewMenuSelectMusic, &QAction::triggered, [=]() {
+        mainView->setCurrentWidget(mainMusicWidget);
+        mainMusicWidget->initializeView();
+    });
+    connect(viewMenuSelectMovie, &QAction::triggered, [=]() {
+        mainView->setCurrentWidget(mainMovieWidget);
+        mainMovieWidget->initializeView();
+    });
+    connect(viewMenuSelectStreaming, &QAction::triggered, [=]() {
+        mainView->setCurrentWidget(mainStreamingWidget);
+        mainStreamingWidget->initializeView();
+    });
     // Create view menu.
     auto viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(viewMenuSelectMusic);
