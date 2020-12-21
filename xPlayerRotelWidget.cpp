@@ -24,6 +24,8 @@
 const QList<QString> Rotel_Sources {
         "cd", "coax1", "coax2", "opt1", "opt2", "aux1", "aux2", "tuner", "phono", "usb", "bluetooth", "pcusb"
 };
+// Special source indicating power off command.
+const QString Rotel_Source_PowerOff = "power off";
 // Limit the maximal volume.
 const int Rotel_MaximumVolume = 60;
 // Command strings in order to communicate to and from the Rotel A14 or A12 amp.
@@ -47,7 +49,8 @@ const QString Rotel_SetSource = "amp:%1!";
 const QString Rotel_RequestMute = "amp:mute?";
 const QString Rotel_ResponsePrefixMute = "amp:mute=";
 const QString Rotel_SetMute = "amp:mute_%1!";
-
+// Power off
+const QString Rotel_PowerOff = "amp:power_off!";
 
 xPlayerRotelControls* xPlayerRotelControls::rotelControls = nullptr;
 
@@ -126,6 +129,11 @@ void xPlayerRotelControls::setTreble(int t) {
 }
 
 void xPlayerRotelControls::setSource(const QString& src) {
+    // Check for special "power off" command.
+    if (src == Rotel_Source_PowerOff) {
+        powerOff();
+        return;
+    }
     auto srcIndex = Rotel_Sources.indexOf(src);
     if (srcIndex >= 0) {
         auto srcResponse = sendCommand(Rotel_SetSource.arg(src));
@@ -138,6 +146,12 @@ void xPlayerRotelControls::setMuted(bool m) {
     auto muteResponse = sendCommand(Rotel_SetMute.arg(m ? "on" : "off"));
     emit muted(m);
     qDebug() << "RotelControls: setMute: " << muteResponse;
+}
+
+void xPlayerRotelControls::powerOff() {
+    auto powerOffResponse = sendCommand(Rotel_PowerOff);
+    emit disconnected();
+    qDebug() << "RotelControls: powerOff: " << powerOffResponse;
 }
 
 int xPlayerRotelControls::getVolume() {
@@ -262,6 +276,9 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     for (const auto& source : Rotel_Sources) {
        rotelSource->addItem(source);
     }
+    // Insert separator and the special power off source.
+    rotelSource->insertSeparator(rotelSource->count());
+    rotelSource->addItem(Rotel_Source_PowerOff);
     rotelBass = new QSpinBox(this);
     rotelBass->setRange(-10, 10);
     rotelTreble = new QSpinBox(this);

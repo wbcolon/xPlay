@@ -103,6 +103,10 @@ public slots:
      * @param m enable mute if true, disable mute otherwise.
      */
     void setMuted(bool m);
+    /**
+     * Send command to power off the Rotel amp.
+     */
+    void powerOff();
 
 signals:
     /**
