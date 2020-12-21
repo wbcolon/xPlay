@@ -163,8 +163,15 @@ public slots:
      * @param name the name of the movie displayed.
      */
     void setMovie(const QString& path, const QString& name);
-
+    /**
+     * Setup the queue of movies to be played after the current one.
+     *
+     * @param queue list of pairs of path and name to be displayed.
+     */
     void setMovieQueue(const QList<std::pair<QString,QString>>& queue);
+    /**
+     * Clear the queue of movies.
+     */
     void clearMovieQueue();
     /**
      * Enable or disable the scale and crop mode.
