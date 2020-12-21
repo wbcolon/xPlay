@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.4 - 2020-12-21
+
+- Display currently played movie in the window title if in full window mode.
+- Fix minor rounding issue in times displayed in slider.
+
 ## 0.4.3 - 2020-12-12
 
 - Add autoplay next movie feature. Updated movie player UI.

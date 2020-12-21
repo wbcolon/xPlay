@@ -78,7 +78,7 @@ xPlay has a music view, a movie view and a streaming view.
 ### Music View 
 
 ![Screenshot Music View](screenshots/xplay_screenshot_music_view_00.png)
-![Screenshot Music View](screenshots/xplay_screenshot_music_view_01.png)
+![Screenshot Music View (rotel)](screenshots/xplay_screenshot_music_view_01.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The 
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select) 
@@ -108,13 +108,14 @@ movie list will start the playback.
 
 The player section itself allows for seeking within the movie and selecting the audio channel or subtitle. The
 control section has a *play/pause* and *stop* buttons. The *rew* and *fwd* buttons jump 60 seconds backward or 
-forward in the movie. The *full window* button maximizes the video output window. The *scale and crop* checkbox 
-may be usable for some movies that have black borders. The video output window can also be toggled by a double-click. 
-In addition you can rewind and forward by 60 seconds using the left and right arrow keys. The up and down arrow keys 
-will increase or decrease the volume by one. The *S* key will toggle the scale and crop mode. The *ESC* key can be 
-used to end the full window mode. The full window mode will automatically end if the current movie is about to end.
-If the *Autoplay Next* checkbox is enabled then the next movie in the movie list will be played as soon as the 
-current movie has ended. The player will stay in fill window mode until the last movie of the list is finished.
+forward in the movie. The *full window* button maximizes the video output window. The currently played movie will
+be displayed in the window title. The *scale and crop* checkbox may be usable for some movies that have black 
+borders. The video output window can also be toggled by a double-click. In addition you can rewind and forward 
+by 60 seconds using the left and right arrow keys. The up and down arrow keys will increase or decrease the 
+volume by one. The *S* key will toggle the scale and crop mode. The *ESC* key can be used to end the full window 
+mode. The full window mode will automatically end if the current movie is about to end. If the *Autoplay Next* 
+checkbox is enabled then the next movie in the movie list will be played as soon as the current movie has ended. 
+The player will stay in fill window mode until the last movie of the list is finished.
 
 ### Streaming View
 
