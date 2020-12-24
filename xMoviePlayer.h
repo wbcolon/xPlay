@@ -95,15 +95,12 @@ signals:
     /**
      * Signal the name of the currently played movie.
      *
-     * @param name the name of the currently played movie.
-     */
-    void currentMovieName(const QString& name);
-    /**
-     * Signal the path of the currently played movie.
-     *
      * @param path the absolute path of the currently played movie.
+     * @param name the name of the currently played movie.
+     * @param tag the tag for the currently played movie.
+     * @param directory the directory for the currently played movie.
      */
-    void currentMoviePath(const QString& path);
+    void currentMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Signal the amount played for the current movie.
      *
@@ -161,14 +158,18 @@ public slots:
      *
      * @param path absolute path to the movie to be played.
      * @param name the name of the movie displayed.
+     * @param tag the tag for the movie played.
+     * @param directory the directory for the movie played.
      */
-    void setMovie(const QString& path, const QString& name);
+    void setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Setup the queue of movies to be played after the current one.
      *
      * @param queue list of pairs of path and name to be displayed.
+     * @param tag the tag for the movies in the queue.
+     * @param directory the directory for the movies in the queue.
      */
-    void setMovieQueue(const QList<std::pair<QString,QString>>& queue);
+    void setMovieQueue(const QList<std::pair<QString,QString>>& queue, const QString& tag, const QString& directory);
     /**
      * Clear the queue of movies.
      */
@@ -271,6 +272,8 @@ private:
     QList<Phonon::SubtitleDescription> currentSubtitleDescriptions;
     QList<Phonon::AudioChannelDescription> currentAudioChannelDescriptions;
     QList<std::pair<QString,QString>> movieQueue;
+    QString movieQueueTag;
+    QString movieQueueDirectory;
     bool fullWindow;
 };
 

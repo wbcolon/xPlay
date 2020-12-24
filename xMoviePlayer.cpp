@@ -77,18 +77,19 @@ void xMoviePlayer::stop() {
     emit currentState(State::StopState);
 }
 
-void xMoviePlayer::setMovie(const QString& path, const QString& name) {
+void xMoviePlayer::setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory) {
     resetMoviePlayer();
     moviePlayer->setCurrentSource(QUrl::fromLocalFile(path));
     moviePlayer->play();
     qDebug() << "xMoviePlayer: play: " << path;
-    emit currentMovieName(name);
-    emit currentMoviePath(path);
+    emit currentMovie(path, name, tag, directory);
     emit currentState(xMoviePlayer::PlayingState);
 }
 
-void xMoviePlayer::setMovieQueue(const QList<std::pair<QString,QString>>& queue) {
+void xMoviePlayer::setMovieQueue(const QList<std::pair<QString,QString>>& queue, const QString& tag, const QString& directory) {
     movieQueue = queue;
+    movieQueueTag = tag;
+    movieQueueDirectory = directory;
 }
 
 void xMoviePlayer::clearMovieQueue() {
@@ -182,7 +183,7 @@ void xMoviePlayer::closeToFinish(qint32 timeLeft) {
     } else {
         // Take next movie out of the queue.
         auto nextMovie = movieQueue.takeFirst();
-        setMovie(nextMovie.first, nextMovie.second);
+        setMovie(nextMovie.first, nextMovie.second, movieQueueTag, movieQueueDirectory);
     }
 }
 

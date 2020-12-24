@@ -129,7 +129,10 @@ void xPlayerMovieWidget::clear() {
     sliderWidget->clear();
 }
 
-void xPlayerMovieWidget::currentMovie(const QString& movie) {
+void xPlayerMovieWidget::currentMovie(const QString& path, const QString& movie, const QString& tag, const QString& directory) {
+    Q_UNUSED(path)
+    Q_UNUSED(tag)
+    Q_UNUSED(directory)
     movieLabel->setText(movie);
 }
 

@@ -76,14 +76,18 @@ signals:
      *
      * @param path the absolute path of the movie as string.
      * @param name the name displayed for the movie.
+     * @param tag the tag for the movie played.
+     * @param directory the directory for the movie played.
      */
-    void setMovie(const QString& path, const QString& name);
+    void setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Signal emitted in order to set the movie queue.
      *
-     * @param queue
+     * @param queue list of pairs of path and name to be displayed.
+     * @param tag the tag for the movies in the queue.
+     * @param directory the directory for the movies in the queue.
      */
-    void setMovieQueue(const QList<std::pair<QString,QString>>& queue);
+    void setMovieQueue(const QList<std::pair<QString,QString>>& queue, const QString& tag, const QString& directory);
     /**
      * Signal emitted in order to clear the movie queue;
      */
@@ -152,8 +156,11 @@ private slots:
      * Select an entry in the movie list widget based on its path.
      *
      * @param path the path of the currently played movie.
+     * @param name the name displayed for the movie.
+     * @param tag the tag for the movie played.
+     * @param directory the directory for the movie played.
      */
-    void updateSelectedMovie(const QString& path);
+    void updateSelectedMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Set the autoplay next mode and update/clear the movie queue.
      *
@@ -171,9 +178,18 @@ private:
     /**
      * Emit signal to initiate update of window title with new currently playing movie.
      *
+     * @param path the path of the currently played movie.
      * @param name the displayed name of the currently playing movie.
+     * @param tag the tag for the currently movie played.
+     * @param directory the directory for the currently movie played.
      */
-    void updateWindowTitle(const QString& name);
+    void updateWindowTitle(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    /**
+     * Create the window title based on the current movie played and the full window mode.
+     *
+     * @return the new window title as string.
+     */
+    QString createWindowTitle();
     /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
@@ -187,6 +203,8 @@ private:
     QListWidget* movieList;
     QStringList currentMovies;
     QString currentMovieName;
+    QString currentMovieTag;
+    QString currentMovieDirectory;
     xMoviePlayer* moviePlayer;
     QStackedWidget* movieStack;
     xPlayerMovieWidget* moviePlayerWidget;

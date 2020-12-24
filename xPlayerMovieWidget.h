@@ -46,9 +46,12 @@ public slots:
     /**
      * Display the currently played movie.
      *
+     * @param path the path of the movie played.
      * @param movie the filename of the movie played.
+     * @param tag the tag for the movie played.
+     * @param directory the directory for the movie played.
      */
-    void currentMovie(const QString& movie);
+    void currentMovie(const QString& path, const QString& movie, const QString& tag, const QString& directory);
     /**
      * Retrieve the audio channels for the current movie.
      *

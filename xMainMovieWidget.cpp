@@ -13,6 +13,7 @@
  */
 
 #include "xMainMovieWidget.h"
+#include "xPlayerDatabase.h"
 
 #include <QGridLayout>
 #include <QGroupBox>
@@ -34,6 +35,8 @@ auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
 xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
         QStackedWidget(parent),
         currentMovieName(),
+        currentMovieTag(),
+        currentMovieDirectory(),
         moviePlayer(player),
         fullWindow(false),
         autoPlayNextMovie(false) {
@@ -79,9 +82,9 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     connect(this, &xMainMovieWidget::setMovie, moviePlayer, &xMoviePlayer::setMovie);
     connect(this, &xMainMovieWidget::setMovieQueue, moviePlayer, &xMoviePlayer::setMovieQueue);
     connect(this, &xMainMovieWidget::clearMovieQueue, moviePlayer, &xMoviePlayer::clearMovieQueue);
-    connect(moviePlayer, &xMoviePlayer::currentMoviePath, this, &xMainMovieWidget::updateSelectedMovie);
-    connect(moviePlayer, &xMoviePlayer::currentMovieName, moviePlayerWidget, &xPlayerMovieWidget::currentMovie);
-    connect(moviePlayer, &xMoviePlayer::currentMovieName, this, &xMainMovieWidget::updateWindowTitle);
+    connect(moviePlayer, &xMoviePlayer::currentMovie, this, &xMainMovieWidget::updateSelectedMovie);
+    connect(moviePlayer, &xMoviePlayer::currentMovie, moviePlayerWidget, &xPlayerMovieWidget::currentMovie);
+    connect(moviePlayer, &xMoviePlayer::currentMovie, this, &xMainMovieWidget::updateWindowTitle);
     connect(moviePlayer, &xMoviePlayer::currentMovieLength, moviePlayerWidget, &xPlayerMovieWidget::currentMovieLength);
     connect(moviePlayer, &xMoviePlayer::currentMoviePlayed, moviePlayerWidget, &xPlayerMovieWidget::currentMoviePlayed);
     connect(moviePlayer, &xMoviePlayer::currentSubtitles, moviePlayerWidget, &xPlayerMovieWidget::currentSubtitles);
@@ -93,13 +96,18 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     connect(moviePlayerWidget, &xPlayerMovieWidget::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
     connect(moviePlayer, &xMoviePlayer::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
     connect(moviePlayerWidget, &xPlayerMovieWidget::autoPlayNextMovie, this, &xMainMovieWidget::setAutoPlayNextMovie);
+    // Connect database.
+    connect(moviePlayer, &xMoviePlayer::currentMovie,
+            [=](const QString&, const QString& name, const QString& tag, const QString& directory) {
+                xPlayerDatabase::database()->updateMovieFile(name, tag, directory);
+            });
     // Prepare Stack
     addWidget(mainWidget);
     setCurrentWidget(mainWidget);
 }
 
 void xMainMovieWidget::initializeView() {
-    updateWindowTitle(currentMovieName);
+    updateWindowTitle(QString(), currentMovieName, currentMovieTag, currentMovieDirectory);
     emit showMenuBar(!fullWindow);
 }
 
@@ -125,14 +133,12 @@ void xMainMovieWidget::setFullWindow(bool mode) {
     if (fullWindow == mode) {
         return;
     }
-    auto title = QApplication::applicationName();
     fullWindow = mode;
     if (mode) {
         movieStack->removeWidget(moviePlayer);
         moviePlayer->setParent(this);
         addWidget(moviePlayer);
         setCurrentWidget(moviePlayer);
-        title += " - " + currentMovieName;
     } else {
         removeWidget(moviePlayer);
         moviePlayer->setParent(mainWidget);
@@ -140,7 +146,7 @@ void xMainMovieWidget::setFullWindow(bool mode) {
         movieStack->setCurrentWidget(moviePlayer);
         setCurrentWidget(mainWidget);
     }
-    emit showWindowTitle(title);
+    emit showWindowTitle(createWindowTitle());
     emit showMenuBar(!fullWindow);
 }
 
@@ -192,12 +198,20 @@ void xMainMovieWidget::selectDirectory(int index) {
 void xMainMovieWidget::selectMovie(QListWidgetItem* movieItem) {
     auto movieIndex = movieList->row(movieItem);
     if ((movieIndex >= 0) && (movieIndex < currentMovies.size())) {
+        QString tag = tagList->currentItem()->text();
+        QString directory { "." };
+        if (directoryList->count() > 0) {
+            directory = directoryList->currentItem()->text();
+        }
         updateMovieQueue(movieIndex);
-        emit setMovie(currentMovies[movieIndex], movieItem->text());
+        emit setMovie(currentMovies[movieIndex], movieItem->text(), tag, directory);
     }
 }
 
-void xMainMovieWidget::updateSelectedMovie(const QString& path) {
+void xMainMovieWidget::updateSelectedMovie(const QString& path, const QString& name, const QString& tag, const QString& directory) {
+    Q_UNUSED(name)
+    Q_UNUSED(tag)
+    Q_UNUSED(directory)
     auto movieIndex = movieList->currentRow();
     auto pathIndex = currentMovies.indexOf(path);
     // Update selection only if pathIndex is valid and not the currently selected index.
@@ -219,7 +233,12 @@ void xMainMovieWidget::updateMovieQueue(int index) {
                 qDebug() << "QUEUE: " << movieList->item(i)->text();
                 queue.push_back(std::make_pair(currentMovies[i], movieList->item(i)->text()));
             }
-            emit setMovieQueue(queue);
+            QString tag = tagList->currentItem()->text();
+            QString directory { "." };
+            if (directoryList->count() > 0) {
+                directory = directoryList->currentItem()->text();
+            }
+            emit setMovieQueue(queue, tag, directory);
         } else {
             emit clearMovieQueue();
         }
@@ -228,10 +247,27 @@ void xMainMovieWidget::updateMovieQueue(int index) {
     }
 }
 
-void xMainMovieWidget::updateWindowTitle(const QString& name) {
+void xMainMovieWidget::updateWindowTitle(const QString& path, const QString& name, const QString& tag, const QString& directory) {
+    Q_UNUSED(path)
     currentMovieName = name;
+    currentMovieTag = tag;
+    currentMovieDirectory = directory;
     if (fullWindow) {
-        emit showWindowTitle(QApplication::applicationName()+" - "+currentMovieName);
+        emit showWindowTitle(createWindowTitle());
+    }
+}
+
+QString xMainMovieWidget::createWindowTitle() {
+    if (fullWindow) {
+        if (currentMovieDirectory == ".") {
+            return QString("%1 - (%2) - %3").arg(QApplication::applicationName()).
+                    arg(currentMovieTag).arg(currentMovieName);
+        } else {
+            return QString("%1 - (%2/%3) - %4").arg(QApplication::applicationName()).
+                    arg(currentMovieTag).arg(currentMovieDirectory).arg(currentMovieName);
+        }
+    } else {
+        return QApplication::applicationName();
     }
 }
 
