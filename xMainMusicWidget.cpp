@@ -13,6 +13,7 @@
  */
 #include "xMainMusicWidget.h"
 #include "xPlayerMusicWidget.h"
+#include "xPlayerDatabase.h"
 
 #include <QGroupBox>
 #include <QGridLayout>
@@ -92,6 +93,11 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRemoved);
     // Connect music player to main widget for queue update.
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
+    // Connect database.
+    connect(musicPlayer, &xMusicPlayer::currentTrack,
+            [=](int, const QString& artist, const QString& album, const QString& track, int, int sampleRate, int bitsPerSample) {
+                xPlayerDatabase::database()->updateMusicFile(artist, album, track, sampleRate, bitsPerSample);
+            });
 }
 void xMainMusicWidget::initializeView() {
     emit showWindowTitle(QApplication::applicationName());
