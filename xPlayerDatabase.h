@@ -16,6 +16,7 @@
 #define __XPLAYERDATABASE_H__
 
 #include <QObject>
+#include <QStringList>
 #include <soci.h>
 #include <sqlite3/soci-sqlite3.h>
 
@@ -29,6 +30,9 @@ public:
      * @return pointer to a singleton of the database.
      */
     static xPlayerDatabase* database();
+
+    QStringList getPlayedArtists(quint64 after=0);
+    QStringList getPlayedAlbums(const QString& artist, quint64 after=0);
 
 public slots:
     /**
@@ -60,7 +64,7 @@ public slots:
 
 private:
     explicit xPlayerDatabase(QObject* parent=nullptr);
-    ~xPlayerDatabase() override = default;
+    ~xPlayerDatabase() noexcept;
 
     static xPlayerDatabase* playerDatabase;
     soci::session sqlDatabase;

@@ -25,6 +25,7 @@ xPlayerDatabase::xPlayerDatabase(QObject* parent):
         QObject(parent) {
     try {
         sqlDatabase.open(soci::sqlite3, xPlayerConfiguration::configuration()->getDatabasePath().toStdString());
+        // The following create table commands will fail if database already exists.
         // Create music table.
         sqlDatabase << "CREATE TABLE music (hash VARCHAR PRIMARY KEY, playCount INT, timeStamp BIGINT, "
                        "artist VARCHAR, album VARCHAR, track VARCHAR, sampleRate INT, bitsPerSample INT)";
@@ -33,7 +34,15 @@ xPlayerDatabase::xPlayerDatabase(QObject* parent):
                        "tag VARCHAR, directory VARCHAR, movie VARCHAR)";
     } catch (soci::soci_error& e) {
         // Ignore error.
-        qInfo() << "xPlay database already exists. Ignoring error.";
+    }
+}
+
+xPlayerDatabase::~xPlayerDatabase() {
+    // Close database.
+    try {
+        sqlDatabase.close();
+    } catch (soci::soci_error& e) {
+        // Ignore error.
     }
 }
 
@@ -45,6 +54,37 @@ xPlayerDatabase* xPlayerDatabase::database() {
     return playerDatabase;
 }
 
+QStringList xPlayerDatabase::getPlayedArtists(quint64 after) {
+    QStringList artists;
+    try {
+        soci::rowset<std::string> distinctArtists = (sqlDatabase.prepare <<
+                "SELECT DISTINCT(artist) FROM music WHERE timeStamp >= :after", soci::use(after));
+        for (const auto& distinctArtist : distinctArtists) {
+            artists.push_back(QString::fromStdString(distinctArtist));
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to query database for played artists, error: " << e.what();
+        artists.clear();
+    }
+    return artists;
+}
+
+QStringList xPlayerDatabase::getPlayedAlbums(const QString& artist, quint64 after) {
+    QStringList albums;
+    try {
+        soci::rowset<std::string> distinctAlbums = (sqlDatabase.prepare <<
+                "SELECT DISTINCT(album) FROM music WHERE artist = :artist AND timeStamp >= :after",
+                soci::use(artist.toStdString()), soci::use(after));
+        for (const auto& distinctAlbum : distinctAlbums) {
+            albums.push_back(QString::fromStdString(distinctAlbum));
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to query database for played albums for an artist, error: " << e.what();
+        albums.clear();
+    }
+    return albums;
+}
+
 void xPlayerDatabase::updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample) {
     auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
@@ -52,7 +92,7 @@ void xPlayerDatabase::updateMusicFile(const QString& artist, const QString& albu
         int playCount = -1;
         soci::indicator playCountIndicator;
         sqlDatabase << "SELECT playCount FROM music WHERE hash=:hash", soci::into(playCount, playCountIndicator), soci::use(hash);
-        if (playCountIndicator == soci::i_ok) {
+        if ((playCountIndicator == soci::i_ok) && (playCount > 0)) {
             sqlDatabase << "UPDATE music SET playCount=:playCount,timeStamp=:timeStamp WHERE hash=:hash",
                     soci::use(playCount+1), soci::use(timeStamp), soci::use(hash);
             qDebug() << "xPlayerDatabase: update: " << artist+"/"+album+"/"+track << QString("(%1)").arg(playCount);
@@ -76,7 +116,7 @@ void xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, 
         int playCount = -1;
         soci::indicator playCountIndicator;
         sqlDatabase << "SELECT playCount FROM movie WHERE hash=:hash", soci::into(playCount, playCountIndicator), soci::use(hash);
-        if (playCountIndicator == soci::i_ok) {
+        if ((playCountIndicator == soci::i_ok) && (playCount > 0)) {
             sqlDatabase << "UPDATE movie SET playCount=:playCount,timeStamp=:timeStamp WHERE hash=:hash",
                     soci::use(playCount+1), soci::use(timeStamp), soci::use(hash);
             qDebug() << "xPlayerDatabase: update: " << tag+"/"+directory+"/"+movie << QString("(%1)").arg(playCount);
