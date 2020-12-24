@@ -154,6 +154,12 @@ public:
      */
     std::pair<QString,QUrl> getStreamingSitesDefault();
     /**
+     * Get the path to the database file.
+     *
+     * @return the absolute path as string.
+     */
+    QString getDatabasePath();
+    /**
      * Trigger all update configuration signals.
      *
      * Useful on application start, when the entire configuration is initially read.
@@ -201,11 +207,13 @@ private:
     static std::pair<QString,QString> splitMovieLibraryTagAndDirectory(const QString& tagDir);
     static std::pair<QString,QUrl> splitStreamingShortNameAndUrl(const QString& nameUrl);
 
-    const QString ApplicationName = "xPlay";
+    // Use different application names for debug/release in order to have separate settings and databases.
+    const QString ApplicationName = XPLAY_APP_NAME;
     const QString OrganisationName = "wbcolon";
 
     static xPlayerConfiguration* playerConfiguration;
     QSettings* settings;
+    QString dataBasePath;
 };
 
 #endif

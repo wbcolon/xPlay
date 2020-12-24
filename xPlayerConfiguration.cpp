@@ -17,7 +17,9 @@
 
 #include <QList>
 #include <QUrl>
+#include <QStandardPaths>
 #include <QRegularExpression>
+#include <QDebug>
 
 // Configuration strings.
 const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" };
@@ -46,6 +48,8 @@ xPlayerConfiguration::xPlayerConfiguration():
         QObject() {
     // Settings.
     settings = new QSettings(xPlayerConfiguration::OrganisationName, xPlayerConfiguration::ApplicationName, this);
+    dataBasePath = QString("%1/%2/%3.db").arg(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)).
+            arg(xPlayerConfiguration::OrganisationName).arg(xPlayerConfiguration::ApplicationName);
 }
 
 xPlayerConfiguration* xPlayerConfiguration::configuration() {
@@ -240,6 +244,10 @@ std::pair<QString,QUrl> xPlayerConfiguration::splitStreamingShortNameAndUrl(cons
     } else {
         return std::make_pair("",QUrl(""));
     }
+}
+
+QString xPlayerConfiguration::getDatabasePath() {
+    return dataBasePath;
 }
 
 void xPlayerConfiguration::updatedConfiguration() {
