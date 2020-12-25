@@ -1,3 +1,10 @@
-<svg height="1024" width="768" xmlns="http://www.w3.org/2000/svg">
-  <path d="M384 512l384 256V256L384 512zM0 512l384 256V512 256L0 512z" />
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <style
+        type="text/css"
+        id="current-color-scheme">
+        .ColorScheme-Text {
+            color:#232629;
+        }
+    </style>
+    <path d="M16 16l14 10V6zM2 16l14 10V6z" class="ColorScheme-Text" fill="currentColor"/>
 </svg>

@@ -8,5 +8,6 @@
     <file>images/xplay-eject.svg</file>
     <file>images/xplay-forward.svg</file>
     <file>images/xplay-rewind.svg</file>
+    <file>images/xplay-star.svg</file>
 </qresource>
 </RCC>
