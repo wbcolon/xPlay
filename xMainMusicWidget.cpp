@@ -14,6 +14,7 @@
 #include "xMainMusicWidget.h"
 #include "xPlayerMusicWidget.h"
 #include "xPlayerDatabase.h"
+#include "xPlayerConfiguration.h"
 
 #include <QGroupBox>
 #include <QGridLayout>
@@ -37,7 +38,9 @@ auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
 xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         musicPlayer(player),
-        playedTrack(0) {
+        playedTrack(0),
+        useDatabaseMusicOverlay(true),
+        databaseCutOff(0) {
     // Create and group boxes with embedded list widgets.
     auto [artistBox, artistList_] = addGroupBox(tr("Artists"));
     auto [albumBox, albumList_] = addGroupBox(tr("Albums"));
@@ -98,6 +101,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
             [=](int, const QString& artist, const QString& album, const QString& track, int, int sampleRate, int bitsPerSample) {
                 xPlayerDatabase::database()->updateMusicFile(artist, album, track, sampleRate, bitsPerSample);
             });
+    // Connect configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicOverlay,
+            this, &xMainMusicWidget::updatedDatabaseMusicOverlay);
 }
 void xMainMusicWidget::initializeView() {
     emit showWindowTitle(QApplication::applicationName());
@@ -130,6 +136,8 @@ void xMainMusicWidget::scannedArtists(const QStringList& artists) {
     }
     // Update the selector based upon the added artists
     scannedArtistsSelectors(selectors);
+    // Update database overlay for artists.
+    updatePlayedArtists();
 }
 
 void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
@@ -139,14 +147,18 @@ void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
     for (const auto& album : albums) {
         albumList->addItem(album);
     }
+    // Update database overlay for albums.
+    updatePlayedAlbums();
 }
 
 void xMainMusicWidget::scannedTracks(const QStringList& tracks) {
-   // Clear only track list
-   trackList->clear();
-   for (const auto& track : tracks) {
-       trackList->addItem(track);
-   }
+    // Clear only track list
+    trackList->clear();
+    for (const auto& track : tracks) {
+        trackList->addItem(track);
+    }
+    // Update database overlay for tracks.
+    updatePlayedTracks();
 }
 
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks) {
@@ -285,6 +297,8 @@ void xMainMusicWidget::currentQueueTrack(int index) {
     if (playedItem) {
         playedItem->setIcon(QIcon(":/images/xplay-play.svg"));
     }
+    // Update database overlay for tracks.
+    updatePlayedTracks();
 }
 
 void xMainMusicWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
@@ -292,6 +306,8 @@ void xMainMusicWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
     if ((track >= 0) && (track< queueList->count())) {
         currentQueueTrack(track);
         emit musicPlayer->play(track);
+        // Update database overlay for tracks.
+        updatePlayedTracks();
     }
 }
 
@@ -310,6 +326,31 @@ void xMainMusicWidget::clearQueue() {
     // Clear playlist (queue).
     queueList->clear();
 }
+
+void xMainMusicWidget::updatedDatabaseMusicOverlay() {
+    useDatabaseMusicOverlay = xPlayerConfiguration::configuration()->getDatabaseMusicOverlay();
+    databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
+    if (useDatabaseMusicOverlay) {
+        updatePlayedArtists();
+        updatePlayedAlbums();
+        updatePlayedTracks();
+    } else {
+        // Clear artist list.
+        for (auto i = 0; i < artistList->count(); ++i) {
+            artistList->item(i)->setIcon(QIcon());
+        }
+        // Clear album list.
+        for (auto i = 0; i < albumList->count(); ++i) {
+            albumList->item(i)->setIcon(QIcon());
+        }
+        // Clear track list.
+        for (auto i = 0; i < trackList->count(); ++i) {
+            trackList->item(i)->setIcon(QIcon());
+            trackList->item(i)->setToolTip(QString());
+        }
+    }
+}
+
 
 void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
     // Currently unused
@@ -330,3 +371,98 @@ void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
         emit queueTracks(artistName, albumName, trackNames);
     }
 }
+void xMainMusicWidget::updatePlayedArtists() {
+    // Only update if database overlay is enabled. Exit otherwise.
+    if (!useDatabaseMusicOverlay) {
+        return;
+    }
+    auto playedArtists = xPlayerDatabase::database()->getPlayedArtists(databaseCutOff);
+    for (auto i = 0; i < artistList->count(); ++i) {
+        auto artistItem = artistList->item(i);
+        auto artist = artistItem->text();
+        // Clear icon.
+        artistItem->setIcon(QIcon());
+        for (const auto& playedArtist : playedArtists) {
+            // Update icon and tooltip if movie already played.
+            if (playedArtist == artist) {
+                artistItem->setIcon(QIcon(":images/xplay-star.svg"));
+                break;
+            }
+        }
+    }
+}
+
+void xMainMusicWidget::updatePlayedAlbums() {
+    // Only update if database overlay is enabled. Exit otherwise.
+    if (!useDatabaseMusicOverlay) {
+        return;
+    }
+    auto artistItem = artistList->currentItem();
+    if (!artistItem) {
+        return;
+    }
+    auto artist = artistItem->text();
+    auto playedAlbums = xPlayerDatabase::database()->getPlayedAlbums(artist, databaseCutOff);
+    for (auto i = 0; i < albumList->count(); ++i) {
+        auto albumItem = albumList->item(i);
+        auto album = albumItem->text();
+        // Clear icon and tooltip.
+        albumItem->setIcon(QIcon());
+        for (const auto& playedAlbum : playedAlbums) {
+            // Update icon and tooltip if movie already played.
+            if (playedAlbum == album) {
+                albumItem->setIcon(QIcon(":images/xplay-star.svg"));
+                break;
+            }
+        }
+    }
+}
+
+void xMainMusicWidget::updatePlayedTracks() {
+    // Only update if database overlay is enabled. Exit otherwise.
+    if (!useDatabaseMusicOverlay) {
+        return;
+    }
+    auto artistItem = artistList->currentItem();
+    auto albumItem = albumList->currentItem();
+    // No artist or album currently selected. We do not need to update.
+    if ((!artistItem) || (!albumItem)) {
+        return;
+    }
+    auto artist = artistItem->text();
+    auto album = albumItem->text();
+    auto playedMusicTracks = xPlayerDatabase::database()->getPlayedTracks(artist, album, databaseCutOff);
+    for (auto i = 0; i < trackList->count(); ++i) {
+        auto trackItem = trackList->item(i);
+        auto track = trackItem->text();
+        // Clear icon and tooltip.
+        trackItem->setIcon(QIcon());
+        trackItem->setToolTip(QString());
+        for (auto playedMusicTrack = playedMusicTracks.begin(); playedMusicTrack != playedMusicTracks.end(); ++playedMusicTrack) {
+            // Update icon and tooltip if track already played.
+            if (std::get<0>(*playedMusicTrack) == track) {
+                trackItem->setIcon(QIcon(":images/xplay-star.svg"));
+                // Adjust tooltip to play count "once" vs "x times".
+                auto playCount = std::get<1>(*playedMusicTrack);
+                if (playCount > 1) {
+                    trackItem->setToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
+                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
+                } else {
+                    trackItem->setToolTip(QString(tr("played once, last time on %1")).
+                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
+                }
+                // Remove element to speed up search in the next iteration.
+                playedMusicTracks.erase(playedMusicTrack);
+                // End update if no more tracks need to be marked.
+                if (playedMusicTracks.isEmpty()) {
+                    updatePlayedArtists();
+                    updatePlayedAlbums();
+                    return;
+                }
+                // Break loop and move on to the next movie item.
+                break;
+            }
+        }
+    }
+}
+

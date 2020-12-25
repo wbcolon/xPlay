@@ -167,6 +167,10 @@ private slots:
      * @param mode clear the queue if true, else update queue.
      */
     void setAutoPlayNextMovie(bool mode);
+    /**
+     * Update the movie database overlay on configuration changes.
+     */
+    void updatedDatabaseMovieOverlay();
 
 private:
     /**
@@ -175,6 +179,18 @@ private:
      * @param index the index of the currently selected (played) movie.
      */
     void updateMovieQueue(int index);
+    /**
+     * Update the database overlay for played tags.
+     */
+    void updatePlayedTags();
+    /**
+     * Update the database overlay for played directories.
+     */
+    void updatePlayedDirectories();
+    /**
+     * Update the database overlay for played movies and add tooltips.
+     */
+    void updatePlayedMovies();
     /**
      * Emit signal to initiate update of window title with new currently playing movie.
      *
@@ -211,6 +227,8 @@ private:
     QWidget* mainWidget;
     bool fullWindow;
     bool autoPlayNextMovie;
+    bool useDatabaseMovieOverlay;
+    quint64 databaseCutOff;
 };
 
 #endif

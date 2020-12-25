@@ -217,8 +217,24 @@ private slots:
      * Clear the list of queued tracks.
      */
     void clearQueue();
+    /**
+     * Update the music database overlay on configuration changes.
+     */
+    void updatedDatabaseMusicOverlay();
 
 private:
+    /**
+     * Update the database overlay for played artists.
+     */
+    void updatePlayedArtists();
+    /**
+     * Update the database overlay for played albums.
+     */
+    void updatePlayedAlbums();
+    /**
+     * Update the database overlay for played tracks and add tooltips.
+     */
+    void updatePlayedTracks();
     /**
      * Update the list of selectors (and add "none").
      *
@@ -255,6 +271,8 @@ private:
     QListWidget* artistSelectorList;
     QListWidget* queueList;
     int playedTrack;
+    bool useDatabaseMusicOverlay;
+    quint64 databaseCutOff;
     /**
      * Store the current list of unfiltered artists for later filtering.
      */
