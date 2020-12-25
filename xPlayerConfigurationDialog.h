@@ -18,7 +18,9 @@
 #include "xPlayerConfiguration.h"
 
 #include <QDialog>
+#include <QDateEdit>
 #include <QSpinBox>
+#include <QCheckBox>
 #include <QPushButton>
 #include <QLineEdit>
 #include <QListWidget>
@@ -82,7 +84,9 @@ private slots:
      * Mark selected name/url from the streaming site list as default streaming site.
      */
     void streamingSiteDefault();
-
+    /**
+     * Toggle enable/disable for the Rotel configuration.
+     */
     void toggleRotelWidget();
 
 private:
@@ -126,6 +130,10 @@ private:
     QPushButton* rotelEnableWidget;
     QLineEdit* rotelNetworkAddressWidget;
     QSpinBox* rotelNetworkPortWidget;
+    QCheckBox* databaseMusicOverlayCheck;
+    QCheckBox* databaseMovieOverlayCheck;
+    QCheckBox* databaseCutOffCheck;
+    QDateEdit* databaseCutOffDate;
     std::pair<QString,QUrl> streamingSitesDefault;
 };
 

@@ -26,6 +26,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
         QDialog(parent, flags) {
     auto configurationLayout = new QGridLayout(this);
     auto rotelBox = new QGroupBox(tr("Rotel Configuration"), this);
+    auto databaseBox = new QGroupBox(tr("Database Configuration"), this);
     auto musicLibraryBox = new QGroupBox(tr("Music Library Configuration"), this);
     auto movieLibraryBox = new QGroupBox(tr("Movie Library Configuration"), this);
     auto streamingSitesBox = new QGroupBox(tr("Streaming Sites Configuration"), this);
@@ -35,7 +36,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     configurationButtons->addButton(QDialogButtonBox::Cancel);
 
     // Setup movie library setup, with tags, directories and extensions.
-    auto movieLibraryLayout = new QGridLayout(movieLibraryBox);
+    auto movieLibraryLayout = new QGridLayout();
     auto movieLibraryTagLabel = new QLabel(tr("Tag"), movieLibraryBox);
     movieLibraryTagWidget = new QLineEdit(movieLibraryBox);
     auto movieLibraryDirectoryLabel = new QLabel(tr("Directory"), movieLibraryBox);
@@ -57,8 +58,9 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     movieLibraryLayout->addWidget(movieLibraryButtons, 7, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryExtensionsLabel, 8, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryExtensionsWidget, 9, 0, 1, 5);
+    movieLibraryBox->setLayout(movieLibraryLayout);
     // Setup music library with directory and extensions.
-    auto musicLibraryLayout = new QGridLayout(musicLibraryBox);
+    auto musicLibraryLayout = new QGridLayout();
     auto musicLibraryDirectoryLabel = new QLabel(tr("Directory"), musicLibraryBox);
     musicLibraryDirectoryWidget = new QLineEdit(musicLibraryBox);
     auto musicLibraryDirectoryOpenButton = new QPushButton(tr("..."), musicLibraryBox);
@@ -69,8 +71,9 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryLayout->addWidget(musicLibraryDirectoryOpenButton, 1, 4);
     musicLibraryLayout->addWidget(musicLibraryExtensionsLabel, 2, 0, 1, 5);
     musicLibraryLayout->addWidget(musicLibraryExtensionsWidget, 3, 0, 1, 5);
+    musicLibraryBox->setLayout(musicLibraryLayout);
     // Setup rotel amp with network address and port.
-    auto rotelLayout = new QGridLayout(rotelBox);
+    auto rotelLayout = new QGridLayout();
     auto rotelNetworkAddressLabel = new QLabel(tr("Network Address"), rotelBox);
     auto rotelNetworkPortLabel = new QLabel(tr("Port"), rotelBox);
     rotelNetworkAddressWidget = new QLineEdit(rotelBox);
@@ -82,8 +85,9 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     rotelLayout->addWidget(rotelNetworkPortLabel, 0, 3);
     rotelLayout->addWidget(rotelNetworkPortWidget, 1, 3);
     rotelLayout->addWidget(rotelEnableWidget, 1, 4, 1, 1);
+    rotelBox->setLayout(rotelLayout);
     // Setup streaming sites with URL and short name.
-    auto streamingSitesLayout = new QGridLayout(streamingSitesBox);
+    auto streamingSitesLayout = new QGridLayout();
     auto streamingNameLabel = new QLabel(tr("Name"), streamingSitesBox);
     streamingNameWidget = new QLineEdit(streamingSitesBox);
     auto streamingUrlLabel = new QLabel(tr("Url"), streamingSitesBox);
@@ -100,14 +104,28 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     streamingSitesLayout->addWidget(streamingUrlWidget, 1, 2, 1, 3);
     streamingSitesLayout->addWidget(streamingSitesListWidget, 2, 0, 3, 5);
     streamingSitesLayout->addWidget(streamingSitesButtons, 5, 0, 1, 5);
+    streamingSitesBox->setLayout(streamingSitesLayout);
+    // Setup database configuration.
+    auto databaseLayout = new QGridLayout();
+    databaseMusicOverlayCheck = new QCheckBox(tr("Enable database overlay for music library"),databaseBox);
+    databaseMovieOverlayCheck = new QCheckBox(tr("Enable database overlay for movie library"),databaseBox);
+    databaseCutOffDate = new QDateEdit(databaseBox);
+    databaseCutOffDate->setDisplayFormat("dd MMMM yyyy");
+    databaseCutOffCheck = new QCheckBox(tr("Use cut-off date"), databaseBox);
+    databaseLayout->addWidget(databaseMusicOverlayCheck, 0, 0, 1, 2);
+    databaseLayout->addWidget(databaseMovieOverlayCheck, 1, 0, 1, 2);
+    databaseLayout->addWidget(databaseCutOffCheck, 2, 0, 1, 1);
+    databaseLayout->addWidget(databaseCutOffDate, 2, 1, 1, 1);
+    databaseBox->setLayout(databaseLayout);
     // Configuration layout.
     configurationLayout->addWidget(musicLibraryBox, 0, 0, 2, 4);
-    configurationLayout->addWidget(streamingSitesBox, 2, 0, 3, 4);
-    configurationLayout->addWidget(rotelBox, 5, 0, 1, 4);
-    configurationLayout->addWidget(movieLibraryBox, 0, 4, 6, 4);
-    configurationLayout->setRowMinimumHeight(6, 50);
-    configurationLayout->setRowStretch(6, 0);
-    configurationLayout->addWidget(configurationButtons, 7, 4, 1, 4);
+    configurationLayout->addWidget(movieLibraryBox, 2, 0, 6, 4);
+    configurationLayout->addWidget(streamingSitesBox, 0, 4, 4, 4);
+    configurationLayout->addWidget(databaseBox, 4, 4, 2, 4);
+    configurationLayout->addWidget(rotelBox, 6, 4, 2, 4);
+    configurationLayout->setRowMinimumHeight(8, 50);
+    configurationLayout->setRowStretch(8, 0);
+    configurationLayout->addWidget(configurationButtons, 9, 4, 1, 4);
     // Connect rotel button
     connect(rotelEnableWidget, &QPushButton::pressed, this, &xPlayerConfigurationDialog::toggleRotelWidget);
     // Connect dialog buttons.
@@ -122,6 +140,8 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     connect(streamingSitesButtons->button(QDialogButtonBox::Discard), &QPushButton::pressed, this, &xPlayerConfigurationDialog::streamingSiteRemove);
     connect(streamingSitesDefaultButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::streamingSiteDefault);
     connect(streamingSitesListWidget, &QListWidget::currentItemChanged, this, &xPlayerConfigurationDialog::selectStreamingSite);
+    // Connect database check boxes.
+    connect(databaseCutOffCheck, &QCheckBox::clicked, databaseCutOffDate, &QDateEdit::setEnabled);
     // Connect dialog buttons.
     connect(configurationButtons->button(QDialogButtonBox::Save), &QPushButton::pressed, this, &xPlayerConfigurationDialog::saveSettings);
     connect(configurationButtons->button(QDialogButtonBox::Reset), &QPushButton::pressed, this, &xPlayerConfigurationDialog::loadSettings);
@@ -139,6 +159,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto [rotelNetworkAddress, rotelNetworkPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
     auto movieLibraryTagAndDirectory = xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectory();
     auto movieLibraryExtensions = xPlayerConfiguration::configuration()->getMovieLibraryExtensions();
+    auto databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
     auto streamingSites = xPlayerConfiguration::configuration()->getStreamingSites();
     streamingSitesDefault = xPlayerConfiguration::configuration()->getStreamingSitesDefault();
     // Update the configuration dialog UI.
@@ -150,6 +171,15 @@ void xPlayerConfigurationDialog::loadSettings() {
         rotelNetworkAddressWidget->setEnabled(false);
         rotelNetworkPortWidget->setEnabled(false);
         rotelEnableWidget->setText(tr("enable"));
+    }
+    databaseMusicOverlayCheck->setChecked(xPlayerConfiguration::configuration()->getDatabaseMusicOverlay());
+    databaseMovieOverlayCheck->setChecked(xPlayerConfiguration::configuration()->getDatabaseMovieOverlay());
+    if (databaseCutOff) {
+        databaseCutOffCheck->setChecked(true);
+        databaseCutOffDate->setDate(QDateTime::fromMSecsSinceEpoch(databaseCutOff).date());
+    } else {
+        databaseCutOffCheck->setChecked(false);
+        databaseCutOffDate->setEnabled(false);
     }
     movieLibraryExtensionsWidget->setText(movieLibraryExtensions);
     movieLibraryListWidget->clear();
@@ -175,6 +205,11 @@ void xPlayerConfigurationDialog::saveSettings() {
     auto rotelNetworkAddress = rotelNetworkAddressWidget->text();
     auto rotelNetworkPort = rotelNetworkPortWidget->value();
     auto movieLibraryExtensions = movieLibraryExtensionsWidget->text();
+    quint64 databaseCutOff = 0;
+    if (databaseCutOffCheck->isChecked()) {
+        // startOfDay requires Qt 5.14 or higher.
+        databaseCutOff = QDateTime(databaseCutOffDate->date()).toMSecsSinceEpoch();
+    }
     QStringList movieLibraryTagAndDirectory;
     if (movieLibraryListWidget->count() > 0) {
         for (int i = 0; i < movieLibraryListWidget->count(); ++i) {
@@ -200,6 +235,9 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryExtensions: " << movieLibraryExtensions;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSites: " << streamingSites;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSitesDefault: " << streamingSitesDefault;
+    qDebug() << "xPlayerConfigurationDialog: save: databaseCutOff: " << databaseCutOff;
+    qDebug() << "xPlayerConfigurationDialog: save: databaseMusicOverlay: " << databaseMusicOverlayCheck->isChecked();
+    qDebug() << "xPlayerConfigurationDialog: save: databaseMovieOverlay: " << databaseMovieOverlayCheck->isChecked();
     // Save settings.
     xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
     xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
@@ -209,6 +247,9 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setMovieLibraryExtensions(movieLibraryExtensions);
     xPlayerConfiguration::configuration()->setStreamingSites(streamingSites);
     xPlayerConfiguration::configuration()->setStreamingSitesDefault(streamingSitesDefault);
+    xPlayerConfiguration::configuration()->setDatabaseCutOff(databaseCutOff);
+    xPlayerConfiguration::configuration()->setDatabaseMusicOverlay(databaseMusicOverlayCheck->isChecked());
+    xPlayerConfiguration::configuration()->setDatabaseMovieOverlay(databaseMovieOverlayCheck->isChecked());
     // End dialog.
     accept();
 }

@@ -31,7 +31,7 @@ public:
      *
      * @return pointer to a singleton of the configuration.
      */
-    static xPlayerConfiguration* configuration();
+    [[nodiscard]] static xPlayerConfiguration* configuration();
     /**
      * Set the base path to the music library.
      *
@@ -82,83 +82,119 @@ public:
      */
     void setStreamingSitesDefault(const std::pair<QString,QUrl>& site);
     /**
+     * Set the cut-off time stamp used in database queries.
+     *
+     * @param cutOff the time stamp if ms since epoch.
+     */
+    void setDatabaseCutOff(quint64 cutOff);
+    /**
+     * Set the mode for the database overlay for the music view.
+     *
+     * @param enabled if true then enable overlay, disable otherwise.
+     */
+    void setDatabaseMusicOverlay(bool enabled);
+    /**
+     * Set the mode for the database overlay for the movie view.
+     *
+     * @param enabled if true then enable overlay, disable otherwise.
+     */
+    void setDatabaseMovieOverlay(bool enabled);
+    /**
      * Get the base directory of the music library.
      *
      * @return the music library directory as string.
      */
-    QString getMusicLibraryDirectory();
+    [[nodiscard]] QString getMusicLibraryDirectory();
     /**
      * Get the base directory of the music library.
      *
      * @return the music library directory as filesystem::path.
      */
-    std::filesystem::path getMusicLibraryDirectoryPath();
+    [[nodiscard]] std::filesystem::path getMusicLibraryDirectoryPath();
     /**
      * Get the list of accepted extensions for music files.
      *
      * @return the list of extensions as space separated string.
      */
-    QString getMusicLibraryExtensions();
+    [[nodiscard]] QString getMusicLibraryExtensions();
     /**
      * Get the list of accepted extensions for music files.
      *
      * @return the list of extensions.
      */
-    QStringList getMusicLibraryExtensionList();
+    [[nodiscard]] QStringList getMusicLibraryExtensionList();
     /**
      * Return the availability of the Rotel amp widget.
      *
      * @return true if the Rotel amp widget is displayed, false otherwise.
      */
-    bool rotelWidget();
+    [[nodiscard]] bool rotelWidget();
     /**
      * Get the network configuration for the Rotel amp.
      *
      * @return the pair of network address and port.
      */
-    std::pair<QString,int> getRotelNetworkAddress();
+    [[nodiscard]] std::pair<QString,int> getRotelNetworkAddress();
     /**
      * Get the list of tag and directory strings.
      *
      * @return the list of strings containing the tag and directory.
      */
-    QStringList getMovieLibraryTagAndDirectory();
+    [[nodiscard]] QStringList getMovieLibraryTagAndDirectory();
     /**
      * Get the list of tag and directory paths.
      *
      * @return the list of pairs of tag and corresponding directory as filesystem::path.
      */
-    std::list<std::pair<QString,std::filesystem::path>> getMovieLibraryTagAndDirectoryPath();
+    [[nodiscard]] std::list<std::pair<QString,std::filesystem::path>> getMovieLibraryTagAndDirectoryPath();
     /**
      * Get the list of accepted extensions for movie files.
      *
      * @return the list of extensions as space separated string.
      */
-    QString getMovieLibraryExtensions();
+    [[nodiscard]] QString getMovieLibraryExtensions();
     /**
      * Get the list of accepted extensions for movie files.
      *
      * @return the list of extensions.
      */
-    QStringList getMovieLibraryExtensionList();
+    [[nodiscard]] QStringList getMovieLibraryExtensionList();
     /**
      * Get the list of streaming sites.
      *
      * @return list of pair of short name and URL.
      */
-    QList<std::pair<QString,QUrl>> getStreamingSites();
+    [[nodiscard]] QList<std::pair<QString,QUrl>> getStreamingSites();
     /**
      * Get the default streaming site.
      *
      * @return a pair of short name and URL.
      */
-    std::pair<QString,QUrl> getStreamingSitesDefault();
+    [[nodiscard]] std::pair<QString,QUrl> getStreamingSitesDefault();
     /**
      * Get the path to the database file.
      *
      * @return the absolute path as string.
      */
-    QString getDatabasePath();
+    [[nodiscard]] QString getDatabasePath();
+    /**
+     * Get the time stamp used as cut-off in the database queries.
+     *
+     * @return the cut-off time stamp in ms since epoch.
+     */
+    [[nodiscard]] quint64 getDatabaseCutOff();
+    /**
+     * Get the mode for the database overlay for the music view.
+     *
+     * @return true, if the overlay is enabled, false otherwise.
+     */
+    [[nodiscard]] bool getDatabaseMusicOverlay();
+    /**
+     * Get the mode for the database overlay for the movie view.
+     *
+     * @return true, if the overlay is enabled, false otherwise.
+     */
+    [[nodiscard]] bool getDatabaseMovieOverlay();
     /**
      * Trigger all update configuration signals.
      *
@@ -199,13 +235,32 @@ signals:
      * Signal an update of the default streaming site.
      */
     void updatedStreamingSitesDefault();
+    /**
+     * Signal an update of the database overlay for the music view.
+     */
+    void updatedDatabaseMusicOverlay();
+    /**
+     * Signal an update of the database overlay for the movie view.
+     */
+    void updatedDatabaseMovieOverlay();
 
 private:
     xPlayerConfiguration();
     ~xPlayerConfiguration() override = default;
-
-    static std::pair<QString,QString> splitMovieLibraryTagAndDirectory(const QString& tagDir);
-    static std::pair<QString,QUrl> splitStreamingShortNameAndUrl(const QString& nameUrl);
+    /**
+     * Helper function that splits item string into pair of tag and directory.
+     *
+     * @param tagDir the string stored in the list widget item.
+     * @return the pair of extracted tag and directory.
+     */
+    [[nodiscard]] static std::pair<QString,QString> splitMovieLibraryTagAndDirectory(const QString& tagDir);
+    /**
+     *  Helper function that splits item string into pair of name and URL.
+     *
+     * @param nameUrl the string stored in the list widget item.
+     * @return the pair of extracted name and URL.
+     */
+    [[nodiscard]] static std::pair<QString,QUrl> splitStreamingShortNameAndUrl(const QString& nameUrl);
 
     // Use different application names for debug/release in order to have separate settings and databases.
     const QString ApplicationName = XPLAY_APP_NAME;

@@ -31,6 +31,9 @@ const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDi
 const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" };
 const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" };
 const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" };
+const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" };
+const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" };
+const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOverlay" };
 
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" };
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" };
@@ -129,6 +132,32 @@ void xPlayerConfiguration::setStreamingSites(const QList<std::pair<QString,QUrl>
     }
 }
 
+void xPlayerConfiguration::setDatabaseCutOff(quint64 cutOff) {
+    if (cutOff != getDatabaseCutOff()) {
+        settings->setValue(xPlayerConfiguration_DatabaseCutOff, cutOff);
+        settings->sync();
+        // Trigger reconfiguration of music and movie overlay.
+        emit updatedDatabaseMusicOverlay();
+        emit updatedDatabaseMovieOverlay();
+    }
+}
+
+void xPlayerConfiguration::setDatabaseMusicOverlay(bool enabled) {
+    if (enabled != getDatabaseMusicOverlay()) {
+        settings->setValue(xPlayerConfiguration_DatabaseMusicOverlay, enabled);
+        settings->sync();
+        emit updatedDatabaseMusicOverlay();
+    }
+}
+
+void xPlayerConfiguration::setDatabaseMovieOverlay(bool enabled) {
+    if (enabled != getDatabaseMovieOverlay()) {
+       settings->setValue(xPlayerConfiguration_DatabaseMovieOverlay, enabled);
+       settings->sync();
+       emit updatedDatabaseMovieOverlay();
+    }
+}
+
 void xPlayerConfiguration::setStreamingSitesDefault(const std::pair<QString,QUrl>& site) {
     if (site != getStreamingSitesDefault()) {
         auto nameUrlString = QString("(%1) - %2").arg(site.first).arg(site.second.toString());
@@ -203,6 +232,18 @@ std::pair<QString,QUrl> xPlayerConfiguration::getStreamingSitesDefault() {
     }
 }
 
+quint64 xPlayerConfiguration::getDatabaseCutOff() {
+    return settings->value(xPlayerConfiguration_DatabaseCutOff, 0).toULongLong();
+}
+
+bool xPlayerConfiguration::getDatabaseMusicOverlay() {
+    return settings->value(xPlayerConfiguration_DatabaseMusicOverlay, true).toBool();
+}
+
+bool xPlayerConfiguration::getDatabaseMovieOverlay() {
+    return settings->value(xPlayerConfiguration_DatabaseMovieOverlay, true).toBool();
+}
+
 std::list<std::pair<QString,std::filesystem::path>> xPlayerConfiguration::getMovieLibraryTagAndDirectoryPath() {
     std::list<std::pair<QString,std::filesystem::path>> tagDirList;
     for  (const auto& entry : getMovieLibraryTagAndDirectory()) {
@@ -259,4 +300,6 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMovieLibraryExtensions();
     emit updatedStreamingSites();
     emit updatedStreamingSitesDefault();
+    emit updatedDatabaseMusicOverlay();
+    emit updatedDatabaseMovieOverlay();
 }
