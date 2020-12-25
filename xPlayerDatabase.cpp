@@ -54,6 +54,72 @@ xPlayerDatabase* xPlayerDatabase::database() {
     return playerDatabase;
 }
 
+int xPlayerDatabase::getPlayCount(int bitsPerSample, int sampleRate, quint64 after) {
+    int playCount = -1;
+    soci::indicator playCountIndicator;
+    try {
+        if (bitsPerSample > 0) {
+            if (sampleRate > 0) {
+                sqlDatabase << "SELECT SUM(playCount) FROM music WHERE bitsPerSample = :bitsPerSample AND sampleRate = :sampleRate AND timeStamp >= :after",
+                        soci::into(playCount, playCountIndicator), soci::use(bitsPerSample), soci::use(sampleRate), soci::use(after);
+            } else {
+                sqlDatabase << "SELECT SUM(playCount) FROM music WHERE bitsPerSample = :bitsPerSample AND timeStamp >= :after",
+                        soci::into(playCount, playCountIndicator), soci::use(sampleRate), soci::use(after);
+            }
+        } else {
+            if (sampleRate > 0) {
+                sqlDatabase << "SELECT SUM(playCount) FROM music WHERE sampleRate = :sampleRate AND timeStamp >= :after",
+                        soci::into(playCount, playCountIndicator), soci::use(sampleRate), soci::use(after);
+            } else {
+                sqlDatabase << "SELECT SUM(playCount) FROM music WHERE timeStamp >= :after",
+                        soci::into(playCount, playCountIndicator), soci::use(after);
+            }
+        }
+        if ((playCountIndicator == soci::i_ok) && (playCount > 0)) {
+            return playCount;
+        } else {
+            // No play count found.
+            return 0;
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to query database for play count, error: " << e.what();
+        return -1;
+    }
+}
+
+int xPlayerDatabase::getPlayCount(const QString& artist, const QString& album, quint64 after) {
+    int playCount = -1;
+    soci::indicator playCountIndicator;
+    try {
+        if (artist.isEmpty()) {
+            if (album.isEmpty()) {
+                sqlDatabase << "SELECT SUM(playCount) FROM music WHERE timeStamp >= :after",
+                        soci::into(playCount, playCountIndicator), soci::use(after);
+            } else {
+                sqlDatabase << "SELECT SUM(playCount) FROM music WHERE album = :album AND timeStamp >= :after",
+                        soci::into(playCount, playCountIndicator), soci::use(album.toStdString()), soci::use(after);
+            }
+        } else {
+            if (album.isEmpty()) {
+                sqlDatabase << "SELECT SUM(playCount) FROM music WHERE artist = :artist AND timeStamp >= :after",
+                        soci::into(playCount, playCountIndicator), soci::use(artist.toStdString()), soci::use(after);
+            } else {
+                sqlDatabase << "SELECT SUM(playCount) FROM music WHERE artist = :artist AND album = :album AND timeStamp >= :after",
+                        soci::into(playCount, playCountIndicator), soci::use(artist.toStdString()), soci::use(album.toStdString()), soci::use(after);
+            }
+        }
+        if ((playCountIndicator == soci::i_ok) && (playCount > 0)) {
+            return playCount;
+        } else {
+            // No play count found.
+            return 0;
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to query database for play count, error: " << e.what();
+        return -1;
+    }
+}
+
 QStringList xPlayerDatabase::getPlayedArtists(quint64 after) {
     QStringList artists;
     try {
@@ -62,6 +128,7 @@ QStringList xPlayerDatabase::getPlayedArtists(quint64 after) {
         for (const auto& distinctArtist : distinctArtists) {
             artists.push_back(QString::fromStdString(distinctArtist));
         }
+        artists.sort();
     } catch (soci::soci_error& e) {
         qCritical() << "Unable to query database for played artists, error: " << e.what();
         artists.clear();
@@ -78,11 +145,83 @@ QStringList xPlayerDatabase::getPlayedAlbums(const QString& artist, quint64 afte
         for (const auto& distinctAlbum : distinctAlbums) {
             albums.push_back(QString::fromStdString(distinctAlbum));
         }
+        albums.sort();
     } catch (soci::soci_error& e) {
         qCritical() << "Unable to query database for played albums for an artist, error: " << e.what();
         albums.clear();
     }
     return albums;
+}
+
+QList<std::tuple<QString,int,quint64>> xPlayerDatabase::getPlayedTracks(const QString& artist, const QString& album, quint64 after) {
+    QList<std::tuple<QString,int,quint64>> tracks;
+    try {
+        soci::rowset<soci::row> playedTracks = (sqlDatabase.prepare <<
+                "SELECT track, playCount, timeStamp FROM music WHERE artist = :artist AND album = :album AND timeStamp >= :after",
+                soci::use(artist.toStdString()), soci::use(album.toStdString()), soci::use(after));
+        for (const auto& playedTrack : playedTracks) {
+            auto track = playedTrack.get<std::string>(0);
+            auto playCount = playedTrack.get<int>(1);
+            auto timeStamp = playedTrack.get<qint64>(2);
+            tracks.push_back(std::make_tuple(QString::fromStdString(track), playCount, timeStamp));
+        }
+    } catch (soci::soci_error& e)  {
+        qCritical() << "Unable to query database for played movies for tag and directory, error: " << e.what();
+        tracks.clear();
+    }
+    return tracks;
+}
+
+QStringList xPlayerDatabase::getPlayedTags(quint64 after) {
+    QStringList tags;
+    try {
+        soci::rowset<std::string> distinctTags = (sqlDatabase.prepare <<
+                "SELECT DISTINCT(tag) FROM movie WHERE timeStamp >= :after", soci::use(after));
+        for (const auto& distinctTag : distinctTags) {
+            tags.push_back(QString::fromStdString(distinctTag));
+        }
+        tags.sort();
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to query database for played artists, error: " << e.what();
+        tags.clear();
+    }
+    return tags;
+}
+
+QStringList xPlayerDatabase::getPlayedDirectories(const QString& tag, quint64 after) {
+    QStringList directories;
+    try {
+        soci::rowset<std::string> distinctDirectories = (sqlDatabase.prepare <<
+                "SELECT DISTINCT(directory) FROM movie WHERE tag = :tag AND timeStamp >= :after",
+                soci::use(tag.toStdString()), soci::use(after));
+        for (const auto& distinctDirectory : distinctDirectories) {
+            directories.push_back(QString::fromStdString(distinctDirectory));
+        }
+        directories.sort();
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to query database for played albums for an artist, error: " << e.what();
+        directories.clear();
+    }
+    return directories;
+}
+
+QList<std::tuple<QString,int,quint64>> xPlayerDatabase::getPlayedMovies(const QString& tag, const QString& directory, quint64 after) {
+    QList<std::tuple<QString,int,quint64>> movies;
+    try {
+        soci::rowset<soci::row> playedMovies = (sqlDatabase.prepare <<
+                "SELECT movie, playCount, timeStamp FROM movie WHERE tag = :tag AND directory = :directory AND timeStamp >= :after",
+                soci::use(tag.toStdString()), soci::use(directory.toStdString()), soci::use(after));
+        for (const auto& playedMovie : playedMovies) {
+            auto movie = playedMovie.get<std::string>(0);
+            auto playCount = playedMovie.get<int>(1);
+            auto timeStamp = playedMovie.get<qint64>(2);
+            movies.push_back(std::make_tuple(QString::fromStdString(movie), playCount, timeStamp));
+        }
+    } catch (soci::soci_error& e)  {
+        qCritical() << "Unable to query database for played movies for tag and directory, error: " << e.what();
+        movies.clear();
+    }
+    return movies;
 }
 
 void xPlayerDatabase::updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample) {
@@ -107,6 +246,7 @@ void xPlayerDatabase::updateMusicFile(const QString& artist, const QString& albu
     } catch (soci::soci_error& e) {
         qCritical() << "xPlayerDatabase::updateMusicFile: error: " << e.what();
     }
+    qDebug() << "ARTISTS: " << getPlayedArtists(0) << ", COUNT: " << getPlayCount(0, 0);
 }
 
 void xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, const QString& directory) {
@@ -131,18 +271,3 @@ void xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, 
         qCritical() << "xPlayerDatabase::updateMusicFile: error: " << e.what();
     }
 }
-
-#if 0
-// TODO REMOVE
-// Example query
-soci::rowset<soci::row> movieRowSet = (sqlDatabase.prepare << "SELECT * FROM movie WHERE hash=:hash", soci::use(hash));
-        for (const auto& movieRow : movieRowSet) {
-            // Exit after the update since there can only be one result.
-            auto playCount = movieRow.get<int>(1)+1;
-            sqlDatabase << "UPDATE movie SET playCount=:playCount,timeStamp=:timeStamp WHERE hash=:hash",
-                    soci::use(playCount), soci::use(timeStamp), soci::use(hash);
-            qDebug() << "xPlayerDatabase: update: " << tag+"/"+directory+"/"+movie << QString("(%1)").arg(playCount);
-            return;
-        }
-
-#endif

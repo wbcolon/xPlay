@@ -30,9 +30,72 @@ public:
      * @return pointer to a singleton of the database.
      */
     static xPlayerDatabase* database();
-
-    QStringList getPlayedArtists(quint64 after=0);
-    QStringList getPlayedAlbums(const QString& artist, quint64 after=0);
+    /**
+     * Return the sum of the play count based on bits per sample and sample rate.
+     *
+     * @param bitsPerSample specified bits per sample or 0 as wildcard.
+     * @param sampleRate specified sample rate or 0 as wildcard.
+     * @param after the time stamp after which played files are considered.
+     * @return the sum of the play count as integer.
+     */
+    int getPlayCount(int bitsPerSample, int sampleRate, quint64 after=0);
+    /**
+     * Return the sum of the play count based on artist and album.
+     *
+     * @param artist specified artist of empty string as wildcard.
+     * @param album specified album or empty string as wildcard.
+     * @param after the time stamp after which played files are considered.
+     * @return the sum of the play count as integer.
+     */
+    int getPlayCount(const QString& artist, const QString& album, quint64 after=0);
+    /**
+     * Return a list of played artists.
+     *
+     * @param after the time stamp used in the query the played tracks.
+     * @return a list of artists played.
+     */
+    QStringList getPlayedArtists(quint64 after);
+    /**
+     * Return a list of played albums.
+     *
+     * @param artist the artist used the query of played tracks must match.
+     * @param after the time stamp used in the query the played tracks.
+     * @return a list of albums played.
+     */
+    QStringList getPlayedAlbums(const QString& artist, quint64 after);
+    /**
+     * Return a list of played tracks, their play count and the last time played.
+     *
+     * @param artist the artist used to query the played tracks must match.
+     * @param album the album used to query the played tracks must match
+     * @param after the time stamp used in the query the played tracks.
+     * @return a list of tuples of tracks played with play count and time stamp.
+     */
+    QList<std::tuple<QString,int,quint64>> getPlayedTracks(const QString& artist, const QString& album, quint64 after);
+    /**
+     * Return a list of played tags.
+     *
+     * @param after the time stamp used in the query the played movies.
+     * @return a list of tags played.
+     */
+    QStringList getPlayedTags(quint64 after);
+    /**
+     * Return a list of played directories.
+     *
+     * @param tag the tag used the query of played movies must match.
+     * @param after the time stamp used in the query the played movies.
+     * @return a list of directories played.
+     */
+    QStringList getPlayedDirectories(const QString& tag, quint64 after);
+    /**
+     * Return a list of played movies, their play count and the last time played.
+     *
+     * @param tag the tag used the query of played movies must match.
+     * @param directory the directory the query of played movies must match.
+     * @param after the time stamp used in the query the played movies.
+     * @return a list of tuples of movies played with play count and time stamp.
+     */
+    QList<std::tuple<QString,int,quint64>> getPlayedMovies(const QString& tag, const QString& directory, quint64 after);
 
 public slots:
     /**
@@ -64,7 +127,7 @@ public slots:
 
 private:
     explicit xPlayerDatabase(QObject* parent=nullptr);
-    ~xPlayerDatabase() noexcept;
+    ~xPlayerDatabase() noexcept override;
 
     static xPlayerDatabase* playerDatabase;
     soci::session sqlDatabase;
