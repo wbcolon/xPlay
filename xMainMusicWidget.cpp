@@ -71,12 +71,12 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Setup layout for main widget.
     auto mainWidgetLayout = new QGridLayout(this);
     mainWidgetLayout->setSpacing(10);
-    mainWidgetLayout->addWidget(playerBox, 0, 0, 1, 3);
-    mainWidgetLayout->addWidget(artistBox, 1, 0, 8, 1);
-    mainWidgetLayout->addWidget(albumBox, 1, 1, 7, 1);
-    mainWidgetLayout->addWidget(trackBox, 1, 2, 7, 1);
-    mainWidgetLayout->addWidget(artistSelectorBox, 8, 1, 1, 2);
-    mainWidgetLayout->addWidget(queueBox, 0, 3, 9, 1);
+    mainWidgetLayout->addWidget(playerBox, 0, 0, 1, 12);
+    mainWidgetLayout->addWidget(artistBox, 1, 0, 8, 3);
+    mainWidgetLayout->addWidget(albumBox, 1, 3, 7, 5);
+    mainWidgetLayout->addWidget(trackBox, 1, 8, 7, 4);
+    mainWidgetLayout->addWidget(artistSelectorBox, 8, 3, 1, 9);
+    mainWidgetLayout->addWidget(queueBox, 0, 12, 9, 4);
     // Connect artist, album, track and selector widgets
     connect(artistList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtist);
     connect(artistList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueArtist);
@@ -165,7 +165,10 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
     for (const auto& albumTrack : albumTracks) {
         for (const auto& track : albumTrack.second) {
             // Add to the playlist (queue)
-            queueList->addItem(track);
+            auto queueItem = new QListWidgetItem(track, queueList);
+            // Add tooltip.
+            queueItem->setToolTip(QString("%1 - %2").arg(artist).arg(albumTrack.first));
+            queueList->addItem(queueItem);
         }
         emit queueTracks(artist, albumTrack.first, albumTrack.second);
     }
@@ -246,7 +249,10 @@ void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
             trackName = trackList->item(i)->text();
             trackNames.push_back(trackName);
             // Add to the playlist (queue)
-            queueList->addItem(trackName);
+            auto queueItem = new QListWidgetItem(trackName, queueList);
+            // Add tooltip.
+            queueItem->setToolTip(QString("%1 - %2").arg(artistName).arg(albumName));
+            queueList->addItem(queueItem);
         }
         // Signal the set tracks to be queued by the music player.
         emit queueTracks(artistName, albumName, trackNames);
@@ -366,7 +372,10 @@ void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
         QString trackName = trackList->item(track)->text();
         trackNames.push_back(trackName);
         // Add to the playlist (queue)
-        queueList->addItem(trackName);
+        auto queueItem = new QListWidgetItem(trackName, queueList);
+        // Add tooltip.
+        queueItem->setToolTip(QString("%1 - %2").arg(artistName).arg(albumName));
+        queueList->addItem(queueItem);
         // Signal the set tracks to be queued by the music player.
         emit queueTracks(artistName, albumName, trackNames);
     }

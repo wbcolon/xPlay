@@ -247,14 +247,7 @@ private:
      * @param artists unfiltered list of artists.
      * @return filtered list of artists that start with the selector string.
      */
-    QStringList filterArtists(const QStringList& artists);
-    /**
-     * Emit ScanForArtist for the given artist name.
-     *
-     * @param artistName the given artist name.
-     * @param queue if true then all albums of an artist will be queued.
-     */
-    void selectArtistAndQueue(const QString& artistName, bool queue);
+    [[nodiscard]] QStringList filterArtists(const QStringList& artists);
     /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
