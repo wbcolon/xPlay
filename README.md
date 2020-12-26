@@ -79,13 +79,17 @@ xPlay has a music view, a movie view and a streaming view.
 
 ![Screenshot Music View](screenshots/xplay_screenshot_music_view_00.png)
 ![Screenshot Music View (rotel)](screenshots/xplay_screenshot_music_view_01.png)
+![Screenshot Music View (database overlay)](screenshots/xplay_screenshot_music_view_02.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The 
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select) 
 on an album. If you double-click on a track in the track list, then the track and the following tracks of the list 
 are added to the queue. If you right-click on a track in the track list, then only this track will be added to the 
 queue. The horizontal artist selector list can be used to filter the artist list by the first character. The 
-filtering is removed if you click on *none*.
+filtering is removed if you click on *none*. The database overlay (if activated) marks every artist, album and track
+with a star (*) if it has been played within the configured time period. For each track a tooltip is added that shows
+how many times this track has been played and the last time it was played. The overlay makes it easier to identify 
+music that you have not listen too in some time or at all.
 
 The player itself displays the artist, album and track currently played. It includes a slider to seek within the
 currently played file. In addition there is player control section with a *play/pause*, *stop*, *prev*, *next*
@@ -99,12 +103,16 @@ The Rotel widget allows to control a Rotel A12 or A14 amp via a network connecti
 
 ![Screenshot Movie View](screenshots/xplay_screenshot_movie_view_00.png)
 ![Screenshot Movie View (fullwindow)](screenshots/xplay_screenshot_movie_view_01.png)
+![Screenshot Movie View (database overlay)](screenshots/xplay_screenshot_movie_view_02.png)
 
 The main screen of the movie view has three vertical lists for tags, directories and movies. A tag is a 
 representation of one or more base directories. The directory list contains all sub directories (only one level)
 of these. An additional entry "." is added for all movies that are not located within a sub directory. The 
 movie list displays all movie files, but this list does not act as a queue. Double-click on an entry in the 
-movie list will start the playback. 
+movie list will start the playback. The database overlay (if activated) will mark every tag, directory and movie
+with a star (*) if it has been played within the configured time period. For each movie a tooltip is added that
+displays the number of times this movie has been played and the last time it was played. The overlay helps keeping 
+track which episode of a show you have already seen.
 
 The player section itself allows for seeking within the movie and selecting the audio channel or subtitle. The
 control section has a *play/pause* and *stop* buttons. The *rew* and *fwd* buttons jump 60 seconds backward or 
@@ -142,21 +150,25 @@ information about the used Qt and Qwt libraries.
 The configuration dialog is using QSettings to load and store the xPlay configuration. The directory and 
 extensions for the music and the movie library can be configured as well as the sites for the streaming view.
 The Rotel widget can be enabled or disabled and its network configuration can be configured.
+The database overlay for the music and movie view can be configured using individual check boxes. A cut-off
+date can be configured for each database query. If specified then entries with a time stamp before the cut-off
+date are ignored. This features enables the user to e.g. see which movies he has seen in the last month.
 
 ![Screenshot Configuration Dialog](screenshots/xplay_screenshot_configuration_dialog.png)
 
 
 ## Artwork
 
-The media control artwork has been borrowed from Wikipedia.
-(https://en.wikipedia.org/wiki/Media_control_symbols)
+The media control artwork was borrowed from Wikipedia (https://en.wikipedia.org/wiki/Media_control_symbols)
+and the KDE 5.x breeze icons.
 
 ## Requirements
 
-* Qt 5.x
-* Phonon (use Qt based music view with USE_PHONON=OFF)
-* Qwt 6.x for Qt5 (optional, deactivate with USE_QWT=OFF)
-* taglib
+* Qt 5.x (https://www.qt.io/)
+* Phonon (https://github.com/KDE/phonon)
+* Qwt 6.x for Qt5 (http://qwt.sf.net) (optional, deactivate with USE_QWT=OFF)
+* SOCI - The C++ Database Access Library (http://soci.sourceforge.net/) 
+* TagLib Audio Meta-Data Library (https://taglib.org/)
 * C++17
 
 With Qwt the UI has an improved volume knob and track slider.

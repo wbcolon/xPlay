@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 - 2020-12-26
+
+- Add database for played music and movie files.
+- Add configurable database layer for music and movie view.
+
 ## 0.4.4 - 2020-12-21
 
 - Display currently played movie in the window title if in full window mode.
