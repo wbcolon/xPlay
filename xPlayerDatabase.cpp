@@ -246,7 +246,6 @@ void xPlayerDatabase::updateMusicFile(const QString& artist, const QString& albu
     } catch (soci::soci_error& e) {
         qCritical() << "xPlayerDatabase::updateMusicFile: error: " << e.what();
     }
-    qDebug() << "ARTISTS: " << getPlayedArtists(0) << ", COUNT: " << getPlayCount(0, 0);
 }
 
 void xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, const QString& directory) {
