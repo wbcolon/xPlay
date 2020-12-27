@@ -85,11 +85,15 @@ The main screen of the music view has four vertical list for the artists, album,
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select) 
 on an album. If you double-click on a track in the track list, then the track and the following tracks of the list 
 are added to the queue. If you right-click on a track in the track list, then only this track will be added to the 
-queue. The horizontal artist selector list can be used to filter the artist list by the first character. The 
-filtering is removed if you click on *none*. The database overlay (if activated) marks every artist, album and track
-with a star (*) if it has been played within the configured time period. For each track a tooltip is added that shows
-how many times this track has been played and the last time it was played. The overlay makes it easier to identify 
-music that you have not listen too in some time or at all.
+queue. A double-click on an artist will queue all albums of the selected artist. The horizontal artist selector list 
+can be used to filter the artist list by the first character. The filtering is removed if you click on *none*. 
+If a selector is double-clicked then all selected artists with their albums are queue. A double-click on *none* will
+queue the entire music library.
+
+The database overlay (if activated) marks every artist, album and track with a star (*) if it has been played within 
+the configured time period. For each track a tooltip is added that shows how many times this track has been 
+played and the last time it was played. The overlay makes it easier to identify music that you have not listen 
+too in some time or at all.
 
 The player itself displays the artist, album and track currently played. It includes a slider to seek within the
 currently played file. In addition there is player control section with a *play/pause*, *stop*, *prev*, *next*

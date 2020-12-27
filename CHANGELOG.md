@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1 - 2020-12-27
+
+- Adjusted music view layout.
+- Queue all artists matching selector on double-click.
+
 ## 0.5.0 - 2020-12-26
 
 - Add database for played music and movie files.
