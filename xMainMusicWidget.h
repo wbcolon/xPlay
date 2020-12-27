@@ -84,7 +84,6 @@ signals:
      * @param tracks ordered vector of track names.
      */
     void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks);
-
     /**
      * Signal the dequeue of a single track
      *
@@ -146,6 +145,11 @@ private slots:
      */
     void selectArtist(int artist);
     /**
+     * Queue all albums for the currently selected artists.
+     *
+     * Function is triggered whenever an artist out of the list of artists
+     * is double-clicked. The artist name is retrieved and all its albums
+     * are queued.
      *
      * @param artistItem pointer to the currently selected row.
      */
@@ -189,6 +193,16 @@ private slots:
      * @param selector position of the first character used to filter artists.
      */
     void selectArtistSelector(int selector);
+    /**
+     * Queue all albums for the currently all artists starting with the selector.
+     *
+     * Function is triggered whenever a selector out of the list of selectors
+     * is double-clicked. All artists are retrieved and all their albums
+     * are queued. A double-click on "none" will queue the entire library.
+     *
+     * @param selectorItem pointer to the currently selected row.
+     */
+    void queueArtistSelector(QListWidgetItem* selectorItem);
     /**
      * Update the player UI based on the player state.
      *
@@ -236,11 +250,17 @@ private:
      */
     void updatePlayedTracks();
     /**
+     * Update the list of artists.
+     *
+     * @param artists the list of all unfiltered artists.
+     */
+    void updateScannedArtists(const QStringList& artists);
+    /**
      * Update the list of selectors (and add "none").
      *
      * @param selectors a set of characters (as QString) used for filtering artists.
      */
-    void scannedArtistsSelectors(const std::set<QString>& selectors);
+    void updateScannedArtistsSelectors(const std::set<QString>& selectors);
     /**
      * Filter the list of artists based on the selected selector.
      *

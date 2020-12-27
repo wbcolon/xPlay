@@ -83,6 +83,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     connect(albumList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectAlbum);
     connect(trackList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::selectTrack);
     connect(artistSelectorList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtistSelector);
+    connect(artistSelectorList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueArtistSelector);
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
     connect(this, &xMainMusicWidget::dequeueTrack, musicPlayer, &xMusicPlayer::dequeTrack);
@@ -122,6 +123,17 @@ void xMainMusicWidget::clear() {
 void xMainMusicWidget::scannedArtists(const QStringList& artists) {
     std::set<QString> selectors;
     unfilteredArtists = artists;
+    // Use unfiltered list for selectors update
+    for (const auto& artist : artists) {
+        selectors.insert(artist.left(1));
+    }
+    // Update the selector based upon the added artists
+    updateScannedArtistsSelectors(selectors);
+    // Update the artists.
+    updateScannedArtists(artists);
+}
+
+void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
     // Clear artist, album and track lists
     artistList->clear();
     albumList->clear();
@@ -130,12 +142,6 @@ void xMainMusicWidget::scannedArtists(const QStringList& artists) {
     for (const auto& artist : filterArtists(artists)) {
         artistList->addItem(artist);
     }
-    // Use unfiltered list for selectors update
-    for (const auto& artist : artists) {
-        selectors.insert(artist.left(1));
-    }
-    // Update the selector based upon the added artists
-    scannedArtistsSelectors(selectors);
     // Update database overlay for artists.
     updatePlayedArtists();
 }
@@ -174,7 +180,7 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
     }
 }
 
-void xMainMusicWidget::scannedArtistsSelectors(const std::set<QString> &selectors) {
+void xMainMusicWidget::updateScannedArtistsSelectors(const std::set<QString> &selectors) {
     // Update artist selectors list widget.
     artistSelectorList->clear();
     artistSelectorList->addItem(tr("none"));
@@ -263,7 +269,21 @@ void xMainMusicWidget::selectArtistSelector(int selector) {
     // Check if index is valid.
     if ((selector >= 0) && (selector < artistSelectorList->count())) {
         // Call with stored list in order to update artist filtering.
-        scannedArtists(unfilteredArtists);
+        updateScannedArtists(unfilteredArtists);
+    }
+}
+
+void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
+    // Currently unused
+    auto selector = artistSelectorList->row(selectorItem);
+    if ((selector >= 0) && (selector < artistSelectorList->count())) {
+        // Call with stored list in order to update artist filtering.
+        updateScannedArtists(unfilteredArtists);
+        // Scan for all filtered artists.
+        for (auto i = 0; i < artistList->count(); ++i) {
+            // Retrieve artist name and trigger scanAllAlbumsForArtist
+            emit scanAllAlbumsForArtist(artistList->item(i)->text());
+        }
     }
 }
 
