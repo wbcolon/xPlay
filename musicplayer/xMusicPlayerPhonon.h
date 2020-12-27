@@ -39,6 +39,12 @@ public:
      * @return true if music player is muted, false otherwise.
      */
     [[nodiscard]] bool isMuted() const override;
+    /**
+     * Return the shuffle mode for the music player
+     *
+     * @return true if the shuffle mode is enabled.
+     */
+    [[nodiscard]] bool getShuffleMode() const override;
 
 public slots:
     /**
@@ -104,6 +110,12 @@ public slots:
      */
     void setMuted(bool mute) override;
     /**
+     * Set the shuffle mode.
+     *
+     * @param shuffle enabled shuffle mode if true disable otherwise.
+     */
+    void setShuffleMode(bool shuffle) override;
+    /**
      * Set the volume
      *
      * @param vol integer value between 0 (silence) and 100 (full volume)
@@ -128,8 +140,10 @@ private slots:
 private:
     std::vector<std::tuple<QString,QString,QString>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;
+    QVector<int> musicPlaylistPermutation;
     Phonon::MediaObject* musicPlayer;
     Phonon::AudioOutput* musicOutput;
+    bool useShuffleMode;
     // Only required due to track length issues with phonon.
     QMediaPlayer* musicPlayerForTime;
 };

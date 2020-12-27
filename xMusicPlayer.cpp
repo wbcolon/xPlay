@@ -13,6 +13,7 @@
  */
 #include "xMusicPlayer.h"
 
+#include <QRandomGenerator>
 #include <QDebug>
 #include <taglib/fileref.h>
 #include <taglib/audioproperties.h>
@@ -52,4 +53,61 @@ std::tuple<int,int,int> xMusicPlayer::propertiesFromFile(const QString& filename
         qCritical() << "xMusicPlayer: unable to determine properties for: " << filename << ", error: " << e.what();
     }
     return std::make_tuple(currentTrackProperties->bitrate(), currentTrackProperties->sampleRate(), bitsPerSample);
+}
+
+QVector<int> xMusicPlayer::computePermutation(int elements, int startIndex) {
+    QList<int> input;
+    QVector<int> permutation;
+    // Setup the input with all indices.
+    for (auto i = 0; i < elements; ++i) {
+        input.push_back(i);
+    }
+    // Remove the start index if we have a valid one.
+    if ((startIndex >= 0) && (startIndex < elements)) {
+        // Add startIndex to the permutation as first element.
+        permutation.push_back(startIndex);
+        input.removeOne(startIndex);
+        --elements;
+    }
+    // Choose the remaining elements at random.
+    for (auto i = 0; i < elements; ++i) {
+        auto index = QRandomGenerator::global()->bounded(input.count());
+        permutation.push_back(input[index]);
+        input.removeAt(index);
+    }
+    return permutation;
+}
+
+QVector<int> xMusicPlayer::extendPermutation(const QVector<int>& permutation, int elements, int extendIndex) {
+    // Return an empty permutation if we do not extend.
+    if (elements < permutation.count()) {
+        return QVector<int>();
+    }
+    QList<int> input;
+    QVector<int> ePermutation;
+    // Setup the input with all indices.
+    for (auto i = 0; i < elements; ++i) {
+        input.push_back(i);
+    }
+    if ((extendIndex >= 0) && (extendIndex < elements)) {
+        for (auto i = 0; i < permutation.count(); ++i) {
+            // Remove the index from the input that are in the permutation.
+            input.removeOne(permutation[i]);
+            // Add the removed index to the extended permutation.
+            ePermutation.push_back(permutation[i]);
+            // We have one less element o choose.
+            --elements;
+            // End loop if we reached the extendIndex value.
+            if (permutation[i] == extendIndex) {
+                break;
+            }
+        }
+    }
+    // Choose the remaining elements at random.
+    for (auto i = 0; i < elements; ++i) {
+        auto index = QRandomGenerator::global()->bounded(input.count());
+        ePermutation.push_back(input[index]);
+        input.removeAt(index);
+    }
+    return ePermutation;
 }

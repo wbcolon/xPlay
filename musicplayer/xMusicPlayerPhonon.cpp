@@ -16,7 +16,9 @@
 #include <cmath>
 
 xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
-        xMusicPlayer(parent) {
+        xMusicPlayer(parent),
+        musicPlaylistPermutation(),
+        useShuffleMode(false) {
     // Setup the media player.
     musicPlayer = new Phonon::MediaObject(this);
     musicOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
@@ -51,7 +53,28 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
         musicPlaylistEntries.push_back(queueEntry);
         auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(pathFromQueueEntry(queueEntry)));
         musicPlaylist.push_back(queueSource);
-        musicPlayer->enqueue(queueSource);
+        if (!useShuffleMode) {
+            musicPlayer->enqueue(queueSource);
+        }
+    }
+    // We need to extend the permutation
+    if (useShuffleMode) {
+        auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
+        qDebug() << "CURRENT_INDEX: " << currentIndex;
+        // The musicPlaylistPermutation still has the old size.
+        if ((currentIndex >= 0) && (currentIndex < musicPlaylistPermutation.count())) {
+            // A song was already playing.
+            musicPlaylistPermutation = extendPermutation(musicPlaylistPermutation, musicPlaylist.count(), currentIndex);
+            for (auto i = currentIndex+1; i < musicPlaylistPermutation.count(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+            }
+        } else {
+            // No current song was playing. Queue possibly empty. No start index.
+            musicPlaylistPermutation = computePermutation(musicPlaylist.count(), -1);
+            for (auto i = 0; i < musicPlaylistPermutation.count(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+            }
+        }
     }
     // Play if autoplay is enabled.
     if (autoPlay) {
@@ -66,6 +89,10 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
 }
 
 void xMusicPlayerPhonon::dequeTrack(int index) {
+    // We do not allow deque tracks if in shuffle mode.
+    if (useShuffleMode) {
+        return;
+    }
     // Determine the index of the currently played song.
     auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
     // Remove the selected track from the playlist and entries.
@@ -156,13 +183,23 @@ void xMusicPlayerPhonon::stop() {
 void xMusicPlayerPhonon::prev() {
     // Jump to the previous element in the playlist if it exists.
     auto position = musicPlaylist.indexOf(musicPlayer->currentSource());
+    // If we are in shuffle mode then we need to find the position in our permutation.
+    if (useShuffleMode) {
+        position = musicPlaylistPermutation.indexOf(position);
+    }
     if (position > 0) {
         // Stop the player and clear its state.
         musicPlayer->stop();
         musicPlayer->clear();
         // Queue all tracks starting with position - 1.
-        for (auto i = position - 1; i < musicPlaylist.size(); ++i) {
-            musicPlayer->enqueue(musicPlaylist[i]);
+        if (useShuffleMode) {
+            for (auto i = position - 1; i < musicPlaylist.size(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+            }
+        } else{
+            for (auto i = position - 1; i < musicPlaylist.size(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[i]);
+            }
         }
         // Play.
         musicPlayer->play();
@@ -173,13 +210,23 @@ void xMusicPlayerPhonon::prev() {
 void xMusicPlayerPhonon::next() {
     // Jump to the next element in the playlist if it exists.
     auto position = musicPlaylist.indexOf(musicPlayer->currentSource());
+    // If we are in shuffle mode then we need to find the position in our permutation.
+    if (useShuffleMode) {
+        position = musicPlaylistPermutation.indexOf(position);
+    }
     if (position < musicPlaylist.size()-1) {
         // Stop the player and clear its state.
         musicPlayer->stop();
         musicPlayer->clear();
         // Queue all tracks starting with position + 1.
-        for (auto i = position + 1; i < musicPlaylist.size(); ++i) {
-            musicPlayer->enqueue(musicPlaylist[i]);
+        if (useShuffleMode) {
+            for (auto i = position + 1; i < musicPlaylist.size(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+            }
+        } else {
+            for (auto i = position + 1; i < musicPlaylist.size(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[i]);
+            }
         }
         // Play.
         musicPlayer->play();
@@ -193,6 +240,31 @@ void xMusicPlayerPhonon::setMuted(bool mute) {
 
 bool xMusicPlayerPhonon::isMuted() const {
     return musicOutput->isMuted();
+}
+
+void xMusicPlayerPhonon::setShuffleMode(bool shuffle) {
+    useShuffleMode = shuffle;
+    if (useShuffleMode) {
+        auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
+        if ((currentIndex >= 0) && (currentIndex < musicPlaylist.count())) {
+            musicPlaylistPermutation = computePermutation(musicPlaylist.count(), currentIndex);
+            // Do not stop, just clear the queue
+            musicPlayer->clearQueue();
+            // Remaining tracks include the current
+            for (auto i = 1; i < musicPlaylistPermutation.count(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+            }
+        } else {
+            // should only happen if the queue is empty.
+            qDebug() << "SHUFFLE: QUEUE SIZE: " << musicPlaylist.count();
+        }
+    } else {
+        musicPlaylistPermutation.clear();
+    }
+}
+
+bool xMusicPlayerPhonon::getShuffleMode() const {
+    return useShuffleMode;
 }
 
 void xMusicPlayerPhonon::setVolume(int vol) {

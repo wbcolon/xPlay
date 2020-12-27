@@ -37,6 +37,12 @@ public:
      * @return true if music player is muted, false otherwise.
      */
     [[nodiscard]] bool isMuted() const override;
+    /**
+     * Return the shuffle mode for the music player
+     *
+     * @return true if the shuffle mode is enabled.
+     */
+    [[nodiscard]] bool getShuffleMode() const override;
 
 public slots:
     /**
@@ -103,6 +109,12 @@ public slots:
      */
     void setMuted(bool mute) override;
     /**
+     * Set the shuffle mode.
+     *
+     * @param shuffle enabled shuffle mode if true disable otherwise.
+     */
+    virtual void setShuffleMode(bool shuffle) override;
+    /**
      * Set the volume
      *
      * @param vol integer value between 0 (silence) and 100 (full volume)
@@ -130,6 +142,7 @@ private:
     std::vector<std::tuple<QString,QString,QString>> musicPlaylistEntries;
     QMediaPlayer* musicPlayer;
     QMediaPlaylist* musicPlaylist;
+    bool useShuffleMode;
 };
 
 #endif

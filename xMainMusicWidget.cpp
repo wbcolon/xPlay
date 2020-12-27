@@ -22,6 +22,8 @@
 #include <QListView>
 #include <QFontMetrics>
 #include <QApplication>
+#include <QRandomGenerator>
+#include <QCheckBox>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
 auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
@@ -29,7 +31,7 @@ auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, this);
     auto list = new QListWidget(groupBox);
-    auto boxLayout = new QHBoxLayout();
+    auto boxLayout = new QVBoxLayout();
     boxLayout->addWidget(list);
     groupBox->setLayout(boxLayout);
     return std::make_pair(groupBox,list);
@@ -62,6 +64,10 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
     queueList = queueList_;
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
+    auto queueBoxShuffleCheck = new QCheckBox(tr("shuffle mode"), queueBox);
+    auto queueBoxLayout = dynamic_cast<QVBoxLayout*>(queueBox->layout());
+    queueBoxLayout->addSpacing(10);
+    queueBoxLayout->addWidget(queueBoxShuffleCheck);
     // Setup artistSelector as horizontal list widget with no wrapping. Fix it's height.
     artistSelectorList = artistSelectorList_; // requires since we need to use the member variable;
     artistSelectorList->setViewMode(QListView::IconMode);
@@ -92,6 +98,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Connect queue to main widget
     connect(playerWidget, &xPlayerMusicWidget::currentQueueTrack, this, &xMainMusicWidget::currentQueueTrack);
     connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackClicked);
+    // Connect shuffle mode.
+    connect(queueBoxShuffleCheck, &QCheckBox::clicked, musicPlayer, &xMusicPlayer::setShuffleMode);
+    connect(queueBoxShuffleCheck, &QCheckBox::clicked, queueList, &QListWidget::setDisabled);
     // Right click.
     connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::selectSingleTrack);
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRemoved);

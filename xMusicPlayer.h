@@ -47,6 +47,12 @@ public:
      * @return true if music player is muted, false otherwise.
      */
     [[nodiscard]] virtual bool isMuted() const = 0;
+    /**
+     * Return the shuffle mode for the music player
+     *
+     * @return true if the shuffle mode is enabled.
+     */
+    [[nodiscard]] virtual bool getShuffleMode() const = 0;
 
 signals:
     /**
@@ -131,6 +137,12 @@ public slots:
      */
     virtual void setMuted(bool mute) = 0;
     /**
+     * Set the shuffle mode.
+     *
+     * @param shuffle enabled shuffle mode if true disable otherwise.
+     */
+    virtual void setShuffleMode(bool shuffle) = 0;
+    /**
      * Set the volume
      *
      * @param vol integer value between 0 (silence) and 100 (full volume)
@@ -163,9 +175,33 @@ protected:
      * @return absolute path to the specified track.
      */
     QString pathFromQueueEntry(const std::tuple<QString, QString, QString>& entry);
+    /**
+     * Extract music file properties (bitrate, sample rate, bits per sample).
+     *
+     * @param filename the absolute path to the music file.
+     * @return a tuple containing the file properties.
+     */
     static std::tuple<int,int,int> propertiesFromFile(const QString& filename);
+    /**
+     * Compute a permutation for 0...elements-1. Allow for a fixed starting index.
+     *
+     * @param elements the number of elements for the permutation.
+     * @param startIndex the fixed starting index if >= 0.
+     * @return a vector containing a random permutation of 0...elements-1.
+     */
+    static QVector<int> computePermutation(int elements, int startIndex);
+    /**
+     * Extend a given permutation by keeping the initial permutation to extendIndex.
+     *
+     * @param permutation the current permutation used. Contains extendIndex.
+     * @param elements the new number of elements for the permutation.
+     * @param extendIndex the index up to the permutation is used in the extended permutation.
+     * @return a vector containing an extended random permutation of 0...elements-1.
+     */
+    static QVector<int> extendPermutation(const QVector<int>& permutation, int elements, int extendIndex);
 
     QString baseDirectory;
 };
+
 #endif
 
