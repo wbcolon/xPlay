@@ -121,6 +121,15 @@ private slots:
      */
     void currentState(xMoviePlayer::State state);
     /**
+     * Update the database, database overlay and queue based on the currently played movie.
+     *
+     * @param path the absolute path of the currently played movie.
+     * @param name the name of the currently played movie.
+     * @param tag the tag for the currently played movie.
+     * @param directory the directory for the currently played movie.
+     */
+    void currentMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    /**
      * Enable/disable the full window mode.
      *
      * In contrast to the full screen mode the full window mode only
@@ -191,6 +200,16 @@ private:
      * Update the database overlay for played movies and add tooltips.
      */
     void updatePlayedMovies();
+    /**
+     * Update the database overlay for currently played movie and add tooltips.
+     *
+     * @param tag the tag for the currently played movie.
+     * @param directory the directory for the currently played movie.
+     * @param movie the name of the currently played movie.
+     * @param playCount the play count for the currently played movie.
+     * @param timeStamp the last played time stamp in milli seconds for the currently played movie.
+     */
+    void updatePlayedMovie(const QString& tag, const QString& directory, const QString& movie, int playCount, quint64 timeStamp);
     /**
      * Emit signal to initiate update of window title with new currently playing movie.
      *

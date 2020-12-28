@@ -99,10 +99,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     connect(moviePlayer, &xMoviePlayer::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
     connect(moviePlayerWidget, &xPlayerMovieWidget::autoPlayNextMovie, this, &xMainMovieWidget::setAutoPlayNextMovie);
     // Connect database.
-    connect(moviePlayer, &xMoviePlayer::currentMovie,
-            [=](const QString&, const QString& name, const QString& tag, const QString& directory) {
-                xPlayerDatabase::database()->updateMovieFile(name, tag, directory);
-            });
+    connect(moviePlayer, &xMoviePlayer::currentMovie, this, &xMainMovieWidget::currentMovie);
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMovieOverlay,
             this, &xMainMovieWidget::updatedDatabaseMovieOverlay);
@@ -211,7 +208,6 @@ void xMainMovieWidget::selectMovie(QListWidgetItem* movieItem) {
         if (directoryList->count() > 0) {
             directory = directoryList->currentItem()->text();
         }
-        updatePlayedMovies();
         updateMovieQueue(movieIndex);
         emit setMovie(currentMovies[movieIndex], movieItem->text(), tag, directory);
     }
@@ -364,13 +360,55 @@ void xMainMovieWidget::updatePlayedMovies() {
                 playedMovies.erase(playedMovie);
                 // End update if no more movies need to be marked.
                 if (playedMovies.isEmpty()) {
-                    updatePlayedTags();
-                    updatePlayedDirectories();
                     return;
                 }
                 // Break loop and move on to the next movie item.
                 break;
             }
+        }
+    }
+}
+
+void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& directory,
+                                         const QString& movie, int playCount, quint64 timeStamp) {
+    // Only update if the database overlay is enabled.
+    if (!useDatabaseMovieOverlay) {
+        return;
+    }
+    auto tagItem = tagList->currentItem();
+    // Update the tags.
+    auto tagPlayedItems = tagList->findItems(tag, Qt::MatchExactly);
+    for (auto& tagPlayedItem : tagPlayedItems) {
+        tagPlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+    }
+    // If no tag selected or the tag does not match the selected
+    // tags then we do not need to update the albums.
+    if ((!tagItem) || (tagItem->text() != tag)) {
+        return;
+    }
+    // Handle special case if we only have the "." directory.
+    if (directoryList->count() > 0) {
+        auto directoryItem = directoryList->currentItem();
+        // Update the directorys.
+        auto directoryPlayedItems = directoryList->findItems(directory, Qt::MatchExactly);
+        for (auto& directoryPlayedItem : directoryPlayedItems) {
+            directoryPlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+        }
+        // If no directory selected or the directory does not match the selected
+        // directory then we do not need to update the tracks.
+        if ((!directoryItem) || (directoryItem->text() != directory)) {
+            return;
+        }
+    }
+    auto moviePlayedItems = movieList->findItems(movie, Qt::MatchExactly);
+    for (auto& moviePlayedItem : moviePlayedItems) {
+        moviePlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+        if (playCount > 1) {
+            moviePlayedItem->setToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+        } else {
+            moviePlayedItem->setToolTip(QString(tr("played once, last time on %1")).
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
         }
     }
 }
@@ -414,4 +452,13 @@ void xMainMovieWidget::currentState(xMoviePlayer::State state) {
             movieStack->setCurrentIndex(0);
         } break;
     }
+}
+
+void xMainMovieWidget::currentMovie(const QString& path, const QString& name,
+                                    const QString& tag, const QString& directory) {
+    Q_UNUSED(path)
+    // Update database.
+    auto result = xPlayerDatabase::database()->updateMovieFile(name, tag, directory);
+    // Update database overlay.
+    updatePlayedMovie(tag, directory, name, result.first, result.second);
 }
