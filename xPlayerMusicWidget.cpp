@@ -144,8 +144,6 @@ void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QS
     trackSampleRate->setText(QString("%1Hz").arg(sampleRate));
     trackBitsPerSample->setText(QString("%1-bit").arg(bitsPerSample));
     trackBitrate->setText(QString("%1 kbit/s").arg(bitrate));
-    // Signal index update to the Queue.
-    emit currentQueueTrack(index);
 }
 
 void xPlayerMusicWidget::currentState(xMusicPlayer::State state) {

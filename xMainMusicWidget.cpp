@@ -96,7 +96,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Connect player widget to main widget
     connect(playerWidget, &xPlayerMusicWidget::clearQueue, this, &xMainMusicWidget::clearQueue);
     // Connect queue to main widget
-    connect(playerWidget, &xPlayerMusicWidget::currentQueueTrack, this, &xMainMusicWidget::currentQueueTrack);
     connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackClicked);
     // Connect shuffle mode.
     connect(queueBoxShuffleCheck, &QCheckBox::clicked, musicPlayer, &xMusicPlayer::setShuffleMode);
@@ -106,11 +105,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRemoved);
     // Connect music player to main widget for queue update.
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
-    // Connect database.
-    connect(musicPlayer, &xMusicPlayer::currentTrack,
-            [=](int, const QString& artist, const QString& album, const QString& track, int, int sampleRate, int bitsPerSample) {
-                xPlayerDatabase::database()->updateMusicFile(artist, album, track, sampleRate, bitsPerSample);
-            });
+    // Connect update for current track. Update queue, database and database overlay.
+    connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xMainMusicWidget::currentTrack);
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicOverlay,
             this, &xMainMusicWidget::updatedDatabaseMusicOverlay);
@@ -318,6 +314,17 @@ void xMainMusicWidget::currentState(xMusicPlayer::State state) {
     }
 }
 
+void xMainMusicWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track,
+                                    int bitrate, int sampleRate, int bitsPerSample) {
+    Q_UNUSED(bitrate)
+    // Update queue
+    currentQueueTrack(index);
+    // Update database.
+    auto result = xPlayerDatabase::database()->updateMusicFile(artist, album, track, sampleRate, bitsPerSample);
+    // Update database overlay.
+    updatePlayedTrack(artist, album, track, result.first, result.second);
+}
+
 void xMainMusicWidget::currentQueueTrack(int index) {
     queueList->setCurrentRow(index);
     // Remove play icon from old track
@@ -332,17 +339,13 @@ void xMainMusicWidget::currentQueueTrack(int index) {
     if (playedItem) {
         playedItem->setIcon(QIcon(":/images/xplay-play.svg"));
     }
-    // Update database overlay for tracks.
-    updatePlayedTracks();
 }
 
 void xMainMusicWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
     auto track = queueList->row(trackItem);
     if ((track >= 0) && (track< queueList->count())) {
         currentQueueTrack(track);
-        emit musicPlayer->play(track);
-        // Update database overlay for tracks.
-        updatePlayedTracks();
+        musicPlayer->play(track);
     }
 }
 
@@ -463,6 +466,7 @@ void xMainMusicWidget::updatePlayedTracks() {
     }
     auto artistItem = artistList->currentItem();
     auto albumItem = albumList->currentItem();
+    qDebug() << "ARTIST: " << artistItem;
     // No artist or album currently selected. We do not need to update.
     if ((!artistItem) || (!albumItem)) {
         return;
@@ -493,8 +497,6 @@ void xMainMusicWidget::updatePlayedTracks() {
                 playedMusicTracks.erase(playedMusicTrack);
                 // End update if no more tracks need to be marked.
                 if (playedMusicTracks.isEmpty()) {
-                    updatePlayedArtists();
-                    updatePlayedAlbums();
                     return;
                 }
                 // Break loop and move on to the next movie item.
@@ -504,3 +506,43 @@ void xMainMusicWidget::updatePlayedTracks() {
     }
 }
 
+void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& album,
+                                         const QString& track, int playCount, quint64 timeStamp) {
+    // Only update if the database overlay is enabled.
+    if (!useDatabaseMusicOverlay) {
+        return;
+    }
+    auto artistItem = artistList->currentItem();
+    // Update the artists.
+    auto artistPlayedItems = artistList->findItems(artist, Qt::MatchExactly);
+    for (auto& artistPlayedItem : artistPlayedItems) {
+        artistPlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+    }
+    // If no artist selected or the artist does not match the selected
+    // artists then we do not need to update the albums.
+    if ((!artistItem) || (artistItem->text() != artist)) {
+        return;
+    }
+    auto albumItem = albumList->currentItem();
+    // Update the albums.
+    auto albumPlayedItems = albumList->findItems(album, Qt::MatchExactly);
+    for (auto& albumPlayedItem : albumPlayedItems) {
+        albumPlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+    }
+    // If no album selected or the album does not match the selected
+    // album then we do not need to update the tracks.
+    if ((!albumItem) || (albumItem->text() != album)) {
+        return;
+    }
+    auto trackPlayedItems = trackList->findItems(track, Qt::MatchExactly);
+    for (auto& trackPlayedItem : trackPlayedItems) {
+        trackPlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+        if (playCount > 1) {
+            trackPlayedItem->setToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+        } else {
+            trackPlayedItem->setToolTip(QString(tr("played once, last time on %1")).
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+        }
+    }
+}

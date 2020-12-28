@@ -182,23 +182,6 @@ protected:
      * @return a tuple containing the file properties.
      */
     static std::tuple<int,int,int> propertiesFromFile(const QString& filename);
-    /**
-     * Compute a permutation for 0...elements-1. Allow for a fixed starting index.
-     *
-     * @param elements the number of elements for the permutation.
-     * @param startIndex the fixed starting index if >= 0.
-     * @return a vector containing a random permutation of 0...elements-1.
-     */
-    static QVector<int> computePermutation(int elements, int startIndex);
-    /**
-     * Extend a given permutation by keeping the initial permutation to extendIndex.
-     *
-     * @param permutation the current permutation used. Contains extendIndex.
-     * @param elements the new number of elements for the permutation.
-     * @param extendIndex the index up to the permutation is used in the extended permutation.
-     * @return a vector containing an extended random permutation of 0...elements-1.
-     */
-    static QVector<int> extendPermutation(const QVector<int>& permutation, int elements, int extendIndex);
 
     QString baseDirectory;
 };

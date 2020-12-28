@@ -13,6 +13,7 @@
  */
 #include "xMusicPlayerPhonon.h"
 
+#include <QRandomGenerator>
 #include <cmath>
 
 xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
@@ -60,7 +61,6 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
     // We need to extend the permutation
     if (useShuffleMode) {
         auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
-        qDebug() << "CURRENT_INDEX: " << currentIndex;
         // The musicPlaylistPermutation still has the old size.
         if ((currentIndex >= 0) && (currentIndex < musicPlaylistPermutation.count())) {
             // A song was already playing.
@@ -148,6 +148,10 @@ void xMusicPlayerPhonon::playPause() {
 }
 
 void xMusicPlayerPhonon::play(int index) {
+    // We do not allow clicking on a queued tracks if in shuffle mode.
+    if (useShuffleMode) {
+        return;
+    }
     // Check if the index is valid.
     if ((index >= 0) && (index < musicPlaylist.size())) {
         // Stop the player and clear its state.
@@ -254,9 +258,6 @@ void xMusicPlayerPhonon::setShuffleMode(bool shuffle) {
             for (auto i = 1; i < musicPlaylistPermutation.count(); ++i) {
                 musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
             }
-        } else {
-            // should only happen if the queue is empty.
-            qDebug() << "SHUFFLE: QUEUE SIZE: " << musicPlaylist.count();
         }
     } else {
         musicPlaylistPermutation.clear();
@@ -319,3 +320,59 @@ void xMusicPlayerPhonon::finished() {
     }
 }
 
+QVector<int> xMusicPlayerPhonon::computePermutation(int elements, int startIndex) {
+    QList<int> input;
+    QVector<int> permutation;
+    // Setup the input with all indices.
+    for (auto i = 0; i < elements; ++i) {
+        input.push_back(i);
+    }
+    // Remove the start index if we have a valid one.
+    if ((startIndex >= 0) && (startIndex < elements)) {
+        // Add startIndex to the permutation as first element.
+        permutation.push_back(startIndex);
+        input.removeOne(startIndex);
+        --elements;
+    }
+    // Choose the remaining elements at random.
+    for (auto i = 0; i < elements; ++i) {
+        auto index = QRandomGenerator::global()->bounded(input.count());
+        permutation.push_back(input[index]);
+        input.removeAt(index);
+    }
+    return permutation;
+}
+
+QVector<int> xMusicPlayerPhonon::extendPermutation(const QVector<int>& permutation, int elements, int extendIndex) {
+    // Return an empty permutation if we do not extend.
+    if (elements < permutation.count()) {
+        return QVector<int>();
+    }
+    QList<int> input;
+    QVector<int> ePermutation;
+    // Setup the input with all indices.
+    for (auto i = 0; i < elements; ++i) {
+        input.push_back(i);
+    }
+    if ((extendIndex >= 0) && (extendIndex < elements)) {
+        for (auto i = 0; i < permutation.count(); ++i) {
+            // Remove the index from the input that are in the permutation.
+            input.removeOne(permutation[i]);
+            // Add the removed index to the extended permutation.
+            ePermutation.push_back(permutation[i]);
+            // We have one less element o choose.
+            --elements;
+            // End loop if we reached the extendIndex value.
+            if (permutation[i] == extendIndex) {
+                break;
+            }
+        }
+    }
+    // Choose the remaining elements at random.
+    for (auto i = 0; i < elements; ++i) {
+        auto index = QRandomGenerator::global()->bounded(input.count());
+        ePermutation.push_back(input[index]);
+        input.removeAt(index);
+    }
+    return ePermutation;
+}

@@ -30,12 +30,6 @@ public:
 
 signals:
     /**
-     * Signal the position of the current track.
-     *
-     * @param index the position of the track in the playlist.
-     */
-    void currentQueueTrack(int index);
-    /**
      * Signal that the playlist needs to be cleared.
      */
     void clearQueue();

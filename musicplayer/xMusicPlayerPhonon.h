@@ -132,12 +132,43 @@ private slots:
      * @param index the position of the current track in the playlist.
      */
     void currentTrackSource(const Phonon::MediaSource& current);
+    /**
+     * Determine current track length through Qt mediaplayer.
+     *
+     * @param duration the track length in milliseconds.
+     */
     void currentTrackDuration(qint64 duration);
-
+    /**
+     * Track state changes in phonon media player. Try to recover from errors.
+     *
+     * @param newState the current state of the phonon media player.
+     * @param oldState the previous state of the phonon media player.
+     */
     void stateChanged(Phonon::State newState, Phonon::State oldState);
+    /**
+     * Track finished signal from the phonon media player. Track errors.
+     */
     void finished();
 
 private:
+    /**
+     * Compute a permutation for 0...elements-1. Allow for a fixed starting index.
+     *
+     * @param elements the number of elements for the permutation.
+     * @param startIndex the fixed starting index if >= 0.
+     * @return a vector containing a random permutation of 0...elements-1.
+     */
+    static QVector<int> computePermutation(int elements, int startIndex);
+    /**
+     * Extend a given permutation by keeping the initial permutation to extendIndex.
+     *
+     * @param permutation the current permutation used. Contains extendIndex.
+     * @param elements the new number of elements for the permutation.
+     * @param extendIndex the index up to the permutation is used in the extended permutation.
+     * @return a vector containing an extended random permutation of 0...elements-1.
+     */
+    static QVector<int> extendPermutation(const QVector<int>& permutation, int elements, int extendIndex);
+
     std::vector<std::tuple<QString,QString,QString>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;
     QVector<int> musicPlaylistPermutation;
