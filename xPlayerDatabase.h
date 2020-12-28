@@ -96,8 +96,6 @@ public:
      * @return a list of tuples of movies played with play count and time stamp.
      */
     QList<std::tuple<QString,int,quint64>> getPlayedMovies(const QString& tag, const QString& directory, quint64 after);
-
-public slots:
     /**
      * Record the playing music file in the music table of the database.
      *
@@ -110,8 +108,9 @@ public slots:
      * @param track the track including the track number for the music file played.
      * @param sampleRate the sample rate for the music file played in Hz.
      * @param bitsPerSample the bits per sample for the music file played.
+     * @return the pair of play count and time stamp for updated track.
      */
-    void updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample);
+    std::pair<int,quint64> updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample);
     /**
      * Record the playing movie file in the movie table of the database.
      *
@@ -122,8 +121,9 @@ public slots:
      * @param movie the file name displayed for the movie file played.
      * @param tag the tag the movie file played belongs to.
      * @param directory the directory the movie file played belongs to.
+     * @return the pair of play count and time stamp for updated movie.
      */
-    void updateMovieFile(const QString& movie, const QString& tag, const QString& directory);
+    std::pair<int,quint64> updateMovieFile(const QString& movie, const QString& tag, const QString& directory);
 
 private:
     explicit xPlayerDatabase(QObject* parent=nullptr);

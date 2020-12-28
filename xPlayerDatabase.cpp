@@ -224,7 +224,7 @@ QList<std::tuple<QString,int,quint64>> xPlayerDatabase::getPlayedMovies(const QS
     return movies;
 }
 
-void xPlayerDatabase::updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample) {
+std::pair<int,quint64> xPlayerDatabase::updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample) {
     auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
     try {
@@ -235,6 +235,7 @@ void xPlayerDatabase::updateMusicFile(const QString& artist, const QString& albu
             sqlDatabase << "UPDATE music SET playCount=:playCount,timeStamp=:timeStamp WHERE hash=:hash",
                     soci::use(playCount+1), soci::use(timeStamp), soci::use(hash);
             qDebug() << "xPlayerDatabase: update: " << artist+"/"+album+"/"+track << QString("(%1)").arg(playCount);
+            return std::make_pair(playCount+1,timeStamp);
         } else {
             // Insert into the database if no element exists.
             sqlDatabase << "INSERT INTO music VALUES (:hash,:playCount,:timeStamp,:artist,:album,:track,:sampleRate,:bitsPerSample)",
@@ -242,13 +243,15 @@ void xPlayerDatabase::updateMusicFile(const QString& artist, const QString& albu
                     soci::use(album.toStdString()), soci::use(track.toStdString()), soci::use(sampleRate),
                     soci::use(bitsPerSample);
             qDebug() << "xPlayerDatabase: insert: " << artist + "/" + album + "/" + track;
+            return std::make_pair(1,timeStamp);
         }
     } catch (soci::soci_error& e) {
         qCritical() << "xPlayerDatabase::updateMusicFile: error: " << e.what();
     }
+    return std::make_pair(0,0);
 }
 
-void xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, const QString& directory) {
+std::pair<int,quint64> xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, const QString& directory) {
     auto hash = QCryptographicHash::hash((tag+"/"+directory+"/"+movie).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
     try {
@@ -259,14 +262,17 @@ void xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, 
             sqlDatabase << "UPDATE movie SET playCount=:playCount,timeStamp=:timeStamp WHERE hash=:hash",
                     soci::use(playCount+1), soci::use(timeStamp), soci::use(hash);
             qDebug() << "xPlayerDatabase: update: " << tag+"/"+directory+"/"+movie << QString("(%1)").arg(playCount);
+            return std::make_pair(playCount+1,timeStamp);
         } else {
             // Insert into the database if no element exists.
             sqlDatabase << "INSERT INTO movie VALUES (:hash,:playCount,:timeStamp,:tag,:directory,:movie)",
                     soci::use(hash), soci::use(1), soci::use(timeStamp), soci::use(tag.toStdString()),
                     soci::use(directory.toStdString()), soci::use(movie.toStdString());
             qDebug() << "xPlayerDatabase: insert: " << tag + "/" + directory + "/" + movie;
+            return std::make_pair(1,timeStamp);
         }
     } catch (soci::soci_error& e) {
         qCritical() << "xPlayerDatabase::updateMusicFile: error: " << e.what();
     }
+    return std::make_pair(0,0);
 }
