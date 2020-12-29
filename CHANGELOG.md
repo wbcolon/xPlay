@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2 - 2020-12-29
+
+- Add shuffle-mode for the queue. Deque and double-click on queue track are disabled.
+- Improved database usage.
+
 ## 0.5.1 - 2020-12-27
 
 - Adjusted music view layout.

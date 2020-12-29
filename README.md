@@ -88,7 +88,8 @@ are added to the queue. If you right-click on a track in the track list, then on
 queue. A double-click on an artist will queue all albums of the selected artist. The horizontal artist selector list 
 can be used to filter the artist list by the first character. The filtering is removed if you click on *none*. 
 If a selector is double-clicked then all selected artists with their albums are queue. A double-click on *none* will
-queue the entire music library.
+queue the entire music library. The queue does support a shuffle mode where the tracks will be played at random. The
+jump to an individual track in the queue or the deque of a single track is not supported in shuffle mode.
 
 The database overlay (if activated) marks every artist, album and track with a star (*) if it has been played within 
 the configured time period. For each track a tooltip is added that shows how many times this track has been 

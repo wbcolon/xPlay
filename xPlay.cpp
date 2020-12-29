@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 {
     QApplication playApp(argc, argv);
     QApplication::setApplicationName("xPlay");
-    QApplication::setApplicationVersion("0.5.1");
+    QApplication::setApplicationVersion("0.5.2");
     if (handleCommandLine(playApp)) {
         // Exit if the command line was handled.
         return 0;
