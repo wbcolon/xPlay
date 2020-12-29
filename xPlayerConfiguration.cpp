@@ -24,6 +24,7 @@
 // Configuration strings.
 const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" };
 const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" };
+const QString xPlayerConfiguration_MusicLibraryAlbumSelectors { "xPlay/MusicLibraryAlbumSelectors" };
 const QString xPlayerConfiguration_RotelWidget { "xPlay/RotelWidget" };
 const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddress" };
 const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" };
@@ -35,14 +36,14 @@ const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" };
 const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" };
 const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOverlay" };
 
+// Configuration defaults.
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" };
+const QString xPlayerConfiguration_MusicLibraryAlbumSelectors_Default { "(live) [hd] [mp3]" };
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" };
-
 const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = {
         { "qobuz", QUrl("https://play.qobuz.com/login") },
         { "youtube", QUrl("https://www.youtube.com") },
 };
-
 
 // singleton object.
 xPlayerConfiguration* xPlayerConfiguration::playerConfiguration = nullptr;
@@ -76,6 +77,14 @@ void xPlayerConfiguration::setMusicLibraryExtensions(const QString& extensions) 
         settings->setValue(xPlayerConfiguration_MusicLibraryExtensions, extensions);
         settings->sync();
         emit updatedMovieLibraryExtensions();
+    }
+}
+
+void xPlayerConfiguration::setMusicLibraryAlbumSelectors(const QString& selectors) {
+    if (selectors != getMusicLibraryAlbumSelectors()) {
+        settings->setValue(xPlayerConfiguration_MusicLibraryAlbumSelectors, selectors);
+        settings->sync();
+        emit updatedMusicLibraryAlbumSelectors();
     }
 }
 
@@ -189,6 +198,20 @@ QStringList xPlayerConfiguration::getMusicLibraryExtensionList() {
     }
 }
 
+QString xPlayerConfiguration::getMusicLibraryAlbumSelectors() {
+    return settings->value(xPlayerConfiguration_MusicLibraryAlbumSelectors,
+                           xPlayerConfiguration_MusicLibraryAlbumSelectors_Default).toString();
+}
+
+QStringList xPlayerConfiguration::getMusicLibraryAlbumSelectorList() {
+    auto selectors = getMusicLibraryAlbumSelectors();
+    if (selectors.isEmpty()) {
+        return QStringList();
+    } else {
+        return selectors.split(" ");
+    }
+}
+
 bool xPlayerConfiguration::rotelWidget() {
     return settings->value(xPlayerConfiguration_RotelWidget, true).toBool();
 }
@@ -295,6 +318,7 @@ void xPlayerConfiguration::updatedConfiguration() {
     // Fire all update signals.
     emit updatedMusicLibraryDirectory();
     emit updatedMusicLibraryExtensions();
+    emit updatedMusicLibraryAlbumSelectors();
     emit updatedRotelNetworkAddress();
     emit updatedMovieLibraryTagsAndDirectories();
     emit updatedMovieLibraryExtensions();

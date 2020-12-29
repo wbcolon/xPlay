@@ -45,6 +45,12 @@ public:
      */
     void setMusicLibraryExtensions(const QString& extensions);
     /**
+     * Set the set of album selectors for filtering albums.
+     *
+     * @param selectors a space separated list of album selectors.
+     */
+    void setMusicLibraryAlbumSelectors(const QString& selectors);
+    /**
      * Set availability of the Rotel amp widget.
      *
      * @param enabled show Rotel widget after restart if true, disable otherwise.
@@ -123,6 +129,18 @@ public:
      * @return the list of extensions.
      */
     [[nodiscard]] QStringList getMusicLibraryExtensionList();
+    /**
+     * Get the list of album selectors for filtering albums.
+     *
+     * @return the list of selectors as space separated string.
+     */
+    [[nodiscard]] QString getMusicLibraryAlbumSelectors();
+    /**
+     * Get the list of album selectors for filtering albums.
+     *
+     * @return the list of selectors.
+     */
+    [[nodiscard]] QStringList getMusicLibraryAlbumSelectorList();
     /**
      * Return the availability of the Rotel amp widget.
      *
@@ -211,6 +229,10 @@ signals:
      * Signal an update of the accepted music file extensions.
      */
     void updatedMusicLibraryExtensions();
+    /**
+     * Signal an update of the album selectors.
+     */
+    void updatedMusicLibraryAlbumSelectors();
     /**
      * Signal an update of the movie library directory.
      */

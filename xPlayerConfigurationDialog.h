@@ -120,6 +120,7 @@ private:
 
     QLineEdit* musicLibraryDirectoryWidget;
     QLineEdit* musicLibraryExtensionsWidget;
+    QLineEdit* musicLibraryAlbumSelectorsWidget;
     QLineEdit* movieLibraryTagWidget;
     QLineEdit* movieLibraryDirectoryWidget;
     QLineEdit* movieLibraryExtensionsWidget;
