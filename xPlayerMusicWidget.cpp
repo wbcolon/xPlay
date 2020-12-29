@@ -137,6 +137,7 @@ void xPlayerMusicWidget::clear() {
 
 void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track,
                                       int bitrate, int sampleRate, int bitsPerSample) {
+    Q_UNUSED(index)
     // Display the current track information (without length)
     artistName->setText(artist);
     albumName->setText(album);
