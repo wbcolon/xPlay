@@ -40,6 +40,8 @@ auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
 xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         musicPlayer(player),
+        albumSelectorMatch(),
+        albumSelectorNotMatch(),
         playedTrack(0),
         useDatabaseMusicOverlay(true),
         databaseCutOff(0) {
@@ -48,7 +50,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     auto [albumBox, albumList_] = addGroupBox(tr("Albums"));
     auto [trackBox, trackList_] = addGroupBox(tr("Tracks"));
     auto [queueBox, queueList_] = addGroupBox(tr("Queue"));
-    auto [artistSelectorBox, artistSelectorList_] = addGroupBox(tr("ArtistSelector"));
+    auto [artistSelectorBox, artistSelectorList_] = addGroupBox(tr("Artist Selector"));
     auto playerBox = new QGroupBox(tr("Player"), this);
     auto playerLayout = new QHBoxLayout();
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
@@ -74,22 +76,34 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     artistSelectorList->setWrapping(false);
     artistSelectorList->setFixedHeight(QFontMetrics(QApplication::font()).height()*3/2);
     artistSelectorBox->setFixedHeight(artistSelectorBox->sizeHint().height());
+    // Setup album selector.
+    auto albumSelectorBox = new QGroupBox(tr("Album Selector"), this);
+    auto albumSelectorLayout = new QVBoxLayout();
+    // Create album selector widget.
+    albumSelectorList = new xPlayerSelectorWidget(albumSelectorBox);
+    albumSelectorLayout->addWidget(albumSelectorList);
+    albumSelectorBox->setLayout(albumSelectorLayout);
+    // Set heigh of album selector to height af artist selector.
+    albumSelectorBox->setFixedHeight(artistSelectorBox->sizeHint().height());
     // Setup layout for main widget.
     auto mainWidgetLayout = new QGridLayout(this);
     mainWidgetLayout->setSpacing(10);
     mainWidgetLayout->addWidget(playerBox, 0, 0, 1, 12);
-    mainWidgetLayout->addWidget(artistBox, 1, 0, 8, 3);
+    mainWidgetLayout->addWidget(artistBox, 1, 0, 7, 3);
     mainWidgetLayout->addWidget(albumBox, 1, 3, 7, 5);
     mainWidgetLayout->addWidget(trackBox, 1, 8, 7, 4);
-    mainWidgetLayout->addWidget(artistSelectorBox, 8, 3, 1, 9);
+    mainWidgetLayout->addWidget(artistSelectorBox, 8, 0, 1, 8);
+    mainWidgetLayout->addWidget(albumSelectorBox, 8, 8, 1, 4);
     mainWidgetLayout->addWidget(queueBox, 0, 12, 9, 4);
     // Connect artist, album, track and selector widgets
     connect(artistList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtist);
     connect(artistList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueArtist);
     connect(albumList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectAlbum);
+    connect(albumList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueAlbum);
     connect(trackList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::selectTrack);
     connect(artistSelectorList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtistSelector);
     connect(artistSelectorList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueArtistSelector);
+    connect(albumSelectorList, &xPlayerSelectorWidget::updatedSelectors, this, &xMainMusicWidget::selectAlbumSelector);
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
     connect(this, &xMainMusicWidget::dequeueTrack, musicPlayer, &xMusicPlayer::dequeTrack);
@@ -110,6 +124,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicOverlay,
             this, &xMainMusicWidget::updatedDatabaseMusicOverlay);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryAlbumSelectors,
+            this, &xMainMusicWidget::updatedMusicLibraryAlbumSelectors);
 }
 void xMainMusicWidget::initializeView() {
     emit showWindowTitle(QApplication::applicationName());
@@ -155,7 +171,8 @@ void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
     // Clear album and track lists
     albumList->clear();
     trackList->clear();
-    for (const auto& album : albums) {
+    unfilteredAlbums = albums;
+    for (const auto& album : filterAlbums(albums)) {
         albumList->addItem(album);
     }
     // Update database overlay for albums.
@@ -174,6 +191,10 @@ void xMainMusicWidget::scannedTracks(const QStringList& tracks) {
 
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks) {
     for (const auto& albumTrack : albumTracks) {
+        // Skip over the albums that do not match our filter.
+        if (!filterAlbum(albumTrack.first)) {
+            continue;
+        }
         for (const auto& track : albumTrack.second) {
             // Add to the playlist (queue)
             auto queueItem = new QListWidgetItem(track, queueList);
@@ -216,6 +237,40 @@ QStringList xMainMusicWidget::filterArtists(const QStringList& artists) {
     return artists;
 }
 
+QStringList xMainMusicWidget::filterAlbums(const QStringList& albums) {
+    QStringList filtered;
+    for (const auto& album : albums) {
+        // Only add albums that pass our filters.
+        if (filterAlbum(album)) {
+            filtered.push_back(album);
+        }
+    }
+    return filtered;
+}
+
+bool xMainMusicWidget::filterAlbum(const QString& album) {
+    // Go through the not match selectors.
+    for (const auto& notMatch : albumSelectorNotMatch) {
+        if (album.contains(notMatch)) {
+            return false;
+        }
+    }
+    // Accept if we do not have any match selectors.
+    if (albumSelectorMatch.isEmpty()) {
+        return true;
+    } else {
+        // Go through the match selectors.
+        for (const auto& match : albumSelectorMatch) {
+            // Only has to match one.
+            if (album.contains(match)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 void xMainMusicWidget::selectArtist(int artist) {
     // Check if artist index is valid.
     if ((artist >= 0) && (artist < artistList->count())) {
@@ -242,6 +297,15 @@ void xMainMusicWidget::selectAlbum(int album) {
         auto artistName = artistList->currentItem()->text();
         auto albumName = albumList->item(album)->text();
         emit scanForArtistAndAlbum(artistName, albumName);
+    }
+}
+
+void xMainMusicWidget::queueAlbum(QListWidgetItem* albumItem) {
+    // Emulate behavior of selecting album and clicking on the first track.
+    if (albumItem == albumList->currentItem()) {
+        if (trackList->count() > 0) {
+            selectTrack(trackList->item(0));
+        }
     }
 }
 
@@ -290,6 +354,12 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
             emit scanAllAlbumsForArtist(artistList->item(i)->text());
         }
     }
+}
+
+void xMainMusicWidget::selectAlbumSelector(const QStringList& match, const QStringList& notMatch) {
+    albumSelectorMatch = match;
+    albumSelectorNotMatch = notMatch;
+    scannedAlbums(unfilteredAlbums);
 }
 
 void xMainMusicWidget::currentState(xMusicPlayer::State state) {
@@ -389,6 +459,16 @@ void xMainMusicWidget::updatedDatabaseMusicOverlay() {
     }
 }
 
+void xMainMusicWidget::updatedMusicLibraryAlbumSelectors() {
+    albumSelectorList->setSelectors(xPlayerConfiguration::configuration()->getMusicLibraryAlbumSelectorList());
+    // Clear match and not match selectors.
+    albumSelectorMatch.clear();
+    albumSelectorNotMatch.clear();
+    // If we have a list of albums, then we re-filter.
+    if (!unfilteredAlbums.isEmpty()) {
+        scannedAlbums(unfilteredAlbums);
+    }
+}
 
 void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
     // Currently unused

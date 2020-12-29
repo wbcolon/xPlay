@@ -16,6 +16,7 @@
 
 #include "xMusicPlayer.h"
 #include "xPlayerMusicWidget.h"
+#include "xPlayerSelectorWidget.h"
 
 #include <QListWidget>
 #include <QString>
@@ -165,6 +166,15 @@ private slots:
      */
     void selectAlbum(int album);
     /**
+     * Queue the currently selected album.
+     *
+     * Function is triggered whenever an album out of the list of albums
+     * is double-clicked. The album name is retrieved and queued.
+     *
+     * @param albumItem pointer to the currently selected row.
+     */
+    void queueAlbum(QListWidgetItem* albumItem);
+    /**
      * Append tracks to the playlist (queue).
      *
      * Function is triggered by a double click to an entry in the list of
@@ -203,6 +213,16 @@ private slots:
      * @param selectorItem pointer to the currently selected row.
      */
     void queueArtistSelector(QListWidgetItem* selectorItem);
+    /**
+     * Filter the list of albums.
+     *
+     * Function is triggered whenever the album selectors are updated. The match
+     * and not match selectors are retrieved and used to filter the list of albums.
+     *
+     * @param match the album must match one element out of this list.
+     * @param notMatch the album must not match any element out of this list.
+     */
+    void selectAlbumSelector(const QStringList& match, const QStringList& notMatch);
     /**
      * Update the player UI based on the player state.
      *
@@ -247,6 +267,10 @@ private slots:
      * Update the music database overlay on configuration changes.
      */
     void updatedDatabaseMusicOverlay();
+    /**
+     * Update the album selectors and re-filter albums if necessary.
+     */
+    void updatedMusicLibraryAlbumSelectors();
 
 private:
     /**
@@ -291,6 +315,20 @@ private:
      */
     [[nodiscard]] QStringList filterArtists(const QStringList& artists);
     /**
+     * Filter the list of albums based on the match and not match selectors.
+     *
+     * @param albums unfiltered list of albums.
+     * @return filtered list of albums according to selectors.
+     */
+    [[nodiscard]] QStringList filterAlbums(const QStringList& albums);
+    /**
+     * Filter the album based on the match and not match selectors.
+     *
+     * @param album the album to be filtered.
+     * @return true if album is allowed, false otherwise.
+     */
+    [[nodiscard]] bool filterAlbum(const QString& album);
+    /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
      * @param boxLabel contains the label for the surrounding groupbox.
@@ -304,14 +342,18 @@ private:
     QListWidget* albumList;
     QListWidget* trackList;
     QListWidget* artistSelectorList;
+    xPlayerSelectorWidget* albumSelectorList;
+    QStringList albumSelectorMatch;
+    QStringList albumSelectorNotMatch;
     QListWidget* queueList;
     int playedTrack;
     bool useDatabaseMusicOverlay;
     quint64 databaseCutOff;
     /**
-     * Store the current list of unfiltered artists for later filtering.
+     * Store the current list of unfiltered artists and albums for later filtering.
      */
     QStringList unfilteredArtists;
+    QStringList unfilteredAlbums;
 };
 
 #endif
