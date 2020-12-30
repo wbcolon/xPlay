@@ -85,11 +85,19 @@ The main screen of the music view has four vertical list for the artists, album,
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select) 
 on an album. If you double-click on a track in the track list, then the track and the following tracks of the list 
 are added to the queue. If you right-click on a track in the track list, then only this track will be added to the 
-queue. A double-click on an artist will queue all albums of the selected artist. The horizontal artist selector list 
+queue. Then entire album can be queued by a double-click on the corresponding album entry. A double-click on an 
+artist entry will queue all albums for the clicked artist. The horizontal artist selector list 
 can be used to filter the artist list by the first character. The filtering is removed if you click on *none*. 
 If a selector is double-clicked then all selected artists with their albums are queue. A double-click on *none* will
-queue the entire music library. The queue does support a shuffle mode where the tracks will be played at random. The
-jump to an individual track in the queue or the deque of a single track is not supported in shuffle mode.
+queue the entire music library. The album selector can be used to filter the displayed albums for an artist. The 
+individual selectors can be modified by double-click. A selector in white is currently not used. Selectors in green
+(at least one of them) must be found in the album name. Red represents not matched selectors. An album cannot 
+contain any of the selectors in red as part of its album name. The filtering done by the album selector does also
+apply whenever an artist or artist selector is queued. By marking the *(live)* album selector in red and then
+double-click on an artist will queue all albums except the ones containing *(live)*.
+The queue does support a shuffle mode in which the queued tracks will be played at random. The jump to an individual 
+track in the queue or the deque of a single track is not supported in shuffle mode. Each track of the queue has a
+tooltip showing the artist and album the track belongs to.
 
 The database overlay (if activated) marks every artist, album and track with a star (*) if it has been played within 
 the configured time period. For each track a tooltip is added that shows how many times this track has been 
@@ -139,7 +147,7 @@ The main screen of the streaming view is basically a simple web browser using th
 we have a number of controls. The controls include a combo box which allows us to select in between a set of 
 preset websites (see configuration dialog). Data for the sites, including history, cache and cookies can easily
 be removed. The navigation section allows for a very basic website navigation. A control for the Rotel amp is also
-available. The browser is limited by the capabilities of QWebEngine, e.g., Netflix did not work in my setup. This 
+available. The browser is limited by the capabilities of QWebEngine, e.g., Netflix did not work for my setup. This 
 may change for coming versions of QWebEngine.
 
 ### Menu
@@ -181,6 +189,7 @@ With Qwt the UI has an improved volume knob and track slider.
 ## Known Issues
 
 Ending the Application before the library scanning threads are finished will result in an abort return code.
+The Phonon music player sometimes stops the playback. It can be restarted without any problems.
 
 ## Notes
 

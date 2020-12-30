@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3 - 2020-12-30
+
+- Queue album by double-click on album entry.
+- Add album selector in order to filter the albums for a given artist.
+- The album filtering also applies when queueing an artist or artist selector.
+
 ## 0.5.2 - 2020-12-29
 
 - Add shuffle-mode for the queue. Deque and double-click on queue track are disabled.
