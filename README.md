@@ -190,6 +190,8 @@ With Qwt the UI has an improved volume knob and track slider.
 
 Ending the Application before the library scanning threads are finished will result in an abort return code.
 The Phonon music player sometimes stops the playback. It can be restarted without any problems.
+The Phonon backend should be configured to GStreamer, not VLC. The Phonon VLC backend may cause issues with
+the movie playback.
 
 ## Notes
 

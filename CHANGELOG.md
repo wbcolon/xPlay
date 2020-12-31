@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.4 - 2020-12-31
+
+- Add argument for starting xPlay maximized.
+- Fix source string for PC-USB input.
+- Fix bug of selecting subtitle if no description exists (VLC backend).  
+- Use fixed width for the volume knob.
+
 ## 0.5.3 - 2020-12-30
 
 - Queue album by double-click on album entry.
