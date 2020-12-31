@@ -22,7 +22,7 @@
 
 // Valid sources for the Rotel A14 or A12 amp
 const QList<QString> Rotel_Sources {
-        "cd", "coax1", "coax2", "opt1", "opt2", "aux1", "aux2", "tuner", "phono", "usb", "bluetooth", "pcusb"
+        "cd", "coax1", "coax2", "opt1", "opt2", "aux1", "aux2", "tuner", "phono", "usb", "bluetooth", "pc_usb"
 };
 // Special source indicating power off command.
 const QString Rotel_Source_PowerOff = "power off";
