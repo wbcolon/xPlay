@@ -15,9 +15,8 @@
 #include <QApplication>
 #include "xApplication.h"
 
-bool handleCommandLine(QApplication& playApp) {
+bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser) {
     // Commandline handling.
-    QCommandLineParser playAppParser;
     playAppParser.addOptions( {
             { {"p", "playpause"},
               QApplication::translate("xPlay", "Toggle play/pause in the current view.") },
@@ -50,6 +49,8 @@ bool handleCommandLine(QApplication& playApp) {
             { {"E", "selectrotelsource"},
               QApplication::translate("xPlay", R"(Select source for Rotel amp ("aux1", "aux1", "opt1", ...).)"),
               QApplication::translate("xPlay", "source") },
+            { {"x", "maximized"},
+                    QApplication::translate("xPlay", "Start xplay in maximized window.") },
     } );
     playAppParser.addHelpOption();
     playAppParser.addVersionOption();
@@ -60,6 +61,10 @@ bool handleCommandLine(QApplication& playApp) {
     }
     // Do we have any arguments.
     if (playAppParser.optionNames().isEmpty()) {
+        return false;
+    }
+    // Exit with false for non-dbus arguments.
+    if (playAppParser.isSet("maximized")) {
         return false;
     }
     // Prepare for DBus commands to be issued.
@@ -148,13 +153,18 @@ int main(int argc, char* argv[])
     QApplication playApp(argc, argv);
     QApplication::setApplicationName("xPlay");
     QApplication::setApplicationVersion("0.5.3");
-    if (handleCommandLine(playApp)) {
+    QCommandLineParser playAppParser;
+    if (handleCommandLine(playApp, playAppParser)) {
         // Exit if the command line was handled.
         return 0;
     }
     // Start xPlay.
     xApplication app;
-    app.resize(1920, 1080);
-    app.show();
+    if (playAppParser.isSet("maximized")) {
+        app.showMaximized();
+    } else {
+        app.resize(1920, 1080);
+        app.show();
+    }
     return playApp.exec();
 }
