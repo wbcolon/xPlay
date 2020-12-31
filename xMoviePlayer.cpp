@@ -136,8 +136,10 @@ void xMoviePlayer::availableSubtitles() {
         subtitles.push_back(subtitle);
     }
     emit currentSubtitles(subtitles);
-    // Disable subtitles on default.
-    movieController->setCurrentSubtitle(currentSubtitleDescriptions[0]);
+    if (currentSubtitleDescriptions.count() > 0) {
+        // Disable subtitles on default.
+        movieController->setCurrentSubtitle(currentSubtitleDescriptions[0]);
+    }
     qDebug() << "xMoviePlayer: subtitle track descriptions: " << currentSubtitleDescriptions;
 }
 
