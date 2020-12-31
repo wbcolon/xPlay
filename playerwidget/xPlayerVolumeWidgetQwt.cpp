@@ -37,6 +37,7 @@ xPlayerVolumeWidgetQwt::xPlayerVolumeWidgetQwt(QWidget *parent, Qt::WindowFlags 
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { emit volume(static_cast<int>(vol)); } );
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { currentVolume=static_cast<int>(vol); } );
     connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
+    setFixedWidth(170);
 }
 
 void xPlayerVolumeWidgetQwt::setVolume(int vol) {
