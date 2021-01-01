@@ -188,10 +188,13 @@ With Qwt the UI has an improved volume knob and track slider.
 
 ## Known Issues
 
-Ending the Application before the library scanning threads are finished will result in an abort return code.
-The Phonon music player sometimes stops the playback. It can be restarted without any problems.
-The Phonon backend should be configured to GStreamer, not VLC. The Phonon VLC backend may cause issues with
-the movie playback.
+* Ending the Application before the library scanning threads are finished will result in an abort return code.
+* Phonon issues
+    * The music player sometimes stops the playback. It can be restarted without any problems.
+    * The backend should be configured to GStreamer. The VLC backend may cause issues.
+    * The GStreamer backend crashed on Ubuntu 20.04 for some movies. Replacing the library
+      */usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgsta52dec.so* from *streamer1.0-plugins-ugly* with the 
+      corresponding library for Ubuntu 20.10 may solve the issue.
 
 ## Notes
 
