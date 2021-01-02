@@ -25,11 +25,17 @@
 xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::WindowFlags flags):
         QDialog(parent, flags) {
     auto configurationLayout = new QGridLayout(this);
+    configurationLayout->setSpacing(24);
     auto rotelBox = new QGroupBox(tr("Rotel Configuration"), this);
+    rotelBox->setFlat(xPlayerUseFlatGroupBox);
     auto databaseBox = new QGroupBox(tr("Database Configuration"), this);
+    databaseBox->setFlat(xPlayerUseFlatGroupBox);
     auto musicLibraryBox = new QGroupBox(tr("Music Library Configuration"), this);
+    musicLibraryBox->setFlat(xPlayerUseFlatGroupBox);
     auto movieLibraryBox = new QGroupBox(tr("Movie Library Configuration"), this);
+    movieLibraryBox->setFlat(xPlayerUseFlatGroupBox);
     auto streamingSitesBox = new QGroupBox(tr("Streaming Sites Configuration"), this);
+    streamingSitesBox->setFlat(xPlayerUseFlatGroupBox);
     auto configurationButtons = new QDialogButtonBox(Qt::Horizontal, this);
     configurationButtons->addButton(QDialogButtonBox::Save);
     configurationButtons->addButton(QDialogButtonBox::Reset);
@@ -127,7 +133,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     configurationLayout->addWidget(streamingSitesBox, 0, 4, 4, 4);
     configurationLayout->addWidget(databaseBox, 4, 4, 2, 4);
     configurationLayout->addWidget(rotelBox, 6, 4, 2, 4);
-    configurationLayout->setRowMinimumHeight(8, 50);
+    configurationLayout->setRowMinimumHeight(8, 32);
     configurationLayout->setRowStretch(8, 0);
     configurationLayout->addWidget(configurationButtons, 9, 4, 1, 4);
     // Connect rotel button

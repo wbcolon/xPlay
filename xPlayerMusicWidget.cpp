@@ -24,18 +24,27 @@
 xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
     QWidget(parent, flags) {
     // Create labels for artist, album and track
+    auto artistLabel = new QLabel(tr("Artist"), this);
     artistName = new QLabel(this);
     artistName->setWordWrap(true);
+    artistName->setStyleSheet("font-weight: bold");
+    auto albumLabel = new QLabel(tr("Album"), this);
     albumName = new QLabel(this);
     albumName->setWordWrap(true);
+    albumName->setStyleSheet("font-weight: bold");
+    auto trackLabel = new QLabel(tr("Track"), this);
     trackName = new QLabel(this);
     trackName->setWordWrap(true);
+    trackName->setStyleSheet("font-weight: bold");
     trackSampleRate = new QLabel(this);
     trackSampleRate->setAlignment(Qt::AlignRight);
+    trackSampleRate->setStyleSheet("font-weight: bold");
     trackBitsPerSample = new QLabel(this);
     trackBitsPerSample->setAlignment(Qt::AlignRight|Qt::AlignTop);
+    trackBitsPerSample->setStyleSheet("font-weight: bold");
     trackBitrate = new QLabel(this);
     trackBitrate->setAlignment(Qt::AlignRight);
+    trackBitrate->setStyleSheet("font-weight: bold");
     // Add track slider and the volume knob for Qwt.
     sliderWidget = new xPlayerSliderWidgetX(this);
     connect(sliderWidget, &xPlayerSliderWidget::seek, musicPlayer, &xMusicPlayer::seek);
@@ -66,22 +75,18 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     // Create the basic player widget layout.
     // Add labels, buttons and the slider.
     auto playerLayout = new QGridLayout(this);
-    playerLayout->setSpacing(0);
-    playerLayout->addWidget(new QLabel(tr("Artist"), this), 0, 0);
+    playerLayout->addWidget(artistLabel, 0, 0);
     playerLayout->addWidget(artistName, 0, 1, 1, 4);
-    playerLayout->addWidget(new QLabel(tr("Album"), this), 1, 0);
+    playerLayout->addWidget(albumLabel, 1, 0);
     playerLayout->addWidget(albumName, 1, 1, 1, 4);
-    playerLayout->addWidget(new QLabel(tr("Track"), this), 2, 0);
+    playerLayout->addWidget(trackLabel, 2, 0);
     playerLayout->addWidget(trackName, 2, 1, 1, 4);
     auto trackSampleRateLabel = new QLabel(tr("Sample rate"));
     trackSampleRateLabel->setAlignment(Qt::AlignRight);
-    //auto trackBitsPerSampleLabel = new QLabel(tr("Bits per sample"));
-    //trackBitsPerSampleLabel->setAlignment(Qt::AlignRight);
     auto trackBitrateLabel = new QLabel(tr("Bitrate"));
     trackBitrateLabel->setAlignment(Qt::AlignRight);
     playerLayout->addWidget(trackSampleRateLabel, 0, 5);
     playerLayout->addWidget(trackSampleRate, 0, 6);
-    //playerLayout->addWidget(trackBitsPerSampleLabel, 1, 5);
     playerLayout->addWidget(trackBitrateLabel, 2, 5);
     playerLayout->addWidget(trackBitsPerSample, 1, 6);
     playerLayout->addWidget(trackBitrate, 2, 6);
@@ -93,14 +98,14 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     controlLayout->addWidget(prevButton, 2, 5, 1, 1);
     controlLayout->addWidget(nextButton, 2, 6, 1, 1);
     controlLayout->addWidget(clearButton, 3, 5, 1, 2);
-    controlLayout->setColumnMinimumWidth(4, 20);
+    controlLayout->setColumnMinimumWidth(4, 16);
     controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
     // Fix sizes of the control tab
     controlTabPlayer->setFixedSize(controlTabPlayer->sizeHint());
     controlTabRotel->setFixedSize(controlTabPlayer->sizeHint());
     controlTab->setFixedSize(controlTab->sizeHint());
     // Add the control tab to the player layout.
-    playerLayout->setColumnMinimumWidth(7, 50);
+    playerLayout->setColumnMinimumWidth(7, 48);
     playerLayout->setColumnStretch(7, 0);
     playerLayout->addWidget(controlTab, 0, 8, 5, 1);
     // Connect the buttons to player widget and/or to the music player.

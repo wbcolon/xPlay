@@ -22,6 +22,8 @@
 #include <filesystem>
 #include <list>
 
+const bool xPlayerUseFlatGroupBox = true;
+
 class xPlayerConfiguration:public QObject {
     Q_OBJECT
 

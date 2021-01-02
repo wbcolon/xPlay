@@ -30,6 +30,7 @@ auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, this);
+    groupBox->setFlat(xPlayerUseFlatGroupBox);
     auto list = new QListWidget(groupBox);
     auto boxLayout = new QVBoxLayout();
     boxLayout->addWidget(list);
@@ -51,11 +52,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     auto [trackBox, trackList_] = addGroupBox(tr("Tracks"));
     auto [queueBox, queueList_] = addGroupBox(tr("Queue"));
     auto [artistSelectorBox, artistSelectorList_] = addGroupBox(tr("Artist Selector"));
-    auto playerBox = new QGroupBox(tr("Player"), this);
-    auto playerLayout = new QHBoxLayout();
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
-    playerLayout->addWidget(playerWidget);
-    playerBox->setLayout(playerLayout);
     // Sort entries in artist/album/track
     artistList = artistList_;
     artistList->setSortingEnabled(true);
@@ -66,9 +63,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
     queueList = queueList_;
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
-    auto queueBoxShuffleCheck = new QCheckBox(tr("shuffle mode"), queueBox);
+    auto queueBoxShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
     auto queueBoxLayout = dynamic_cast<QVBoxLayout*>(queueBox->layout());
-    queueBoxLayout->addSpacing(10);
+    queueBoxLayout->addSpacing(16);
     queueBoxLayout->addWidget(queueBoxShuffleCheck);
     // Setup artistSelector as horizontal list widget with no wrapping. Fix it's height.
     artistSelectorList = artistSelectorList_; // requires since we need to use the member variable;
@@ -78,6 +75,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     artistSelectorBox->setFixedHeight(artistSelectorBox->sizeHint().height());
     // Setup album selector.
     auto albumSelectorBox = new QGroupBox(tr("Album Selector"), this);
+    albumSelectorBox->setFlat(xPlayerUseFlatGroupBox);
     auto albumSelectorLayout = new QVBoxLayout();
     // Create album selector widget.
     albumSelectorList = new xPlayerSelectorWidget(albumSelectorBox);
@@ -87,8 +85,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     albumSelectorBox->setFixedHeight(artistSelectorBox->sizeHint().height());
     // Setup layout for main widget.
     auto mainWidgetLayout = new QGridLayout(this);
-    mainWidgetLayout->setSpacing(10);
-    mainWidgetLayout->addWidget(playerBox, 0, 0, 1, 12);
+    mainWidgetLayout->setSpacing(8);
+    mainWidgetLayout->addWidget(playerWidget, 0, 0, 1, 12);
     mainWidgetLayout->addWidget(artistBox, 1, 0, 7, 3);
     mainWidgetLayout->addWidget(albumBox, 1, 3, 7, 5);
     mainWidgetLayout->addWidget(trackBox, 1, 8, 7, 4);

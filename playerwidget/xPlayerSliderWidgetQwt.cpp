@@ -32,7 +32,7 @@ xPlayerSliderWidgetQwt::xPlayerSliderWidgetQwt(QWidget *parent, Qt::WindowFlags 
     trackSlider->setGroove(false);
     trackSlider->setTrough(false);
     // Adjust the size of the Handle. A little smaller.
-    trackSlider->setHandleSize(QSize(16, 20));
+    trackSlider->setHandleSize(QSize(16, 24));
     // Create labels for length of the track and time played.
     // Labels located on the left and right of a slider.
     trackLengthLabel = new QLabel(this);

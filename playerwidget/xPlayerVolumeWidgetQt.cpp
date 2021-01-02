@@ -38,7 +38,7 @@ xPlayerVolumeWidgetQt::xPlayerVolumeWidgetQt(QWidget *parent, Qt::WindowFlags fl
     connect(volumeDial, &QDial::valueChanged, this, [=](int vol) { currentVolume=vol; } );
     connect(volumeDial, &QDial::valueChanged, this, [=](int vol) { volumeLabel->setText(QString::number(vol)); } );
     connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
-    setFixedWidth(170);
+    setFixedWidth(168);
 }
 
 void xPlayerVolumeWidgetQt::setVolume(int vol) {

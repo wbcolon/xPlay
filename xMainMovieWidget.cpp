@@ -25,6 +25,7 @@ auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, parent);
+    groupBox->setFlat(xPlayerUseFlatGroupBox);
     auto list = new QListWidget(groupBox);
     auto boxLayout = new QHBoxLayout();
     boxLayout->addWidget(list);
@@ -49,11 +50,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     auto [ directoryBox, directoryList_ ] = addGroupBox(tr("Directories"), mainWidget);
     auto [ movieBox, movieList_ ] = addGroupBox(tr("Movies"), mainWidget);
     // Create group box for the player widget.
-    auto moviePlayerBox = new QGroupBox(tr("Player"), mainWidget);
-    auto moviePlayerLayout = new QHBoxLayout();
     moviePlayerWidget = new xPlayerMovieWidget(moviePlayer, mainWidget);
-    moviePlayerLayout->addWidget(moviePlayerWidget);
-    moviePlayerBox->setLayout(moviePlayerLayout);
     // Setup tag, directory and movie lists.
     tagList = tagList_;
     tagList->setSortingEnabled(true);
@@ -68,7 +65,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     movieStack->setCurrentIndex(0);
     // Layout for the main movie widget.
     auto movieLayout = new QGridLayout(mainWidget);
-    movieLayout->addWidget(moviePlayerBox, 0, 0, 2, 5);
+    movieLayout->addWidget(moviePlayerWidget, 0, 0, 2, 5);
     movieLayout->addWidget(movieStack, 2, 0, 8, 5);
     movieLayout->addWidget(tagBox, 0, 5, 2, 2);
     movieLayout->addWidget(directoryBox, 2, 5, 2, 2);

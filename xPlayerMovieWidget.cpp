@@ -37,6 +37,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     movieLabel = new QLabel(this);
     movieLabel->setAlignment(Qt::AlignCenter);
     movieLabel->setWordWrap(true);
+    movieLabel->setStyleSheet("font-weight: bold");
     // Control Tab
     auto controlTab = new QTabWidget(this);
     auto controlTabPlayer = new QWidget(this);
@@ -76,7 +77,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     controlLayout->addWidget(rewButton, 2, 5, 1, 1);
     controlLayout->addWidget(fwdButton, 2, 6, 1, 1);
     controlLayout->addWidget(fullWindowButton, 3, 5, 1, 2);
-    controlLayout->setColumnMinimumWidth(4, 20);
+    controlLayout->setColumnMinimumWidth(4, 16);
     controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
     // Fix sizes of the control tab
     controlTabPlayer->setFixedSize(controlTabPlayer->sizeHint());
@@ -88,7 +89,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     movieLayout->addWidget(sliderWidget, 1, 0, 1, 9);
     movieLayout->addWidget(autoPlayNextCheck, 3, 1, 1, 1);
     movieLayout->addWidget(scaleAndCropCheck, 3, 2, 1, 1);
-    movieLayout->setColumnMinimumWidth(3, 20);
+    movieLayout->setColumnMinimumWidth(3, 24);
     movieLayout->setColumnStretch(3, 0);
     movieLayout->addWidget(audioChannelLabel, 2, 4, 1, 2);
     movieLayout->addWidget(audioChannelBox, 3, 4, 1, 2);
