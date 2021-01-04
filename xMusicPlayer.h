@@ -157,6 +157,10 @@ public slots:
      */
     virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) = 0;
     /**
+     * Indicate end of queueing tracks and hand over to the actual player.
+     */
+    virtual void finishedQueueTracks() = 0;
+    /**
      * Remove the track from the queue.
      *
      * @param index the position of the track in the queue.

@@ -60,6 +60,13 @@ public slots:
      */
     void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) override;
     /**
+     * Indicate end of queueing tracks and hand over to the actual player.
+     *
+     * Called after the one or more queueTracks. The permutation for shuffle mode is computed
+     * and the state of autoplay is determined and acted on.
+     */
+    void finishedQueueTracks() override;
+    /**
      * Remove the track from the queue.
      *
      * @param index the position of the track in the queue.

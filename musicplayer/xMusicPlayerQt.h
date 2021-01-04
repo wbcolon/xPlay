@@ -58,6 +58,10 @@ public slots:
      */
     void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) override;
     /**
+     * Indicate end of queueing tracks and hand over to the actual player.
+     */
+    void finishedQueueTracks() override;
+    /**
      * Remove track from the current playlist
      *
      * @param index of the track to be removed.

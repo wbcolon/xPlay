@@ -62,6 +62,10 @@ void xMusicPlayerQt::queueTracks(const QString& artist, const QString& album, co
     }
 }
 
+void xMusicPlayerQt::finishedQueueTracks() {
+    // No need to do anything here.
+}
+
 void xMusicPlayerQt::dequeTrack(int index) {
     // Remove track from the play list.
     musicPlaylist->removeMedia(index);

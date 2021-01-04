@@ -49,11 +49,13 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(mainMusicWidget, &xMainMusicWidget::scanForArtist, musicLibrary, &xMusicLibrary::scanForArtist);
     connect(mainMusicWidget, &xMainMusicWidget::scanForArtistAndAlbum, musicLibrary, &xMusicLibrary::scanForArtistAndAlbum);
     connect(mainMusicWidget, &xMainMusicWidget::scanAllAlbumsForArtist, musicLibrary, &xMusicLibrary::scanAllAlbumsForArtist);
+    connect(mainMusicWidget, &xMainMusicWidget::scanAllAlbumsForListArtists, musicLibrary, &xMusicLibrary::scanAllAlbumsForListArtists);
     // Results back to the main music widget.
     connect(musicLibrary, &xMusicLibrary::scannedArtists, mainMusicWidget, &xMainMusicWidget::scannedArtists);
     connect(musicLibrary, &xMusicLibrary::scannedAlbums, mainMusicWidget, &xMainMusicWidget::scannedAlbums);
     connect(musicLibrary, &xMusicLibrary::scannedTracks, mainMusicWidget, &xMainMusicWidget::scannedTracks);
     connect(musicLibrary, &xMusicLibrary::scannedAllAlbumTracks, mainMusicWidget, &xMainMusicWidget::scannedAllAlbumTracks);
+    connect(musicLibrary, &xMusicLibrary::scannedListArtistsAllAlbumTracks, mainMusicWidget, &xMainMusicWidget::scannedListArtistsAllAlbumTracks);
     // Connect movie library with main movie widget
     connect(mainMovieWidget, &xMainMovieWidget::scanForTag, movieLibrary, &xMovieLibrary::scanForTag);
     connect(mainMovieWidget, &xMainMovieWidget::scanForTagAndDirectory, movieLibrary, &xMovieLibrary::scanForTagAndDirectory);

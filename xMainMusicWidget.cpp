@@ -104,6 +104,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     connect(albumSelectorList, &xPlayerSelectorWidget::updatedSelectors, this, &xMainMusicWidget::selectAlbumSelector);
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
+    connect(this, &xMainMusicWidget::finishedQueueTracks, musicPlayer, &xMusicPlayer::finishedQueueTracks);
     connect(this, &xMainMusicWidget::dequeueTrack, musicPlayer, &xMusicPlayer::dequeTrack);
     // Connect player widget to main widget
     connect(playerWidget, &xPlayerMusicWidget::clearQueue, this, &xMainMusicWidget::clearQueue);
@@ -202,6 +203,27 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
         }
         emit queueTracks(artist, albumTrack.first, albumTrack.second);
     }
+    emit finishedQueueTracks();
+}
+
+void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<QString>>>>>& listTracks) {
+    for (const auto& listTrack : listTracks) {
+        for (const auto& albumTrack : listTrack.second) {
+            // Skip over the albums that do not match our filter.
+            if (!filterAlbum(albumTrack.first)) {
+                continue;
+            }
+            for (const auto& track : albumTrack.second) {
+                // Add to the playlist (queue)
+                auto queueItem = new QListWidgetItem(track, queueList);
+                // Add tooltip.
+                queueItem->setToolTip(QString("%1 - %2").arg(listTrack.first).arg(albumTrack.first));
+                queueList->addItem(queueItem);
+            }
+            emit queueTracks(listTrack.first, albumTrack.first, albumTrack.second);
+        }
+    }
+    emit finishedQueueTracks();
 }
 
 void xMainMusicWidget::updateScannedArtistsSelectors(const std::set<QString> &selectors) {
@@ -329,6 +351,8 @@ void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
         }
         // Signal the set tracks to be queued by the music player.
         emit queueTracks(artistName, albumName, trackNames);
+        // Finished queueing tracks.
+        emit finishedQueueTracks();
     }
 }
 
@@ -344,13 +368,15 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
     // Currently unused
     auto selector = artistSelectorList->row(selectorItem);
     if ((selector >= 0) && (selector < artistSelectorList->count())) {
+        QList<QString> listArtists;
         // Call with stored list in order to update artist filtering.
         updateScannedArtists(unfilteredArtists);
         // Scan for all filtered artists.
         for (auto i = 0; i < artistList->count(); ++i) {
-            // Retrieve artist name and trigger scanAllAlbumsForArtist
-            emit scanAllAlbumsForArtist(artistList->item(i)->text());
+            listArtists.push_back(artistList->item(i)->text());
         }
+        // Tigger scanAllAlbumsForListArtist with given list of artists.
+        emit scanAllAlbumsForListArtists(listArtists);
     }
 }
 

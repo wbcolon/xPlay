@@ -44,31 +44,44 @@ xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
 }
 
 void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) {
-    // Enable auto play if playlist is currently emtpy.
-    bool autoPlay = (musicPlayer->queue().empty());
-    // Check if do not have files in the general queue and are currently stopped.
-    bool queueEmpty = ((musicPlaylistEntries.empty()) || (musicPlayer->state() != Phonon::StoppedState));
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
     for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
         musicPlaylistEntries.push_back(queueEntry);
         auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(pathFromQueueEntry(queueEntry)));
         musicPlaylist.push_back(queueSource);
-        if (!useShuffleMode) {
-            musicPlayer->enqueue(queueSource);
-        }
     }
+}
+
+void xMusicPlayerPhonon::finishedQueueTracks() {
+    // Enable auto play if playlist is currently emtpy.
+    bool autoPlay = (musicPlayer->queue().empty());
+    // Check if do not have files in the general queue and are currently stopped.
+    bool queueEmpty = (musicPlayer->currentSource().type() == Phonon::MediaSource::Invalid);
     // We need to extend the permutation
     if (useShuffleMode) {
         auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
+        if (currentIndex >= 0) {
+            currentIndex = musicPlaylistPermutation.indexOf(currentIndex);
+            // Check if we are in the process of filling the queue in shuffle mode.
+            if ((currentIndex == 0) && (musicPlayer->state() == Phonon::StoppedState)) {
+                // Treat as empty queue;
+                currentIndex = -1;
+            }
+        }
+        qDebug() << "CURRENT_INDEX: " << currentIndex;
         // The musicPlaylistPermutation still has the old size.
         if ((currentIndex >= 0) && (currentIndex < musicPlaylistPermutation.count())) {
             // A song was already playing.
-            musicPlaylistPermutation = extendPermutation(musicPlaylistPermutation, musicPlaylist.count(), currentIndex);
+            musicPlaylistPermutation = extendPermutation(musicPlaylistPermutation.mid(0, currentIndex+1),
+                                                         musicPlaylist.count(), currentIndex);
             for (auto i = currentIndex+1; i < musicPlaylistPermutation.count(); ++i) {
                 musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
             }
         } else {
+            // Clear everything.
+            musicPlayer->clear();
+            musicPlayer->clearQueue();
             // No current song was playing. Queue possibly empty. No start index.
             musicPlaylistPermutation = computePermutation(musicPlaylist.count(), -1);
             for (auto i = 0; i < musicPlaylistPermutation.count(); ++i) {

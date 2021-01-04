@@ -78,6 +78,12 @@ signals:
      */
     void scanAllAlbumsForArtist(const QString& artist);
     /**
+     * Signal to scan all albums and tracks for a given list of artists.
+     *
+     * @param listArtist the list of artists name for which we scan all albums and tracks.
+     */
+    void scanAllAlbumsForListArtists(const QList<QString>& listArtist);
+    /**
      * Signal a set of tracks to be queued in the playlist.
      *
      * @param artist the artist name for the tracks.
@@ -85,6 +91,10 @@ signals:
      * @param tracks ordered vector of track names.
      */
     void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks);
+    /**
+     * Indicate end of queueing tracks and hand over to the actual player.
+     */
+    void finishedQueueTracks();
     /**
      * Signal the dequeue of a single track
      *
@@ -133,6 +143,12 @@ public slots:
      * @param albumTracks sorted list of pairs of album/list of track names to be queued.
      */
     void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks);
+    /**
+     * Receive the result of all albums and track scan for a given list of artists.
+     *
+     * @param listTracks list of pair of album and list of track name (sorted) for a list of artists.
+     */
+    void scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<QString>>>>>& listTracks);
 
 private slots:
     /**

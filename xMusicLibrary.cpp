@@ -291,7 +291,33 @@ void xMusicLibrary::scanForArtistAndAlbum(const QString& artist, const QString& 
 
 void xMusicLibrary::scanAllAlbumsForArtist(const QString& artist) {
     QList<std::pair<QString,std::vector<QString>>> albumTracks;
+    // Retrieve the albums tracks.
+    getAllAlbumsForArtist(artist, albumTracks);
+    // Update widget
+    emit scannedAllAlbumTracks(artist, albumTracks);
+}
+
+void xMusicLibrary::scanAllAlbumsForListArtists(const QList<QString>& listArtists) {
+    QList<std::pair<QString,QList<std::pair<QString,std::vector<QString>>>>> listTracks;
     try {
+        // Retrieve list of albums and and sort them.
+        for (const auto& artist : listArtists) {
+            QList<std::pair<QString,std::vector<QString>>> albumTracks;
+            getAllAlbumsForArtist(artist, albumTracks);
+            listTracks.push_back(std::make_pair(artist, albumTracks));
+        }
+    } catch (...) {
+        // Clear list on error
+        listTracks.clear();
+    }
+    // Update widget
+    emit scannedListArtistsAllAlbumTracks(listTracks);
+}
+
+void xMusicLibrary::getAllAlbumsForArtist(const QString& artist, QList<std::pair<QString, std::vector<QString>>>& albumTracks) {
+    try {
+        // Clear list.
+        albumTracks.clear();
         // Retrieve list of albums and and sort them.
         auto albumList = musicLibraryFiles->get(artist);
         albumList.sort();
@@ -309,8 +335,7 @@ void xMusicLibrary::scanAllAlbumsForArtist(const QString& artist) {
         // Clear list on error
         albumTracks.clear();
     }
-    // Update widget
-    emit scannedAllAlbumTracks(artist, albumTracks);
+
 }
 
 void xMusicLibrary::scanningFinished() {

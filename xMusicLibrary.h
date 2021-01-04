@@ -188,6 +188,12 @@ signals:
      * @param albumTracks list of pairs of album and list of track name (sorted).
      */
     void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks);
+    /**
+     * Signal the list of scanned album/tracks for a list of artists.
+     *
+     * @param listTracks list of pair of album and list of track name (sorted) for a list of artists.
+     */
+    void scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<QString>>>>>& listTracks);
 
 public slots:
     /**
@@ -215,14 +221,27 @@ public slots:
     /**
      * Scan all albums and tracks for the given artist.
      *
-     * @param artist the artist name for which we can all albums and tracks.
+     * @param artist the artist name for which we scan all albums and tracks.
      */
     void scanAllAlbumsForArtist(const QString& artist);
+    /**
+     * Scan all albums and tracks for a given list of artists.
+     *
+     * @param listArtist the list of artists name for which we scan all albums and tracks.
+     */
+    void scanAllAlbumsForListArtists(const QList<QString>& listArtist);
 
 private slots:
     void scanningFinished();
 
 private:
+    /*
+     * Helper function that only scans all albums and tracks for an artist.
+     *
+     * @param artist the artist name for which we scan all albums and tracks.
+     * @param albumTracks the result of the scan as list of pairs of album name and vector of tracks.
+     */
+    void getAllAlbumsForArtist(const QString& artist, QList<std::pair<QString,std::vector<QString>>>& albumTracks);
     /**
      * Scan music library using the xMusicLibraryScanning class.
      */
