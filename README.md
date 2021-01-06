@@ -80,6 +80,7 @@ xPlay has a music view, a movie view and a streaming view.
 ![Screenshot Music View](screenshots/xplay_screenshot_music_view_00.png)
 ![Screenshot Music View (rotel)](screenshots/xplay_screenshot_music_view_01.png)
 ![Screenshot Music View (database overlay)](screenshots/xplay_screenshot_music_view_02.png)
+![Screenshot Music View (playlists)](screenshots/xplay_screenshot_music_view_03.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The 
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select) 
@@ -98,6 +99,9 @@ double-click on an artist will queue all albums except the ones containing *(liv
 The queue does support a shuffle mode in which the queued tracks will be played at random. The jump to an individual 
 track in the queue or the deque of a single track is not supported in shuffle mode. Each track of the queue has a
 tooltip showing the artist and album the track belongs to.
+The playlist dialog box will open upon pressing the *PlayList* button at the botton of the queue. It allows to
+save the current queue as playlist into the database for later use. The dialog allows for loading playlists that
+are stored in the database or remove any of the stored playlists (including their entries).
 
 The database overlay (if activated) marks every artist, album and track with a star (*) if it has been played within 
 the configured time period. For each track a tooltip is added that shows how many times this track has been 
@@ -108,6 +112,8 @@ The player itself displays the artist, album and track currently played. It incl
 currently played file. In addition there is player control section with a *play/pause*, *stop*, *prev*, *next*
 and *clear queue* buttons and a volume dialer. If you double-click on an entry of the queue then the player jumps
 to this track. Right-clicking on a queue entry will remove this track from the queue.
+
+
 
 The Rotel widget allows to control a Rotel A12 or A14 amp via a network connection. The volume can be adjusted 
 (maximum of 60) and the input can be selected. The values for bass and treble can be adjusted (from -10 to +10).

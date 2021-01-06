@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 - 2021-01-06
+
+- Add playlist support for music view.
+- Improve scanning for artist and selector queueing.
+- Improve shuffle mode. 
+- Minor Layout adjustments.
+- Autoplay bugfix for Phonon bases music player.  
+- Update known issues.
+
 ## 0.5.4 - 2020-12-31
 
 - Add argument for starting xPlay maximized.
