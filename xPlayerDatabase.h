@@ -124,6 +124,40 @@ public:
      * @return the pair of play count and time stamp for updated movie.
      */
     std::pair<int,quint64> updateMovieFile(const QString& movie, const QString& tag, const QString& directory);
+    /**
+     * Remove the playlist and its entries from the database.
+     *
+     * @param name the name of the playlist to be removed.
+     */
+    bool removeMusicPlaylist(const QString& name);
+    /**
+     * Return the names of the playlists.
+     *
+     * @return the list of playlists stored in the database as strings.
+     */
+    QStringList getMusicPlaylists();
+    /**
+     * Return the entries of the playlist with the given name.
+     *
+     * @param name the name of the playlist in the database.
+     * @return the list of entries as tuples of artist, album and track.
+     */
+    std::vector<std::tuple<QString,QString,QString>> getMusicPlaylist(const QString& name);
+    /**
+     * Save the current queue to the database.
+     *
+     * A hash is generated from the combination of the artist/album/track. This
+     * hash is used to update the music table is update with artist/album/track
+     * entries and playCount of 0 and timeStamp of -1 if the entry is not yet
+     * in the music table. The computed hash is also used to record the entry in
+     * the playlistSongs database using the ID of the playlist table for name.
+     * The update for both tables has been optimized to one insert operation each.
+     *
+     * @param name the name for the playlist.
+     * @param entries the queue as list of tuples of artist/album/track.
+     * @return true if the playlist was saved, false otherwise.
+     */
+    bool updateMusicPlaylist(const QString& name, const std::vector<std::tuple<QString,QString,QString>>& entries);
 
 private:
     explicit xPlayerDatabase(QObject* parent=nullptr);

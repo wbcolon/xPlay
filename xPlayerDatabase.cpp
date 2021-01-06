@@ -26,6 +26,9 @@ xPlayerDatabase::xPlayerDatabase(QObject* parent):
     try {
         sqlDatabase.open(soci::sqlite3, xPlayerConfiguration::configuration()->getDatabasePath().toStdString());
         // The following create table commands will fail if database already exists.
+        // Create playlist and playlistSongs table.
+        sqlDatabase << "CREATE TABLE playlist (ID INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL UNIQUE)";
+        sqlDatabase << "CREATE TABLE playlistSongs (ID INTEGER PRIMARY KEY AUTOINCREMENT, playlistID INTEGER, hash VARCHAR)";
         // Create music table.
         sqlDatabase << "CREATE TABLE music (hash VARCHAR PRIMARY KEY, playCount INT, timeStamp BIGINT, "
                        "artist VARCHAR, album VARCHAR, track VARCHAR, sampleRate INT, bitsPerSample INT)";
@@ -231,10 +234,16 @@ std::pair<int,quint64> xPlayerDatabase::updateMusicFile(const QString& artist, c
         int playCount = -1;
         soci::indicator playCountIndicator;
         sqlDatabase << "SELECT playCount FROM music WHERE hash=:hash", soci::into(playCount, playCountIndicator), soci::use(hash);
-        if ((playCountIndicator == soci::i_ok) && (playCount > 0)) {
-            sqlDatabase << "UPDATE music SET playCount=:playCount,timeStamp=:timeStamp WHERE hash=:hash",
-                    soci::use(playCount+1), soci::use(timeStamp), soci::use(hash);
-            qDebug() << "xPlayerDatabase: update: " << artist+"/"+album+"/"+track << QString("(%1)").arg(playCount);
+        if ((playCountIndicator == soci::i_ok) && (playCount >= 0)) {
+            if (playCount > 0) {
+                sqlDatabase << "UPDATE music SET playCount=:playCount,timeStamp=:timeStamp WHERE hash=:hash",
+                        soci::use(playCount+1), soci::use(timeStamp), soci::use(hash);
+            } else {
+                // Update entries that were put in for the playlist but have not been played so far.
+                sqlDatabase << "UPDATE music SET playCount=:playCount,timeStamp=:timeStamp,sampleRate=:sampleRate,bitsPerSample=:bitsPerSample WHERE hash=:hash",
+                        soci::use(1), soci::use(timeStamp), soci::use(sampleRate), soci::use(bitsPerSample), soci::use(hash);
+            }
+            qDebug() << "xPlayerDatabase: update: " << artist+"/"+album+"/"+track << QString("(%1)").arg(playCount+1);
             return std::make_pair(playCount+1,timeStamp);
         } else {
             // Insert into the database if no element exists.
@@ -275,4 +284,159 @@ std::pair<int,quint64> xPlayerDatabase::updateMovieFile(const QString& movie, co
         qCritical() << "xPlayerDatabase::updateMusicFile: error: " << e.what();
     }
     return std::make_pair(0,0);
+}
+
+bool xPlayerDatabase::removeMusicPlaylist(const QString& name) {
+    // Get ID for playlist name.
+    qDebug() << "REMOVE: " << name;
+    int playlistID = -1;
+    try {
+        // Retrieve ID for playlist name.
+        soci::indicator playlistIDIndicator;
+        sqlDatabase << "SELECT ID FROM playlist WHERE name=:name",
+                soci::into(playlistID, playlistIDIndicator), soci::use(name.toStdString());
+        if ((playlistIDIndicator != soci::i_ok) || (playlistID <= 0)) {
+            qCritical() << "xPlayerDatabase: unable to retrieve playlist.";
+            return false;
+        }
+        // Clear playlistSongs entries for current playlist and the name from the playlist.
+        sqlDatabase << "DELETE FROM playlistSongs WHERE playlistID=:playlistID", soci::use(playlistID);
+        sqlDatabase << "DELETE FROM playlist WHERE name=:name", soci::use(name.toStdString());
+    } catch (soci::soci_error& e) {
+        // Return on error.
+        qCritical() << "xPlayerDatabase: unable to retrieve playlist, error: " << e.what();
+        return false;
+    }
+    return true;
+}
+
+QStringList xPlayerDatabase::getMusicPlaylists() {
+    QStringList names;
+    try {
+        // Get the names for playlist.
+        soci::rowset<std::string> playlistNames = (sqlDatabase.prepare << "SELECT name FROM playlist");
+        for (const auto& playlistName : playlistNames) {
+            names.push_back(QString::fromStdString(playlistName));
+        }
+    } catch (soci::soci_error& e) {
+        // Return on error.
+        qCritical() << "xPlayerDatabase: unable to retrieve playlist names, error: " << e.what();
+        return names;
+    }
+    return names;
+}
+
+std::vector<std::tuple<QString,QString,QString>> xPlayerDatabase::getMusicPlaylist(const QString& name) {
+    std::vector<std::tuple<QString,QString,QString>> entries;
+    // Get ID for playlist name.
+    int playlistID = -1;
+    try {
+        // Retrieve ID for playlist name.
+        soci::indicator playlistIDIndicator;
+        sqlDatabase << "SELECT ID FROM playlist WHERE name=:name",
+                soci::into(playlistID, playlistIDIndicator), soci::use(name.toStdString());
+        if ((playlistIDIndicator != soci::i_ok) || (playlistID <= 0)) {
+            qCritical() << "xPlayerDatabase: unable to retrieve playlist.";
+            return entries;
+        }
+    } catch (soci::soci_error& e) {
+        // Return on error.
+        qCritical() << "xPlayerDatabase: unable to retrieve playlist, error: " << e.what();
+        return entries;
+    }
+    // Use inner join to properly retrieve playlist entries.
+    try {
+        soci::rowset<soci::row> playlistEntries = (sqlDatabase.prepare <<
+                "SELECT music.artist, music.album, music.track FROM playlistSongs INNER JOIN "
+                "music ON music.hash = playlistSongs.hash WHERE playlistID = :playlistID", soci::use(playlistID));
+        for (const auto& playlistEntry : playlistEntries) {
+            auto artist = playlistEntry.get<std::string>(0);
+            auto album = playlistEntry.get<std::string>(1);
+            auto track = playlistEntry.get<std::string>(2);
+            entries.emplace_back(std::make_tuple(QString::fromStdString(artist), QString::fromStdString(album), QString::fromStdString(track)));
+        }
+    } catch (soci::soci_error& e)  {
+        qCritical() << "Unable to query database for playlist, error: " << e.what();
+        entries.clear();
+    }
+    return entries;
+}
+
+bool xPlayerDatabase::updateMusicPlaylist(const QString& name, const std::vector<std::tuple<QString,QString,QString>>& entries) {
+    // Update playlist
+    try {
+        // Insert playlist name.
+        sqlDatabase << "INSERT INTO playlist (name) VALUES (:name)", soci::use(name.toStdString());
+    } catch (soci::soci_error& e) {
+        // Ignore insert errors.
+    }
+    // Get ID for playlist name.
+    int playlistID = -1;
+    try {
+        // Retrieve ID for playlist name.
+        soci::indicator playlistIDIndicator;
+        sqlDatabase << "SELECT ID FROM playlist WHERE name=:name",
+                soci::into(playlistID, playlistIDIndicator), soci::use(name.toStdString());
+        if ((playlistIDIndicator != soci::i_ok) || (playlistID <= 0)) {
+            qCritical() << "xPlayerDatabase: unable to retrieve playlist.";
+            return false;
+        }
+        // Clear playlistSongs entries for current playlist.
+        sqlDatabase << "DELETE FROM playlistSongs WHERE playlistID=:playlistID", soci::use(playlistID);
+    } catch (soci::soci_error& e) {
+        // Return on error.
+        qCritical() << "xPlayerDatabase: unable to retrieve playlist, error: " << e.what();
+        return false;
+    }
+    qDebug() << "xPlayerDatabase::updateMusicPlaylist: prepare list: existing hashes.";
+    std::vector<std::string> hashExisting;
+    try {
+        // Get the names for playlist.
+        soci::rowset<std::string> musicHashes = (sqlDatabase.prepare << "SELECT hash FROM music");
+        for (const auto& hash : musicHashes) {
+            hashExisting.emplace_back(hash);
+        }
+    } catch (soci::soci_error& e) {
+        // Return on error.
+        qCritical() << "xPlayerDatabase: unable to retrieve hashes, error: " << e.what();
+        return false;
+    }
+    std::sort(hashExisting.begin(), hashExisting.end());
+    qDebug() << "xPlayerDatabase::updateMusicPlaylist: prepare list: compute hashes.";
+    std::vector<std::string> hashEntries(entries.size());
+    std::string addMusicEntries;
+    std::string addPlaylistEntries;
+    for (const auto& entry : entries) {
+        auto artist = std::get<0>(entry);
+        auto album = std::get<1>(entry);
+        auto track = std::get<2>(entry);
+        auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
+
+        if (!std::binary_search(hashExisting.begin(), hashExisting.end(), hash)) {
+            if (!addMusicEntries.empty()) {
+                addMusicEntries += ", ";
+            }
+            addMusicEntries += QString(R"(("%1", 0, -1, "%2", "%3", "%4", 0, 0))").arg(QString::fromStdString(hash)).arg(artist).arg(album).arg(track).toStdString();
+        } else {
+           qDebug() << "xPlayerDatabase::updateMusicPlaylist: skip: " << QString::fromStdString(hash);
+        }
+        if (!addPlaylistEntries.empty()) {
+            addPlaylistEntries += ", ";
+        }
+        addPlaylistEntries += QString("(%1, \"%2\")").arg(playlistID).arg(QString::fromStdString(hash)).toStdString();
+    }
+    qDebug() << "xPlayerDatabase::updateMusicPlaylist: insert";
+    // Update music and playlistSongs.
+    try {
+        // Insert into the music table if element need to be added.
+        if (!addMusicEntries.empty()) {
+            sqlDatabase << "INSERT INTO music VALUES " + addMusicEntries;
+        }
+        // Insert into playlistSongs
+        sqlDatabase << "INSERT INTO playlistSongs (playlistID,hash) VALUES "+addPlaylistEntries;
+    } catch (soci::soci_error& e) {
+        qCritical() << "xPlayerDatabase: unable to insert, error: " << e.what();
+        return false;
+    }
+    return true;
 }
