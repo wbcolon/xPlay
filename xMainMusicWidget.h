@@ -280,6 +280,16 @@ private slots:
      */
     void clearQueue();
     /**
+     * Update queue UI with the loaded playlist entries.
+     *
+     * @param entries list of tuples of artist, album and tracks.
+     */
+    void playlist(const std::vector<std::tuple<QString,QString,QString>>& entries);
+    /**
+     * Show playlist dialog.
+     */
+    void playlistMenu();
+    /**
      * Update the music database overlay on configuration changes.
      */
     void updatedDatabaseMusicOverlay();

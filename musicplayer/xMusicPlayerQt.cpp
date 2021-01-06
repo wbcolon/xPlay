@@ -12,6 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xMusicPlayerQt.h"
+#include "xPlayerDatabase.h"
 
 #include <QMediaControl>
 #include <QMediaService>
@@ -75,6 +76,23 @@ void xMusicPlayerQt::clearQueue() {
     // Clear playlist and musicPlaylistEntries.
     musicPlaylist->clear();
     musicPlaylistEntries.clear();
+}
+
+void xMusicPlayerQt::loadQueueFromPlaylist(const QString& name) {
+    // Load the playlist from the database.
+    auto playlistEntries = xPlayerDatabase::database()->getMusicPlaylist(name);
+    clearQueue();
+    // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
+    for (const auto& entry : playlistEntries) {
+        musicPlaylist->addMedia(QUrl::fromLocalFile(pathFromQueueEntry(entry)));
+    }
+    emit playlist(playlistEntries);
+}
+
+void xMusicPlayerQt::saveQueueToPlaylist(const QString& name) {
+    // Store the current queue to the database.
+    auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, musicPlaylistEntries);
+    emit playlistState(name, saved);
 }
 
 void xMusicPlayerQt::playPause() {

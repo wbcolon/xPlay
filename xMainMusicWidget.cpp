@@ -15,6 +15,7 @@
 #include "xPlayerMusicWidget.h"
 #include "xPlayerDatabase.h"
 #include "xPlayerConfiguration.h"
+#include "xPlayerPlaylistDialog.h"
 
 #include <QGroupBox>
 #include <QGridLayout>
@@ -50,7 +51,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     auto [artistBox, artistList_] = addGroupBox(tr("Artists"));
     auto [albumBox, albumList_] = addGroupBox(tr("Albums"));
     auto [trackBox, trackList_] = addGroupBox(tr("Tracks"));
-    auto [queueBox, queueList_] = addGroupBox(tr("Queue"));
     auto [artistSelectorBox, artistSelectorList_] = addGroupBox(tr("Artist Selector"));
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
     // Sort entries in artist/album/track
@@ -61,12 +61,22 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     trackList = trackList_;
     trackList->setSortingEnabled(true);
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
-    queueList = queueList_;
+    // Queue list.
+    auto queueBox = new QGroupBox(tr("Queue"), this);
+    queueBox->setFlat(xPlayerUseFlatGroupBox);
+    auto queueBoxLayout = new QGridLayout();
+    queueList = new QListWidget(queueBox);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
-    auto queueBoxShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
-    auto queueBoxLayout = dynamic_cast<QVBoxLayout*>(queueBox->layout());
-    queueBoxLayout->addSpacing(16);
-    queueBoxLayout->addWidget(queueBoxShuffleCheck);
+    auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
+    // Playlist menu.
+    auto queuePlaylistButton = new QPushButton("Playlist", queueBox);
+    queuePlaylistButton->setFlat(false);
+    queueBoxLayout->addWidget(queueList, 0, 0, 8, 3);
+    queueBoxLayout->setRowMinimumHeight(8, 16);
+    queueBoxLayout->setRowStretch(8, 0);
+    queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
+    queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
+    queueBox->setLayout(queueBoxLayout);
     // Setup artistSelector as horizontal list widget with no wrapping. Fix it's height.
     artistSelectorList = artistSelectorList_; // requires since we need to use the member variable;
     artistSelectorList->setViewMode(QListView::IconMode);
@@ -111,8 +121,10 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Connect queue to main widget
     connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackClicked);
     // Connect shuffle mode.
-    connect(queueBoxShuffleCheck, &QCheckBox::clicked, musicPlayer, &xMusicPlayer::setShuffleMode);
-    connect(queueBoxShuffleCheck, &QCheckBox::clicked, queueList, &QListWidget::setDisabled);
+    connect(queueShuffleCheck, &QCheckBox::clicked, musicPlayer, &xMusicPlayer::setShuffleMode);
+    connect(queueShuffleCheck, &QCheckBox::clicked, queueList, &QListWidget::setDisabled);
+    // Connect queue playlist menu.
+    connect(queuePlaylistButton, &QPushButton::pressed, this, &xMainMusicWidget::playlistMenu);
     // Right click.
     connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::selectSingleTrack);
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRemoved);
@@ -120,6 +132,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
     // Connect update for current track. Update queue, database and database overlay.
     connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xMainMusicWidget::currentTrack);
+    // Connect update of playlist.
+    connect(musicPlayer, &xMusicPlayer::playlist, this, &xMainMusicWidget::playlist);
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicOverlay,
             this, &xMainMusicWidget::updatedDatabaseMusicOverlay);
@@ -649,4 +663,28 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
                     arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
         }
     }
+}
+
+void xMainMusicWidget::playlist(const std::vector<std::tuple<QString,QString,QString>>& entries) {
+    // Clear the player widget.
+    playerWidget->clear();
+    // Clear queue.
+    queueList->clear();
+    for (const auto& entry : entries) {
+        // Add to the playlist (queue)
+        auto queueItem = new QListWidgetItem(std::get<2>(entry), queueList);
+        // Add tooltip.
+        queueItem->setToolTip(QString("%1 - %2").arg(std::get<0>(entry)).arg(std::get<1>(entry)));
+        queueList->addItem(queueItem);
+    }
+}
+
+void xMainMusicWidget::playlistMenu() {
+    auto playlistNames = xPlayerDatabase::database()->getMusicPlaylists();
+    auto playlistDialog = new xPlayerPlaylistDialog(playlistNames, this);
+    connect(playlistDialog, &xPlayerPlaylistDialog::savePlaylist, musicPlayer, &xMusicPlayer::saveQueueToPlaylist);
+    connect(playlistDialog, &xPlayerPlaylistDialog::openPlaylist, musicPlayer, &xMusicPlayer::loadQueueFromPlaylist);
+    connect(playlistDialog, &xPlayerPlaylistDialog::removePlaylist,
+            [=](const QString& name) { xPlayerDatabase::database()->removeMusicPlaylist(name); });
+    playlistDialog->exec();
 }

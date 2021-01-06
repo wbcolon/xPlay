@@ -86,11 +86,24 @@ signals:
      */
     void currentVolume(int vol);
     /**
-     * Signal the current state of the music player
+     * Signal the current state of the music player.
      *
      * @param state the current state
      */
     void currentState(xMusicPlayer::State state);
+    /**
+     * Signal the currently loaded playlist to update queue UI.
+     *
+     * @param entries playlist entries as tuple of artist, album and track.
+     */
+    void playlist(const std::vector<std::tuple<QString,QString,QString>>& entries);
+    /**
+     * Signal the state of the saved playlist.
+     *
+     * @param name the name for the playlist.
+     * @param saved true is playlist was saved, false otherwise.
+     */
+    void playlistState(const QString& name, bool saved);
 
 public slots:
     /*
@@ -170,6 +183,18 @@ public slots:
      * Clear the playlist and stop the player.
      */
     virtual void clearQueue() = 0;
+    /**
+     * Load the playlist from the database and use it as queue.
+     *
+     * @param name the name for the playlist.
+     */
+    virtual void loadQueueFromPlaylist(const QString& name) = 0;
+    /**
+     * Save the current playlist to the database.
+     *
+     * @param name the name for the playlist.
+     */
+    virtual void saveQueueToPlaylist(const QString& name) = 0;
 
 protected:
     /**

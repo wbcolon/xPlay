@@ -12,6 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xMusicPlayerPhonon.h"
+#include "xPlayerDatabase.h"
 
 #include <QRandomGenerator>
 #include <cmath>
@@ -47,20 +48,23 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
     for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
-        musicPlaylistEntries.push_back(queueEntry);
         auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(pathFromQueueEntry(queueEntry)));
-        musicPlaylist.push_back(queueSource);
+        if (queueSource.type() != Phonon::MediaSource::Invalid) {
+            musicPlaylistEntries.push_back(queueEntry);
+            musicPlaylist.push_back(queueSource);
+        }
     }
 }
 
 void xMusicPlayerPhonon::finishedQueueTracks() {
     // Enable auto play if playlist is currently emtpy.
     bool autoPlay = (musicPlayer->queue().empty());
-    // Check if do not have files in the general queue and are currently stopped.
-    bool queueEmpty = (musicPlayer->currentSource().type() == Phonon::MediaSource::Invalid);
-    // We need to extend the permutation
+    // Check if there is an invalid or empty file.
+    bool noMedia = ((musicPlayer->currentSource().type() == Phonon::MediaSource::Invalid) ||
+                    (musicPlayer->currentSource().type() == Phonon::MediaSource::Empty));
+    // Find the index of the current media source in the playlist.
+    auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
     if (useShuffleMode) {
-        auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
         if (currentIndex >= 0) {
             currentIndex = musicPlaylistPermutation.indexOf(currentIndex);
             // Check if we are in the process of filling the queue in shuffle mode.
@@ -69,7 +73,6 @@ void xMusicPlayerPhonon::finishedQueueTracks() {
                 currentIndex = -1;
             }
         }
-        qDebug() << "CURRENT_INDEX: " << currentIndex;
         // The musicPlaylistPermutation still has the old size.
         if ((currentIndex >= 0) && (currentIndex < musicPlaylistPermutation.count())) {
             // A song was already playing.
@@ -88,10 +91,15 @@ void xMusicPlayerPhonon::finishedQueueTracks() {
                 musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
             }
         }
+    } else {
+        // Enqueue in regular order.
+        for (size_t i = currentIndex+1; i < musicPlaylistEntries.size(); ++i) {
+            musicPlayer->enqueue(musicPlaylist[i]);
+        }
     }
     // Play if autoplay is enabled.
     if (autoPlay) {
-        if (queueEmpty) {
+        if (noMedia) {
             musicPlayer->play();
             emit currentState(State::PlayingState);
         } else {
@@ -147,6 +155,33 @@ void xMusicPlayerPhonon::clearQueue() {
     // Remove entries from the play lists.
     musicPlaylistEntries.clear();
     musicPlaylist.clear();
+}
+
+void xMusicPlayerPhonon::loadQueueFromPlaylist(const QString& name) {
+    // Load the playlist from the database.
+    auto playlistEntries = xPlayerDatabase::database()->getMusicPlaylist(name);
+    clearQueue();
+    // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
+    for (auto entry = playlistEntries.begin(); entry != playlistEntries.end(); ++entry) {
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(pathFromQueueEntry(*entry)));
+        if (queueSource.type() != Phonon::MediaSource::Invalid) {
+            musicPlaylistEntries.push_back(*entry);
+            musicPlaylist.push_back(queueSource);
+            // Enqueue entries.
+            musicPlayer->enqueue(queueSource);
+        } else {
+            // Remove invalid entries from the list.
+            playlistEntries.erase(entry);
+        }
+    }
+    emit playlist(playlistEntries);
+    finishedQueueTracks();
+}
+
+void xMusicPlayerPhonon::saveQueueToPlaylist(const QString& name) {
+    // Store the current queue to the database.
+    auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, musicPlaylistEntries);
+    emit playlistState(name, saved);
 }
 
 void xMusicPlayerPhonon::playPause() {

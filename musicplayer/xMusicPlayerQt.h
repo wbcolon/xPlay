@@ -71,7 +71,18 @@ public slots:
      * Clear the playlist and stop the player.
      */
     void clearQueue() override;
-
+    /**
+     * Load the playlist from the database and add it to the queue.
+     *
+     * @param name the name for the playlist.
+     */
+    void loadQueueFromPlaylist(const QString& name) override;
+    /**
+     * Save the current playlist to the database
+     *
+     * @param name the name for the playlist.
+     */
+    void saveQueueToPlaylist(const QString& name) override;
     /**
      * Play or pause depending on the current media player state.
      */
