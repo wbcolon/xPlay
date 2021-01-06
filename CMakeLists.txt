@@ -62,6 +62,7 @@ add_executable(xPlay
         xMoviePlayer.cpp
         ${XMUSICPLAYERX}
         xPlayerConfigurationDialog.cpp
+        xPlayerPlaylistDialog.cpp
         xPlayerMusicWidget.cpp
         xPlayerVolumeWidget.cpp
         xPlayerSliderWidget.cpp
