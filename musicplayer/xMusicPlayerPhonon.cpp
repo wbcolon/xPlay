@@ -57,8 +57,8 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
 }
 
 void xMusicPlayerPhonon::finishedQueueTracks() {
-    // Enable auto play if playlist is currently emtpy.
-    bool autoPlay = (musicPlayer->queue().empty());
+    // Enable auto play if playlist is currently emtpy and we are in a stopped state..
+    bool autoPlay = ((musicPlayer->queue().empty()) && (musicPlayer->state() == Phonon::StoppedState));
     // Check if there is an invalid or empty file.
     bool noMedia = ((musicPlayer->currentSource().type() == Phonon::MediaSource::Invalid) ||
                     (musicPlayer->currentSource().type() == Phonon::MediaSource::Empty));
@@ -78,21 +78,25 @@ void xMusicPlayerPhonon::finishedQueueTracks() {
             // A song was already playing.
             musicPlaylistPermutation = extendPermutation(musicPlaylistPermutation.mid(0, currentIndex+1),
                                                          musicPlaylist.count(), currentIndex);
+            // Clear queue and enqueue the remaining entries.
+            musicPlayer->clearQueue();
             for (auto i = currentIndex+1; i < musicPlaylistPermutation.count(); ++i) {
                 musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
             }
         } else {
-            // Clear everything.
-            musicPlayer->clear();
-            musicPlayer->clearQueue();
             // No current song was playing. Queue possibly empty. No start index.
             musicPlaylistPermutation = computePermutation(musicPlaylist.count(), -1);
+            // Clear queue and enqueue all entries.
+            musicPlayer->clearQueue();
             for (auto i = 0; i < musicPlaylistPermutation.count(); ++i) {
                 musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
             }
         }
     } else {
         // Enqueue in regular order.
+        // If no track currently played and queue empty then currentIndex == -1.
+        // Clear queue and enqueue the remaining entries.
+        musicPlayer->clearQueue();
         for (size_t i = currentIndex+1; i < musicPlaylistEntries.size(); ++i) {
             musicPlayer->enqueue(musicPlaylist[i]);
         }

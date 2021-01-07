@@ -1,19 +1,23 @@
 # Changelog
 
+## 0.6.1 - 2021-01-06
+
+- Fix autoplay and queue.
+
 ## 0.6.0 - 2021-01-06
 
 - Add playlist support for music view.
 - Improve scanning for artist and selector queueing.
-- Improve shuffle mode. 
+- Improve shuffle mode.
 - Minor Layout adjustments.
-- Autoplay bugfix for Phonon bases music player.  
+- Autoplay bugfix for Phonon bases music player.
 - Update known issues.
 
 ## 0.5.4 - 2020-12-31
 
 - Add argument for starting xPlay maximized.
 - Fix source string for PC-USB input.
-- Fix bug of selecting subtitle if no description exists (VLC backend).  
+- Fix bug of selecting subtitle if no description exists (VLC backend).
 - Use fixed width for the volume knob.
 
 ## 0.5.3 - 2020-12-30
