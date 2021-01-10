@@ -88,6 +88,10 @@ private slots:
      * Toggle enable/disable for the Rotel configuration.
      */
     void toggleRotelWidget();
+    /**
+     * Open a dialog in order to select a database directory.
+     */
+    void openDatabaseDirectory();
 
 private:
     /**
@@ -131,6 +135,7 @@ private:
     QPushButton* rotelEnableWidget;
     QLineEdit* rotelNetworkAddressWidget;
     QSpinBox* rotelNetworkPortWidget;
+    QLineEdit* databaseDirectoryWidget;
     QCheckBox* databaseMusicOverlayCheck;
     QCheckBox* databaseMovieOverlayCheck;
     QCheckBox* databaseCutOffCheck;

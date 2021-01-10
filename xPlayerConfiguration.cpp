@@ -32,6 +32,7 @@ const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDi
 const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" };
 const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" };
 const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" };
+const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory" };
 const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" };
 const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" };
 const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOverlay" };
@@ -52,8 +53,7 @@ xPlayerConfiguration::xPlayerConfiguration():
         QObject() {
     // Settings.
     settings = new QSettings(xPlayerConfiguration::OrganisationName, xPlayerConfiguration::ApplicationName, this);
-    dataBasePath = QString("%1/%2/%3.db").arg(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)).
-            arg(xPlayerConfiguration::OrganisationName).arg(xPlayerConfiguration::ApplicationName);
+    dataBaseFile = QString("%1.db").arg(xPlayerConfiguration::ApplicationName);
 }
 
 xPlayerConfiguration* xPlayerConfiguration::configuration() {
@@ -138,6 +138,19 @@ void xPlayerConfiguration::setStreamingSites(const QList<std::pair<QString,QUrl>
         settings->setValue(xPlayerConfiguration_StreamingSites, nameUrlString);
         settings->sync();
         emit updatedStreamingSites();
+    }
+}
+
+void xPlayerConfiguration::setDatabaseDirectory(const QString& dir) {
+    // Make sure that dir ends with "/".
+    auto dataDir = (dir.endsWith('/')) ? dir : dir+"/";
+    if (dataDir != getDatabaseDirectory()) {
+        settings->setValue(xPlayerConfiguration_DatabaseDirectory, dataDir);
+        settings->sync();
+        emit updatedDatabaseDirectory();
+        // Trigger reconfiguration of music and movie overlay.
+        emit updatedDatabaseMusicOverlay();
+        emit updatedDatabaseMovieOverlay();
     }
 }
 
@@ -255,6 +268,19 @@ std::pair<QString,QUrl> xPlayerConfiguration::getStreamingSitesDefault() {
     }
 }
 
+QString xPlayerConfiguration::getDatabaseDirectory() {
+    auto path = settings->value(xPlayerConfiguration_DatabaseDirectory, "").toString();
+    if (path.isEmpty()) {
+        path = QString("%1/%2/").arg(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)).
+                arg(xPlayerConfiguration::OrganisationName);
+    }
+    return path;
+}
+
+QString xPlayerConfiguration::getDatabasePath() {
+    return getDatabaseDirectory()+dataBaseFile;
+}
+
 quint64 xPlayerConfiguration::getDatabaseCutOff() {
     return settings->value(xPlayerConfiguration_DatabaseCutOff, 0).toULongLong();
 }
@@ -308,10 +334,6 @@ std::pair<QString,QUrl> xPlayerConfiguration::splitStreamingShortNameAndUrl(cons
     } else {
         return std::make_pair("",QUrl(""));
     }
-}
-
-QString xPlayerConfiguration::getDatabasePath() {
-    return dataBasePath;
 }
 
 void xPlayerConfiguration::updatedConfiguration() {

@@ -159,9 +159,19 @@ public:
      */
     bool updateMusicPlaylist(const QString& name, const std::vector<std::tuple<QString,QString,QString>>& entries);
 
+private slots:
+    /**
+     * Called upon changing the directory where the database is stored.
+     */
+    void updatedDatabaseDirectory();
+
 private:
     explicit xPlayerDatabase(QObject* parent=nullptr);
     ~xPlayerDatabase() noexcept override;
+    /**
+     * Load the database from the path stored in the configuration.
+     */
+    void loadDatabase();
 
     static xPlayerDatabase* playerDatabase;
     soci::session sqlDatabase;

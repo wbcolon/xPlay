@@ -23,6 +23,32 @@ xPlayerDatabase* xPlayerDatabase::playerDatabase = nullptr;
 
 xPlayerDatabase::xPlayerDatabase(QObject* parent):
         QObject(parent) {
+    loadDatabase();
+    // Connect configuration to database file.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseDirectory,
+            this, &xPlayerDatabase::updatedDatabaseDirectory);
+}
+
+xPlayerDatabase::~xPlayerDatabase() {
+    // Close database.
+    try {
+        sqlDatabase.close();
+    } catch (soci::soci_error& e) {
+        // Ignore error.
+    }
+}
+
+void xPlayerDatabase::updatedDatabaseDirectory() {
+    // Close database.
+    try {
+        sqlDatabase.close();
+    } catch (soci::soci_error& e) {
+        // Ignore error.
+    }
+    loadDatabase();
+}
+
+void xPlayerDatabase::loadDatabase() {
     try {
         sqlDatabase.open(soci::sqlite3, xPlayerConfiguration::configuration()->getDatabasePath().toStdString());
         // The following create table commands will fail if database already exists.
@@ -35,15 +61,6 @@ xPlayerDatabase::xPlayerDatabase(QObject* parent):
         // Create movie table.
         sqlDatabase << "CREATE TABLE movie (hash VARCHAR PRIMARY KEY, playCount INT, timeStamp BIGINT, "
                        "tag VARCHAR, directory VARCHAR, movie VARCHAR)";
-    } catch (soci::soci_error& e) {
-        // Ignore error.
-    }
-}
-
-xPlayerDatabase::~xPlayerDatabase() {
-    // Close database.
-    try {
-        sqlDatabase.close();
     } catch (soci::soci_error& e) {
         // Ignore error.
     }

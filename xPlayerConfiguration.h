@@ -90,6 +90,12 @@ public:
      */
     void setStreamingSitesDefault(const std::pair<QString,QUrl>& site);
     /**
+     * Set the directory to the database file.
+     *
+     * @param dir the directory as string.
+     */
+    void setDatabaseDirectory(const QString& dir);
+    /**
      * Set the cut-off time stamp used in database queries.
      *
      * @param cutOff the time stamp if ms since epoch.
@@ -192,6 +198,12 @@ public:
      */
     [[nodiscard]] std::pair<QString,QUrl> getStreamingSitesDefault();
     /**
+     * Get the directory to the database file.
+     *
+     * @return the absolute path as string.
+     */
+    [[nodiscard]] QString getDatabaseDirectory();
+    /**
      * Get the path to the database file.
      *
      * @return the absolute path as string.
@@ -262,6 +274,10 @@ signals:
     /**
      * Signal an update of the database overlay for the music view.
      */
+    void updatedDatabaseDirectory();
+    /**
+     * Signal an update of the database overlay for the music view.
+     */
     void updatedDatabaseMusicOverlay();
     /**
      * Signal an update of the database overlay for the movie view.
@@ -292,7 +308,7 @@ private:
 
     static xPlayerConfiguration* playerConfiguration;
     QSettings* settings;
-    QString dataBasePath;
+    QString dataBaseFile;
 };
 
 #endif
