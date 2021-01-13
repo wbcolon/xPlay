@@ -528,6 +528,8 @@ void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
         queueList->addItem(queueItem);
         // Signal the set tracks to be queued by the music player.
         emit queueTracks(artistName, albumName, trackNames);
+        // Signal finish adding tracks.
+        emit finishedQueueTracks();
     }
 }
 void xMainMusicWidget::updatePlayedArtists() {
