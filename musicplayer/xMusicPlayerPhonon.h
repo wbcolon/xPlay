@@ -193,6 +193,7 @@ private:
     QVector<int> musicPlaylistPermutation;
     Phonon::MediaObject* musicPlayer;
     Phonon::AudioOutput* musicOutput;
+    xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;
     // Only required due to track length issues with phonon.
     QMediaPlayer* musicPlayerForTime;

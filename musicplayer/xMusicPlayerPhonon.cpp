@@ -20,6 +20,7 @@
 xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
         xMusicPlayer(parent),
         musicPlaylistPermutation(),
+        musicPlayerState(State::StopState),
         useShuffleMode(false) {
     // Setup the media player.
     musicPlayer = new Phonon::MediaObject(this);
@@ -104,8 +105,8 @@ void xMusicPlayerPhonon::finishedQueueTracks() {
     // Play if autoplay is enabled.
     if (autoPlay) {
         if (noMedia) {
+            emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
             musicPlayer->play();
-            emit currentState(State::PlayingState);
         } else {
             // Go to next if music player queue is empty but files are in the general queue.
             next();
@@ -153,8 +154,8 @@ void xMusicPlayerPhonon::dequeTrack(int index) {
 
 void xMusicPlayerPhonon::clearQueue() {
     // Stop the music player and clear its state (including queue).
+    emit currentState(musicPlayerState = State::StopState);
     musicPlayer->stop();
-    emit currentState(State::StopState);
     musicPlayer->clear();
     // Remove entries from the play lists.
     musicPlaylistEntries.clear();
@@ -191,11 +192,11 @@ void xMusicPlayerPhonon::saveQueueToPlaylist(const QString& name) {
 void xMusicPlayerPhonon::playPause() {
     // Pause if the media player is in playing state, resume play.
     if (musicPlayer->state() == Phonon::PlayingState) {
+        emit currentState(musicPlayerState = State::PauseState);
         musicPlayer->pause();
-        emit currentState(State::PauseState);
     } else {
+        emit currentState(musicPlayerState = State::PlayingState);
         musicPlayer->play();
-        emit currentState(State::PlayingState);
     }
 }
 
@@ -214,8 +215,8 @@ void xMusicPlayerPhonon::play(int index) {
             musicPlayer->enqueue(musicPlaylist[i]);
         }
         // Play.
+        emit currentState(musicPlayerState = State::PlayingState);
         musicPlayer->play();
-        emit currentState(State::PlayingState);
     }
 }
 
@@ -232,8 +233,8 @@ void xMusicPlayerPhonon::jump(qint64 delta) {
 
 void xMusicPlayerPhonon::stop() {
     // Stop the media player.
+    emit currentState(musicPlayerState = State::StopState);
     musicPlayer->stop();
-    emit currentState(State::StopState);
 }
 
 void xMusicPlayerPhonon::prev() {
@@ -258,8 +259,8 @@ void xMusicPlayerPhonon::prev() {
             }
         }
         // Play.
+        emit currentState(musicPlayerState = State::PlayingState);
         musicPlayer->play();
-        emit currentState(State::PlayingState);
     }
 }
 
@@ -285,8 +286,8 @@ void xMusicPlayerPhonon::next() {
             }
         }
         // Play.
+        emit currentState(musicPlayerState = State::PlayingState);
         musicPlayer->play();
-        emit currentState(State::PlayingState);
     }
 }
 
@@ -353,16 +354,29 @@ void xMusicPlayerPhonon::currentTrackSource(const Phonon::MediaSource& current) 
 
 void xMusicPlayerPhonon::stateChanged(Phonon::State newState, Phonon::State oldState) {
     if (newState == Phonon::ErrorState) {
-        qCritical() << "xMusicPlayerPhonon: error: " << musicPlayer->errorString();
+        qCritical() << "xMusicPlayerPhonon: error: " << musicPlayer->errorString() << ", track: " << musicPlayer->currentSource();
         if (oldState == Phonon::PlayingState) {
             qInfo() << "xMusicPlayerPhonon: trying to recover...";
-            musicPlayer->play();
-            emit currentState(xMusicPlayer::PlayingState);
+            play(musicPlaylist.indexOf(musicPlayer->currentSource()));
         }
-    }
-    if ((newState == Phonon::StoppedState) && (oldState == Phonon::PlayingState)) {
-        musicPlayer->stop();
-        emit currentState(xMusicPlayer::StopState);
+    } else {
+        // Check music player state. Try to recover.
+        if ((newState == Phonon::StoppedState) && (oldState == Phonon::PlayingState)) {
+            if (musicPlayer->queue().count() == 0) {
+                emit currentState(musicPlayerState = xMusicPlayer::StopState);
+                musicPlayer->stop();
+            } else {
+                if (musicPlayerState == State::PlayingState) {
+                    qCritical() << "xMusicPlayerPhonon: trying to recover from state error, current track: " << musicPlayer->currentSource();
+                    if (useShuffleMode) {
+                        musicPlayer->stop();
+                        next();
+                    } else {
+                        play(musicPlaylist.indexOf(musicPlayer->currentSource()));
+                    }
+                }
+            }
+        }
     }
 }
 
