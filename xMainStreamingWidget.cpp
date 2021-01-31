@@ -82,7 +82,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     siteLayout->addWidget(clearButton, 5, 0, 1, 2);
     sitesBox->setLayout(siteLayout);
     // Main streaming layout.
-    streamingLayout->addWidget(streamingWebView, 0, 0, 20, 20);
+    streamingLayout->addWidget(streamingWebView, 0, 0, 25, 20);
     streamingLayout->addWidget(sitesBox, 0, 21, 2, 1);
     streamingLayout->setRowMinimumHeight(2, 20);
     streamingLayout->setRowStretch(2, 0);

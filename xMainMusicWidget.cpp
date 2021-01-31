@@ -81,7 +81,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     artistSelectorList = artistSelectorList_; // requires since we need to use the member variable;
     artistSelectorList->setViewMode(QListView::IconMode);
     artistSelectorList->setWrapping(false);
-    artistSelectorList->setFixedHeight(QFontMetrics(QApplication::font()).height()*3/2);
+    artistSelectorList->setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
     artistSelectorBox->setFixedHeight(artistSelectorBox->sizeHint().height());
     // Setup album selector.
     auto albumSelectorBox = new QGroupBox(tr("Album Selector"), this);

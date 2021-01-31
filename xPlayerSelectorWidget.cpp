@@ -13,6 +13,7 @@
  */
 
 #include "xPlayerSelectorWidget.h"
+#include "xPlayerConfiguration.h"
 #include <QApplication>
 #include <QDebug>
 
@@ -24,7 +25,7 @@ xPlayerSelectorWidget::xPlayerSelectorWidget(QWidget* parent):
     setViewMode(QListWidget::IconMode);
     setSelectionMode(QListWidget::NoSelection);
     connect(this, &QListWidget::itemDoubleClicked, this, &xPlayerSelectorWidget::selectorClicked);
-    setFixedHeight(QFontMetrics(QApplication::font()).height()*3/2);
+    setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
 }
 
 void xPlayerSelectorWidget::setSelectors(const QStringList& selectors) {
