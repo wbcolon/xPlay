@@ -51,6 +51,11 @@ void xPlayerDatabase::updatedDatabaseDirectory() {
 void xPlayerDatabase::loadDatabase() {
     try {
         sqlDatabase.open(soci::sqlite3, xPlayerConfiguration::configuration()->getDatabasePath().toStdString());
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to open database: " << e.what();
+        return;
+    }
+    try {
         // The following create table commands will fail if database already exists.
         // Create playlist and playlistSongs table.
         sqlDatabase << "CREATE TABLE playlist (ID INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL UNIQUE)";
@@ -273,6 +278,7 @@ std::pair<int,quint64> xPlayerDatabase::updateMusicFile(const QString& artist, c
         }
     } catch (soci::soci_error& e) {
         qCritical() << "xPlayerDatabase::updateMusicFile: error: " << e.what();
+        emit databaseUpdateError();
     }
     return std::make_pair(0,0);
 }
@@ -299,6 +305,7 @@ std::pair<int,quint64> xPlayerDatabase::updateMovieFile(const QString& movie, co
         }
     } catch (soci::soci_error& e) {
         qCritical() << "xPlayerDatabase::updateMusicFile: error: " << e.what();
+        emit databaseUpdateError();
     }
     return std::make_pair(0,0);
 }

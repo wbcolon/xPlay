@@ -159,6 +159,9 @@ public:
      */
     bool updateMusicPlaylist(const QString& name, const std::vector<std::tuple<QString,QString,QString>>& entries);
 
+signals:
+    void databaseUpdateError();
+
 private slots:
     /**
      * Called upon changing the directory where the database is stored.

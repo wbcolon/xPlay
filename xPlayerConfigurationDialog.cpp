@@ -142,6 +142,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     databaseCutOffDate = new QDateEdit(databaseBox);
     databaseCutOffDate->setDisplayFormat("dd MMMM yyyy");
     databaseCutOffCheck = new QCheckBox(tr("Use cut-off date"), databaseBox);
+    databaseIgnoreUpdateErrorsCheck = new QCheckBox(tr("Ignore database update errors"), databaseBox);
     databaseLayout->addWidget(databaseDirectoryLabel, 0, 0, 1, 5);
     databaseLayout->addWidget(databaseDirectoryWidget, 1, 0, 1, 4);
     databaseLayout->addWidget(databaseDirectoryButton, 1, 4, 1, 1);
@@ -151,6 +152,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     databaseLayout->addWidget(databaseMovieOverlayCheck, 4, 0, 1, 5);
     databaseLayout->addWidget(databaseCutOffCheck, 5, 0, 1, 3);
     databaseLayout->addWidget(databaseCutOffDate, 5, 3, 1, 2);
+    databaseLayout->addWidget(databaseIgnoreUpdateErrorsCheck, 6, 0, 1, 5);
     databaseBox->setLayout(databaseLayout);
     // Additional tab layout.
     additionalLayout->addWidget(databaseBox, 0, 0, 2, 2);
@@ -226,6 +228,7 @@ void xPlayerConfigurationDialog::loadSettings() {
         databaseCutOffCheck->setChecked(false);
         databaseCutOffDate->setEnabled(false);
     }
+    databaseIgnoreUpdateErrorsCheck->setChecked(xPlayerConfiguration::configuration()->getDatabaseIgnoreUpdateErrors());
     movieLibraryExtensionsWidget->setText(movieLibraryExtensions);
     movieLibraryListWidget->clear();
     if (movieLibraryTagAndDirectory.count() > 0) {
@@ -287,6 +290,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: databaseCutOff: " << databaseCutOff;
     qDebug() << "xPlayerConfigurationDialog: save: databaseMusicOverlay: " << databaseMusicOverlayCheck->isChecked();
     qDebug() << "xPlayerConfigurationDialog: save: databaseMovieOverlay: " << databaseMovieOverlayCheck->isChecked();
+    qDebug() << "xPlayerConfigurationDialog: save: databaseIgnoreUpdateErrors: " << databaseIgnoreUpdateErrorsCheck->isChecked();
     // Save settings.
     xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
     xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
@@ -301,6 +305,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setDatabaseCutOff(databaseCutOff);
     xPlayerConfiguration::configuration()->setDatabaseMusicOverlay(databaseMusicOverlayCheck->isChecked());
     xPlayerConfiguration::configuration()->setDatabaseMovieOverlay(databaseMovieOverlayCheck->isChecked());
+    xPlayerConfiguration::configuration()->setDatabaseIgnoreUpdateErrors(databaseIgnoreUpdateErrorsCheck->isChecked());
     // End dialog.
     accept();
 }

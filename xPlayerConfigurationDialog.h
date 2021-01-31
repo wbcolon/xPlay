@@ -140,6 +140,7 @@ private:
     QCheckBox* databaseMovieOverlayCheck;
     QCheckBox* databaseCutOffCheck;
     QDateEdit* databaseCutOffDate;
+    QCheckBox* databaseIgnoreUpdateErrorsCheck;
     std::pair<QString,QUrl> streamingSitesDefault;
 };
 

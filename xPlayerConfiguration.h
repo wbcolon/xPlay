@@ -115,6 +115,15 @@ public:
      */
     void setDatabaseMovieOverlay(bool enabled);
     /**
+     * Set the mode for handling database update errors.
+     *
+     * The mode will not be stored as part of the permanent settings.
+     * It will always default to false on the program startup.
+     *
+     * @param enabled if true then ignore errors, display otherwise.
+     */
+    void setDatabaseIgnoreUpdateErrors(bool enabled);
+    /**
      * Get the base directory of the music library.
      *
      * @return the music library directory as string.
@@ -229,6 +238,12 @@ public:
      */
     [[nodiscard]] bool getDatabaseMovieOverlay();
     /**
+     * Get the mode for handling database update errors.
+     *
+     * @return true, if update errors are ignored, false otherwise.
+     */
+    [[nodiscard]] bool getDatabaseIgnoreUpdateErrors();
+    /**
      * Trigger all update configuration signals.
      *
      * Useful on application start, when the entire configuration is initially read.
@@ -310,6 +325,7 @@ private:
     static xPlayerConfiguration* playerConfiguration;
     QSettings* settings;
     QString dataBaseFile;
+    bool databaseIgnoreUpdateErrors;
 };
 
 #endif

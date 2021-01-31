@@ -429,8 +429,10 @@ void xMainMusicWidget::currentTrack(int index, const QString& artist, const QStr
     currentQueueTrack(index);
     // Update database.
     auto result = xPlayerDatabase::database()->updateMusicFile(artist, album, track, sampleRate, bitsPerSample);
-    // Update database overlay.
-    updatePlayedTrack(artist, album, track, result.first, result.second);
+    if (result.second > 0) {
+        // Update database overlay.
+        updatePlayedTrack(artist, album, track, result.first, result.second);
+    }
 }
 
 void xMainMusicWidget::currentQueueTrack(int index) {

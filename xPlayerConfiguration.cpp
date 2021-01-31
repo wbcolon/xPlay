@@ -50,7 +50,8 @@ const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites 
 xPlayerConfiguration* xPlayerConfiguration::playerConfiguration = nullptr;
 
 xPlayerConfiguration::xPlayerConfiguration():
-        QObject() {
+        QObject(),
+        databaseIgnoreUpdateErrors(false) {
     // Settings.
     settings = new QSettings(xPlayerConfiguration::OrganisationName, xPlayerConfiguration::ApplicationName, this);
     dataBaseFile = QString("%1.db").arg(xPlayerConfiguration::ApplicationName);
@@ -180,6 +181,10 @@ void xPlayerConfiguration::setDatabaseMovieOverlay(bool enabled) {
     }
 }
 
+void xPlayerConfiguration::setDatabaseIgnoreUpdateErrors(bool enabled) {
+    databaseIgnoreUpdateErrors = enabled;
+}
+
 void xPlayerConfiguration::setStreamingSitesDefault(const std::pair<QString,QUrl>& site) {
     if (site != getStreamingSitesDefault()) {
         auto nameUrlString = QString("(%1) - %2").arg(site.first).arg(site.second.toString());
@@ -291,6 +296,10 @@ bool xPlayerConfiguration::getDatabaseMusicOverlay() {
 
 bool xPlayerConfiguration::getDatabaseMovieOverlay() {
     return settings->value(xPlayerConfiguration_DatabaseMovieOverlay, true).toBool();
+}
+
+bool xPlayerConfiguration::getDatabaseIgnoreUpdateErrors() {
+    return databaseIgnoreUpdateErrors;
 }
 
 std::list<std::pair<QString,std::filesystem::path>> xPlayerConfiguration::getMovieLibraryTagAndDirectoryPath() {

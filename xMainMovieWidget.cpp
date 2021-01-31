@@ -456,6 +456,8 @@ void xMainMovieWidget::currentMovie(const QString& path, const QString& name,
     Q_UNUSED(path)
     // Update database.
     auto result = xPlayerDatabase::database()->updateMovieFile(name, tag, directory);
-    // Update database overlay.
-    updatePlayedMovie(tag, directory, name, result.first, result.second);
+    if (result.second > 0) {
+        // Update database overlay.
+        updatePlayedMovie(tag, directory, name, result.first, result.second);
+    }
 }

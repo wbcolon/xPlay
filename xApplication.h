@@ -41,6 +41,10 @@ private slots:
      */
     void configure();
     /**
+     * Display message dialog on database update error.
+     */
+    void databaseUpdateError();
+    /**
      * Set the music library directory if it has been updated.
      */
     void setMusicLibraryDirectory();
