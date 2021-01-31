@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2 - 2021-01-31
+
+- Update error recovery code for phonon music player.
+- Fix queue issue if single track is added.
+- Handle database update errors.
+- Update configuration dialog. Add options for path to database and to ignore database update errors.
+- UI fixes for selectors and streaming view.
+
 ## 0.6.1 - 2021-01-06
 
 - Fix autoplay and queue.

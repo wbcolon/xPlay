@@ -173,7 +173,10 @@ The database overlay for the music and movie view can be configured using indivi
 date can be configured for each database query. If specified then entries with a time stamp before the cut-off
 date are ignored. This features enables the user to e.g. see which movies he has seen in the last month.
 
-![Screenshot Configuration Dialog](screenshots/xplay_screenshot_configuration_dialog.png)
+![Screenshot Configuration Dialog (Music)](screenshots/xplay_screenshot_configuration_dialog_00.png)
+![Screenshot Configuration Dialog (Movie)](screenshots/xplay_screenshot_configuration_dialog_01.png)
+![Screenshot Configuration Dialog (Streaming)](screenshots/xplay_screenshot_configuration_dialog_02.png)
+![Screenshot Configuration Dialog (Additional)](screenshots/xplay_screenshot_configuration_dialog_03.png)
 
 
 ## Artwork
