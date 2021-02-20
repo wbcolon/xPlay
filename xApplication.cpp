@@ -204,7 +204,11 @@ void xApplication::dbus_muteRotel() {
 void xApplication::dbus_changeRotelVolume(int delta) {
     // Set the volume for the Rotel amp.
     auto rotelControls = xPlayerRotelControls::controls();
-    rotelControls->setVolume(rotelControls->getVolume()+delta);
+    auto rotelVolume = rotelControls->getVolume();
+    // Only adjust volume if getVolume was successful.
+    if (rotelVolume >= 0) {
+        rotelControls->setVolume(rotelVolume+delta);
+    }
 }
 
 void xApplication::dbus_selectRotelSource(const QString& source) {

@@ -166,7 +166,7 @@ int xPlayerRotelControls::getVolume() {
 
 int xPlayerRotelControls::getBass() {
     QString bassResponse = sendCommand(Rotel_RequestBass);
-    qDebug() << "RotelControls: getVolume: " << bassResponse;
+    qDebug() << "RotelControls: getBass: " << bassResponse;
     if (!bassResponse.isEmpty()) {
         return bassResponse.remove(Rotel_ResponsePrefixBass).remove("$").toInt();
     } else {
@@ -176,7 +176,7 @@ int xPlayerRotelControls::getBass() {
 
 int xPlayerRotelControls::getTreble() {
     QString trebleResponse = sendCommand(Rotel_RequestTreble);
-    qDebug() << "RotelControls: getVolume: " << trebleResponse;
+    qDebug() << "RotelControls: getTreble: " << trebleResponse;
     if (!trebleResponse.isEmpty()) {
         return trebleResponse.remove(Rotel_ResponsePrefixTreble).remove("$").toInt();
     } else {
