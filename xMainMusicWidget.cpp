@@ -25,6 +25,7 @@
 #include <QApplication>
 #include <QRandomGenerator>
 #include <QCheckBox>
+#include <random>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
 auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
@@ -55,7 +56,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
     // Sort entries in artist/album/track
     artistList = artistList_;
-    artistList->setSortingEnabled(true);
+    artistList->setSortingEnabled(false);
     albumList = albumList_;
     albumList->setSortingEnabled(true);
     trackList = trackList_;
@@ -244,19 +245,28 @@ void xMainMusicWidget::updateScannedArtistsSelectors(const std::set<QString> &se
     // Update artist selectors list widget.
     artistSelectorList->clear();
     artistSelectorList->addItem(tr("none"));
+    artistSelectorList->addItem(tr("random"));
     for (const auto& as : selectors) {
         artistSelectorList->addItem(as);
     }
 }
 
 QStringList xMainMusicWidget::filterArtists(const QStringList& artists) {
-    // Check if a selector is selected.
+    // Check if a selector is selected. We sort the list if necessary.
+    QStringList filtered;
     if (artistSelectorList->currentItem()) {
-        QStringList filtered;
         QString selected = artistSelectorList->currentItem()->text();
         // Do not filter if we have selector "none" selected.
-        if (selected.startsWith(tr("none"))) {
-            return artists;
+        if (selected.compare(tr("none"), Qt::CaseInsensitive) == 0) {
+            filtered = artists;
+            filtered.sort();
+            return filtered;
+        }
+        // Do not filter if we have selector "random" selected. Just randomize list.
+        if (selected.compare(tr("random"), Qt::CaseInsensitive) == 0) {
+            filtered = artists;
+            std::shuffle(filtered.begin(), filtered.end(), std::mt19937(std::random_device()()));
+            return filtered;
         }
         // Go through list of artists and only add the ones to the filtered
         // list that start with the selector character.
@@ -266,9 +276,13 @@ QStringList xMainMusicWidget::filterArtists(const QStringList& artists) {
             }
         }
         // Return filtered list of artists.
+        filtered.sort();
         return filtered;
     }
-    return artists;
+    // No artist selector enabled. Return sorted list of artists.
+    filtered = artists;
+    filtered.sort();
+    return filtered;
 }
 
 QStringList xMainMusicWidget::filterAlbums(const QStringList& albums) {
@@ -382,6 +396,11 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
     // Currently unused
     auto selector = artistSelectorList->row(selectorItem);
     if ((selector >= 0) && (selector < artistSelectorList->count())) {
+        // Do not queue artist selector if random is selected, just randomize again.
+        if (selectorItem->text().compare("random", Qt::CaseInsensitive) == 0) {
+            selectArtistSelector(selector);
+            return;
+        }
         QList<QString> listArtists;
         // Call with stored list in order to update artist filtering.
         updateScannedArtists(unfilteredArtists);
