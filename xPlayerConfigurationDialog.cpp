@@ -13,8 +13,8 @@
  */
 
 #include "xPlayerConfigurationDialog.h"
+#include "xPlayerUI.h"
 
-#include <QGridLayout>
 #include <QGroupBox>
 #include <QFileDialog>
 #include <QDialogButtonBox>
@@ -25,8 +25,8 @@
 
 xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::WindowFlags flags):
         QDialog(parent, flags) {
-    auto configurationLayout = new QGridLayout(this);
-    configurationLayout->setSpacing(0);
+    auto configurationLayout = new xPlayerLayout(this);
+    configurationLayout->setSpacing(xPlayerLayout::NoSpace);
     auto configurationTab = new QTabWidget(this);
     configurationTab->setTabPosition(QTabWidget::South);
     configurationTab->setFocusPolicy(Qt::NoFocus);
@@ -37,7 +37,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     auto streamingSitesTab = new QGroupBox(tr("Streaming Sites Configuration"), configurationTab);
     streamingSitesTab->setFlat(xPlayerUseFlatGroupBox);
     auto additionalTab = new QWidget(configurationTab);
-    auto additionalLayout = new QGridLayout();
+    auto additionalLayout = new xPlayerLayout();
     auto databaseBox = new QGroupBox(tr("Database Configuration"), additionalTab);
     databaseBox->setFlat(xPlayerUseFlatGroupBox);
     auto rotelBox = new QGroupBox(tr("Rotel Configuration"), additionalTab);
@@ -52,7 +52,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     configurationButtons->addButton(QDialogButtonBox::Cancel);
     configurationButtons->setFocusPolicy(Qt::NoFocus);
     // Setup movie library setup, with tags, directories and extensions.
-    auto movieLibraryLayout = new QGridLayout();
+    auto movieLibraryLayout = new xPlayerLayout();
     auto movieLibraryTagLabel = new QLabel(tr("Tag"), movieLibraryTab);
     movieLibraryTagWidget = new QLineEdit(movieLibraryTab);
     auto movieLibraryDirectoryLabel = new QLabel(tr("Directory"), movieLibraryTab);
@@ -74,11 +74,10 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     movieLibraryLayout->addWidget(movieLibraryButtons, 7, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryExtensionsLabel, 8, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryExtensionsWidget, 9, 0, 1, 5);
-    movieLibraryLayout->setRowMinimumHeight(10, 0);
-    movieLibraryLayout->setRowStretch(10, 2);
+    movieLibraryLayout->addRowStretcher(10);
     movieLibraryTab->setLayout(movieLibraryLayout);
     // Setup music library with directory and extensions.
-    auto musicLibraryLayout = new QGridLayout();
+    auto musicLibraryLayout = new xPlayerLayout();
     auto musicLibraryDirectoryLabel = new QLabel(tr("Directory"), musicLibraryTab);
     musicLibraryDirectoryWidget = new QLineEdit(musicLibraryTab);
     auto musicLibraryDirectoryOpenButton = new QPushButton(tr("..."), musicLibraryTab);
@@ -93,11 +92,10 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryLayout->addWidget(musicLibraryExtensionsWidget, 3, 0, 1, 5);
     musicLibraryLayout->addWidget(musicLibraryAlbumSelectorsLabel, 4, 0, 1, 5);
     musicLibraryLayout->addWidget(musicLibraryAlbumSelectorsWidget, 5, 0, 1, 5);
-    musicLibraryLayout->setRowMinimumHeight(6, 0);
-    musicLibraryLayout->setRowStretch(6, 2);
+    musicLibraryLayout->addRowStretcher(6);
     musicLibraryTab->setLayout(musicLibraryLayout);
     // Setup streaming sites with URL and short name.
-    auto streamingSitesLayout = new QGridLayout();
+    auto streamingSitesLayout = new xPlayerLayout();
     auto streamingNameLabel = new QLabel(tr("Name"), streamingSitesTab);
     streamingNameWidget = new QLineEdit(streamingSitesTab);
     auto streamingUrlLabel = new QLabel(tr("Url"), streamingSitesTab);
@@ -114,11 +112,10 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     streamingSitesLayout->addWidget(streamingUrlWidget, 1, 2, 1, 3);
     streamingSitesLayout->addWidget(streamingSitesListWidget, 2, 0, 3, 5);
     streamingSitesLayout->addWidget(streamingSitesButtons, 5, 0, 1, 5);
-    streamingSitesLayout->setRowMinimumHeight(6, 0);
-    streamingSitesLayout->setRowStretch(6, 2);
+    streamingSitesLayout->addRowStretcher(6);
     streamingSitesTab->setLayout(streamingSitesLayout);
     // Setup rotel amp with network address and port.
-    auto rotelLayout = new QGridLayout();
+    auto rotelLayout = new xPlayerLayout();
     auto rotelNetworkAddressLabel = new QLabel(tr("Network Address"), rotelBox);
     auto rotelNetworkPortLabel = new QLabel(tr("Port"), rotelBox);
     rotelNetworkAddressWidget = new QLineEdit(rotelBox);
@@ -132,7 +129,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     rotelLayout->addWidget(rotelEnableWidget, 1, 4, 1, 1);
     rotelBox->setLayout(rotelLayout);
     // Setup database configuration.
-    auto databaseLayout = new QGridLayout();
+    auto databaseLayout = new xPlayerLayout();
     auto databaseDirectoryLabel = new QLabel(tr("Directory"), databaseBox);
     databaseDirectoryWidget = new QLineEdit(databaseBox);
     databaseDirectoryWidget->setReadOnly(true);
@@ -146,8 +143,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     databaseLayout->addWidget(databaseDirectoryLabel, 0, 0, 1, 5);
     databaseLayout->addWidget(databaseDirectoryWidget, 1, 0, 1, 4);
     databaseLayout->addWidget(databaseDirectoryButton, 1, 4, 1, 1);
-    databaseLayout->setRowMinimumHeight(2, 16);
-    databaseLayout->setRowStretch(2, 0);
+    databaseLayout->addRowSpacer(2, xPlayerLayout::MediumSpace);
     databaseLayout->addWidget(databaseMusicOverlayCheck, 3, 0, 1, 5);
     databaseLayout->addWidget(databaseMovieOverlayCheck, 4, 0, 1, 5);
     databaseLayout->addWidget(databaseCutOffCheck, 5, 0, 1, 3);
@@ -156,16 +152,13 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     databaseBox->setLayout(databaseLayout);
     // Additional tab layout.
     additionalLayout->addWidget(databaseBox, 0, 0, 2, 2);
-    additionalLayout->setRowMinimumHeight(2, 32);
-    additionalLayout->setRowStretch(2, 0);
+    additionalLayout->addRowSpacer(2, xPlayerLayout::HugeSpace);
     additionalLayout->addWidget(rotelBox, 3, 0, 1, 2);
-    additionalLayout->setRowMinimumHeight(4, 0);
-    additionalLayout->setRowStretch(4, 2);
+    additionalLayout->addRowStretcher(4);
     additionalTab->setLayout(additionalLayout);
     // Configuration layout.
     configurationLayout->addWidget(configurationTab, 0, 0, 4, 4);
-    configurationLayout->setRowMinimumHeight(4, 32);
-    configurationLayout->setRowStretch(4, 0);
+    configurationLayout->addRowSpacer(4, xPlayerLayout::HugeSpace);
     configurationLayout->addWidget(configurationButtons, 5, 0, 1, 4);
     setLayout(configurationLayout);
     // Connect rotel button

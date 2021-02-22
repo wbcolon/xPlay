@@ -13,6 +13,7 @@
  */
 
 #include "xPlayerSelectorWidget.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include <QApplication>
 #include <QDebug>

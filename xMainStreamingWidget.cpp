@@ -14,6 +14,7 @@
 
 #include "xMainStreamingWidget.h"
 #include "xPlayerRotelWidget.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
 #include <QtWebEngineWidgets/QWebEngineView>
@@ -21,7 +22,6 @@
 #include <QtWebEngineWidgets/QWebEngineProfile>
 #include <QtWebEngineWidgets/QWebEngineHistory>
 #include <QWebEngineCookieStore>
-#include <QGridLayout>
 #include <QGroupBox>
 #include <QComboBox>
 #include <QPushButton>
@@ -30,7 +30,7 @@
 
 xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flags):
     QWidget(parent, flags) {
-    auto streamingLayout = new QGridLayout(this);
+    auto streamingLayout = new xPlayerLayout(this);
     streamingWebView = new QWebEngineView(this);
     QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
@@ -53,12 +53,14 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     auto reloadButton = new QPushButton(tr("Reload"), controlBox);
     muteAudio = new QCheckBox(tr("Mute Site"), controlBox);
     // Layout.
-    auto controlLayout = new QGridLayout();
+    auto controlLayout = new xPlayerLayout();
+    controlLayout->setSpacing(xPlayerLayout::NoSpace);
     controlLayout->addWidget(homeButton, 0, 0, 1, 2);
     controlLayout->addWidget(backButton, 1, 0, 1, 1);
     controlLayout->addWidget(fwdButton, 1, 1, 1, 1);
     controlLayout->addWidget(reloadButton, 2, 0, 1, 2);
-    controlLayout->addWidget(muteAudio, 3, 0, 1, 2);
+    controlLayout->addRowSpacer(3, xPlayerLayout::SmallSpace);
+    controlLayout->addWidget(muteAudio, 4, 0, 1, 2);
     controlBox->setLayout(controlLayout);
     // Sites box.
     auto sitesBox = new QGroupBox(tr("Sites"), this);
@@ -72,10 +74,10 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     cacheCheckBox->setChecked(true);
     auto clearButton = new QPushButton(tr("Clear"), sitesBox);
     // Layout.
-    auto siteLayout = new QGridLayout();
+    auto siteLayout = new xPlayerLayout();
+    siteLayout->setSpacing(xPlayerLayout::NoSpace);
     siteLayout->addWidget(sitesCombo, 0, 0, 1, 2);
-    siteLayout->setRowMinimumHeight(1, 20);
-    siteLayout->setRowStretch(1, 0);
+    siteLayout->addRowSpacer(1, xPlayerLayout::SmallSpace);
     siteLayout->addWidget(historyCheckBox, 2, 0, 1, 2);
     siteLayout->addWidget(cookiesCheckBox, 3, 0, 1, 2);
     siteLayout->addWidget(cacheCheckBox, 4, 0, 1, 2);
@@ -84,15 +86,12 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     // Main streaming layout.
     streamingLayout->addWidget(streamingWebView, 0, 0, 25, 20);
     streamingLayout->addWidget(sitesBox, 0, 21, 2, 1);
-    streamingLayout->setRowMinimumHeight(2, 20);
-    streamingLayout->setRowStretch(2, 0);
+    streamingLayout->addRowSpacer(2, xPlayerLayout::MediumSpace);
     streamingLayout->addWidget(controlBox, 3, 21, 4, 1);
-    streamingLayout->setRowMinimumHeight(7, 20);
-    streamingLayout->setRowStretch(7, 0);
+    streamingLayout->addRowSpacer(7, xPlayerLayout::MediumSpace);
     streamingLayout->addWidget(rotelBox, 8, 21, 7, 1);
-    streamingLayout->setRowMinimumHeight(10, 20);
-    streamingLayout->setRowStretch(15, 0);
-    streamingLayout->addWidget(new QLabel(""), 16, 21, 9, 1);
+    streamingLayout->addRowSpacer(10, xPlayerLayout::MediumSpace);
+    streamingLayout->addRowStretcher(16);
     // Connect Rotel amp widget configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
         rotelBox->setEnabled(xPlayerConfiguration::configuration()->rotelWidget());

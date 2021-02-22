@@ -13,9 +13,9 @@
  */
 #include "xPlayerRotelWidget.h"
 #include "xPlayerVolumeWidgetX.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
-#include <QGridLayout>
 #include <QList>
 #include <QTimer>
 #include <QSpinBox>
@@ -268,7 +268,7 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
 
 xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientation, Qt::WindowFlags flags):
         QWidget(parent, flags) {
-    auto rotelLayout = new QGridLayout(this);
+    auto rotelLayout = new xPlayerLayout(this);
     // Create a volume knob.
     rotelVolume = new xPlayerVolumeWidgetX(this);
     // Create a combo box for the input sources and add valid sources.
@@ -289,9 +289,9 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     rotelTrebleLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
     // Add the volume knob, bass, treble and the source input to the layout
     if (orientation == Qt::Horizontal) {
+        rotelLayout->setSpacing(xPlayerLayout::NoSpace);
         rotelLayout->addWidget(rotelVolume, 0, 0, 4, 4);
-        rotelLayout->setColumnMinimumWidth(4, 20);
-        rotelLayout->setColumnStretch(4, 0);
+        rotelLayout->addColumnSpacer(4, xPlayerLayout::MediumSpace);
         rotelLayout->addWidget(rotelSource, 0, 5, 1, 4);
         rotelLayout->addWidget(rotelBassLabel, 1, 5, 1, 2);
         rotelLayout->addWidget(rotelTrebleLabel, 1, 7, 1, 2);
@@ -299,13 +299,13 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
         rotelLayout->addWidget(rotelTreble, 2, 7, 1, 2);
 
     } else {
+        rotelLayout->setSpacing(xPlayerLayout::SmallSpace);
         rotelLayout->addWidget(rotelSource, 0, 0, 1, 4);
         rotelLayout->addWidget(rotelBassLabel, 1, 0, 1, 2);
         rotelLayout->addWidget(rotelTrebleLabel, 1, 2, 1, 2);
         rotelLayout->addWidget(rotelBass, 2, 0, 1, 2);
         rotelLayout->addWidget(rotelTreble, 2, 2, 1, 2);
-        rotelLayout->setRowMinimumHeight(3, 20);
-        rotelLayout->setRowStretch(3, 0);
+        rotelLayout->addRowSpacer(3, xPlayerLayout::MediumSpace);
         rotelLayout->addWidget(rotelVolume, 4, 0, 4, 4);
     }
     rotelControls = xPlayerRotelControls::controls();

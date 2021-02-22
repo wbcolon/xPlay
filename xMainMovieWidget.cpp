@@ -13,10 +13,10 @@
  */
 
 #include "xMainMovieWidget.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerDatabase.h"
 
-#include <QGridLayout>
 #include <QGroupBox>
 #include <QApplication>
 
@@ -64,7 +64,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     movieStack->addWidget(moviePlayer);
     movieStack->setCurrentIndex(0);
     // Layout for the main movie widget.
-    auto movieLayout = new QGridLayout(mainWidget);
+    auto movieLayout = new xPlayerLayout(mainWidget);
     movieLayout->addWidget(moviePlayerWidget, 0, 0, 2, 5);
     movieLayout->addWidget(movieStack, 2, 0, 8, 5);
     movieLayout->addWidget(tagBox, 0, 5, 2, 2);

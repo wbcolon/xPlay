@@ -14,11 +14,11 @@
 #include "xMainMusicWidget.h"
 #include "xPlayerMusicWidget.h"
 #include "xPlayerDatabase.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerPlaylistDialog.h"
 
 #include <QGroupBox>
-#include <QGridLayout>
 #include <QListWidget>
 #include <QListView>
 #include <QFontMetrics>
@@ -57,6 +57,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Sort entries in artist/album/track
     artistList = artistList_;
     artistList->setSortingEnabled(false);
+    // auto artistFont = artistList->font();
+    // artistFont.setPointSizeF(artistFont.pointSizeF()*1.3);
+    // artistList->setFont(artistFont);
     albumList = albumList_;
     albumList->setSortingEnabled(true);
     trackList = trackList_;
@@ -65,7 +68,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Queue list.
     auto queueBox = new QGroupBox(tr("Queue"), this);
     queueBox->setFlat(xPlayerUseFlatGroupBox);
-    auto queueBoxLayout = new QGridLayout();
+    auto queueBoxLayout = new xPlayerLayout();
     queueList = new QListWidget(queueBox);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
     auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
@@ -73,8 +76,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     auto queuePlaylistButton = new QPushButton("Playlist", queueBox);
     queuePlaylistButton->setFlat(false);
     queueBoxLayout->addWidget(queueList, 0, 0, 8, 3);
-    queueBoxLayout->setRowMinimumHeight(8, 16);
-    queueBoxLayout->setRowStretch(8, 0);
+    queueBoxLayout->addRowSpacer(8, xPlayerLayout::MediumSpace);
     queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
     queueBox->setLayout(queueBoxLayout);
@@ -95,8 +97,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     // Set heigh of album selector to height af artist selector.
     albumSelectorBox->setFixedHeight(artistSelectorBox->sizeHint().height());
     // Setup layout for main widget.
-    auto mainWidgetLayout = new QGridLayout(this);
-    mainWidgetLayout->setSpacing(8);
+    auto mainWidgetLayout = new xPlayerLayout(this);
+    mainWidgetLayout->setSpacing(xPlayerLayout::SmallSpace);
     mainWidgetLayout->addWidget(playerWidget, 0, 0, 1, 12);
     mainWidgetLayout->addWidget(artistBox, 1, 0, 7, 3);
     mainWidgetLayout->addWidget(albumBox, 1, 3, 7, 5);

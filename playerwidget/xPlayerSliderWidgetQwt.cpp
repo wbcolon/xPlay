@@ -12,12 +12,11 @@
  * GNU General Public License for more details.
  */
 #include "xPlayerSliderWidgetQwt.h"
-
-#include <QGridLayout>
+#include "xPlayerUI.h"
 
 xPlayerSliderWidgetQwt::xPlayerSliderWidgetQwt(QWidget *parent, Qt::WindowFlags flags):
         xPlayerSliderWidget(parent, flags) {
-    auto sliderLayout = new QGridLayout(this);
+    auto sliderLayout = new xPlayerLayout(this);
     // Create a slider that displays the played time and can be used
     // to seek within a track.
     trackSlider = new QwtSlider(Qt::Horizontal, this);
@@ -33,6 +32,7 @@ xPlayerSliderWidgetQwt::xPlayerSliderWidgetQwt(QWidget *parent, Qt::WindowFlags 
     trackSlider->setTrough(false);
     // Adjust the size of the Handle. A little smaller.
     trackSlider->setHandleSize(QSize(16, 24));
+    trackSlider->setSpacing(2);
     // Create labels for length of the track and time played.
     // Labels located on the left and right of a slider.
     trackLengthLabel = new QLabel(this);

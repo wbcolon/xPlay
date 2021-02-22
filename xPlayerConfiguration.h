@@ -22,9 +22,6 @@
 #include <filesystem>
 #include <list>
 
-const bool xPlayerUseFlatGroupBox = true;
-const double xPlayerSelectorHeightFontFactor = 1.6;
-
 class xPlayerConfiguration:public QObject {
     Q_OBJECT
 

@@ -13,15 +13,15 @@
  */
 
 #include "xPlayerPlaylistDialog.h"
+#include "xPlayerUI.h"
 
 #include <QGroupBox>
-#include <QGridLayout>
 #include <QLabel>
 #include <QPushButton>
 
 xPlayerPlaylistDialog::xPlayerPlaylistDialog(const QStringList& playlistNames, QWidget* parent, Qt::WindowFlags flags):
         QDialog(parent, flags) {
-    auto playlistLayout = new QGridLayout();
+    auto playlistLayout = new xPlayerLayout();
     playlistList = new QListWidget(this);
     playlistInput = new QLineEdit(this);
     auto playlistListLabel = new QLabel(tr("Playlists"), this);
@@ -35,12 +35,10 @@ xPlayerPlaylistDialog::xPlayerPlaylistDialog(const QStringList& playlistNames, Q
     playlistButtons->addButton(QDialogButtonBox::Cancel);
     playlistLayout->addWidget(playlistListLabel, 0, 0, 1, 4);
     playlistLayout->addWidget(playlistList, 1, 0, 3, 4);
-    playlistLayout->setRowMinimumHeight(4, 24);
-    playlistLayout->setRowStretch(4, 0);
+    playlistLayout->addRowSpacer(4, xPlayerLayout::LargeSpace);
     playlistLayout->addWidget(playlistInputLabel, 5, 0, 1, 4);
     playlistLayout->addWidget(playlistInput, 6, 0, 1, 4);
-    playlistLayout->setRowMinimumHeight(7, 24);
-    playlistLayout->setRowStretch(7, 0);
+    playlistLayout->addRowSpacer(7, xPlayerLayout::LargeSpace);
     playlistLayout->addWidget(playlistButtons, 8, 0, 1, 4);
     setLayout(playlistLayout);
     playlistList->addItems(playlistNames);

@@ -14,9 +14,9 @@
 
 #include "xPlayerMovieWidget.h"
 #include "xPlayerVolumeWidgetX.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
-#include <QGridLayout>
 #include <QPushButton>
 #include <QGroupBox>
 #include <QComboBox>
@@ -71,26 +71,27 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     connect(moviePlayer, &xMoviePlayer::currentMoviePlayed, sliderWidget, &xPlayerSliderWidget::trackPlayed);
     connect(moviePlayer, &xMoviePlayer::currentMovieLength, sliderWidget, &xPlayerSliderWidget::trackLength);
     // Layout
-    auto controlLayout = new QGridLayout(controlTabPlayer);
+    auto controlLayout = new xPlayerLayout(controlTabPlayer);
+    controlLayout->setSpacing(xPlayerLayout::NoSpace);
     controlLayout->addWidget(playPauseButton, 0, 5, 1, 2);
     controlLayout->addWidget(stopButton, 1, 5, 1, 2);
     controlLayout->addWidget(rewButton, 2, 5, 1, 1);
     controlLayout->addWidget(fwdButton, 2, 6, 1, 1);
     controlLayout->addWidget(fullWindowButton, 3, 5, 1, 2);
-    controlLayout->setColumnMinimumWidth(4, 16);
+    controlLayout->addColumnSpacer(4, xPlayerLayout::MediumSpace);
     controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
     // Fix sizes of the control tab
     controlTabPlayer->setFixedSize(controlTabPlayer->sizeHint());
     controlTabRotel->setFixedSize(controlTabPlayer->sizeHint());
     controlTab->setFixedSize(controlTab->sizeHint());
     // Layout
-    auto movieLayout = new QGridLayout(this);
+    auto movieLayout = new xPlayerLayout(this);
+    movieLayout->setSpacing(xPlayerLayout::NoSpace);
     movieLayout->addWidget(movieLabel, 0, 0, 1, 9);
     movieLayout->addWidget(sliderWidget, 1, 0, 1, 9);
     movieLayout->addWidget(autoPlayNextCheck, 3, 1, 1, 1);
     movieLayout->addWidget(scaleAndCropCheck, 3, 2, 1, 1);
-    movieLayout->setColumnMinimumWidth(3, 24);
-    movieLayout->setColumnStretch(3, 0);
+    movieLayout->addColumnSpacer(3, xPlayerLayout::LargeSpace);
     movieLayout->addWidget(audioChannelLabel, 2, 4, 1, 2);
     movieLayout->addWidget(audioChannelBox, 3, 4, 1, 2);
     movieLayout->addWidget(subtitleLabel, 2, 6, 1, 2);

@@ -54,6 +54,7 @@ include_directories(${PROJECT_SOURCE_DIR} ${SOCI_INCLUDE_DIRS})
 
 add_executable(xPlay
         xPlayerConfig.h
+        xPlayerUI.cpp
         xPlayerConfiguration.cpp
         xPlayerDatabase.cpp
         xMusicLibrary.cpp

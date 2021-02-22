@@ -14,9 +14,9 @@
 #include "xPlayerMusicWidget.h"
 #include "xPlayerVolumeWidgetX.h"
 #include "xPlayerRotelWidget.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
-#include <QGridLayout>
 #include <QTabWidget>
 #include <QIcon>
 #include <taglib/fileref.h>
@@ -74,7 +74,8 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     connect(musicPlayer, &xMusicPlayer::currentTrackLength, sliderWidget, &xPlayerSliderWidget::trackLength);
     // Create the basic player widget layout.
     // Add labels, buttons and the slider.
-    auto playerLayout = new QGridLayout(this);
+    auto playerLayout = new xPlayerLayout(this);
+    playerLayout->setSpacing(xPlayerLayout::NoSpace);
     playerLayout->addWidget(artistLabel, 0, 0);
     playerLayout->addWidget(artistName, 0, 1, 1, 4);
     playerLayout->addWidget(albumLabel, 1, 0);
@@ -92,21 +93,21 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     playerLayout->addWidget(trackBitrate, 2, 6);
     playerLayout->addWidget(sliderWidget, 4, 0, 1, 7);
     // Create a layout for the music player and playlist control buttons.
-    auto controlLayout = new QGridLayout(controlTabPlayer);
+    auto controlLayout = new xPlayerLayout(controlTabPlayer);
+    controlLayout->setSpacing(xPlayerLayout::NoSpace);
     controlLayout->addWidget(playPauseButton, 0, 5, 1, 2);
     controlLayout->addWidget(stopButton, 1, 5, 1, 2);
     controlLayout->addWidget(prevButton, 2, 5, 1, 1);
     controlLayout->addWidget(nextButton, 2, 6, 1, 1);
     controlLayout->addWidget(clearButton, 3, 5, 1, 2);
-    controlLayout->setColumnMinimumWidth(4, 16);
+    controlLayout->addColumnSpacer(4, xPlayerLayout::MediumSpace);
     controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
     // Fix sizes of the control tab
     controlTabPlayer->setFixedSize(controlTabPlayer->sizeHint());
     controlTabRotel->setFixedSize(controlTabPlayer->sizeHint());
     controlTab->setFixedSize(controlTab->sizeHint());
     // Add the control tab to the player layout.
-    playerLayout->setColumnMinimumWidth(7, 48);
-    playerLayout->setColumnStretch(7, 0);
+    playerLayout->addColumnSpacer(7, xPlayerLayout::SeparatorSpace);
     playerLayout->addWidget(controlTab, 0, 8, 5, 1);
     // Connect the buttons to player widget and/or to the music player.
     connect(playPauseButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::playPause);
