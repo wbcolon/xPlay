@@ -30,6 +30,7 @@ xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
     // musicPlayer = Phonon::createPlayer(Phonon::MusicCategory);
     musicPlayer->setTransitionTime(0);
     musicPlayer->setTickInterval(500);
+    musicOutput->setMuted(false);
     // Setup the play list.
     // Connect QMediaPlayer signals to out music player signals.
     connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayerPhonon::currentTrackPlayed);

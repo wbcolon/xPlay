@@ -27,6 +27,7 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         fullWindow(false) {
     // Setup the media player.
     audioOutput = new Phonon::AudioOutput(Phonon::VideoCategory, this);
+    audioOutput->setMuted(false);
     resetMoviePlayer();
 }
 
