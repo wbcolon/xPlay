@@ -191,7 +191,7 @@ QList<std::tuple<QString,int,quint64>> xPlayerDatabase::getPlayedTracks(const QS
             tracks.push_back(std::make_tuple(QString::fromStdString(track), playCount, timeStamp));
         }
     } catch (soci::soci_error& e)  {
-        qCritical() << "Unable to query database for played movies for tag and directory, error: " << e.what();
+        qCritical() << "Unable to query database for played tracks for artist and album, error: " << e.what();
         tracks.clear();
     }
     return tracks;
@@ -463,4 +463,94 @@ bool xPlayerDatabase::updateMusicPlaylist(const QString& name, const std::vector
         return false;
     }
     return true;
+}
+
+std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllTracks() {
+    std::list<std::tuple<QString,QString,QString>> tracks;
+    try {
+        soci::rowset<soci::row> dbTracks = (sqlDatabase.prepare <<
+                "SELECT artist, album, track FROM music ORDER BY artist, album");
+        for (const auto& dbTrack : dbTracks) {
+            auto artist = QString::fromStdString(dbTrack.get<std::string>(0));
+            auto album = QString::fromStdString(dbTrack.get<std::string>(1));
+            auto track = QString::fromStdString(dbTrack.get<std::string>(2));
+            tracks.emplace_back(std::make_tuple(artist, album, track));
+            qDebug() << "Entries: " << artist << "," << album << "," << track;
+        }
+    } catch (soci::soci_error& e)  {
+        qCritical() << "Unable to query database for played tracks, error: " << e.what();
+        tracks.clear();
+    }
+    return tracks;
+}
+std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllMovies() {
+    std::list<std::tuple<QString,QString,QString>> movies;
+    try {
+        soci::rowset<soci::row> dbMovies = (sqlDatabase.prepare <<
+                "SELECT tag, directory, movie FROM movie ORDER BY tag, directory");
+        for (const auto& dbMovie : dbMovies) {
+            auto tag = QString::fromStdString(dbMovie.get<std::string>(0));
+            auto directory = QString::fromStdString(dbMovie.get<std::string>(1));
+            auto movie = QString::fromStdString(dbMovie.get<std::string>(2));
+            movies.emplace_back(std::make_tuple(tag, directory, movie));
+            qDebug() << "Entries: " << tag << "," << directory << "," << movie;
+        }
+    } catch (soci::soci_error& e)  {
+        qCritical() << "Unable to query database for all movies, error: " << e.what();
+        movies.clear();
+    }
+    return movies;
+}
+
+void xPlayerDatabase::removeTracks(const std::list<std::tuple<QString, QString, QString>>& entries) {
+    // We do not only need to remove the tracks in the music table,
+    // but also the corresponding hashes in the playlistSongs table.
+    auto whereArguments = convertEntriesToWhereArguments(entries);
+    for (const auto& whereArgument : whereArguments) {
+        removeFromTable("music", whereArgument);
+        removeFromTable("playlistSongs", whereArgument);
+    }
+}
+
+void xPlayerDatabase::removeMovies(const std::list<std::tuple<QString, QString, QString>>& entries) {
+    // We only need to remove the movies from the movie table.
+    auto whereArguments = convertEntriesToWhereArguments(entries);
+    for (const auto& whereArgument : whereArguments) {
+        removeFromTable("movie", whereArgument);
+    }
+}
+
+std::list<std::string> xPlayerDatabase::convertEntriesToWhereArguments(const std::list<std::tuple<QString, QString, QString>>& entries) {
+    std::list<std::string> whereArguments;
+    std::string entryHash, whereArgument;
+    int removeHashesCount = 0;
+    for (const auto& entry : entries) {
+        entryHash = QCryptographicHash::hash((std::get<0>(entry)+"/"+std::get<1>(entry)+"/"+std::get<2>(entry)).toUtf8(),
+                                             QCryptographicHash::Sha256).toBase64().toStdString();
+        whereArgument += " OR hash == \"" + entryHash + "\"";
+        // We need to split the commands if we have too many entries.
+        if (removeHashesCount >= 500) {
+            whereArgument.replace(0, 3, " WHERE");
+            whereArguments.push_back(whereArgument);
+            whereArgument.clear();
+            removeHashesCount=0;
+        } else {
+            ++removeHashesCount;
+        }
+    }
+    if (!whereArgument.empty()) {
+        whereArgument.replace(0, 3, " WHERE");
+        whereArguments.push_back(whereArgument);
+    }
+    return whereArguments;
+}
+
+void xPlayerDatabase::removeFromTable(const std::string& tableName, const std::string& whereArgument) {
+    // Remove entries from given table.
+    try {
+        // Insert playlist name.
+        sqlDatabase << "DELETE FROM " + tableName + whereArgument;
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to remove tracks from " << QString::fromStdString(tableName) << " table, error: " << e.what();
+    }
 }

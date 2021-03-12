@@ -13,10 +13,13 @@
  */
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QDialogButtonBox>
 #include <QMessageBox>
 #include <QApplication>
+#include <QGridLayout>
 
 #include "xApplication.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerConfigurationDialog.h"
 #include "xPlayerDatabase.h"
@@ -57,6 +60,9 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(musicLibrary, &xMusicLibrary::scannedTracks, mainMusicWidget, &xMainMusicWidget::scannedTracks);
     connect(musicLibrary, &xMusicLibrary::scannedAllAlbumTracks, mainMusicWidget, &xMainMusicWidget::scannedAllAlbumTracks);
     connect(musicLibrary, &xMusicLibrary::scannedListArtistsAllAlbumTracks, mainMusicWidget, &xMainMusicWidget::scannedListArtistsAllAlbumTracks);
+    // Connect music or movie library for application.
+    connect(musicLibrary, &xMusicLibrary::scannedUnknownEntries, this, &xApplication::unknownTracks);
+    connect(movieLibrary, &xMovieLibrary::scannedUnknownEntries, this, &xApplication::unknownMovies);
     // Connect movie library with main movie widget
     connect(mainMovieWidget, &xMainMovieWidget::scanForTag, movieLibrary, &xMovieLibrary::scanForTag);
     connect(mainMovieWidget, &xMainMovieWidget::scanForTagAndDirectory, movieLibrary, &xMovieLibrary::scanForTagAndDirectory);
@@ -216,6 +222,56 @@ void xApplication::dbus_selectRotelSource(const QString& source) {
     xPlayerRotelControls::controls()->setSource(source);
 }
 
+void xApplication::unknownTracks(const std::list<std::tuple<QString,QString,QString>>& entries) {
+    // Do we have any unknown tracks.
+    if (entries.empty()) {
+        QMessageBox::information(this, "Music Database", "No unknown entries found.");
+    } else {
+        if (unknownEntriesDialog("Music Database", entries) == QDialog::Accepted) {
+            xPlayerDatabase::database()->removeTracks(entries);
+        }
+    }
+}
+
+void xApplication::unknownMovies(const std::list<std::tuple<QString,QString,QString>>& entries) {
+    // Do we have any unknown tracks.
+    if (entries.empty()) {
+        QMessageBox::information(this, "Movie Database", "No unknown entries found.");
+    } else {
+        if (unknownEntriesDialog("Movie Database", entries) == QDialog::Accepted) {
+            xPlayerDatabase::database()->removeMovies(entries);
+        }
+    }
+}
+
+int xApplication::unknownEntriesDialog(const QString& dialogTitle, const std::list<std::tuple<QString, QString, QString>>& entries) {
+    auto unknownDialog = new QDialog(this);
+    unknownDialog->setWindowTitle(dialogTitle);
+    auto unknownDialogLayout = new xPlayerLayout();
+    auto unknownEntriesList = new QListWidget(unknownDialog);
+    // Fill list widget.
+    for (const auto& entry : entries) {
+        unknownEntriesList->addItem(QString("%1/%2/%3").arg(std::get<0>(entry)).arg(std::get<1>(entry)).arg(std::get<2>(entry)));
+    }
+    auto unknownDialogButtons = new QDialogButtonBox(unknownDialog);
+    unknownDialogButtons->addButton(QDialogButtonBox::Discard);
+    unknownDialogButtons->addButton(QDialogButtonBox::Cancel);
+    unknownDialogButtons->button(QDialogButtonBox::Discard)->setText(tr("Remove"));
+    unknownDialogLayout->addWidget(new QLabel(tr("Unknown Entries"), unknownDialog), 0, 0, 1, 4);
+    unknownDialogLayout->addWidget(unknownEntriesList, 1, 0, 4, 4);
+    unknownDialogLayout->setRowStretch(1, 2);
+    unknownDialogLayout->addRowSpacer(5, xPlayerLayout::LargeSpace);
+    unknownDialogLayout->addWidget(unknownDialogButtons, 6, 0, 4, 4);
+    unknownDialog->setLayout(unknownDialogLayout);
+    // Connect buttons to playlist actions and close afterwards.
+    connect(unknownDialogButtons->button(QDialogButtonBox::Discard), &QPushButton::pressed, unknownDialog, &QDialog::accept);
+    connect(unknownDialogButtons->button(QDialogButtonBox::Cancel), &QPushButton::pressed, unknownDialog, &QDialog::reject);
+    unknownDialog->resize(unknownDialog->sizeHint());
+    // Set the minimum width as 3/2 of its height.
+    unknownDialog->setMinimumWidth(unknownDialog->sizeHint().height()*3/2);
+    return unknownDialog->exec();
+}
+
 void xApplication::setMusicLibraryDirectory() {
     auto musicLibraryDirectory=xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
     mainMusicWidget->clear();
@@ -242,16 +298,28 @@ void xApplication::setStreamingSitesDefault() {
     mainStreamingWidget->setSitesDefault(xPlayerConfiguration::configuration()->getStreamingSitesDefault());
 }
 
+void xApplication::checkMusicDatabase() {
+    musicLibrary->scanForUnknownEntries(xPlayerDatabase::database()->getAllTracks());
+}
+
+void xApplication::checkMovieDatabase() {
+    movieLibrary->scanForUnknownEntries(xPlayerDatabase::database()->getAllMovies());
+}
+
 void xApplication::createMenus() {
     // Create actions for file menu.
     auto fileMenuConfigure = new QAction("&Configure", this);
     auto fileMenuRescanMusicLibrary = new QAction("Rescan M&usic Library", this);
     auto fileMenuRescanMovieLibrary = new QAction("Rescan M&ovie Library", this);
+    auto fileMenuCheckMusicDatabase = new QAction("Check Mu&sic Database", this);
+    auto fileMenuCheckMovieDatabase = new QAction("Check Mo&vie Database", this);
     auto fileMenuExitAction = new QAction(tr("&Exit"), this);
     // Connect actions from file menu.
     connect(fileMenuConfigure, &QAction::triggered, this, &xApplication::configure);
     connect(fileMenuRescanMusicLibrary, &QAction::triggered, this, &xApplication::setMusicLibraryDirectory);
     connect(fileMenuRescanMovieLibrary, &QAction::triggered, this, &xApplication::setMovieLibraryTagsAndDirectories);
+    connect(fileMenuCheckMusicDatabase, &QAction::triggered, this, &xApplication::checkMusicDatabase);
+    connect(fileMenuCheckMovieDatabase, &QAction::triggered, this, &xApplication::checkMovieDatabase);
     connect(fileMenuExitAction, &QAction::triggered, this, &xApplication::close);
     // Create file menu.
     auto fileMenu = menuBar()->addMenu(tr("&File"));
@@ -259,6 +327,9 @@ void xApplication::createMenus() {
     fileMenu->addSeparator();
     fileMenu->addAction(fileMenuRescanMusicLibrary);
     fileMenu->addAction(fileMenuRescanMovieLibrary);
+    fileMenu->addSeparator();
+    fileMenu->addAction(fileMenuCheckMusicDatabase);
+    fileMenu->addAction(fileMenuCheckMovieDatabase);
     fileMenu->addSeparator();
     fileMenu->addAction(fileMenuExitAction);
     // Create actions for view menu.

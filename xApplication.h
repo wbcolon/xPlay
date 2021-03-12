@@ -65,6 +65,14 @@ private slots:
      */
     void setStreamingSitesDefault();
     /**
+     * Check the music database entries against the music library for unknown entries.
+     */
+    void checkMusicDatabase();
+    /**
+     * Check the music database entries against the music library for unknown entries.
+     */
+    void checkMovieDatabase();
+    /**
      * Toggle play/pause in current view (music/movie) after dbus call.
      */
     void dbus_playPause();
@@ -126,12 +134,32 @@ private slots:
      * @param source the new source as string.
      */
     void dbus_selectRotelSource(const QString& source);
+    /**
+     * Show dialog for unknown entries in the music table of the database.
+     *
+     * @param entries a list of tuples of artist, album and track unknown.
+     */
+    void unknownTracks(const std::list<std::tuple<QString,QString,QString>>& entries);
+    /**
+     * Show dialog for unknown entries in the movie table of the database.
+     *
+     * @param entries a list of tuples of tag, directory and movie unknown.
+     */
+    void unknownMovies(const std::list<std::tuple<QString,QString,QString>>& entries);
 
 private:
     /**
      * Generate the File and View menus and connect actions.
      */
     void createMenus();
+    /**
+     * Create a generic dialog for unknown database entries (tracks or movies)
+     *
+     * @param dialogTitle the title for the unknown entries dialog.
+     * @param entries list of tuples of unknown database entries.
+     * @return QDialog::Accepted if entries are to be removed, QDialog::Rejected otherwise.
+     */
+    int unknownEntriesDialog(const QString& dialogTitle, const std::list<std::tuple<QString,QString,QString>>& entries);
 
     xMusicLibrary* musicLibrary;
     xMusicPlayerX* musicPlayer;

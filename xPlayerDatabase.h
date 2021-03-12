@@ -158,6 +158,42 @@ public:
      * @return true if the playlist was saved, false otherwise.
      */
     bool updateMusicPlaylist(const QString& name, const std::vector<std::tuple<QString,QString,QString>>& entries);
+    /**
+     * Return all tracks stored in the music table of the database.
+     *
+     * The play count and time stamp are ignored for this function. The output
+     * can be used to verify the validity of the database entries against the
+     * scanned music library.
+     *
+     * @return a list of tuples of artist, album and track as strings.
+     */
+    std::list<std::tuple<QString,QString,QString>> getAllTracks();
+    /**
+     * Return all movies stored in the movie table of the database.
+     *
+     * The play count and time stamp are ignored for this function. The output
+     * can be used to verify the validity of the database entries against the
+     * scanned movie library.
+     *
+     * @return a list of tuples of tag, directory and movie as strings.
+     */
+    std::list<std::tuple<QString,QString,QString>> getAllMovies();
+    /**
+     * Remove the list of entries from the music table of the database.
+     *
+     * Not only the entries of the music table are removed, but the also
+     * the corresponding entries of the playlists stored in the playlistSongs
+     * table. The hash ID is use to identify the entries.
+     *
+     * @param entries a list of tuples of artist, album and track.
+     */
+    void removeTracks(const std::list<std::tuple<QString,QString,QString>>& entries);
+    /**
+     * Remove the list of entries from the movie table of the database.
+     *
+     * @param entries a list of tuples of tag, directory and movie.
+     */
+    void removeMovies(const std::list<std::tuple<QString,QString,QString>>& entries);
 
 signals:
     void databaseUpdateError();
@@ -175,6 +211,24 @@ private:
      * Load the database from the path stored in the configuration.
      */
     void loadDatabase();
+    /**
+     * Generic function to remove entries from a table in the database.
+     *
+     * @param tableName the table name the entries are removed from.
+     * @param whereArgument the where argument that is attached to the delete statement.
+     */
+    void removeFromTable(const std::string& tableName, const std::string& whereArgument);
+
+    /**
+     * Convert the a list of entries into a list of where arguments with hashes.
+     *
+     * The list needs to be split up if we have more than 500 entries due to the
+     * limitations on the number of OR in a where argument.
+     *
+     * @param entries the list of entries to be converted to where arguments.
+     * @return a list of where arguments with hashes in OR concatenation.
+     */
+    static std::list<std::string> convertEntriesToWhereArguments(const std::list<std::tuple<QString,QString,QString>>& entries);
 
     static xPlayerDatabase* playerDatabase;
     soci::session sqlDatabase;

@@ -194,6 +194,12 @@ signals:
      * @param listTracks list of pair of album and list of track name (sorted) for a list of artists.
      */
     void scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<QString>>>>>& listTracks);
+    /**
+     * Signal the list of entries not found in the music library
+     *
+     * @param listEntries a list of tuples of artist, album and track not found.
+     */
+    void scannedUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries);
 
 public slots:
     /**
@@ -230,6 +236,12 @@ public slots:
      * @param listArtist the list of artists name for which we scan all albums and tracks.
      */
     void scanAllAlbumsForListArtists(const QList<QString>& listArtist);
+    /**
+     * Scan list to find entries that are not in the music library.
+     *
+     * @param listEntries the list of tuples of artist, album and track to verify.
+     */
+    void scanForUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries);
 
 private slots:
     void scanningFinished();

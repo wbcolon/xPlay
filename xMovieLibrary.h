@@ -112,6 +112,12 @@ signals:
      * @param movies a vector of pairs of file name and full path.
      */
     void scannedMovies(const std::vector<std::pair<QString,QString>>& movies);
+    /**
+     * Signal the list of entries not found in the movie library
+     *
+     * @param listEntries a list of tuples of tag, directory and movie not found.
+     */
+    void scannedUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries);
 
 public slots:
     /**
@@ -127,6 +133,12 @@ public slots:
      * @param dir the corresponding directory for the given tag.
      */
     void scanForTagAndDirectory(const QString& tag, const QString& dir);
+    /**
+     * Scan list to find entries that are not in the movie library.
+     *
+     * @param listEntries the list of tuples of tag, directory and movie to verify.
+     */
+    void scanForUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries);
 
 private:
     // maps directories and files to an assigned tag
