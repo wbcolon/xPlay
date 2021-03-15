@@ -45,9 +45,9 @@ else()
 endif()
 
 if (USE_QWT)
-    set(XPLAYERWIDGETX playerwidget/xPlayerSliderWidgetQwt.cpp playerwidget/xPlayerVolumeWidgetQwt.cpp)
+    set(XPLAYERWIDGETX playerwidget/xPlayerSliderWidgetQwt.cpp playerwidget/xPlayerVolumeWidgetQwt.cpp playerwidget/xPlayerBalanceWidgetQwt.cpp)
 else()
-    set(XPLAYERWIDGETX playerwidget/xPlayerSliderWidgetQt.cpp playerwidget/xPlayerVolumeWidgetQt.cpp)
+    set(XPLAYERWIDGETX playerwidget/xPlayerSliderWidgetQt.cpp playerwidget/xPlayerVolumeWidgetQt.cpp playerwidget/xPlayerBalanceWidgetQt.cpp)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR} ${SOCI_INCLUDE_DIRS})
@@ -67,6 +67,7 @@ add_executable(xPlay
         xPlayerMusicWidget.cpp
         xPlayerVolumeWidget.cpp
         xPlayerSliderWidget.cpp
+        xPlayerBalanceWidget.cpp
         ${XPLAYERWIDGETX}
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
