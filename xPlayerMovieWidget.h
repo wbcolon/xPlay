@@ -17,6 +17,7 @@
 
 #include "xMoviePlayer.h"
 #include "xPlayerSliderWidgetX.h"
+#include "xPlayerControlButtonWidget.h"
 #include "xPlayerRotelWidget.h"
 
 #include <QComboBox>
@@ -109,8 +110,8 @@ private:
     xPlayerSliderWidgetX* sliderWidget;
     xMoviePlayer* moviePlayer;
     xMoviePlayer::State moviePlayerState;
+    xPlayerControlButtonWidget* controlButtonWidget;
     xPlayerRotelWidget* controlTabRotel;
-    QPushButton* playPauseButton;
 };
 
 #endif

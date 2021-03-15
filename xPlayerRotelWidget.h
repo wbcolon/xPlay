@@ -15,6 +15,7 @@
 #define __XPLAYERROTELWIDGET_H__
 
 #include "xPlayerVolumeWidget.h"
+#include "xPlayerBalanceWidgetX.h"
 
 #include <QComboBox>
 #include <QSpinBox>
@@ -60,6 +61,12 @@ public:
      */
     int getTreble();
     /**
+     * Send get balance command to the Rotel amp and return retrieved treble.
+     *
+     * @return the current balance of the Rotel amp (< 0 to the left, > 0 to the right).
+     */
+    int getBalance();
+    /**
      * Send get source command to the Rotel amp and return retrieved source.
      *
      * @return the current source of the Rotel amp as string.
@@ -91,6 +98,12 @@ public slots:
      * @param t the new treble as integer.
      */
     void setTreble(int t);
+    /**
+     * Send set balance command to the Rotel amp.
+     *
+     * @param b the new balance as integer (< 0 to the left, > 0 to the right)
+     */
+    void setBalance(int b);
     /**
      * Send set source command to the Rotel amp.
      *
@@ -135,6 +148,12 @@ signals:
      * @param t the new volume as integer.
      */
     void treble(int t);
+    /**
+     * Signal emitted if balance is updated by a setBalance command.
+     *
+     * @param b the new balance as integer (< 0 to the left, > 0 to the right).
+     */
+    void balance(int b);
     /**
      * Signal emitted if source is updated by a setSource command.
      *
@@ -230,6 +249,12 @@ private slots:
      */
     void updateTreble(int t);
     /**
+     * Update only the slider value.
+     *
+     * @param b the new balance as integer.
+     */
+    void updateBalance(int b);
+    /**
      * Update only the combo box containing the sources.
      *
      * @param source the new source as string.
@@ -244,9 +269,11 @@ private slots:
 
 private:
     xPlayerVolumeWidget* rotelVolume;
+    xPlayerBalanceWidget* rotelBalance;
     QComboBox* rotelSource;
     QLabel* rotelBassLabel;
     QLabel* rotelTrebleLabel;
+    QLabel* rotelBalanceLabel;
     QSpinBox* rotelBass;
     QSpinBox* rotelTreble;
     xPlayerRotelControls* rotelControls;

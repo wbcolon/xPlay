@@ -13,31 +13,32 @@
  */
 #include "xPlayerVolumeWidgetQwt.h"
 
-#include <QGridLayout>
+#include "xPlayerUI.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QMouseEvent>
 
 xPlayerVolumeWidgetQwt::xPlayerVolumeWidgetQwt(QWidget *parent, Qt::WindowFlags flags):
         xPlayerVolumeWidget(parent, flags) {
-    auto volumeLayout = new QGridLayout(this);
+    auto volumeLayout = new xPlayerLayout(this);
     volumeKnob = new QwtKnob(this);
     volumeKnob->setLowerBound(0);
     volumeKnob->setUpperBound(100);
     volumeKnob->setScaleStepSize(20);
     volumeKnob->setWrapping(false);
-    // Qwt implementation. Layout here overlap on purpose
-    volumeLayout->addWidget(volumeKnob, 0, 0, 4, 4);
     volumeMuteButton = new QPushButton(tr("Volume"), this);
     volumeMuteButton->setFlat(true);
-    //auto volumeLabel = new QLabel(tr("Volume"));
-    //volumeLabel->setAlignment(Qt::AlignCenter);
-    volumeLayout->addWidget(volumeMuteButton, 3, 0, 1, 4);
+    // Only stretch top and bottom.
+    volumeLayout->addRowStretcher(0);
+    // Qwt implementation. Layout here overlap on purpose
+    volumeLayout->addWidget(volumeKnob, 1, 0, 4, 4);
+    volumeLayout->addWidget(volumeMuteButton, 4, 0, 1, 4);
+    volumeLayout->addRowStretcher(5);
     // Connect the volume slider to the widgets signal. Use lambda to do proper conversion.
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { emit volume(static_cast<int>(vol)); } );
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { currentVolume=static_cast<int>(vol); } );
     connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
-    setFixedWidth(168);
+    setFixedWidth(xPlayerVolumeWidgetWidth);
 }
 
 void xPlayerVolumeWidgetQwt::setVolume(int vol) {

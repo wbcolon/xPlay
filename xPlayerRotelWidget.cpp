@@ -49,6 +49,10 @@ const QString Rotel_SetSource = "amp:%1!";
 const QString Rotel_RequestMute = "amp:mute?";
 const QString Rotel_ResponsePrefixMute = "amp:mute=";
 const QString Rotel_SetMute = "amp:mute_%1!";
+// Mute
+const QString Rotel_RequestBalance = "amp:balance?";
+const QString Rotel_ResponsePrefixBalance = "amp:balance=";
+const QString Rotel_SetBalance = "amp:balance_%1!";
 // Power off
 const QString Rotel_PowerOff = "amp:power_off!";
 
@@ -128,6 +132,20 @@ void xPlayerRotelControls::setTreble(int t) {
     qDebug() << "RotelControls: setTreble: " << trebleResponse;
 }
 
+void xPlayerRotelControls::setBalance(int b) {
+    auto adjBalance = std::clamp(b, -15, 15);
+    QString adjBalanceString("000");
+    // Lower-case 'l' and 'r' required even though document specified 'L' and 'R'.
+    if (adjBalance < 0) {
+        adjBalanceString = QString("l%1").arg(-adjBalance, 2, 10, QChar('0'));
+    } else if (adjBalance > 0) {
+        adjBalanceString = QString("r%1").arg(adjBalance, 2, 10, QChar('0'));
+    }
+    auto balanceResponse = sendCommand(Rotel_SetBalance.arg(adjBalanceString));
+    emit balance(adjBalance);
+    qDebug() << "RotelControls: setBalance: " << balanceResponse;
+}
+
 void xPlayerRotelControls::setSource(const QString& src) {
     // Check for special "power off" command.
     if (src == Rotel_Source_PowerOff) {
@@ -184,6 +202,17 @@ int xPlayerRotelControls::getTreble() {
     }
 }
 
+int xPlayerRotelControls::getBalance() {
+    QString balanceResponse = sendCommand(Rotel_RequestBalance);
+    qDebug() << "RotelControls: getBalance: " << balanceResponse;
+    if (!balanceResponse.isEmpty()) {
+        return balanceResponse.remove(Rotel_ResponsePrefixBalance).remove("$").remove("R").replace("L","-").toInt();
+    } else {
+        return 0;
+    }
+}
+
+
 QString xPlayerRotelControls::getSource() {
     auto srcString = sendCommand(Rotel_RequestSource);
     qDebug() << "RotelControls: getSource: " << srcString;
@@ -211,6 +240,7 @@ void xPlayerRotelControls::controlsConnected() {
     emit muted(isMuted());
     emit bass(getBass());
     emit treble(getTreble());
+    emit balance(getBalance());
     emit connected();
 }
 
@@ -269,44 +299,59 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
 xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientation, Qt::WindowFlags flags):
         QWidget(parent, flags) {
     auto rotelLayout = new xPlayerLayout(this);
+    rotelLayout->setSpacing(xPlayerLayout::NoSpace);
     // Create a volume knob.
     rotelVolume = new xPlayerVolumeWidgetX(this);
+    // Create rotel control buttons widget.
+    auto rotelControlButton = new QWidget(this);
+    auto rotelControlButtonLayout = new xPlayerLayout();
     // Create a combo box for the input sources and add valid sources.
-    rotelSource = new QComboBox(this);
+    rotelSource = new QComboBox(rotelControlButton);
     for (const auto& source : Rotel_Sources) {
-       rotelSource->addItem(source);
+        rotelSource->addItem(source);
     }
     // Insert separator and the special power off source.
     rotelSource->insertSeparator(rotelSource->count());
     rotelSource->addItem(Rotel_Source_PowerOff);
-    rotelBass = new QSpinBox(this);
+    rotelBass = new QSpinBox(rotelControlButton);
     rotelBass->setRange(-10, 10);
-    rotelTreble = new QSpinBox(this);
+    rotelTreble = new QSpinBox(rotelControlButton);
     rotelTreble->setRange(-10, 10);
-    rotelBassLabel = new QLabel(tr("Bass"));
+    rotelBassLabel = new QLabel(tr("Bass"), rotelControlButton);
     rotelBassLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
-    rotelTrebleLabel = new QLabel(tr("Treble"));
+    rotelTrebleLabel = new QLabel(tr("Treble"), rotelControlButton);
     rotelTrebleLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
+    rotelBalanceLabel = new QLabel(tr("Balance"), rotelControlButton);
+    rotelBalanceLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
+    rotelBalance = new xPlayerBalanceWidgetX(rotelControlButton);
+    rotelBalance->setRange(15);
+    rotelControlButtonLayout->addRowStretcher(0);
+    rotelControlButtonLayout->addWidget(rotelSource, 1, 0, 1, 2);
+    rotelControlButtonLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
+    rotelControlButtonLayout->addWidget(rotelBassLabel, 3, 0);
+    rotelControlButtonLayout->addWidget(rotelTrebleLabel, 3, 1);
+    rotelControlButtonLayout->addWidget(rotelBass, 4, 0);
+    rotelControlButtonLayout->addWidget(rotelTreble, 4, 1);
+    rotelControlButtonLayout->addRowSpacer(5, xPlayerLayout::SmallSpace);
+    rotelControlButtonLayout->addWidget(rotelBalanceLabel, 6, 0, 1, 2);
+    rotelControlButtonLayout->addWidget(rotelBalance, 7, 0, 1, 2);
+    rotelControlButtonLayout->addRowStretcher(8);
+    rotelControlButtonLayout->setContentsMargins(0, 0, 0, 0);
+    rotelControlButton->setLayout(rotelControlButtonLayout);
+    rotelControlButton->setContentsMargins(0, 0, 0, 0);
+    rotelControlButton->setFixedWidth(xPlayerControlButtonWidgetWidth);
     // Add the volume knob, bass, treble and the source input to the layout
     if (orientation == Qt::Horizontal) {
-        rotelLayout->setSpacing(xPlayerLayout::NoSpace);
-        rotelLayout->addWidget(rotelVolume, 0, 0, 4, 4);
-        rotelLayout->addColumnSpacer(4, xPlayerLayout::MediumSpace);
-        rotelLayout->addWidget(rotelSource, 0, 5, 1, 4);
-        rotelLayout->addWidget(rotelBassLabel, 1, 5, 1, 2);
-        rotelLayout->addWidget(rotelTrebleLabel, 1, 7, 1, 2);
-        rotelLayout->addWidget(rotelBass, 2, 5, 1, 2);
-        rotelLayout->addWidget(rotelTreble, 2, 7, 1, 2);
-
+        rotelLayout->addWidget(rotelVolume, 0, 0);
+        rotelLayout->addColumnSpacer(1, xPlayerLayout::MediumSpace);
+        rotelLayout->addWidget(rotelControlButton, 0, 2);
     } else {
         rotelLayout->setSpacing(xPlayerLayout::SmallSpace);
-        rotelLayout->addWidget(rotelSource, 0, 0, 1, 4);
-        rotelLayout->addWidget(rotelBassLabel, 1, 0, 1, 2);
-        rotelLayout->addWidget(rotelTrebleLabel, 1, 2, 1, 2);
-        rotelLayout->addWidget(rotelBass, 2, 0, 1, 2);
-        rotelLayout->addWidget(rotelTreble, 2, 2, 1, 2);
-        rotelLayout->addRowSpacer(3, xPlayerLayout::MediumSpace);
-        rotelLayout->addWidget(rotelVolume, 4, 0, 4, 4);
+        rotelLayout->addWidget(rotelControlButton, 0, 0);
+        rotelLayout->addRowSpacer(1, xPlayerLayout::MediumSpace);
+        // Adjust width for vertical layout.
+        rotelVolume->setFixedWidth(xPlayerControlButtonWidgetWidth);
+        rotelLayout->addWidget(rotelVolume, 2, 0);
     }
     rotelControls = xPlayerRotelControls::controls();
     // Connect the widgets to the amp commands.
@@ -315,21 +360,18 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     QObject::connect(rotelBass, SIGNAL(valueChanged(int)), rotelControls, SLOT(setBass(int)));
     QObject::connect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
     QObject::connect(rotelSource, SIGNAL(currentIndexChanged(const QString&)), rotelControls, SLOT(setSource(const QString&)));
+    QObject::connect(rotelBalance, &xPlayerBalanceWidgetX::balance, rotelControls, &xPlayerRotelControls::setBalance);
     // Connect Rotel controls to Rotel widget.
     QObject::connect(rotelControls, &xPlayerRotelControls::volume, this, &xPlayerRotelWidget::updateVolume);
     QObject::connect(rotelControls, &xPlayerRotelControls::bass, this, &xPlayerRotelWidget::updateBass);
     QObject::connect(rotelControls, &xPlayerRotelControls::treble, this, &xPlayerRotelWidget::updateTreble);
+    QObject::connect(rotelControls, &xPlayerRotelControls::balance, this, &xPlayerRotelWidget::updateBalance);
     QObject::connect(rotelControls, &xPlayerRotelControls::source, this, &xPlayerRotelWidget::updateSource);
     QObject::connect(rotelControls, &xPlayerRotelControls::muted, this, &xPlayerRotelWidget::updateMuted);
     QObject::connect(rotelControls, &xPlayerRotelControls::connected, this, &xPlayerRotelWidget::connected);
     QObject::connect(rotelControls, &xPlayerRotelControls::disconnected, this, &xPlayerRotelWidget::disconnected);
     // Disable until connected.
-    rotelVolume->setEnabled(false);
-    rotelSource->setEnabled(false);
-    rotelTrebleLabel->setEnabled(false);
-    rotelTreble->setEnabled(false);
-    rotelBassLabel->setEnabled(false);
-    rotelBass->setEnabled(false);
+    disconnected();
 }
 
 void xPlayerRotelWidget::updateVolume(int vol) {
@@ -351,6 +393,13 @@ void xPlayerRotelWidget::updateTreble(int t) {
     QObject::disconnect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
     rotelTreble->setValue(t);
     QObject::connect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
+}
+
+void xPlayerRotelWidget::updateBalance(int b) {
+    qDebug() << "xPlayerRotel: updateBalance: " << b;
+    QObject::disconnect(rotelBalance, &xPlayerBalanceWidgetX::balance, rotelControls, &xPlayerRotelControls::setBalance);
+    rotelBalance->setBalance(b);
+    QObject::connect(rotelBalance, &xPlayerBalanceWidgetX::balance, rotelControls, &xPlayerRotelControls::setBalance);
 }
 
 void xPlayerRotelWidget::updateSource(const QString& source) {
@@ -375,6 +424,8 @@ void xPlayerRotelWidget::connected() {
     rotelTreble->setEnabled(true);
     rotelBassLabel->setEnabled(true);
     rotelBass->setEnabled(true);
+    rotelBalanceLabel->setEnabled(true);
+    rotelBalance->setEnabled(true);
 }
 
 void xPlayerRotelWidget::disconnected() {
@@ -385,5 +436,7 @@ void xPlayerRotelWidget::disconnected() {
     rotelTreble->setEnabled(false);
     rotelBassLabel->setEnabled(false);
     rotelBass->setEnabled(false);
+    rotelBalanceLabel->setEnabled(false);
+    rotelBalance->setEnabled(false);
 }
 

@@ -46,14 +46,9 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     controlTab->addTab(controlTabPlayer, "xPlay");
     controlTab->addTab(controlTabRotel, "Rotel");
     controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
-    // Create buttons for play/pause and stop
-    playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), controlTabPlayer);
-    auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), controlTabPlayer);
-    // Create buttons for playlist control, rewind, forward, previous and next.
-    auto rewButton = new QPushButton(QIcon(":/images/xplay-rewind.svg"), tr("Rew"), controlTabPlayer);
-    auto fwdButton = new QPushButton(QIcon(":/images/xplay-forward.svg"), tr("Fwd"), controlTabPlayer);
-    fwdButton->setLayoutDirection(Qt::RightToLeft);
-    auto fullWindowButton = new QPushButton(tr("Full Window"));
+    // Create control buttons widget.
+    controlButtonWidget = new xPlayerControlButtonWidget(xPlayerControlButtonWidget::MoviePlayerMode, controlTabPlayer);
+
     audioChannelBox = new QComboBox(controlTabPlayer);
     auto audioChannelLabel = new QLabel(tr("Audio"), controlTabPlayer);
     audioChannelLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
@@ -73,17 +68,13 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     // Layout
     auto controlLayout = new xPlayerLayout(controlTabPlayer);
     controlLayout->setSpacing(xPlayerLayout::NoSpace);
-    controlLayout->addWidget(playPauseButton, 0, 5, 1, 2);
-    controlLayout->addWidget(stopButton, 1, 5, 1, 2);
-    controlLayout->addWidget(rewButton, 2, 5, 1, 1);
-    controlLayout->addWidget(fwdButton, 2, 6, 1, 1);
-    controlLayout->addWidget(fullWindowButton, 3, 5, 1, 2);
-    controlLayout->addColumnSpacer(4, xPlayerLayout::MediumSpace);
-    controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
+    controlLayout->addWidget(volumeWidget, 0, 0);
+    controlLayout->addColumnSpacer(1, xPlayerLayout::MediumSpace);
+    controlLayout->addWidget(controlButtonWidget, 0, 2);
     // Fix sizes of the control tab
-    controlTabPlayer->setFixedSize(controlTabPlayer->sizeHint());
-    controlTabRotel->setFixedSize(controlTabPlayer->sizeHint());
-    controlTab->setFixedSize(controlTab->sizeHint());
+    controlTabPlayer->setFixedWidth(controlTabPlayer->sizeHint().width());
+    controlTabRotel->setFixedWidth(controlTabPlayer->sizeHint().width());
+    controlTab->setFixedWidth(controlTab->sizeHint().width());
     // Layout
     auto movieLayout = new xPlayerLayout(this);
     movieLayout->setSpacing(xPlayerLayout::NoSpace);
@@ -103,11 +94,11 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
         controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     } );
     // Connect the buttons to player widget and/or to the music player.
-    connect(playPauseButton, &QPushButton::pressed, moviePlayer, &xMoviePlayer::playPause);
-    connect(stopButton, &QPushButton::pressed, moviePlayer, &xMoviePlayer::stop);
-    connect(rewButton, &QPushButton::pressed, [=]() { moviePlayer->jump(-60000); });
-    connect(fwdButton, &QPushButton::pressed, [=]() { moviePlayer->jump(60000); });
-    connect(fullWindowButton, &QPushButton::pressed, this, &xPlayerMovieWidget::fullWindowPressed);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::playPausePressed, moviePlayer, &xMoviePlayer::playPause);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::stopPressed, moviePlayer, &xMoviePlayer::stop);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::rewindPressed, [=]() { moviePlayer->jump(-60000); });
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::forwardPressed, [=]() { moviePlayer->jump(60000); });
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::fullWindowPressed, this, &xPlayerMovieWidget::fullWindowPressed);
     // Connect check boxes.
     connect(autoPlayNextCheck, &QCheckBox::clicked, this, &xPlayerMovieWidget::autoPlayNextMovie);
     connect(scaleAndCropCheck, &QCheckBox::clicked, moviePlayer, &xMoviePlayer::setScaleAndCropMode);
@@ -159,13 +150,11 @@ void xPlayerMovieWidget::currentState(xMoviePlayer::State state) {
     moviePlayerState = state;
     switch (moviePlayerState) {
         case xMoviePlayer::PlayingState: {
-            playPauseButton->setIcon(QIcon(":/images/xplay-pause.svg"));
-            playPauseButton->setText(tr("Pause"));
+            controlButtonWidget->setPlayPauseState(false);
         } break;
         case xMoviePlayer::PauseState:
         case xMoviePlayer::StopState: {
-            playPauseButton->setIcon(QIcon(":/images/xplay-play.svg"));
-            playPauseButton->setText(tr("Play"));
+            controlButtonWidget->setPlayPauseState(true);
         } break;
         default: break;
     }

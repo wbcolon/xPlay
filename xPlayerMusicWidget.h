@@ -17,6 +17,7 @@
 #include "xMusicPlayer.h"
 #include "xPlayerRotelWidget.h"
 #include "xPlayerSliderWidgetX.h"
+#include "xPlayerControlButtonWidget.h"
 
 #include <QLabel>
 #include <QPushButton>
@@ -74,7 +75,7 @@ private:
     /**
      * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
      */
-    QPushButton* playPauseButton;
+    xPlayerControlButtonWidget* controlButtonWidget;
     xPlayerSliderWidgetX* sliderWidget;
     xPlayerRotelWidget* controlTabRotel;
 };

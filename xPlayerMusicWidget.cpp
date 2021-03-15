@@ -56,15 +56,8 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     controlTab->addTab(controlTabPlayer, "xPlay");
     controlTab->addTab(controlTabRotel, "Rotel");
     controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
-    // Create buttons for play/pause and stop
-    playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), controlTabPlayer);
-    auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), controlTabPlayer);
-    // Create buttons for playlist control, previous, next and clear queue.
-    auto prevButton = new QPushButton(QIcon(":/images/xplay-previous.svg"), tr("Prev"), controlTabPlayer);
-    auto nextButton = new QPushButton(QIcon(":/images/xplay-next.svg"), tr("Next"), controlTabPlayer);
-    nextButton->setLayoutDirection(Qt::RightToLeft);
-    //nextButton->setStyleSheet("padding-left: 20px; padding-right: 20px;");
-    auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), controlTabPlayer);
+    // Create control buttons.
+    controlButtonWidget = new xPlayerControlButtonWidget(xPlayerControlButtonWidget::MusicPlayerMode, controlTabPlayer);
     auto volumeWidget = new xPlayerVolumeWidgetX(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
@@ -95,28 +88,24 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     // Create a layout for the music player and playlist control buttons.
     auto controlLayout = new xPlayerLayout(controlTabPlayer);
     controlLayout->setSpacing(xPlayerLayout::NoSpace);
-    controlLayout->addWidget(playPauseButton, 0, 5, 1, 2);
-    controlLayout->addWidget(stopButton, 1, 5, 1, 2);
-    controlLayout->addWidget(prevButton, 2, 5, 1, 1);
-    controlLayout->addWidget(nextButton, 2, 6, 1, 1);
-    controlLayout->addWidget(clearButton, 3, 5, 1, 2);
-    controlLayout->addColumnSpacer(4, xPlayerLayout::MediumSpace);
-    controlLayout->addWidget(volumeWidget, 0, 0, 4, 4);
-    // Fix sizes of the control tab
-    controlTabPlayer->setFixedSize(controlTabPlayer->sizeHint());
-    controlTabRotel->setFixedSize(controlTabPlayer->sizeHint());
-    controlTab->setFixedSize(controlTab->sizeHint());
+    controlLayout->addWidget(volumeWidget, 0, 0);
+    controlLayout->addColumnSpacer(1, xPlayerLayout::MediumSpace);
+    controlLayout->addWidget(controlButtonWidget, 0, 2);
+    // Fix width of the control tab
+    controlTabPlayer->setFixedWidth(controlTabPlayer->sizeHint().width());
+    controlTabRotel->setFixedWidth(controlTabPlayer->sizeHint().width());
+    controlTab->setFixedWidth(controlTab->sizeHint().width());
     // Add the control tab to the player layout.
     playerLayout->addColumnSpacer(7, xPlayerLayout::SeparatorSpace);
     playerLayout->addWidget(controlTab, 0, 8, 5, 1);
     // Connect the buttons to player widget and/or to the music player.
-    connect(playPauseButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::playPause);
-    connect(stopButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::stop);
-    connect(prevButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::prev);
-    connect(nextButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::next);
-    connect(clearButton, &QPushButton::pressed, musicPlayer, &xMusicPlayer::clearQueue);
-    connect(clearButton, &QPushButton::pressed, this, &xPlayerMusicWidget::clearQueue);
-    connect(clearButton, &QPushButton::pressed, this, &xPlayerMusicWidget::clear);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::playPausePressed, musicPlayer, &xMusicPlayer::playPause);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::stopPressed, musicPlayer, &xMusicPlayer::stop);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::previousPressed, musicPlayer, &xMusicPlayer::prev);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::nextPressed, musicPlayer, &xMusicPlayer::next);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::clearPressed, musicPlayer, &xMusicPlayer::clearQueue);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::clearPressed, this, &xPlayerMusicWidget::clearQueue);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::clearPressed, this, &xPlayerMusicWidget::clear);
     // Connect the music player to the player widget.
     connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xPlayerMusicWidget::currentTrack);
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xPlayerMusicWidget::currentState);
@@ -125,7 +114,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
         controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     } );
     // Do not resize the player widget vertically
-    setFixedHeight(sizeHint().height());
+    //setFixedHeight(sizeHint().height());
     // Setup volume
     volumeWidget->setVolume(musicPlayer->getVolume());
 }
@@ -154,16 +143,16 @@ void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QS
 }
 
 void xPlayerMusicWidget::currentState(xMusicPlayer::State state) {
-    // Update the play/pause button based on the state of the music player.
+    // Update the play/pause state based on the state of the music player.
     switch (state) {
         case xMusicPlayer::PlayingState: {
-            playPauseButton->setIcon(QIcon(":/images/xplay-pause.svg"));
-            playPauseButton->setText(tr("Pause"));
+            // Show "pause" if in play state.
+            controlButtonWidget->setPlayPauseState(false);
         } break;
         case xMusicPlayer::PauseState:
         case xMusicPlayer::StopState: {
-            playPauseButton->setIcon(QIcon(":/images/xplay-play.svg"));
-            playPauseButton->setText(tr("Play"));
+            // Show "play" if in pause or stop state.
+            controlButtonWidget->setPlayPauseState(true);
         } break;
     }
 }
