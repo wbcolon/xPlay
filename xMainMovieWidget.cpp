@@ -19,6 +19,7 @@
 
 #include <QGroupBox>
 #include <QApplication>
+#include <QDateTime>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
 auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
