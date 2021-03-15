@@ -68,6 +68,7 @@ add_executable(xPlay
         xPlayerVolumeWidget.cpp
         xPlayerSliderWidget.cpp
         xPlayerBalanceWidget.cpp
+        xPlayerControlButtonWidget.cpp
         ${XPLAYERWIDGETX}
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
