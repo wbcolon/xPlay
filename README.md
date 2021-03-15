@@ -90,18 +90,18 @@ queue. Then entire album can be queued by a double-click on the corresponding al
 artist entry will queue all albums for the clicked artist. The horizontal artist selector list 
 can be used to filter the artist list by the first character. The filtering is removed if you click on *none*. 
 If a selector is double-clicked then all selected artists with their albums are queue. A double-click on *none* will
-queue the entire music library. The album selector can be used to filter the displayed albums for an artist. The 
-individual selectors can be modified by double-click. A selector in white is currently not used. Selectors in green
-(at least one of them) must be found in the album name. Red represents not matched selectors. An album cannot 
-contain any of the selectors in red as part of its album name. The filtering done by the album selector does also
-apply whenever an artist or artist selector is queued. By marking the *(live)* album selector in red and then
-double-click on an artist will queue all albums except the ones containing *(live)*.
-The queue does support a shuffle mode in which the queued tracks will be played at random. The jump to an individual 
-track in the queue or the deque of a single track is not supported in shuffle mode. Each track of the queue has a
-tooltip showing the artist and album the track belongs to.
-The playlist dialog box will open upon pressing the *PlayList* button at the botton of the queue. It allows to
-save the current queue as playlist into the database for later use. The dialog allows for loading playlists that
-are stored in the database or remove any of the stored playlists (including their entries).
+queue the entire music library. The artist selector *random* will randomize the list of artists. A double-click on
+*random* will randomize the artist list again and not add any tracks to the queue. The album selector can be used to
+filter the displayed albums for an artist. The individual selectors can be modified by double-click. A selector in white
+is currently not used. Selectors in green (at least one of them) must be found in the album name. Red represents not
+matched selectors. An album cannot contain any of the selectors in red as part of its album name. The filtering done by
+the album selector does also apply whenever an artist or artist selector is queued. By marking the *(live)* album
+selector in red and then double-click on an artist will queue all albums except the ones containing *(live)*. The queue
+does support a shuffle mode in which the queued tracks will be played at random. The jump to an individual track in the
+queue or the deque of a single track is not supported in shuffle mode. Each track of the queue has a tooltip showing the
+artist and album the track belongs to. The playlist dialog box will open upon pressing the *PlayList* button at the
+botton of the queue. It allows to save the current queue as playlist into the database for later use. The dialog allows
+for loading playlists that are stored in the database or remove any of the stored playlists (including their entries).
 
 The database overlay (if activated) marks every artist, album and track with a star (*) if it has been played within 
 the configured time period. For each track a tooltip is added that shows how many times this track has been 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.3 - 2021-03-15
+
+- Add sync between database and library for music and movie.
+- Add balance slider for rotel widget.
+- Add "random" artist selector.
+- Some UI layout adjustments.
+
 ## 0.6.2 - 2021-01-31
 
 - Update error recovery code for phonon music player.
