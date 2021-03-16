@@ -78,19 +78,19 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     siteLayout->setSpacing(xPlayerLayout::NoSpace);
     siteLayout->addWidget(sitesCombo, 0, 0, 1, 2);
     siteLayout->addRowSpacer(1, xPlayerLayout::SmallSpace);
-    siteLayout->addWidget(historyCheckBox, 2, 0, 1, 2);
-    siteLayout->addWidget(cookiesCheckBox, 3, 0, 1, 2);
-    siteLayout->addWidget(cacheCheckBox, 4, 0, 1, 2);
-    siteLayout->addWidget(clearButton, 5, 0, 1, 2);
+    siteLayout->addWidget(historyCheckBox, 2, 0, 1, 1);
+    siteLayout->addWidget(cookiesCheckBox, 2, 1, 1, 1);
+    siteLayout->addWidget(cacheCheckBox, 3, 0, 1, 2);
+    siteLayout->addWidget(clearButton, 4, 0, 1, 2);
     sitesBox->setLayout(siteLayout);
     // Main streaming layout.
     streamingLayout->addWidget(streamingWebView, 0, 0, 25, 20);
     streamingLayout->addWidget(sitesBox, 0, 21, 2, 1);
-    streamingLayout->addRowSpacer(2, xPlayerLayout::MediumSpace);
+    streamingLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
     streamingLayout->addWidget(controlBox, 3, 21, 4, 1);
-    streamingLayout->addRowSpacer(7, xPlayerLayout::MediumSpace);
+    streamingLayout->addRowSpacer(7, xPlayerLayout::SmallSpace);
     streamingLayout->addWidget(rotelBox, 8, 21, 7, 1);
-    streamingLayout->addRowSpacer(10, xPlayerLayout::MediumSpace);
+    streamingLayout->addRowSpacer(10, xPlayerLayout::SmallSpace);
     streamingLayout->addRowStretcher(16);
     // Connect Rotel amp widget configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {

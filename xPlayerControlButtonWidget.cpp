@@ -29,9 +29,7 @@ xPlayerControlButtonWidget::xPlayerControlButtonWidget(xPlayerControlButtonMode 
     controlButtonLayout->addRowStretcher(0);
     controlButtonLayout->addWidget(playPauseButton, 1, 0, 1, 2);
     controlButtonLayout->addWidget(stopButton, 2, 0, 1, 2);
-    connect(playPauseButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::playPausePressed);
     connect(playPauseButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::playPause);
-    connect(stopButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::stopPressed);
     connect(stopButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::stop);
     if (controlMode == xPlayerControlButtonMode::MusicPlayerMode) {
         // Create buttons for playlist control, previous, next and clear queue.
@@ -85,10 +83,12 @@ bool xPlayerControlButtonWidget::getPlayPauseState() const {
 
 void xPlayerControlButtonWidget::playPause() {
     setPlayPauseState(!playPauseState);
+    emit playPausePressed();
 }
 
 void xPlayerControlButtonWidget::stop() {
     playPauseState = true;
     playPauseButton->setText(tr("Play"));
     playPauseButton->setIcon(QIcon(":/images/xplay-play.svg"));
+    emit stopPressed();
 }

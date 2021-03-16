@@ -346,7 +346,6 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
         rotelLayout->addColumnSpacer(1, xPlayerLayout::MediumSpace);
         rotelLayout->addWidget(rotelControlButton, 0, 2);
     } else {
-        rotelLayout->setSpacing(xPlayerLayout::SmallSpace);
         rotelLayout->addWidget(rotelControlButton, 0, 0);
         rotelLayout->addRowSpacer(1, xPlayerLayout::MediumSpace);
         // Adjust width for vertical layout.

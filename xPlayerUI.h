@@ -20,7 +20,7 @@
 const bool xPlayerUseFlatGroupBox = true;
 const double xPlayerSelectorHeightFontFactor = 1.6;
 const int xPlayerVolumeWidgetWidth = 168;
-const int xPlayerControlButtonWidgetWidth = 232;
+const int xPlayerControlButtonWidgetWidth = 200;
 
 class xPlayerLayout:public QGridLayout {
 public:
