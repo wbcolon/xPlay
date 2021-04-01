@@ -194,6 +194,19 @@ public:
      * @param entries a list of tuples of tag, directory and movie.
      */
     void removeMovies(const std::list<std::tuple<QString,QString,QString>>& entries);
+    /**
+     * Update the transitions between artists and albums.
+     *
+     * @param fromArtist name of artist played before.
+     * @param fromAlbum name of the album played before.
+     * @param toArtist name of the artist currently played
+     * @param toAlbum name of the album currently played.
+     * @param shuffleMode state of the shuffle mode.
+     * @return a pair of transition count and time stamp.
+     */
+    std::pair<int,quint64> updateTransition(const QString& fromArtist, const QString& fromAlbum,
+                                            const QString& toArtist, const QString& toAlbum,
+                                            bool shuffleMode);
 
 signals:
     void databaseUpdateError();

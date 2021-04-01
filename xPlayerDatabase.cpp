@@ -57,6 +57,9 @@ void xPlayerDatabase::loadDatabase() {
     }
     try {
         // The following create table commands will fail if database already exists.
+        // Create artist transition table.
+        sqlDatabase << "CREATE TABLE transition (ID INTEGER PRIMARY KEY AUTOINCREMENT, fromArtist VARCHAR, fromAlbum VARCHAR, "
+                       "toArtist VARCHAR, toAlbum VARCHAR, transitionCount INTEGER, timeStamp BIGINT)";
         // Create playlist and playlistSongs table.
         sqlDatabase << "CREATE TABLE playlist (ID INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL UNIQUE)";
         sqlDatabase << "CREATE TABLE playlistSongs (ID INTEGER PRIMARY KEY AUTOINCREMENT, playlistID INTEGER, hash VARCHAR)";
@@ -553,4 +556,45 @@ void xPlayerDatabase::removeFromTable(const std::string& tableName, const std::s
     } catch (soci::soci_error& e) {
         qCritical() << "Unable to remove tracks from " << QString::fromStdString(tableName) << " table, error: " << e.what();
     }
+}
+std::pair<int,quint64> xPlayerDatabase::updateTransition(const QString& fromArtist, const QString& fromAlbum,
+                                                         const QString& toArtist, const QString& toAlbum,
+                                                         bool shuffleMode) {
+    auto timeStamp = QDateTime::currentMSecsSinceEpoch();
+    auto fromArtistStd = fromArtist.toStdString();
+    auto fromAlbumStd = fromAlbum.toStdString();
+    auto toArtistStd = toArtist.toStdString();
+    auto toAlbumStd = toAlbum.toStdString();
+    try {
+        int transitionCount = -1;
+        soci::indicator transitionCountIndicator;
+        sqlDatabase << "SELECT transitionCount FROM transition WHERE fromArtist=:fromArtist AND fromAlbum=:fromAlbum "
+                       "AND toArtist=:toArtist AND toAlbum=:toAlbum", soci::into(transitionCount, transitionCountIndicator),
+                soci::use(fromArtistStd), soci::use(fromAlbumStd), soci::use(toArtistStd), soci::use(toAlbumStd);
+        if ((transitionCountIndicator == soci::i_ok) && (transitionCount > 0)) {
+            // We do not increase the transition count if in shuffle mode.
+            if (shuffleMode) {
+                return std::make_pair(transitionCount,timeStamp);
+            }
+            sqlDatabase << "UPDATE transition SET transitionCount=:transitionCount,timeStamp=:timeStamp WHERE "
+                           " fromArtist=:fromArtist AND fromAlbum=:fromAlbum AND toArtist=:toArtist AND toAlbum=:toAlbum",
+                    soci::use(transitionCount+1), soci::use(timeStamp), soci::use(fromArtistStd), soci::use(fromAlbumStd),
+                    soci::use(toArtistStd), soci::use(toAlbumStd);
+            qDebug() << "xPlayerDatabase: update: " << fromArtist << "/" << fromAlbum << "->"
+                     << toArtist << "/" << toAlbum << ": " << QString("(%1)").arg(transitionCount+1);
+            return std::make_pair(transitionCount+1,timeStamp);
+        } else {
+            // Insert into the database if no element exists.
+            sqlDatabase << "INSERT INTO transition (fromArtist, fromAlbum, toArtist, toAlbum, transitionCount, timeStamp) VALUES "
+                           "(:fromArtist,:fromAlbum,:toArtist,:toAlbum,:transitionCount,:timeStamp)",
+                    soci::use(fromArtistStd), soci::use(fromAlbumStd), soci::use(toArtistStd), soci::use(toAlbumStd),
+                    soci::use(1), soci::use(timeStamp);
+            qDebug() << "xPlayerDatabase: insert: " << fromArtist << "/" << fromAlbum << "->" << toArtist << "/" << toAlbum;
+            return std::make_pair(1,timeStamp);
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "xPlayerDatabase::updateTransition: error: " << e.what();
+        emit databaseUpdateError();
+    }
+    return std::make_pair(0,0);
 }
