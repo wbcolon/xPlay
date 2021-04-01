@@ -23,7 +23,7 @@ class xMusicPlayerQt:public xMusicPlayer {
     Q_OBJECT
 
 public:
-    explicit xMusicPlayerQt(QObject* parent = nullptr);
+    explicit xMusicPlayerQt(xMusicLibrary* library, QObject* parent = nullptr);
     ~xMusicPlayerQt() override = default;
     /**
      * Return the volume for the music player
@@ -54,9 +54,9 @@ public slots:
      *
      * @param artist the artist name for all queued tracks.
      * @param album the album name for all queued tracks.
-     * @param tracks vector of track names.
+     * @param tracks vector of track objects.
      */
-    void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) override;
+    void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks) override;
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      */
@@ -154,7 +154,7 @@ private slots:
     void currentStateChanged(QMediaPlayer::State newState);
 
 private:
-    std::vector<std::tuple<QString,QString,QString>> musicPlaylistEntries;
+    std::vector<std::tuple<QString,QString,xMusicFile*>> musicPlaylistEntries;
     QMediaPlayer* musicPlayer;
     QMediaPlaylist* musicPlaylist;
     bool useShuffleMode;

@@ -12,13 +12,15 @@
  * GNU General Public License for more details.
  */
 #include "xMusicPlayerPhonon.h"
+#include "xMusicLibrary.h"
+#include "xMusicFile.h"
 #include "xPlayerDatabase.h"
 
 #include <QRandomGenerator>
 #include <cmath>
 
-xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
-        xMusicPlayer(parent),
+xMusicPlayerPhonon::xMusicPlayerPhonon(xMusicLibrary* library, QObject* parent):
+        xMusicPlayer(library, parent),
         musicPlaylistPermutation(),
         musicPlayerState(State::StopState),
         useShuffleMode(false) {
@@ -46,11 +48,11 @@ xMusicPlayerPhonon::xMusicPlayerPhonon(QObject* parent):
     connect(musicPlayerForTime, &QMediaPlayer::durationChanged, this, &xMusicPlayerPhonon::currentTrackDuration);
 }
 
-void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) {
+void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks) {
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
     for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
-        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(pathFromQueueEntry(queueEntry)));
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(track->getFilePath().generic_string())));
         if (queueSource.type() != Phonon::MediaSource::Invalid) {
             musicPlaylistEntries.push_back(queueEntry);
             musicPlaylist.push_back(queueSource);
@@ -169,9 +171,17 @@ void xMusicPlayerPhonon::loadQueueFromPlaylist(const QString& name) {
     clearQueue();
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
     for (auto entry = playlistEntries.begin(); entry != playlistEntries.end(); ++entry) {
-        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(pathFromQueueEntry(*entry)));
+        // Split up tuple
+        const auto& [entryArtist, entryAlbum, entryTrackName] = *entry;
+        auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        if (entryObject == nullptr) {
+            // Remove invalid entries from the list.
+            playlistEntries.erase(entry);
+            continue;
+        }
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(entryObject->getFilePath().generic_string())));
         if (queueSource.type() != Phonon::MediaSource::Invalid) {
-            musicPlaylistEntries.push_back(*entry);
+            musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
             musicPlaylist.push_back(queueSource);
             // Enqueue entries.
             musicPlayer->enqueue(queueSource);
@@ -186,7 +196,13 @@ void xMusicPlayerPhonon::loadQueueFromPlaylist(const QString& name) {
 
 void xMusicPlayerPhonon::saveQueueToPlaylist(const QString& name) {
     // Store the current queue to the database.
-    auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, musicPlaylistEntries);
+    // First convert to database format.
+    std::vector<std::tuple<QString,QString,QString>> databasePlaylistEntries;
+    for (const auto& entry : musicPlaylistEntries) {
+        databasePlaylistEntries.emplace_back(std::make_tuple(std::get<0>(entry),
+                std::get<1>(entry), std::get<2>(entry)->getTrackName()));
+    }
+    auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, databasePlaylistEntries);
     emit playlistState(name, saved);
 }
 
@@ -342,9 +358,10 @@ void xMusicPlayerPhonon::currentTrackSource(const Phonon::MediaSource& current) 
     if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
         // Retrieve info for the currently played track and emit the information.
         auto entry = musicPlaylistEntries[index];
-        auto properties = propertiesFromFile(current.fileName());
-        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry), std::get<2>(entry),
-                std::get<0>(properties), std::get<1>(properties), std::get<2>(properties));
+        auto entryObject = std::get<2>(entry);
+        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
+                          entryObject->getTrackName(), entryObject->getBitrate(),
+                          entryObject->getSampleRate(), entryObject->getBitsPerSample());
         // Use hack to determine the proper total length.
         // We need the muted musicPlayerForTime to play until the total time has been determined
         // and the durationChanged signal was triggered.

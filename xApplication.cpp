@@ -17,8 +17,10 @@
 #include <QMessageBox>
 #include <QApplication>
 #include <QGridLayout>
+#include <QMetaType>
 
 #include "xApplication.h"
+#include "xMusicFile.h"
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerConfigurationDialog.h"
@@ -26,15 +28,20 @@
 
 xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags) {
+    // Register Type
+    qRegisterMetaType<xMusicFile>();
+    qRegisterMetaType<xMusicFile*>();
+    qRegisterMetaType<std::list<xMusicFile*>>();
+    qRegisterMetaType<std::vector<xMusicFile*>>();
     // Setup music and movie library.
     musicLibrary = new xMusicLibrary(this);
     movieLibrary = new xMovieLibrary(this);
     // Stack for different views.
     mainView = new QStackedWidget(this);
     // Setup players and main widgets
-    musicPlayer = new xMusicPlayerX(mainView);
+    musicPlayer = new xMusicPlayerX(musicLibrary, mainView);
     moviePlayer = new xMoviePlayer(mainView);
-    mainMusicWidget = new xMainMusicWidget(musicPlayer, mainView);
+    mainMusicWidget = new xMainMusicWidget(musicPlayer, musicLibrary, mainView);
     mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
     mainStreamingWidget = new xMainStreamingWidget(mainView);
     mainDbus = new xPlayerDBus(mainView);
@@ -276,7 +283,6 @@ void xApplication::setMusicLibraryDirectory() {
     auto musicLibraryDirectory=xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
     mainMusicWidget->clear();
     musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));
-    musicPlayer->setBaseDirectory(musicLibraryDirectory);
     qInfo() << "Update music library path to " << musicLibraryDirectory;
 }
 

@@ -12,6 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xMusicLibrary.h"
+#include "xMusicFile.h"
 #include "xPlayerConfiguration.h"
 
 #include <QDebug>
@@ -38,7 +39,7 @@ xMusicLibraryFiles* xMusicLibraryFiles::files() {
     return musicLibraryFiles;
 }
 
-void xMusicLibraryFiles::set(const QString& artist, const std::map<QString,std::list<std::filesystem::path>>& albumTracks) {
+void xMusicLibraryFiles::set(const QString& artist, const std::map<QString,std::list<xMusicFile*>>& albumTracks) {
     musicFilesLock.lock();
     auto artistPos = musicFiles.find(artist);
     if (artistPos != musicFiles.end()) {
@@ -49,8 +50,7 @@ void xMusicLibraryFiles::set(const QString& artist, const std::map<QString,std::
     musicFilesLock.unlock();
 }
 
-void xMusicLibraryFiles::set(const QString& artist, const QString& album,
-                             const std::list<std::filesystem::path>& tracks) {
+void xMusicLibraryFiles::set(const QString& artist, const QString& album, const std::list<xMusicFile*>& tracks) {
     musicFilesLock.lock();
     auto artistPos = musicFiles.find(artist);
     if (artistPos != musicFiles.end()) {
@@ -61,7 +61,7 @@ void xMusicLibraryFiles::set(const QString& artist, const QString& album,
             artistPos->second[album] = tracks;
         }
     } else {
-        std::map<QString,std::list<std::filesystem::path>> albumMap;
+        std::map<QString, std::list<xMusicFile*>> albumMap;
         albumMap[album] = tracks;
         musicFiles[artist] = albumMap;
     }
@@ -74,7 +74,7 @@ void xMusicLibraryFiles::clear() {
     musicFilesLock.unlock();
 }
 
-std::list<std::filesystem::path> xMusicLibraryFiles::get(const QString& artist, const QString& album) {
+std::list<xMusicFile*> xMusicLibraryFiles::get(const QString& artist, const QString& album) {
     musicFilesLock.lock();
     auto artistPos = musicFiles.find(artist);
     if (artistPos != musicFiles.end()) {
@@ -94,7 +94,7 @@ std::list<std::filesystem::path> xMusicLibraryFiles::get(const QString& artist, 
         }
     }
     musicFilesLock.unlock();
-    return std::list<std::filesystem::path>();
+    return std::list<xMusicFile*>();
 }
 
 QStringList xMusicLibraryFiles::get(const QString& artist) const {
@@ -110,8 +110,8 @@ QStringList xMusicLibraryFiles::get(const QString& artist) const {
     return albumList;
 }
 
-std::list<std::tuple<QString, QString, std::filesystem::path>> xMusicLibraryFiles::get() const {
-    std::list<std::tuple<QString, QString, std::filesystem::path>> artistAlbumList;
+std::list<std::tuple<QString, QString, xMusicFile*>> xMusicLibraryFiles::get() const {
+    std::list<std::tuple<QString, QString, xMusicFile*>> artistAlbumList;
     musicFilesLock.lock();
     for (const auto& artist : musicFiles) {
         for (const auto& album : artist.second) {
@@ -135,14 +135,16 @@ bool xMusicLibraryFiles::isMusicFile(const std::filesystem::path& file) {
     return false;
 }
 
-std::list<std::filesystem::path> xMusicLibraryFiles::scanForAlbumTracks(const std::filesystem::path& albumPath) {
-    std::list<std::filesystem::path> trackList;
+std::list<xMusicFile*> xMusicLibraryFiles::scanForAlbumTracks(xMusicFile* albumPath) {
+    std::list<xMusicFile*> trackList;
     // Add the album path itself
     trackList.push_back(albumPath);
     // Add all files in the album path
-    for (const auto& trackFile : std::filesystem::directory_iterator(albumPath)) {
+    for (const auto& trackFile : std::filesystem::directory_iterator(albumPath->getFilePath())) {
         if (isMusicFile(trackFile)) {
-            trackList.push_back(trackFile.path());
+            auto trackFileObject = new xMusicFile(trackFile.path(), albumPath->getArtist(), albumPath->getArtist(),
+                                        QString::fromStdString(trackFile.path().filename()));
+            trackList.push_back(trackFileObject);
         }
     }
     return trackList;
@@ -198,7 +200,7 @@ void xMusicLibraryScanning::scan() {
                 continue;
             }
             auto artistName = QString::fromStdString(artistPath.filename());
-            std::map<QString, std::list<std::filesystem::path>> artistAlbumMap;
+            std::map<QString, std::list<xMusicFile*>> artistAlbumMap;
             // Read all albums for the given artist.
             for (const auto& albumDir : std::filesystem::directory_iterator(artistPath)) {
                 const auto& albumPath = albumDir.path();
@@ -211,8 +213,8 @@ void xMusicLibraryScanning::scan() {
                 // Do not scan the files in each directory as it is too costly.
                 // Instead add the album path as first element element to track list.
                 // It will be later used to read the tracks on demand.
-                std::list<std::filesystem::path> trackList;
-                trackList.push_back(albumPath);
+                std::list<xMusicFile*> trackList;
+                trackList.push_back(new xMusicFile(albumPath, artistName, albumName, ""));
                 artistAlbumMap[albumName] = trackList;
             }
             musicLibraryFiles->set(artistName, artistAlbumMap);
@@ -262,6 +264,17 @@ const std::filesystem::path& xMusicLibrary::getBaseDirectory() const {
     return baseDirectory;
 }
 
+xMusicFile* xMusicLibrary::getMusicFile(const QString& artist, const QString& album, const QString& trackName) {
+    auto trackObjects = musicLibraryFiles->get(artist, album);
+    trackObjects.pop_front();
+    for (const auto& track : trackObjects) {
+        if (track->getTrackName() == trackName) {
+            return track;
+        }
+    }
+    return nullptr;
+}
+
 void xMusicLibrary::scanForArtist(const QString& artist) {
     // Get list of albums for this artist.
     auto albumList = musicLibraryFiles->get(artist);
@@ -270,27 +283,28 @@ void xMusicLibrary::scanForArtist(const QString& artist) {
 }
 
 void xMusicLibrary::scanForArtistAndAlbum(const QString& artist, const QString& album) {
-    QStringList trackList;
+    std::list<xMusicFile*> trackList;
     try {
-        auto trackPath = musicLibraryFiles->get(artist, album);
+        auto trackObjects = musicLibraryFiles->get(artist, album);
         // Remove album path used it to scan the directory.
         // We do not need it for track list.
-        trackPath.pop_front();
+        trackObjects.pop_front();
         // Generate list of tracks for artist/album
-        for (const auto& track : trackPath) {
-            trackList.push_back(QString::fromStdString(track.filename()));
-            qDebug() << "xMusicLibrary::scanAlbum: track: " << QString::fromStdString(track.filename());
+        for (const auto& track : trackObjects) {
+            trackList.push_back(track);
+            qDebug() << "xMusicLibrary::scanAlbum: track: " << track->getTrackName();
         }
     } catch (...) {
         // Clear list on error
         trackList.clear();
     }
+    trackList.sort([](xMusicFile* a, xMusicFile* b) { return (a->getTrackName() < b->getTrackName()); });
     // Update widget
     emit scannedTracks(trackList);
 }
 
 void xMusicLibrary::scanAllAlbumsForArtist(const QString& artist) {
-    QList<std::pair<QString,std::vector<QString>>> albumTracks;
+    QList<std::pair<QString,std::vector<xMusicFile*>>> albumTracks;
     // Retrieve the albums tracks.
     getAllAlbumsForArtist(artist, albumTracks);
     // Update widget
@@ -298,11 +312,11 @@ void xMusicLibrary::scanAllAlbumsForArtist(const QString& artist) {
 }
 
 void xMusicLibrary::scanAllAlbumsForListArtists(const QList<QString>& listArtists) {
-    QList<std::pair<QString,QList<std::pair<QString,std::vector<QString>>>>> listTracks;
+    QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicFile*>>>>> listTracks;
     try {
         // Retrieve list of albums and and sort them.
         for (const auto& artist : listArtists) {
-            QList<std::pair<QString,std::vector<QString>>> albumTracks;
+            QList<std::pair<QString,std::vector<xMusicFile*>>> albumTracks;
             getAllAlbumsForArtist(artist, albumTracks);
             listTracks.push_back(std::make_pair(artist, albumTracks));
         }
@@ -317,7 +331,7 @@ void xMusicLibrary::scanAllAlbumsForListArtists(const QList<QString>& listArtist
 void xMusicLibrary::scanForUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries) {
     std::list<std::tuple<QString, QString, QString>> unknownDatabaseEntries;
     QString currentArtist, currentAlbum;
-    std::list<std::filesystem::path> currentTracks;
+    std::list<xMusicFile*> currentTracks;
     for (const auto& entry : listEntries) {
         // We need to cache the entries if possible. List should be sorted by artist and album.
         if ((currentArtist != std::get<0>(entry)) || (currentAlbum != std::get<1>(entry))) {
@@ -328,8 +342,8 @@ void xMusicLibrary::scanForUnknownEntries(const std::list<std::tuple<QString, QS
         // We need to match the relative path generated by artist/album/track with the absolute paths stored.
         auto entryTrack = std::get<2>(entry).toStdString();
         auto currentTracksPos = std::find_if(currentTracks.begin(), currentTracks.end(),
-                                             [&entryTrack](const std::filesystem::path& track) {
-                                                 return (track.filename() == entryTrack);
+                                             [&entryTrack](xMusicFile* trackObject) {
+                                                 return (trackObject->getFilePath().filename() == entryTrack);
                                              });
         // If we do not find the track then we append the entry to the unknown list.
         if (currentTracksPos == currentTracks.end()) {
@@ -341,7 +355,7 @@ void xMusicLibrary::scanForUnknownEntries(const std::list<std::tuple<QString, QS
     emit scannedUnknownEntries(unknownDatabaseEntries);
 }
 
-void xMusicLibrary::getAllAlbumsForArtist(const QString& artist, QList<std::pair<QString, std::vector<QString>>>& albumTracks) {
+void xMusicLibrary::getAllAlbumsForArtist(const QString& artist, QList<std::pair<QString, std::vector<xMusicFile*>>>& albumTracks) {
     try {
         // Clear list.
         albumTracks.clear();
@@ -349,14 +363,14 @@ void xMusicLibrary::getAllAlbumsForArtist(const QString& artist, QList<std::pair
         auto albumList = musicLibraryFiles->get(artist);
         albumList.sort();
         for (const auto& album : albumList) {
-            auto trackPaths = musicLibraryFiles->get(artist, album);
-            trackPaths.pop_front();
-            trackPaths.sort();
-            std::vector<QString> trackNames;
-            for (const auto& track : trackPaths) {
-                trackNames.emplace_back(QString::fromStdString(track.filename()));
+            auto trackObjects = musicLibraryFiles->get(artist, album);
+            trackObjects.pop_front();
+            trackObjects.sort([](xMusicFile* a, xMusicFile* b) { return (a->getTrackName() < b->getTrackName()); });
+            std::vector<xMusicFile*> albumTrackObjects;
+            for (const auto& track : trackObjects) {
+                albumTrackObjects.emplace_back(track);
             }
-            albumTracks.push_back(std::make_pair(album, trackNames));
+            albumTracks.push_back(std::make_pair(album, albumTrackObjects));
         }
     } catch (...) {
         // Clear list on error

@@ -25,7 +25,7 @@ class xMusicPlayerPhonon:public xMusicPlayer {
     Q_OBJECT
 
 public:
-    explicit xMusicPlayerPhonon(QObject* parent = nullptr);
+    explicit xMusicPlayerPhonon(xMusicLibrary* library, QObject* parent = nullptr);
     ~xMusicPlayerPhonon() override = default;
     /**
      * Return the volume for the music player
@@ -56,9 +56,9 @@ public slots:
      *
      * @param artist the artist name for all queued tracks.
      * @param album the album name for all queued tracks.
-     * @param tracks vector of track names.
+     * @param tracks vector of music file objects.
      */
-    void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) override;
+    void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks) override;
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      *
@@ -188,7 +188,7 @@ private:
      */
     static QVector<int> extendPermutation(const QVector<int>& permutation, int elements, int extendIndex);
 
-    std::vector<std::tuple<QString,QString,QString>> musicPlaylistEntries;
+    std::vector<std::tuple<QString,QString,xMusicFile*>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;
     QVector<int> musicPlaylistPermutation;
     Phonon::MediaObject* musicPlayer;

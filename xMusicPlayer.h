@@ -16,6 +16,9 @@
 
 #include <QWidget>
 
+class xMusicFile;
+class xMusicLibrary;
+
 class xMusicPlayer:public QObject {
     Q_OBJECT
 
@@ -26,15 +29,8 @@ public:
         StopState
     };
 
-    explicit xMusicPlayer(QObject* parent = nullptr);
+    explicit xMusicPlayer(xMusicLibrary* library, QObject* parent = nullptr);
     ~xMusicPlayer() override = default;
-
-    /**
-     * Set the base directory for the music library
-     *
-     * @param base the absolute path of the base of the music library.
-     */
-    void setBaseDirectory(const QString& base);
     /**
      * Return the volume for the music player
      *
@@ -168,7 +164,7 @@ public slots:
      * @param album the album name for all queued tracks.
      * @param tracks vector of track names.
      */
-    virtual void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) = 0;
+    virtual void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks) = 0;
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      */
@@ -197,22 +193,7 @@ public slots:
     virtual void saveQueueToPlaylist(const QString& name) = 0;
 
 protected:
-    /**
-     * Generate a path from the given information.
-     *
-     * @param entry tuple of artist,album and track.
-     * @return absolute path to the specified track.
-     */
-    QString pathFromQueueEntry(const std::tuple<QString, QString, QString>& entry);
-    /**
-     * Extract music file properties (bitrate, sample rate, bits per sample).
-     *
-     * @param filename the absolute path to the music file.
-     * @return a tuple containing the file properties.
-     */
-    static std::tuple<int,int,int> propertiesFromFile(const QString& filename);
-
-    QString baseDirectory;
+    xMusicLibrary* musicLibrary;
 };
 
 #endif

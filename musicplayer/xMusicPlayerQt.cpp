@@ -12,14 +12,16 @@
  * GNU General Public License for more details.
  */
 #include "xMusicPlayerQt.h"
+#include "xMusicLibrary.h"
+#include "xMusicFile.h"
 #include "xPlayerDatabase.h"
 
 #include <QMediaControl>
 #include <QMediaService>
 #include <QMediaGaplessPlaybackControl>
 
-xMusicPlayerQt::xMusicPlayerQt(QObject* parent):
-        xMusicPlayer(parent) {
+xMusicPlayerQt::xMusicPlayerQt(xMusicLibrary* library, QObject* parent):
+        xMusicPlayer(library, parent) {
     // Setup the media player.
     musicPlayer = new QMediaPlayer(this, QMediaPlayer::LowLatency);
     musicPlayer->setMuted(false);
@@ -38,9 +40,9 @@ xMusicPlayerQt::xMusicPlayerQt(QObject* parent):
     connect(musicPlaylist, &QMediaPlaylist::currentIndexChanged, this, &xMusicPlayerQt::currentTrackIndex);
 }
 
-void xMusicPlayerQt::queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks) {
+void xMusicPlayerQt::queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks) {
     // Do we really add any tracks.
-    if (tracks.size() == 0) {
+    if (tracks.empty()) {
         return;
     }
     // Enable auto play if playlist is currently emtpy.
@@ -52,7 +54,7 @@ void xMusicPlayerQt::queueTracks(const QString& artist, const QString& album, co
     for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
         musicPlaylistEntries.push_back(queueEntry);
-        musicPlaylist->addMedia(QUrl::fromLocalFile(pathFromQueueEntry(queueEntry)));
+        musicPlaylist->addMedia(QUrl::fromLocalFile(QString::fromStdString(track->getFilePath().generic_string())));
     }
     // Play if autoplay is enabled.
     if (autoPlay) {
@@ -85,14 +87,25 @@ void xMusicPlayerQt::loadQueueFromPlaylist(const QString& name) {
     clearQueue();
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
     for (const auto& entry : playlistEntries) {
-        musicPlaylist->addMedia(QUrl::fromLocalFile(pathFromQueueEntry(entry)));
+        // Split up tuple
+        const auto& [entryArtist, entryAlbum, entryTrackName] = entry;
+        auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        if (entryObject) {
+            musicPlaylist->addMedia(QUrl::fromLocalFile(QString::fromStdString(entryObject->getFilePath().generic_string())));
+        }
     }
     emit playlist(playlistEntries);
 }
 
 void xMusicPlayerQt::saveQueueToPlaylist(const QString& name) {
     // Store the current queue to the database.
-    auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, musicPlaylistEntries);
+    // First convert to database format.
+    std::vector<std::tuple<QString,QString,QString>> databasePlaylistEntries;
+    for (const auto& entry : musicPlaylistEntries) {
+        databasePlaylistEntries.emplace_back(std::make_tuple(std::get<0>(entry), std::get<1>(entry),
+                std::get<2>(entry)->getTrackName()));
+    }
+    auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, databasePlaylistEntries);
     emit playlistState(name, saved);
 }
 
@@ -180,10 +193,10 @@ void xMusicPlayerQt::currentTrackIndex(int index) {
     if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
         // Retrieve info for the currently played track and emit the information.
         auto entry = musicPlaylistEntries[index];
-        auto current = baseDirectory+"/"+std::get<0>(entry)+"/"+std::get<1>(entry)+"/"+std::get<2>(entry);
-        auto properties = propertiesFromFile(current);
-        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry), std::get<2>(entry),
-                std::get<0>(properties), std::get<1>(properties), std::get<2>(properties));
+        auto entryObject = std::get<2>(entry);
+        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
+                          entryObject->getTrackName(), entryObject->getBitrate(),
+                          entryObject->getSampleRate(), entryObject->getBitsPerSample());
     }
 }
 
