@@ -15,8 +15,10 @@
 #define __XMAINWIDGET_H__
 
 #include "xMusicPlayer.h"
+#include "xMusicLibrary.h"
 #include "xPlayerMusicWidget.h"
 #include "xPlayerSelectorWidget.h"
+#include "xPlayerListWidget.h"
 
 #include <QListWidget>
 #include <QString>
@@ -29,7 +31,8 @@ class xMainMusicWidget: public QWidget {
     Q_OBJECT
 
 public:
-    explicit xMainMusicWidget(xMusicPlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    explicit xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
+                              QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xMainMusicWidget() override = default;
     /**
      * Perform initial commands required when switching to this view.
@@ -88,9 +91,9 @@ signals:
      *
      * @param artist the artist name for the tracks.
      * @param album the album name for the tracks.
-     * @param tracks ordered vector of track names.
+     * @param tracks ordered vector of music file objects.
      */
-    void queueTracks(const QString& artist, const QString& album, const std::vector<QString>& tracks);
+    void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks);
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      */
@@ -136,19 +139,19 @@ public slots:
      *
      * @param tracks unordered list of track names.
      */
-    void scannedTracks(const QStringList& tracks);
+    void scannedTracks(const std::list<xMusicFile*>& tracks);
     /**
      * Receive the result of the all album and track scan for a given artist
      *
      * @param albumTracks sorted list of pairs of album/list of track names to be queued.
      */
-    void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks);
+    void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<xMusicFile*>>>& albumTracks);
     /**
      * Receive the result of all albums and track scan for a given list of artists.
      *
      * @param listTracks list of pair of album and list of track name (sorted) for a list of artists.
      */
-    void scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<QString>>>>>& listTracks);
+    void scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks);
 
 private slots:
     /**
@@ -363,15 +366,16 @@ private:
     auto addGroupBox(const QString& boxLabel);
 
     xMusicPlayer* musicPlayer;
+    xMusicLibrary* musicLibrary;
     xPlayerMusicWidget* playerWidget;
-    QListWidget* artistList;
-    QListWidget* albumList;
-    QListWidget* trackList;
+    xPlayerListWidget* artistList;
+    xPlayerListWidget* albumList;
+    xPlayerListWidget* trackList;
     QListWidget* artistSelectorList;
     xPlayerSelectorWidget* albumSelectorList;
     QStringList albumSelectorMatch;
     QStringList albumSelectorNotMatch;
-    QListWidget* queueList;
+    xPlayerListWidget* queueList;
     int playedTrack;
     bool useDatabaseMusicOverlay;
     quint64 databaseCutOff;
@@ -380,6 +384,11 @@ private:
      */
     QStringList unfilteredArtists;
     QStringList unfilteredAlbums;
+    /**
+     * Currently played artist and album. May differ from currently selected artist and album.
+     */
+    QString currentArtist;
+    QString currentAlbum;
 };
 
 #endif

@@ -18,6 +18,7 @@
 #include "xPlayerMovieWidget.h"
 #include "xPlayerSliderWidgetX.h"
 #include "xPlayerVolumeWidgetX.h"
+#include "xPlayerListWidget.h"
 
 #include <QStackedWidget>
 #include <QListWidget>
@@ -233,9 +234,9 @@ private:
      */
     auto addGroupBox(const QString& boxLabel, QWidget* parent);
 
-    QListWidget* tagList;
-    QListWidget* directoryList;
-    QListWidget* movieList;
+    xPlayerListWidget* tagList;
+    xPlayerListWidget* directoryList;
+    xPlayerListWidget* movieList;
     QStringList currentMovies;
     QString currentMovieName;
     QString currentMovieTag;

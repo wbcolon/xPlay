@@ -12,6 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xMainMusicWidget.h"
+#include "xMusicFile.h"
 #include "xPlayerMusicWidget.h"
 #include "xPlayerDatabase.h"
 #include "xPlayerUI.h"
@@ -26,6 +27,9 @@
 #include <QRandomGenerator>
 #include <QDateTime>
 #include <QCheckBox>
+#include <QRadioButton>
+#include <QButtonGroup>
+#include <QLineEdit>
 #include <random>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
@@ -34,43 +38,45 @@ auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, this);
     groupBox->setFlat(xPlayerUseFlatGroupBox);
-    auto list = new QListWidget(groupBox);
+    auto list = new xPlayerListWidget(groupBox);
     auto boxLayout = new QVBoxLayout();
     boxLayout->addWidget(list);
     groupBox->setLayout(boxLayout);
     return std::make_pair(groupBox,list);
 }
 
-xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::WindowFlags flags):
+xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         musicPlayer(player),
+        musicLibrary(library),
         albumSelectorMatch(),
         albumSelectorNotMatch(),
         playedTrack(0),
         useDatabaseMusicOverlay(true),
-        databaseCutOff(0) {
+        databaseCutOff(0),
+        currentArtist(),
+        currentAlbum() {
     // Create and group boxes with embedded list widgets.
     auto [artistBox, artistList_] = addGroupBox(tr("Artists"));
     auto [albumBox, albumList_] = addGroupBox(tr("Albums"));
     auto [trackBox, trackList_] = addGroupBox(tr("Tracks"));
-    auto [artistSelectorBox, artistSelectorList_] = addGroupBox(tr("Artist Selector"));
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
     // Sort entries in artist/album/track
     artistList = artistList_;
-    artistList->setSortingEnabled(false);
+    artistList->enableSorting(false);
     // auto artistFont = artistList->font();
     // artistFont.setPointSizeF(artistFont.pointSizeF()*1.3);
     // artistList->setFont(artistFont);
     albumList = albumList_;
-    albumList->setSortingEnabled(true);
+    albumList->enableSorting(true);
     trackList = trackList_;
-    trackList->setSortingEnabled(true);
+    trackList->enableSorting(true);
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
     // Queue list.
     auto queueBox = new QGroupBox(tr("Queue"), this);
     queueBox->setFlat(xPlayerUseFlatGroupBox);
     auto queueBoxLayout = new xPlayerLayout();
-    queueList = new QListWidget(queueBox);
+    queueList = new xPlayerListWidget(queueBox);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
     auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
     // Playlist menu.
@@ -81,22 +87,37 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
     queueBox->setLayout(queueBoxLayout);
-    // Setup artistSelector as horizontal list widget with no wrapping. Fix it's height.
-    artistSelectorList = artistSelectorList_; // requires since we need to use the member variable;
+    // Selector Tabs.
+    auto selectorTabs = new QTabWidget(this);
+    artistSelectorList = new QListWidget(selectorTabs);
     artistSelectorList->setViewMode(QListView::IconMode);
     artistSelectorList->setWrapping(false);
     artistSelectorList->setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
-    artistSelectorBox->setFixedHeight(artistSelectorBox->sizeHint().height());
-    // Setup album selector.
-    auto albumSelectorBox = new QGroupBox(tr("Album Selector"), this);
-    albumSelectorBox->setFlat(xPlayerUseFlatGroupBox);
-    auto albumSelectorLayout = new QVBoxLayout();
-    // Create album selector widget.
-    albumSelectorList = new xPlayerSelectorWidget(albumSelectorBox);
-    albumSelectorLayout->addWidget(albumSelectorList);
-    albumSelectorBox->setLayout(albumSelectorLayout);
-    // Set heigh of album selector to height af artist selector.
-    albumSelectorBox->setFixedHeight(artistSelectorBox->sizeHint().height());
+    albumSelectorList = new xPlayerSelectorWidget(selectorTabs);
+    auto searchSelector = new QWidget(selectorTabs);
+    searchSelector->setContentsMargins(0, 0, 0, 0);
+    auto searchSelectorLayout = new xPlayerLayout();
+    searchSelectorLayout->setSpacing(0);
+    searchSelectorLayout->setContentsMargins(0, 0, 0, 0);
+    auto searchArtistButton = new QRadioButton(tr("Artist"), searchSelector);
+    auto searchAlbumButton = new QRadioButton(tr("Album"), searchSelector);
+    auto searchTrackButton = new QRadioButton(tr("Track"), searchSelector);
+    auto searchButtons = new QButtonGroup(searchSelector);
+    searchButtons->addButton(searchArtistButton);
+    searchButtons->addButton(searchAlbumButton);
+    searchButtons->addButton(searchTrackButton);
+    searchSelectorLayout->addWidget(new QLineEdit(searchSelector), 0, 0, 1, 8);
+    searchSelectorLayout->addColumnSpacer(8, xPlayerLayout::MediumSpace);
+    searchSelectorLayout->addWidget(searchArtistButton, 0, 9);
+    searchSelectorLayout->addWidget(searchAlbumButton, 0, 10);
+    searchSelectorLayout->addWidget(searchTrackButton, 0, 11);
+    searchSelectorLayout->addColumnSpacer(12, xPlayerLayout::MediumSpace);
+    searchSelectorLayout->addWidget(new QPushButton(tr("Search"), searchSelector), 0, 13);
+    searchSelector->setLayout(searchSelectorLayout);
+    selectorTabs->addTab(artistSelectorList, tr("Artist Selector"));
+    selectorTabs->addTab(albumSelectorList, tr("Album Selector"));
+    selectorTabs->addTab(searchSelector, tr("Search"));
+    selectorTabs->setFixedHeight(artistSelectorList->height()+selectorTabs->tabBar()->sizeHint().height());
     // Setup layout for main widget.
     auto mainWidgetLayout = new xPlayerLayout(this);
     mainWidgetLayout->setSpacing(xPlayerLayout::SmallSpace);
@@ -104,8 +125,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, QWidget *parent, Qt::Wi
     mainWidgetLayout->addWidget(artistBox, 1, 0, 7, 3);
     mainWidgetLayout->addWidget(albumBox, 1, 3, 7, 5);
     mainWidgetLayout->addWidget(trackBox, 1, 8, 7, 4);
-    mainWidgetLayout->addWidget(artistSelectorBox, 8, 0, 1, 8);
-    mainWidgetLayout->addWidget(albumSelectorBox, 8, 8, 1, 4);
+    mainWidgetLayout->addWidget(selectorTabs, 8, 0, 1, 12);
     mainWidgetLayout->addWidget(queueBox, 0, 12, 9, 4);
     // Connect artist, album, track and selector widgets
     connect(artistList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtist);
@@ -173,12 +193,12 @@ void xMainMusicWidget::scannedArtists(const QStringList& artists) {
 
 void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
     // Clear artist, album and track lists
-    artistList->clear();
-    albumList->clear();
-    trackList->clear();
+    artistList->clearItems();
+    albumList->clearItems();
+    trackList->clearItems();
     // Not very efficient to use a filtered and the unfiltered list, but easier to read.
     for (const auto& artist : filterArtists(artists)) {
-        artistList->addItem(artist);
+        artistList->addItemWidget(artist);
     }
     // Update database overlay for artists.
     updatePlayedArtists();
@@ -186,27 +206,29 @@ void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
 
 void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
     // Clear album and track lists
-    albumList->clear();
-    trackList->clear();
+    albumList->clearItems();
+    trackList->clearItems();
     unfilteredAlbums = albums;
     for (const auto& album : filterAlbums(albums)) {
-        albumList->addItem(album);
+        albumList->addItemWidget(album);
     }
     // Update database overlay for albums.
     updatePlayedAlbums();
 }
 
-void xMainMusicWidget::scannedTracks(const QStringList& tracks) {
+void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
     // Clear only track list
-    trackList->clear();
+    trackList->clearItems();
     for (const auto& track : tracks) {
-        trackList->addItem(track);
+        trackList->addItemWidget(track);
     }
+    trackList->updateItems();
     // Update database overlay for tracks.
     updatePlayedTracks();
 }
 
-void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<QString>>>& albumTracks) {
+void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,
+                                             std::vector<xMusicFile*>>>& albumTracks) {
     for (const auto& albumTrack : albumTracks) {
         // Skip over the albums that do not match our filter.
         if (!filterAlbum(albumTrack.first)) {
@@ -214,17 +236,17 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
         }
         for (const auto& track : albumTrack.second) {
             // Add to the playlist (queue)
-            auto queueItem = new QListWidgetItem(track, queueList);
-            // Add tooltip.
-            queueItem->setToolTip(QString("%1 - %2").arg(artist).arg(albumTrack.first));
-            queueList->addItem(queueItem);
+            queueList->addItemWidget(track, QString("%1 - %2").arg(artist).arg(albumTrack.first));
         }
         emit queueTracks(artist, albumTrack.first, albumTrack.second);
     }
     emit finishedQueueTracks();
+    // Update items.
+    queueList->updateItems();
 }
 
-void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<QString>>>>>& listTracks) {
+void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString,
+                                                        std::vector<xMusicFile*>>>>>& listTracks) {
     for (const auto& listTrack : listTracks) {
         for (const auto& albumTrack : listTrack.second) {
             // Skip over the albums that do not match our filter.
@@ -233,15 +255,14 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
             }
             for (const auto& track : albumTrack.second) {
                 // Add to the playlist (queue)
-                auto queueItem = new QListWidgetItem(track, queueList);
-                // Add tooltip.
-                queueItem->setToolTip(QString("%1 - %2").arg(listTrack.first).arg(albumTrack.first));
-                queueList->addItem(queueItem);
+                queueList->addItemWidget(track, QString("%1 - %2").arg(listTrack.first).arg(albumTrack.first));
             }
             emit queueTracks(listTrack.first, albumTrack.first, albumTrack.second);
         }
     }
     emit finishedQueueTracks();
+    // Update items.
+    queueList->updateItems();
 }
 
 void xMainMusicWidget::updateScannedArtistsSelectors(const std::set<QString> &selectors) {
@@ -326,7 +347,7 @@ void xMainMusicWidget::selectArtist(int artist) {
     // Check if artist index is valid.
     if ((artist >= 0) && (artist < artistList->count())) {
         // Retrieve selected artist name and trigger scanForArtist
-        auto artistName = artistList->item(artist)->text();
+        auto artistName = artistList->itemWidget(artist)->text();
         emit scanForArtist(artistName);
     }
 }
@@ -336,7 +357,7 @@ void xMainMusicWidget::queueArtist(QListWidgetItem *artistItem) {
     auto artist = artistList->row(artistItem);
     if ((artist >= 0) && (artist < artistList->count())) {
         // Retrieve selected artist name and trigger scanAllAlbumsForArtist
-        emit scanAllAlbumsForArtist(artistItem->text());
+        emit scanAllAlbumsForArtist(artistList->itemWidget(artist)->text());
     }
 }
 
@@ -345,8 +366,8 @@ void xMainMusicWidget::selectAlbum(int album) {
     if ((album >= 0) && (album < albumList->count())) {
         // Retrieve selected artist and album name and
         // trigger scanForArtistAndAlbum
-        auto artistName = artistList->currentItem()->text();
-        auto albumName = albumList->item(album)->text();
+        auto artistName = artistList->currentItemWidget()->text();
+        auto albumName = albumList->itemWidget(album)->text();
         emit scanForArtistAndAlbum(artistName, albumName);
     }
 }
@@ -365,25 +386,27 @@ void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
     auto track = trackList->row(trackItem);
     if ((track >= 0) && (track< trackList->count())) {
         // Retrieve selected artist and album name.
-        auto artistName = artistList->currentItem()->text();
-        auto albumName = albumList->currentItem()->text();
+        auto artistName = artistList->currentItemWidget()->text();
+        auto albumName = albumList->currentItemWidget()->text();
         // Retrieve all track names from the selected index to
         // the end of the album.
-        std::vector<QString> trackNames;
+        std::vector<xMusicFile*> trackObjects;
         QString trackName;
         for (auto i = track; i < trackList->count(); ++i) {
-            trackName = trackList->item(i)->text();
-            trackNames.push_back(trackName);
+            trackName = trackList->itemWidget(i)->text();
+            auto trackObject = musicLibrary->getMusicFile(artistName, albumName, trackName);
+            if (trackObject != nullptr) {
+                trackObjects.push_back(trackObject);
+            }
             // Add to the playlist (queue)
-            auto queueItem = new QListWidgetItem(trackName, queueList);
-            // Add tooltip.
-            queueItem->setToolTip(QString("%1 - %2").arg(artistName).arg(albumName));
-            queueList->addItem(queueItem);
+            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(artistName).arg(albumName));
         }
         // Signal the set tracks to be queued by the music player.
-        emit queueTracks(artistName, albumName, trackNames);
+        emit queueTracks(artistName, albumName, trackObjects);
         // Finished queueing tracks.
         emit finishedQueueTracks();
+        // Update items.
+        queueList->updateItems();
     }
 }
 
@@ -409,9 +432,9 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
         updateScannedArtists(unfilteredArtists);
         // Scan for all filtered artists.
         for (auto i = 0; i < artistList->count(); ++i) {
-            listArtists.push_back(artistList->item(i)->text());
+            listArtists.push_back(artistList->itemWidget(i)->text());
         }
-        // Tigger scanAllAlbumsForListArtist with given list of artists.
+        // Trigger scanAllAlbumsForListArtist with given list of artists.
         emit scanAllAlbumsForListArtists(listArtists);
     }
 }
@@ -424,22 +447,22 @@ void xMainMusicWidget::selectAlbumSelector(const QStringList& match, const QStri
 
 void xMainMusicWidget::currentState(xMusicPlayer::State state) {
     // Update the icon for the played track based on the state of the music player.
-    auto currentTrack = queueList->item(playedTrack);
+    auto currentTrack = queueList->itemWidget(playedTrack);
     if (!currentTrack) {
         return;
     }
     switch (state) {
         case xMusicPlayer::PlayingState: {
-            currentTrack->setIcon(QIcon(":/images/xplay-play.svg"));
+            currentTrack->setIcon(":/images/xplay-play.svg");
         } break;
         case xMusicPlayer::PauseState: {
-            currentTrack->setIcon(QIcon(":/images/xplay-pause.svg"));
+            currentTrack->setIcon(":/images/xplay-pause.svg");
         } break;
         case xMusicPlayer::StopState: {
-            currentTrack->setIcon(QIcon(":/images/xplay-stop.svg"));
+            currentTrack->setIcon(":/images/xplay-stop.svg");
         } break;
         default: {
-            currentTrack->setIcon(QIcon());
+            currentTrack->removeIcon();
         } break;
     }
 }
@@ -455,22 +478,32 @@ void xMainMusicWidget::currentTrack(int index, const QString& artist, const QStr
         // Update database overlay.
         updatePlayedTrack(artist, album, track, result.first, result.second);
     }
+    // Update transitions
+    if (((!currentArtist.isEmpty()) && (!currentAlbum.isEmpty())) &&
+        ((currentArtist != artist) || (currentAlbum != album))) {
+        auto transition = xPlayerDatabase::database()->updateTransition(currentArtist, currentAlbum, artist, album,
+                                                                        musicPlayer->getShuffleMode());
+        // Currently unused.
+        Q_UNUSED(transition)
+    }
+    currentArtist = artist;
+    currentAlbum = album;
 }
 
 void xMainMusicWidget::currentQueueTrack(int index) {
-    queueList->setCurrentRow(index);
     // Remove play icon from old track
-    auto oldPlayedItem = queueList->item(playedTrack);
+    auto oldPlayedItem = queueList->itemWidget(playedTrack);
     if (oldPlayedItem) {
-        oldPlayedItem->setIcon(QIcon());
+        oldPlayedItem->removeIcon();
     }
     // Update played track.
     playedTrack = index;
     // Set play icon only for currently played one.
-    auto playedItem = queueList->item(playedTrack);
+    auto playedItem = queueList->itemWidget(playedTrack);
     if (playedItem) {
-        playedItem->setIcon(QIcon(":/images/xplay-play.svg"));
+        playedItem->setIcon(":/images/xplay-play.svg");
     }
+    queueList->setCurrentRow(index);
 }
 
 void xMainMusicWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
@@ -494,7 +527,7 @@ void xMainMusicWidget::currentQueueTrackRemoved(const QPoint& point) {
 
 void xMainMusicWidget::clearQueue() {
     // Clear playlist (queue).
-    queueList->clear();
+    queueList->clearItems();
 }
 
 void xMainMusicWidget::updatedDatabaseMusicOverlay() {
@@ -507,16 +540,18 @@ void xMainMusicWidget::updatedDatabaseMusicOverlay() {
     } else {
         // Clear artist list.
         for (auto i = 0; i < artistList->count(); ++i) {
-            artistList->item(i)->setIcon(QIcon());
+            artistList->itemWidget(i)->removeIcon();
+            artistList->itemWidget(i)->removeToolTip();
         }
         // Clear album list.
         for (auto i = 0; i < albumList->count(); ++i) {
-            albumList->item(i)->setIcon(QIcon());
+            albumList->itemWidget(i)->removeIcon();
+            albumList->itemWidget(i)->removeToolTip();
         }
         // Clear track list.
         for (auto i = 0; i < trackList->count(); ++i) {
-            trackList->item(i)->setIcon(QIcon());
-            trackList->item(i)->setToolTip(QString());
+            trackList->itemWidget(i)->removeIcon();
+            trackList->itemWidget(i)->removeToolTip();
         }
     }
 }
@@ -539,21 +574,26 @@ void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
     auto track = trackList->currentRow();
     if ((track >= 0) && (track< trackList->count())) {
         // Retrieve selected artist and album name.
-        auto artistName = artistList->currentItem()->text();
-        auto albumName = albumList->currentItem()->text();
+        auto artistName = artistList->currentItemWidget()->text();
+        auto albumName = albumList->currentItemWidget()->text();
         // Retrieve only selected track
-        std::vector<QString> trackNames;
-        QString trackName = trackList->item(track)->text();
-        trackNames.push_back(trackName);
+        std::vector<xMusicFile*> trackObjects;
+        QString trackName = trackList->itemWidget(track)->text();
+        auto trackObject = musicLibrary->getMusicFile(artistName, albumName, trackName);
+        if (trackObject == nullptr) {
+            qCritical() << "xMainMusicWidget: unable to find music file object in library for "
+                        << artistName+"/"+albumName+"/"+trackName;
+            return;
+        }
+        trackObjects.push_back(trackObject);
         // Add to the playlist (queue)
-        auto queueItem = new QListWidgetItem(trackName, queueList);
-        // Add tooltip.
-        queueItem->setToolTip(QString("%1 - %2").arg(artistName).arg(albumName));
-        queueList->addItem(queueItem);
+        queueList->addItemWidget(trackObject,QString("%1 - %2").arg(artistName).arg(albumName));
         // Signal the set tracks to be queued by the music player.
-        emit queueTracks(artistName, albumName, trackNames);
+        emit queueTracks(artistName, albumName, trackObjects);
         // Signal finish adding tracks.
         emit finishedQueueTracks();
+        // Update items.
+        queueList->updateItems();
     }
 }
 void xMainMusicWidget::updatePlayedArtists() {
@@ -563,14 +603,14 @@ void xMainMusicWidget::updatePlayedArtists() {
     }
     auto playedArtists = xPlayerDatabase::database()->getPlayedArtists(databaseCutOff);
     for (auto i = 0; i < artistList->count(); ++i) {
-        auto artistItem = artistList->item(i);
+        auto artistItem = artistList->itemWidget(i);
         auto artist = artistItem->text();
         // Clear icon.
-        artistItem->setIcon(QIcon());
+        artistItem->removeIcon();
         for (const auto& playedArtist : playedArtists) {
             // Update icon and tooltip if movie already played.
             if (playedArtist == artist) {
-                artistItem->setIcon(QIcon(":images/xplay-star.svg"));
+                artistItem->setIcon(":images/xplay-star.svg");
                 break;
             }
         }
@@ -582,21 +622,21 @@ void xMainMusicWidget::updatePlayedAlbums() {
     if (!useDatabaseMusicOverlay) {
         return;
     }
-    auto artistItem = artistList->currentItem();
+    auto artistItem = artistList->currentItemWidget();
     if (!artistItem) {
         return;
     }
     auto artist = artistItem->text();
     auto playedAlbums = xPlayerDatabase::database()->getPlayedAlbums(artist, databaseCutOff);
     for (auto i = 0; i < albumList->count(); ++i) {
-        auto albumItem = albumList->item(i);
+        auto albumItem = albumList->itemWidget(i);
         auto album = albumItem->text();
         // Clear icon and tooltip.
-        albumItem->setIcon(QIcon());
+        albumItem->removeIcon();
         for (const auto& playedAlbum : playedAlbums) {
             // Update icon and tooltip if movie already played.
             if (playedAlbum == album) {
-                albumItem->setIcon(QIcon(":images/xplay-star.svg"));
+                albumItem->setIcon(":images/xplay-star.svg");
                 break;
             }
         }
@@ -608,9 +648,8 @@ void xMainMusicWidget::updatePlayedTracks() {
     if (!useDatabaseMusicOverlay) {
         return;
     }
-    auto artistItem = artistList->currentItem();
-    auto albumItem = albumList->currentItem();
-    qDebug() << "ARTIST: " << artistItem;
+    auto artistItem = artistList->currentItemWidget();
+    auto albumItem = albumList->currentItemWidget();
     // No artist or album currently selected. We do not need to update.
     if ((!artistItem) || (!albumItem)) {
         return;
@@ -619,22 +658,22 @@ void xMainMusicWidget::updatePlayedTracks() {
     auto album = albumItem->text();
     auto playedMusicTracks = xPlayerDatabase::database()->getPlayedTracks(artist, album, databaseCutOff);
     for (auto i = 0; i < trackList->count(); ++i) {
-        auto trackItem = trackList->item(i);
+        auto trackItem = trackList->itemWidget(i);
         auto track = trackItem->text();
         // Clear icon and tooltip.
-        trackItem->setIcon(QIcon());
-        trackItem->setToolTip(QString());
+        trackItem->removeIcon();
+        trackItem->removeToolTip();
         for (auto playedMusicTrack = playedMusicTracks.begin(); playedMusicTrack != playedMusicTracks.end(); ++playedMusicTrack) {
             // Update icon and tooltip if track already played.
             if (std::get<0>(*playedMusicTrack) == track) {
-                trackItem->setIcon(QIcon(":images/xplay-star.svg"));
+                trackItem->setIcon(":images/xplay-star.svg");
                 // Adjust tooltip to play count "once" vs "x times".
                 auto playCount = std::get<1>(*playedMusicTrack);
                 if (playCount > 1) {
-                    trackItem->setToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
+                    trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
                             arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
                 } else {
-                    trackItem->setToolTip(QString(tr("played once, last time on %1")).
+                    trackItem->addToolTip(QString(tr("played once, last time on %1")).
                             arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
                 }
                 // Remove element to speed up search in the next iteration.
@@ -656,36 +695,36 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     if (!useDatabaseMusicOverlay) {
         return;
     }
-    auto artistItem = artistList->currentItem();
+    auto artistItem = artistList->currentItemWidget();
     // Update the artists.
-    auto artistPlayedItems = artistList->findItems(artist, Qt::MatchExactly);
+    auto artistPlayedItems = artistList->findItemWidgets(artist);
     for (auto& artistPlayedItem : artistPlayedItems) {
-        artistPlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+        artistPlayedItem->setIcon(":images/xplay-star.svg");
     }
     // If no artist selected or the artist does not match the selected
     // artists then we do not need to update the albums.
     if ((!artistItem) || (artistItem->text() != artist)) {
         return;
     }
-    auto albumItem = albumList->currentItem();
+    auto albumItem = albumList->currentItemWidget();
     // Update the albums.
-    auto albumPlayedItems = albumList->findItems(album, Qt::MatchExactly);
+    auto albumPlayedItems = albumList->findItemWidgets(album);
     for (auto& albumPlayedItem : albumPlayedItems) {
-        albumPlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+        albumPlayedItem->setIcon(":images/xplay-star.svg");
     }
     // If no album selected or the album does not match the selected
     // album then we do not need to update the tracks.
     if ((!albumItem) || (albumItem->text() != album)) {
         return;
     }
-    auto trackPlayedItems = trackList->findItems(track, Qt::MatchExactly);
+    auto trackPlayedItems = trackList->findItemWidgets(track);
     for (auto& trackPlayedItem : trackPlayedItems) {
-        trackPlayedItem->setIcon(QIcon(":images/xplay-star.svg"));
+        trackPlayedItem->setIcon(":images/xplay-star.svg");
         if (playCount > 1) {
-            trackPlayedItem->setToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
+            trackPlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
                     arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
         } else {
-            trackPlayedItem->setToolTip(QString(tr("played once, last time on %1")).
+            trackPlayedItem->addToolTip(QString(tr("played once, last time on %1")).
                     arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
         }
     }
@@ -695,14 +734,16 @@ void xMainMusicWidget::playlist(const std::vector<std::tuple<QString,QString,QSt
     // Clear the player widget.
     playerWidget->clear();
     // Clear queue.
-    queueList->clear();
+    queueList->clearItems();
     for (const auto& entry : entries) {
         // Add to the playlist (queue)
-        auto queueItem = new QListWidgetItem(std::get<2>(entry), queueList);
-        // Add tooltip.
-        queueItem->setToolTip(QString("%1 - %2").arg(std::get<0>(entry)).arg(std::get<1>(entry)));
-        queueList->addItem(queueItem);
+        auto trackObject = musicLibrary->getMusicFile(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
+        if (trackObject) {
+            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(std::get<0>(entry)).arg(std::get<1>(entry)));
+        }
     }
+    // Update items.
+    queueList->updateItems();
 }
 
 void xMainMusicWidget::playlistMenu() {
