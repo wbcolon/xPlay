@@ -13,9 +13,9 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
 #set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -fsanitize=address -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
-set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -DNDEBUG -DXPLAY_APP_NAME=\\\"xPlay\\\"")
+set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -DXPLAY_APP_NAME=\\\"xPlay\\\"")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 option(USE_PHONON "Use the Phonon based media player instead of Qt" ON)
@@ -60,10 +60,12 @@ add_executable(xPlay
         xMusicLibrary.cpp
         xMovieLibrary.cpp
         xMusicPlayer.cpp
+        xMusicFile.cpp
         xMoviePlayer.cpp
         ${XMUSICPLAYERX}
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp
+        xPlayerListWidget.cpp
         xPlayerMusicWidget.cpp
         xPlayerVolumeWidget.cpp
         xPlayerSliderWidget.cpp
