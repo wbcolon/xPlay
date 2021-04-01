@@ -26,7 +26,17 @@ public:
     ~xPlayerBalanceWidgetQt() override = default;
 
 protected:
+    /**
+     * Update the slider and labels widget on balance changes.
+     *
+     * @param value the new balance as integer.
+     */
     void updateSlider(int value) override;
+    /**
+     * Update the slider and labels widget on range changes.
+     *
+     * @param value the new range value as integer.
+     */
     void updateSliderRange(int value) override;
 
     QSlider* balanceSlider;

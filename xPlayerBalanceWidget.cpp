@@ -16,6 +16,7 @@
 
 xPlayerBalanceWidget::xPlayerBalanceWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
+        balanceRange(0),
         balanceValue(0) {
     balanceLeftLabel = new QLabel();
     balanceLeftLabel->setAlignment(Qt::AlignLeft);
