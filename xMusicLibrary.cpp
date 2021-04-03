@@ -17,6 +17,47 @@
 
 #include <QDebug>
 
+xMusicLibraryFilter::xMusicLibraryFilter() {
+}
+
+bool xMusicLibraryFilter::hasArtistFilter() const {
+    return (!artistMatch.isEmpty());
+}
+
+bool xMusicLibraryFilter::hasAlbumFilter() const {
+    return ((!albumMatch.isEmpty()) || (!albumNotMatch.isEmpty()));
+}
+
+bool xMusicLibraryFilter::hasTrackNameFilter() const {
+    return (!trackNameMatch.isEmpty());
+}
+
+bool xMusicLibraryFilter::isMatchingArtist(const QString& artist) const {
+    return filterMatchesElement(artistMatch, artist, true);
+}
+
+bool xMusicLibraryFilter::isMatchingAlbum(const QString& album) const {
+    if (filterMatchesElement(albumNotMatch, album, false)) {
+        return false;
+    }
+    return filterMatchesElement(albumMatch, album, true);
+}
+
+bool xMusicLibraryFilter::isMatchingTrackName(const QString& trackName) const {
+    return filterMatchesElement(trackNameMatch, trackName, true);
+}
+
+bool xMusicLibraryFilter::filterMatchesElement(const QStringList& listMatch, const QString& text, bool emptyMatch) {
+    // The text always matches an empty list.
+    if (listMatch.isEmpty()) {
+        return emptyMatch;
+    }
+    if (std::any_of(listMatch.begin(), listMatch.end(),
+                    [&text](const QString& match) { return text.contains(match, Qt::CaseInsensitive); })) {
+        return true;
+    }
+    return false;
+}
 
 // singleton
 xMusicLibraryFiles* xMusicLibraryFiles::musicLibraryFiles = nullptr;
@@ -29,6 +70,10 @@ xMusicLibraryFiles::xMusicLibraryFiles(QObject *parent):
     // Connect to configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryExtensions,
             this, &xMusicLibraryFiles::updateMusicExtensions);
+}
+
+xMusicLibraryFiles::~xMusicLibraryFiles() noexcept {
+    clear();
 }
 
 xMusicLibraryFiles* xMusicLibraryFiles::files() {
@@ -70,6 +115,16 @@ void xMusicLibraryFiles::set(const QString& artist, const QString& album, const 
 
 void xMusicLibraryFiles::clear() {
     musicFilesLock.lock();
+    // Remove all the music files.
+    for (auto& artist : musicFiles) {
+        for (auto& album : artist.second) {
+            // Delete all music file objects.
+            for (auto& track : album.second) {
+                delete track;
+            }
+            artist.second.clear();
+        }
+    }
     musicFiles.clear();
     musicFilesLock.unlock();
 }
@@ -97,6 +152,42 @@ std::list<xMusicFile*> xMusicLibraryFiles::get(const QString& artist, const QStr
     return std::list<xMusicFile*>();
 }
 
+std::list<xMusicFile*> xMusicLibraryFiles::get(const QString& artist, const QString& album, const xMusicLibraryFilter& filter) {
+    // Check if we really need to apply a filter here.
+    if (!filter.hasTrackNameFilter()) {
+        return get(artist, album);
+    }
+    // Filter in place.
+    musicFilesLock.lock();
+    auto artistPos = musicFiles.find(artist);
+    if (artistPos != musicFiles.end()) {
+        auto albumPos = artistPos->second.find(album);
+        if (albumPos != artistPos->second.end()) {
+            auto trackPath = albumPos->second;
+            // Remove album path use it to scan the directory.
+            // We do not assume that there will be too many changes.
+            auto albumPath = trackPath.front();
+            trackPath.pop_front();
+            if (trackPath.empty()) {
+                qDebug() << "xMusicLibrary::scanAlbum: read files from disk";
+                albumPos->second = musicLibraryFiles->scanForAlbumTracks(albumPath);
+            }
+            for (const auto& track : albumPos->second) {
+                if (filter.isMatchingTrackName(track->getTrackName())) {
+                    musicFilesLock.unlock();
+                    // Match found. Return entire list.
+                    return albumPos->second;
+                }
+            }
+            musicFilesLock.unlock();
+            // No matches found. Return empty list.
+            return std::list<xMusicFile*>();
+        }
+    }
+    musicFilesLock.unlock();
+    return std::list<xMusicFile*>();
+}
+
 QStringList xMusicLibraryFiles::get(const QString& artist) const {
     QStringList albumList;
     musicFilesLock.lock();
@@ -108,6 +199,38 @@ QStringList xMusicLibraryFiles::get(const QString& artist) const {
     }
     musicFilesLock.unlock();
     return albumList;
+}
+
+QStringList xMusicLibraryFiles::get(const QString& artist, const xMusicLibraryFilter& filter) const {
+    // Check if we really need to apply a filter here.
+    if (!filter.hasAlbumFilter()) {
+        return get(artist);
+    }
+    // Filter in place.
+    QStringList albumList;
+    musicFilesLock.lock();
+    auto artistPos = musicFiles.find(artist);
+    if (artistPos != musicFiles.end()) {
+        for (const auto& album : artistPos->second) {
+            if (filter.isMatchingAlbum(album.first)) {
+                albumList.push_back(album.first);
+            }
+        }
+    }
+    musicFilesLock.unlock();
+    return albumList;
+}
+
+QStringList xMusicLibraryFiles::get(const xMusicLibraryFilter& filter) const {
+    QStringList artistList;
+    musicFilesLock.lock();
+    for (const auto& artist : musicFiles) {
+        if (filter.isMatchingArtist(artist.first)) {
+            artistList.push_back(artist.first);
+        }
+    }
+    musicFilesLock.unlock();
+    return artistList;
 }
 
 std::list<std::tuple<QString, QString, xMusicFile*>> xMusicLibraryFiles::get() const {
@@ -275,12 +398,59 @@ xMusicFile* xMusicLibrary::getMusicFile(const QString& artist, const QString& al
     return nullptr;
 }
 
+void xMusicLibrary::scan(const xMusicLibraryFilter& filter) {
+    auto artistList = musicLibraryFiles->get(filter);
+    if ((filter.hasAlbumFilter()) || (filter.hasTrackNameFilter())) {
+        for (auto i = artistList.begin(); i != artistList.end();) {
+            auto removeArtist = true;
+            auto albumList = musicLibraryFiles->get(*i, filter);
+            if (!albumList.isEmpty()) {
+                // track filtering can be time consuming.
+                if (filter.hasTrackNameFilter()) {
+                    for (const auto& album : albumList) {
+                        if (!musicLibraryFiles->get(*i, album, filter).empty()) {
+                            removeArtist = false;
+                            break;
+                        }
+                    }
+                } else {
+                    removeArtist = false;
+                }
+            }
+            if (removeArtist) {
+                i = artistList.erase(i);
+            } else {
+                ++i;
+            }
+        }
+    }
+    emit scannedArtists(artistList);
+}
+
 void xMusicLibrary::scanForArtist(const QString& artist) {
     // Get list of albums for this artist.
     auto albumList = musicLibraryFiles->get(artist);
     // Update widget.
     emit scannedAlbums(albumList);
 }
+
+void xMusicLibrary::scanForArtist(const QString& artist, const xMusicLibraryFilter& filter) {
+    // Get list of albums for this artist.
+    auto albumList = musicLibraryFiles->get(artist, filter);
+    if (filter.hasTrackNameFilter()) {
+        for (auto i = albumList.begin(); i != albumList.end();) {
+            // Remove album from list if no matching tracks are found.
+            if (musicLibraryFiles->get(artist, *i, filter).empty()) {
+                i = albumList.erase(i);
+            } else {
+                ++i;
+            }
+        }
+    }
+    // Update widget.
+    emit scannedAlbums(albumList);
+}
+
 
 void xMusicLibrary::scanForArtistAndAlbum(const QString& artist, const QString& album) {
     std::list<xMusicFile*> trackList;
@@ -311,7 +481,15 @@ void xMusicLibrary::scanAllAlbumsForArtist(const QString& artist) {
     emit scannedAllAlbumTracks(artist, albumTracks);
 }
 
-void xMusicLibrary::scanAllAlbumsForListArtists(const QList<QString>& listArtists) {
+void xMusicLibrary::scanAllAlbumsForArtist(const QString& artist, const xMusicLibraryFilter& filter) {
+    QList<std::pair<QString,std::vector<xMusicFile*>>> albumTracks;
+    // Retrieve the albums tracks.
+    getAllAlbumsForArtist(artist, albumTracks, filter);
+    // Update widget
+    emit scannedAllAlbumTracks(artist, albumTracks);
+}
+
+void xMusicLibrary::scanAllAlbumsForListArtists(const QStringList& listArtists) {
     QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicFile*>>>>> listTracks;
     try {
         // Retrieve list of albums and and sort them.
@@ -319,6 +497,25 @@ void xMusicLibrary::scanAllAlbumsForListArtists(const QList<QString>& listArtist
             QList<std::pair<QString,std::vector<xMusicFile*>>> albumTracks;
             getAllAlbumsForArtist(artist, albumTracks);
             listTracks.push_back(std::make_pair(artist, albumTracks));
+        }
+    } catch (...) {
+        // Clear list on error
+        listTracks.clear();
+    }
+    // Update widget
+    emit scannedListArtistsAllAlbumTracks(listTracks);
+}
+
+void xMusicLibrary::scanAllAlbumsForListArtists(const QStringList& listArtists, const xMusicLibraryFilter& filter) {
+    QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicFile*>>>>> listTracks;
+    try {
+        // Retrieve list of albums and and sort them.
+        for (const auto& artist : listArtists) {
+            QList<std::pair<QString,std::vector<xMusicFile*>>> albumTracks;
+            getAllAlbumsForArtist(artist, albumTracks, filter);
+            if (!albumTracks.isEmpty()) {
+                listTracks.push_back(std::make_pair(artist, albumTracks));
+            }
         }
     } catch (...) {
         // Clear list on error
@@ -355,7 +552,8 @@ void xMusicLibrary::scanForUnknownEntries(const std::list<std::tuple<QString, QS
     emit scannedUnknownEntries(unknownDatabaseEntries);
 }
 
-void xMusicLibrary::getAllAlbumsForArtist(const QString& artist, QList<std::pair<QString, std::vector<xMusicFile*>>>& albumTracks) {
+void xMusicLibrary::getAllAlbumsForArtist(const QString& artist,
+                                          QList<std::pair<QString, std::vector<xMusicFile*>>>& albumTracks) {
     try {
         // Clear list.
         albumTracks.clear();
@@ -379,6 +577,35 @@ void xMusicLibrary::getAllAlbumsForArtist(const QString& artist, QList<std::pair
 
 }
 
-void xMusicLibrary::scanningFinished() {
-    qDebug() << "xMusicLibrary: scanning finished.";
+void xMusicLibrary::getAllAlbumsForArtist(const QString& artist,
+                                          QList<std::pair<QString, std::vector<xMusicFile*>>>& albumTracks,
+                                          const xMusicLibraryFilter& filter) {
+    // Call version without filter if we do not need them.
+    if ((!filter.hasAlbumFilter()) && (!filter.hasTrackNameFilter())) {
+        getAllAlbumsForArtist(artist, albumTracks);
+        return;
+    }
+    try {
+        // Clear list.
+        albumTracks.clear();
+        // Retrieve list of albums and and sort them.
+        auto albumList = musicLibraryFiles->get(artist, filter);
+        albumList.sort();
+        for (const auto& album : albumList) {
+            auto trackObjects = musicLibraryFiles->get(artist, album, filter);
+            // Only add album with tracks if the track filter matches.
+            if (!trackObjects.empty()) {
+                trackObjects.pop_front();
+                trackObjects.sort([](xMusicFile* a, xMusicFile* b) { return (a->getTrackName() < b->getTrackName()); });
+                std::vector<xMusicFile*> albumTrackObjects;
+                for (const auto& track : trackObjects) {
+                    albumTrackObjects.emplace_back(track);
+                }
+                albumTracks.push_back(std::make_pair(album, albumTrackObjects));
+            }
+        }
+    } catch (...) {
+        // Clear list on error
+        albumTracks.clear();
+    }
 }

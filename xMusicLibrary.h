@@ -26,6 +26,69 @@
 
 class xMusicFile;
 
+class xMusicLibraryFilter {
+public:
+    xMusicLibraryFilter();
+    ~xMusicLibraryFilter() = default;
+    /**
+     * Check if the filter has defined any artist related filters.
+     *
+     * @return true if any artist filter have been specified, false otherwise.
+     */
+    [[nodiscard]] bool hasArtistFilter() const;
+    /**
+     * Check if the filter has defined any album related filters.
+     *
+     * @return true if any album filter have been specified, false otherwise.
+     */
+    [[nodiscard]] bool hasAlbumFilter() const;
+    /**
+     * Check if the filter has defined any track name related filters.
+     *
+     * @return true if any track name filter have been been specified, false otherwise.
+     */
+    [[nodiscard]] bool hasTrackNameFilter() const;
+    /**
+     * Check if the given artist passes the artist filter.
+     *
+     * @param artist the given artist to be verified.
+     * @return true if the artist passes the artist filter, false otherwise.
+     */
+    [[nodiscard]] bool isMatchingArtist(const QString& artist) const;
+    /**
+     * Check if the given album passes the album filter.
+     *
+     * @param album the given album to be verified.
+     * @return true if the album passes the album filter, false otherwise.
+     */
+    [[nodiscard]] bool isMatchingAlbum(const QString& album) const;
+    /**
+     * Check if the given track name passes the track name filter.
+     *
+     * @param trackName the given track name to be verified.
+     * @return true if the track name passes the track name filter, false otherwise.
+     */
+    [[nodiscard]] bool isMatchingTrackName(const QString& trackName) const;
+
+    // Substrings that artist,album,track match or not match.
+    QStringList artistMatch;
+    QStringList albumMatch;
+    QStringList albumNotMatch;
+    QStringList trackNameMatch;
+
+private:
+    /**
+     * Helper function checking any of list elements matches the given text.
+     *
+     * @param listMatch the list of matches as strings.
+     * @param text the text to compare to.
+     * @param emptyMatch the result if list of matches is empty.
+     *
+     * @return true if the any of the list elements matches the text, false otherwise.
+     */
+    static bool filterMatchesElement(const QStringList& listMatch, const QString& text, bool emptyMatch);
+};
+
 class xMusicLibraryFiles:public QObject {
     Q_OBJECT
 
@@ -60,12 +123,40 @@ public:
      */
     [[nodiscard]] std::list<xMusicFile*> get(const QString& artist, const QString& album);
     /**
+     * Retrieve the filtered tracks for the given artist and album.
+     *
+     * The filtered tracks is empty if none of the tracks passes track name filter and is
+     * unfiltered otherwise. The function returns either an empty list of the list of all
+     * tracks.
+     *
+     * @param artist name of the artist as string.
+     * @param album  name of the album for the specified artist as string.
+     * @param filter the filter to be applied.
+     * @return a filtered list of music file objects for the given artist and album.
+     */
+    [[nodiscard]] std::list<xMusicFile*> get(const QString& artist, const QString& album, const xMusicLibraryFilter& filter);
+    /**
      * Retrieve the albums for the given artist.
      *
      * @param artist name of the artist as string.
      * @return a list of strings containing the albums for the specified artist.
      */
     [[nodiscard]] QStringList get(const QString& artist) const;
+    /**
+     * Retrieve the filtered albums for the given artist.
+     *
+     * @param artist name of the artist as string.
+     * @param filter the filter to be applied.
+     * @return a list of strings containing the albums for the specified artist and passing the album filter.
+     */
+    [[nodiscard]] QStringList get(const QString& artist, const xMusicLibraryFilter& filter) const;
+    /**
+     * Retrieve the filtered artists.
+     *
+     * @param filter the filter to be applied.
+     * @return a list of strings containing the artists of the library that pass the artist filter.
+     */
+    [[nodiscard]] QStringList get(const xMusicLibraryFilter& filter) const;
     /**
      * Retrieve all artists, albums and tracks.
      *
@@ -92,7 +183,7 @@ private slots:
 
 private:
     explicit xMusicLibraryFiles(QObject* parent=nullptr);
-    ~xMusicLibraryFiles() override = default;
+    ~xMusicLibraryFiles() noexcept override;
     /**
      * Determine if the given file is a music file.
      *
@@ -171,6 +262,10 @@ public:
 
 signals:
     /**
+     * Signal that the complete scanning process is finished.
+     */
+    void scanningFinished();
+    /**
      * The following signals are triggers by the different scanning functions.
      * They are used to communicate the scanning result from the music library
      * to the main widget which implements the corresponding slots.
@@ -214,6 +309,16 @@ signals:
 
 public slots:
     /**
+     * Scan and filter for artists.
+     *
+     * No actual scanning is performed here. The mediaFile data structure
+     * generated in scan is used. The artist, album and track name filters
+     * are applied. Triggers the signal scannedArtists.
+     *
+     * @param filter the filter to be applied.
+     */
+    void scan(const xMusicLibraryFilter& filter);
+    /**
      * Scan albums for the given artist.
      *
      * No actual scanning is performed here. The mediaFile data structure
@@ -222,6 +327,17 @@ public slots:
      * @param artist the artist name for which we scan for albums.
      */
     void scanForArtist(const QString& artist);
+    /**
+     * Scan and filter albums for the given artist.
+     *
+     * No actual scanning is performed here. The mediaFile data structure
+     * generated in scan is used. The album and track name filters are
+     * applied. Triggers the signal scannedAlbums.
+     *
+     * @param artist the artist name for which we scan for albums.
+     * @param filter the filter to be applied.
+     */
+    void scanForArtist(const QString& artist, const xMusicLibraryFilter& filter);
     /**
      * Scan tracks for the given artist and album.
      *
@@ -242,11 +358,25 @@ public slots:
      */
     void scanAllAlbumsForArtist(const QString& artist);
     /**
+     * Scan and filter all albums and tracks for the given artist.
+     *
+     * @param artist the artist name for which we scan all albums and tracks.
+     * @param filter the filter to be applied.
+     */
+    void scanAllAlbumsForArtist(const QString& artist, const xMusicLibraryFilter& filter);
+    /**
      * Scan all albums and tracks for a given list of artists.
      *
      * @param listArtist the list of artists name for which we scan all albums and tracks.
      */
-    void scanAllAlbumsForListArtists(const QList<QString>& listArtist);
+    void scanAllAlbumsForListArtists(const QStringList& listArtist);
+    /**
+     * Scan and filter all albums and tracks for a given list of artists.
+     *
+     * @param listArtist the list of artists name for which we scan all albums and tracks.
+     * @param filter the filter to be applied.
+     */
+    void scanAllAlbumsForListArtists(const QStringList& listArtist, const xMusicLibraryFilter& filter);
     /**
      * Scan list to find entries that are not in the music library.
      *
@@ -255,7 +385,6 @@ public slots:
     void scanForUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries);
 
 private slots:
-    void scanningFinished();
 
 private:
     /*
@@ -264,7 +393,18 @@ private:
      * @param artist the artist name for which we scan all albums and tracks.
      * @param albumTracks the result of the scan as list of pairs of album name and vector of tracks.
      */
-    void getAllAlbumsForArtist(const QString& artist, QList<std::pair<QString,std::vector<xMusicFile*>>>& albumTracks);
+    void getAllAlbumsForArtist(const QString& artist,
+                               QList<std::pair<QString,std::vector<xMusicFile*>>>& albumTracks);
+    /*
+     * Helper function that only scans and filters all albums and tracks for an artist.
+     *
+     * @param artist the artist name for which we scan all albums and tracks.
+     * @param albumTracks the filtered result of the scan as list of pairs of album name and vector of tracks.
+     * @param filter the filter to be applied.
+     */
+    void getAllAlbumsForArtist(const QString& artist,
+                               QList<std::pair<QString,std::vector<xMusicFile*>>>& albumTracks,
+                               const xMusicLibraryFilter& filter);
     /**
      * Scan music library using the xMusicLibraryScanning class.
      */
