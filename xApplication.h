@@ -147,6 +147,14 @@ private slots:
      */
     void unknownMovies(const std::list<std::tuple<QString,QString,QString>>& entries);
 
+protected:
+    /**
+     * Overload closeEvent in order to perform some cleanup before exiting the program.
+     *
+     * @param event the close event.
+     */
+    void closeEvent(QCloseEvent* event) override;
+
 private:
     /**
      * Generate the File and View menus and connect actions.

@@ -134,6 +134,12 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     setWindowTitle(QApplication::applicationName());
 }
 
+void xApplication::closeEvent(QCloseEvent* event) {
+    // Do some local cleanup before closing.
+    musicLibrary->cleanup();
+    QMainWindow::closeEvent(event);
+}
+
 void xApplication::dbus_playPause() {
     auto currentWidget = mainView->currentWidget();
     if (currentWidget == mainMusicWidget) {
