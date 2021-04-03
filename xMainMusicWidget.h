@@ -62,11 +62,18 @@ signals:
      */
     void showMenuBar(bool menu);
     /**
-     * Signal to scan albums for an artist.
+     * Signal to scan and filter for artists.
+     *
+     * @param filter the filter to be applied.
+     */
+    void scan(const xMusicLibraryFilter& filter);
+    /**
+     * Signal to scan and filter albums for an artist.
      *
      * @param artist name of the artist to scan for.
+     * @param filter the filter to be applied.
      */
-    void scanForArtist(const QString& artist);
+    void scanForArtist(const QString& artist, const xMusicLibraryFilter& filter);
     /**
      * Signal to scan tracks for an artist/album
      *
@@ -75,23 +82,25 @@ signals:
      */
     void scanForArtistAndAlbum(const QString& artist, const QString& album);
     /**
-     * Signal to scan all albums and tracks for the given artist.
+     * Signal to scan and filter all albums and tracks for the given artist.
      *
      * @param artist the artist name for which we can all albums and tracks.
+     * @param filter the filter to be applied.
      */
-    void scanAllAlbumsForArtist(const QString& artist);
+    void scanAllAlbumsForArtist(const QString& artist, const xMusicLibraryFilter& filter);
     /**
-     * Signal to scan all albums and tracks for a given list of artists.
+     * Signal to scan and filter all albums and tracks for a given list of artists.
      *
      * @param listArtist the list of artists name for which we scan all albums and tracks.
+     * @param filter the filter to be applied.
      */
-    void scanAllAlbumsForListArtists(const QList<QString>& listArtist);
+    void scanAllAlbumsForListArtists(const QStringList& listArtist, const xMusicLibraryFilter& filter);
     /**
      * Signal a set of tracks to be queued in the playlist.
      *
      * @param artist the artist name for the tracks.
      * @param album the album name for the tracks.
-     * @param tracks ordered vector of music file objects.
+     * @param tracks ordered vector of track objects.
      */
     void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks);
     /**
@@ -137,19 +146,19 @@ public slots:
      * Update the QListWidget for the list of tracks. The widget itself sorts
      * all added entries.
      *
-     * @param tracks unordered list of track names.
+     * @param tracks unordered list of track objects.
      */
     void scannedTracks(const std::list<xMusicFile*>& tracks);
     /**
      * Receive the result of the all album and track scan for a given artist
      *
-     * @param albumTracks sorted list of pairs of album/list of track names to be queued.
+     * @param albumTracks sorted list of pairs of album/list of track objects to be queued.
      */
     void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<xMusicFile*>>>& albumTracks);
     /**
      * Receive the result of all albums and track scan for a given list of artists.
      *
-     * @param listTracks list of pair of album and list of track name (sorted) for a list of artists.
+     * @param listTracks list of pair of album and list of track objects (sorted) for a list of artists.
      */
     void scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks);
 
@@ -344,20 +353,6 @@ private:
      */
     [[nodiscard]] QStringList filterArtists(const QStringList& artists);
     /**
-     * Filter the list of albums based on the match and not match selectors.
-     *
-     * @param albums unfiltered list of albums.
-     * @return filtered list of albums according to selectors.
-     */
-    [[nodiscard]] QStringList filterAlbums(const QStringList& albums);
-    /**
-     * Filter the album based on the match and not match selectors.
-     *
-     * @param album the album to be filtered.
-     * @return true if album is allowed, false otherwise.
-     */
-    [[nodiscard]] bool filterAlbum(const QString& album);
-    /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
      * @param boxLabel contains the label for the surrounding groupbox.
@@ -367,6 +362,7 @@ private:
 
     xMusicPlayer* musicPlayer;
     xMusicLibrary* musicLibrary;
+    xMusicLibraryFilter musicLibraryFilter;
     xPlayerMusicWidget* playerWidget;
     xPlayerListWidget* artistList;
     xPlayerListWidget* albumList;
@@ -383,7 +379,6 @@ private:
      * Store the current list of unfiltered artists and albums for later filtering.
      */
     QStringList unfilteredArtists;
-    QStringList unfilteredAlbums;
     /**
      * Currently played artist and album. May differ from currently selected artist and album.
      */

@@ -57,10 +57,15 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     createMenus();
     // Connect music library with main music widget.
     // Commands for the music library.
-    connect(mainMusicWidget, &xMainMusicWidget::scanForArtist, musicLibrary, &xMusicLibrary::scanForArtist);
+    connect(mainMusicWidget, SIGNAL(scan(const xMusicLibraryFilter&)),
+            musicLibrary, SLOT(scan(const xMusicLibraryFilter&)));
+    connect(mainMusicWidget, SIGNAL(scanForArtist(const QString&, const xMusicLibraryFilter&)),
+            musicLibrary, SLOT(scanForArtist(const QString&, const xMusicLibraryFilter&)));
     connect(mainMusicWidget, &xMainMusicWidget::scanForArtistAndAlbum, musicLibrary, &xMusicLibrary::scanForArtistAndAlbum);
-    connect(mainMusicWidget, &xMainMusicWidget::scanAllAlbumsForArtist, musicLibrary, &xMusicLibrary::scanAllAlbumsForArtist);
-    connect(mainMusicWidget, &xMainMusicWidget::scanAllAlbumsForListArtists, musicLibrary, &xMusicLibrary::scanAllAlbumsForListArtists);
+    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForArtist(const QString&, const xMusicLibraryFilter&)),
+            musicLibrary, SLOT(scanAllAlbumsForArtist(const QString&, const xMusicLibraryFilter&)));
+    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForListArtists(const QStringList&, const xMusicLibraryFilter&)),
+            musicLibrary, SLOT(scanAllAlbumsForListArtists(const QStringList&, const xMusicLibraryFilter&)));
     // Results back to the main music widget.
     connect(musicLibrary, &xMusicLibrary::scannedArtists, mainMusicWidget, &xMainMusicWidget::scannedArtists);
     connect(musicLibrary, &xMusicLibrary::scannedAlbums, mainMusicWidget, &xMainMusicWidget::scannedAlbums);

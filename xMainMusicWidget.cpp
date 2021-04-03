@@ -208,10 +208,8 @@ void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
     // Clear album and track lists
     albumList->clearItems();
     trackList->clearItems();
-    unfilteredAlbums = albums;
-    for (const auto& album : filterAlbums(albums)) {
-        albumList->addItemWidget(album);
-    }
+    //unfilteredAlbums = albums;
+    albumList->addItemWidgets(albums);
     // Update database overlay for albums.
     updatePlayedAlbums();
 }
@@ -230,10 +228,6 @@ void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,
                                              std::vector<xMusicFile*>>>& albumTracks) {
     for (const auto& albumTrack : albumTracks) {
-        // Skip over the albums that do not match our filter.
-        if (!filterAlbum(albumTrack.first)) {
-            continue;
-        }
         for (const auto& track : albumTrack.second) {
             // Add to the playlist (queue)
             queueList->addItemWidget(track, QString("%1 - %2").arg(artist).arg(albumTrack.first));
@@ -249,10 +243,6 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
                                                         std::vector<xMusicFile*>>>>>& listTracks) {
     for (const auto& listTrack : listTracks) {
         for (const auto& albumTrack : listTrack.second) {
-            // Skip over the albums that do not match our filter.
-            if (!filterAlbum(albumTrack.first)) {
-                continue;
-            }
             for (const auto& track : albumTrack.second) {
                 // Add to the playlist (queue)
                 queueList->addItemWidget(track, QString("%1 - %2").arg(listTrack.first).arg(albumTrack.first));
@@ -309,46 +299,12 @@ QStringList xMainMusicWidget::filterArtists(const QStringList& artists) {
     return filtered;
 }
 
-QStringList xMainMusicWidget::filterAlbums(const QStringList& albums) {
-    QStringList filtered;
-    for (const auto& album : albums) {
-        // Only add albums that pass our filters.
-        if (filterAlbum(album)) {
-            filtered.push_back(album);
-        }
-    }
-    return filtered;
-}
-
-bool xMainMusicWidget::filterAlbum(const QString& album) {
-    // Go through the not match selectors.
-    for (const auto& notMatch : albumSelectorNotMatch) {
-        if (album.contains(notMatch)) {
-            return false;
-        }
-    }
-    // Accept if we do not have any match selectors.
-    if (albumSelectorMatch.isEmpty()) {
-        return true;
-    } else {
-        // Go through the match selectors.
-        for (const auto& match : albumSelectorMatch) {
-            // Only has to match one.
-            if (album.contains(match)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
 void xMainMusicWidget::selectArtist(int artist) {
     // Check if artist index is valid.
     if ((artist >= 0) && (artist < artistList->count())) {
         // Retrieve selected artist name and trigger scanForArtist
         auto artistName = artistList->itemWidget(artist)->text();
-        emit scanForArtist(artistName);
+        emit scanForArtist(artistName, musicLibraryFilter);
     }
 }
 
@@ -357,7 +313,7 @@ void xMainMusicWidget::queueArtist(QListWidgetItem *artistItem) {
     auto artist = artistList->row(artistItem);
     if ((artist >= 0) && (artist < artistList->count())) {
         // Retrieve selected artist name and trigger scanAllAlbumsForArtist
-        emit scanAllAlbumsForArtist(artistList->itemWidget(artist)->text());
+        emit scanAllAlbumsForArtist(artistList->itemWidget(artist)->text(), musicLibraryFilter);
     }
 }
 
@@ -427,7 +383,7 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
             selectArtistSelector(selector);
             return;
         }
-        QList<QString> listArtists;
+        QStringList listArtists;
         // Call with stored list in order to update artist filtering.
         updateScannedArtists(unfilteredArtists);
         // Scan for all filtered artists.
@@ -435,14 +391,17 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
             listArtists.push_back(artistList->itemWidget(i)->text());
         }
         // Trigger scanAllAlbumsForListArtist with given list of artists.
-        emit scanAllAlbumsForListArtists(listArtists);
+        emit scanAllAlbumsForListArtists(listArtists, musicLibraryFilter);
     }
 }
 
 void xMainMusicWidget::selectAlbumSelector(const QStringList& match, const QStringList& notMatch) {
+    // We need to the matching selectors since search may add to the album matches.
     albumSelectorMatch = match;
     albumSelectorNotMatch = notMatch;
-    scannedAlbums(unfilteredAlbums);
+    musicLibraryFilter.albumMatch = albumSelectorMatch;
+    musicLibraryFilter.albumNotMatch = albumSelectorNotMatch;
+    emit scan(musicLibraryFilter);
 }
 
 void xMainMusicWidget::currentState(xMusicPlayer::State state) {
@@ -561,10 +520,11 @@ void xMainMusicWidget::updatedMusicLibraryAlbumSelectors() {
     // Clear match and not match selectors.
     albumSelectorMatch.clear();
     albumSelectorNotMatch.clear();
-    // If we have a list of albums, then we re-filter.
-    if (!unfilteredAlbums.isEmpty()) {
-        scannedAlbums(unfilteredAlbums);
-    }
+    // Search may add to the album matches.
+    musicLibraryFilter.albumMatch = albumSelectorMatch;
+    musicLibraryFilter.albumNotMatch = albumSelectorNotMatch;
+    // Rescan.
+    emit scan(musicLibraryFilter);
 }
 
 void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
