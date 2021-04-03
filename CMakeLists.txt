@@ -20,6 +20,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 option(USE_PHONON "Use the Phonon based media player instead of Qt" ON)
 option(USE_QWT "Use the Qwt based player widget instead of Qt" ON)
+option(USE_STREAMING "Enable the streaming view in xPlay" ON)
 configure_file(xPlayerConfig.h.in xPlayerConfig.h)
 
 find_package(Qt5 COMPONENTS Widgets DBus REQUIRED)

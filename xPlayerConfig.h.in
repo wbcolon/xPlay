@@ -1,3 +1,4 @@
 #cmakedefine USE_PHONON
 #cmakedefine USE_QWT
+#cmakedefine USE_STREAMING
 

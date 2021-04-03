@@ -25,6 +25,7 @@
 #include "xPlayerConfiguration.h"
 #include "xPlayerConfigurationDialog.h"
 #include "xPlayerDatabase.h"
+#include "xPlayerConfig.h"
 
 xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags) {
@@ -43,14 +44,19 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     moviePlayer = new xMoviePlayer(mainView);
     mainMusicWidget = new xMainMusicWidget(musicPlayer, musicLibrary, mainView);
     mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
+#ifdef USE_STREAMING
     mainStreamingWidget = new xMainStreamingWidget(mainView);
-    mainDbus = new xPlayerDBus(mainView);
+#else
+    mainStreamingWidget = nullptr;
+#endif
     // Add to the stack widget
-    mainView->addWidget(new QWidget(mainView));
     mainView->addWidget(mainMusicWidget);
     mainView->addWidget(mainMovieWidget);
+#ifdef USE_STREAMING
     mainView->addWidget(mainStreamingWidget);
+#endif
     mainView->setCurrentWidget(mainMusicWidget);
+    mainDbus = new xPlayerDBus(mainView);
     // Use main widget as central application widget.
     setCentralWidget(mainView);
     // Create Application menus.
@@ -87,8 +93,10 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(mainMusicWidget, &xMainMusicWidget::showWindowTitle, this, &xApplication::setWindowTitle);
     connect(mainMovieWidget, &xMainMovieWidget::showMenuBar, menuBar(), &QMenuBar::setVisible);
     connect(mainMovieWidget, &xMainMovieWidget::showWindowTitle, this, &xApplication::setWindowTitle);
+#ifdef USE_STREAMING
     connect(mainStreamingWidget, &xMainStreamingWidget::showMenuBar, menuBar(), &QMenuBar::setVisible);
     connect(mainStreamingWidget, &xMainStreamingWidget::showWindowTitle, this, &xApplication::setWindowTitle);
+#endif
     // Do not connect main widget to music player here. It is done in the main widget
     // Connect Settings.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryDirectory,
@@ -97,10 +105,12 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
             this, &xApplication::setMovieLibraryTagsAndDirectories);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelNetworkAddress,
             this, &xApplication::setRotelNetworkAddress);
+#ifdef USE_STREAMING
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSites,
             this, &xApplication::setStreamingSites);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSitesDefault,
             this, &xApplication::setStreamingSitesDefault);
+#endif
     // Connect database.
     connect(xPlayerDatabase::database(), &xPlayerDatabase::databaseUpdateError,
             this, &xApplication::databaseUpdateError);
@@ -208,8 +218,10 @@ void xApplication::dbus_selectView(const QString& view) {
         mainView->setCurrentWidget(mainMovieWidget);
         mainMovieWidget->initializeView();
     } else if (!view.compare("streaming", Qt::CaseInsensitive)) {
+#ifdef USE_STREAMING
         mainView->setCurrentWidget(mainStreamingWidget);
         mainStreamingWidget->initializeView();
+#endif
     }
 }
 
@@ -346,7 +358,9 @@ void xApplication::createMenus() {
     // Create actions for view menu.
     auto viewMenuSelectMusic = new QAction("Select M&usic View", this);
     auto viewMenuSelectMovie = new QAction("Select M&ovie View", this);
+#ifdef USE_STREAMING
     auto viewMenuSelectStreaming = new QAction("Select Str&eaming View", this);
+#endif
     // Connect actions from view menu.
     connect(viewMenuSelectMusic, &QAction::triggered, [=]() {
         mainView->setCurrentWidget(mainMusicWidget);
@@ -356,15 +370,19 @@ void xApplication::createMenus() {
         mainView->setCurrentWidget(mainMovieWidget);
         mainMovieWidget->initializeView();
     });
+#ifdef USE_STREAMING
     connect(viewMenuSelectStreaming, &QAction::triggered, [=]() {
         mainView->setCurrentWidget(mainStreamingWidget);
         mainStreamingWidget->initializeView();
     });
+#endif
     // Create view menu.
     auto viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(viewMenuSelectMusic);
     viewMenu->addAction(viewMenuSelectMovie);
+#ifdef USE_STREAMING
     viewMenu->addAction(viewMenuSelectStreaming);
+#endif
     // Create actions for help menu
     auto helpMenuAboutQt = new QAction("About Qt", this);
     auto helpMenuAboutQwt = new QAction("About Qwt", this);
