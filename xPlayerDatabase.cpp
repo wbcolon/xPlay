@@ -598,3 +598,24 @@ std::pair<int,quint64> xPlayerDatabase::updateTransition(const QString& fromArti
     }
     return std::make_pair(0,0);
 }
+
+std::map<QString,std::set<QString>> xPlayerDatabase::getAllAlbums(quint64 after) {
+    std::map<QString,std::set<QString>> mapArtistAlbum;
+    try {
+        soci::rowset<soci::row> artistAlbumRows = (sqlDatabase.prepare <<
+            "SELECT artist, album FROM music WHERE timeStamp >= :after GROUP BY artist, album", soci::use(after));
+        for (const auto& artistAlbumRow : artistAlbumRows) {
+            auto artist = QString::fromStdString(artistAlbumRow.get<std::string>(0));
+            auto album = QString::fromStdString(artistAlbumRow.get<std::string>(1));
+            if (mapArtistAlbum.find(artist) == mapArtistAlbum.end()) {
+                mapArtistAlbum[artist] = std::set<QString>();
+            }
+            mapArtistAlbum[artist].insert(album);
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to query database for played artists and albums, error: " << e.what();
+        mapArtistAlbum.clear();
+    }
+    return mapArtistAlbum;
+
+}

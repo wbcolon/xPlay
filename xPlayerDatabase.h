@@ -19,6 +19,7 @@
 #include <QStringList>
 #include <soci.h>
 #include <sqlite3/soci-sqlite3.h>
+#include <set>
 
 class xPlayerDatabase:public QObject {
     Q_OBJECT
@@ -207,6 +208,14 @@ public:
     std::pair<int,quint64> updateTransition(const QString& fromArtist, const QString& fromAlbum,
                                             const QString& toArtist, const QString& toAlbum,
                                             bool shuffleMode);
+    /**
+     * Retrieve all played artist and albums with their latest timestamp.
+     *
+     * @param after the time stamp used in the query the played movies.
+     *
+     * @return a map from artist to a set of album.
+     */
+    std::map<QString,std::set<QString>> getAllAlbums(quint64 after);
 
 signals:
     void databaseUpdateError();
