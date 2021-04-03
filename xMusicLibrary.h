@@ -260,6 +260,8 @@ public:
      */
     [[nodiscard]] xMusicFile* getMusicFile(const QString& artist, const QString& album, const QString& trackName);
 
+    void cleanup();
+
 signals:
     /**
      * Signal that the complete scanning process is finished.
@@ -405,10 +407,6 @@ private:
     void getAllAlbumsForArtist(const QString& artist,
                                QList<std::pair<QString,std::vector<xMusicFile*>>>& albumTracks,
                                const xMusicLibraryFilter& filter);
-    /**
-     * Scan music library using the xMusicLibraryScanning class.
-     */
-    void scan();
 
     std::filesystem::path baseDirectory;
     /**

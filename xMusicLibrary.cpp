@@ -122,8 +122,9 @@ void xMusicLibraryFiles::clear() {
             for (auto& track : album.second) {
                 delete track;
             }
-            artist.second.clear();
+            album.second.clear();
         }
+        artist.second.clear();
     }
     musicFiles.clear();
     musicFilesLock.unlock();
@@ -289,7 +290,8 @@ xMusicLibraryScanning::xMusicLibraryScanning(QObject *parent):
 
 xMusicLibraryScanning::~xMusicLibraryScanning() noexcept {
     if (isRunning()) {
-        quit();
+        requestInterruption();
+        wait();
     }
 }
 
@@ -307,6 +309,9 @@ void xMusicLibraryScanning::run() {
     for (auto entry : artistAlbumList) {
         musicLibraryFiles->set(std::get<0>(entry), std::get<1>(entry),
                 musicLibraryFiles->scanForAlbumTracks(std::get<2>(entry)));
+        if (currentThread()->isInterruptionRequested()) {
+            return;
+        }
     }
     qDebug() << "xMusicLibraryScanning: finished";
 }
@@ -342,6 +347,9 @@ void xMusicLibraryScanning::scan() {
             }
             musicLibraryFiles->set(artistName, artistAlbumMap);
             artistList.push_back(artistName);
+            if (currentThread()->isInterruptionRequested()) {
+                return;
+            }
         }
         // Update widget
         emit scannedArtists(artistList);
@@ -376,7 +384,8 @@ void xMusicLibrary::setBaseDirectory(const std::filesystem::path& base) {
         // Scan music library after updated directory.
         // Rescan with same base intentional.
         if (musicLibraryScanning->isRunning()) {
-            musicLibraryScanning->quit();
+            musicLibraryScanning->requestInterruption();
+            musicLibraryScanning->wait();
         }
         musicLibraryScanning->setBaseDirectory(base);
         musicLibraryScanning->start(QThread::IdlePriority);
@@ -396,6 +405,14 @@ xMusicFile* xMusicLibrary::getMusicFile(const QString& artist, const QString& al
         }
     }
     return nullptr;
+}
+
+void xMusicLibrary::cleanup() {
+    if ((musicLibraryScanning) && (musicLibraryScanning->isRunning())) {
+        musicLibraryScanning->requestInterruption();
+        musicLibraryScanning->wait();
+    }
+    musicLibraryFiles->clear();
 }
 
 void xMusicLibrary::scan(const xMusicLibraryFilter& filter) {
