@@ -17,26 +17,38 @@
 
 #include <QDebug>
 
-xMusicLibraryFilter::xMusicLibraryFilter() {
+xMusicLibraryFilter::xMusicLibraryFilter():
+        albumMatch(),
+        albumNotMatch(),
+        artistSearchMatch(),
+        albumSearchMatch(),
+        trackNameSearchMatch(),
+        useArtistAlbumMatch(false),
+        artistAlbumMatch(),
+        artistAlbumNotMatch(false) {
 }
 
 bool xMusicLibraryFilter::hasArtistFilter() const {
-    return (!artistMatch.isEmpty());
+    return ((!artistSearchMatch.isEmpty()) || (useArtistAlbumMatch));
 }
 
 bool xMusicLibraryFilter::hasAlbumFilter() const {
-    return ((!albumMatch.isEmpty()) || (!albumNotMatch.isEmpty()));
+    return ((!albumMatch.isEmpty()) || (!albumNotMatch.isEmpty()) ||
+            (!albumSearchMatch.isEmpty()) || (useArtistAlbumMatch));
 }
 
 bool xMusicLibraryFilter::hasTrackNameFilter() const {
-    return (!trackNameMatch.isEmpty());
+    return (!trackNameSearchMatch.isEmpty());
 }
 
 bool xMusicLibraryFilter::isMatchingArtist(const QString& artist) const {
-    return filterMatchesElement(artistMatch, artist, true);
+    return artist.contains(artistSearchMatch, Qt::CaseInsensitive);
 }
 
 bool xMusicLibraryFilter::isMatchingAlbum(const QString& album) const {
+    if (!album.contains(albumSearchMatch, Qt::CaseInsensitive)) {
+        return false;
+    }
     if (filterMatchesElement(albumNotMatch, album, false)) {
         return false;
     }
@@ -44,7 +56,21 @@ bool xMusicLibraryFilter::isMatchingAlbum(const QString& album) const {
 }
 
 bool xMusicLibraryFilter::isMatchingTrackName(const QString& trackName) const {
-    return filterMatchesElement(trackNameMatch, trackName, true);
+    return trackName.contains(trackNameSearchMatch, Qt::CaseInsensitive);
+}
+
+bool xMusicLibraryFilter::isMatchingDatabaseArtistAndAlbum(const QString& artist, const QString& album) const {
+    // No database matching im map is empty.
+    if (!useArtistAlbumMatch) {
+        return true;
+    }
+    auto artistPos = artistAlbumMatch.find(artist);
+    if (artistPos != artistAlbumMatch.end()) {
+        if (artistPos->second.find(album) != artistPos->second.end()) {
+            return !artistAlbumNotMatch;
+        }
+    }
+    return artistAlbumNotMatch;
 }
 
 bool xMusicLibraryFilter::filterMatchesElement(const QStringList& listMatch, const QString& text, bool emptyMatch) {
@@ -57,6 +83,41 @@ bool xMusicLibraryFilter::filterMatchesElement(const QStringList& listMatch, con
         return true;
     }
     return false;
+}
+
+void xMusicLibraryFilter::setAlbumMatch(const QStringList& match, const QStringList& notMatch) {
+    albumMatch = match;
+    albumNotMatch = notMatch;
+    artistSearchMatch.clear();
+    albumSearchMatch.clear();
+    trackNameSearchMatch.clear();
+}
+
+void xMusicLibraryFilter::addSearchMatch(const std::tuple<QString,QString,QString>& match) {
+    artistSearchMatch = std::get<0>(match);
+    albumSearchMatch = std::get<1>(match);
+    trackNameSearchMatch = std::get<2>(match);
+}
+
+void xMusicLibraryFilter::setDatabaseMatch(const std::map<QString,std::set<QString>>& databaseMatch, bool databaseNotMatch) {
+    useArtistAlbumMatch = true;
+    artistAlbumMatch = databaseMatch;
+    artistAlbumNotMatch = databaseNotMatch;
+}
+
+void xMusicLibraryFilter::clearDatabaseMatch() {
+    useArtistAlbumMatch = false;
+    artistAlbumMatch.clear();
+    artistAlbumNotMatch = false;
+}
+
+void xMusicLibraryFilter::clearMatch() {
+    albumMatch.clear();
+    albumNotMatch.clear();
+    artistSearchMatch.clear();
+    albumSearchMatch.clear();
+    trackNameSearchMatch.clear();
+    clearDatabaseMatch();
 }
 
 // singleton
@@ -213,7 +274,8 @@ QStringList xMusicLibraryFiles::get(const QString& artist, const xMusicLibraryFi
     auto artistPos = musicFiles.find(artist);
     if (artistPos != musicFiles.end()) {
         for (const auto& album : artistPos->second) {
-            if (filter.isMatchingAlbum(album.first)) {
+            if ((filter.isMatchingAlbum(album.first)) &&
+                (filter.isMatchingDatabaseArtistAndAlbum(artistPos->first, album.first))) {
                 albumList.push_back(album.first);
             }
         }

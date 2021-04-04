@@ -13,6 +13,7 @@
  */
 #include "xMainMusicWidget.h"
 #include "xMusicFile.h"
+#include "xPlayerMusicSearchWidget.h"
 #include "xPlayerMusicWidget.h"
 #include "xPlayerDatabase.h"
 #include "xPlayerUI.h"
@@ -94,26 +95,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     artistSelectorList->setWrapping(false);
     artistSelectorList->setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
     albumSelectorList = new xPlayerSelectorWidget(selectorTabs);
-    auto searchSelector = new QWidget(selectorTabs);
-    searchSelector->setContentsMargins(0, 0, 0, 0);
-    auto searchSelectorLayout = new xPlayerLayout();
-    searchSelectorLayout->setSpacing(0);
-    searchSelectorLayout->setContentsMargins(0, 0, 0, 0);
-    auto searchArtistButton = new QRadioButton(tr("Artist"), searchSelector);
-    auto searchAlbumButton = new QRadioButton(tr("Album"), searchSelector);
-    auto searchTrackButton = new QRadioButton(tr("Track"), searchSelector);
-    auto searchButtons = new QButtonGroup(searchSelector);
-    searchButtons->addButton(searchArtistButton);
-    searchButtons->addButton(searchAlbumButton);
-    searchButtons->addButton(searchTrackButton);
-    searchSelectorLayout->addWidget(new QLineEdit(searchSelector), 0, 0, 1, 8);
-    searchSelectorLayout->addColumnSpacer(8, xPlayerLayout::MediumSpace);
-    searchSelectorLayout->addWidget(searchArtistButton, 0, 9);
-    searchSelectorLayout->addWidget(searchAlbumButton, 0, 10);
-    searchSelectorLayout->addWidget(searchTrackButton, 0, 11);
-    searchSelectorLayout->addColumnSpacer(12, xPlayerLayout::MediumSpace);
-    searchSelectorLayout->addWidget(new QPushButton(tr("Search"), searchSelector), 0, 13);
-    searchSelector->setLayout(searchSelectorLayout);
+    searchSelector = new xPlayerMusicSearchWidget(selectorTabs);
     selectorTabs->addTab(artistSelectorList, tr("Artist Selector"));
     selectorTabs->addTab(albumSelectorList, tr("Album Selector"));
     selectorTabs->addTab(searchSelector, tr("Search"));
@@ -136,6 +118,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(artistSelectorList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtistSelector);
     connect(artistSelectorList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueArtistSelector);
     connect(albumSelectorList, &xPlayerSelectorWidget::updatedSelectors, this, &xMainMusicWidget::selectAlbumSelector);
+    connect(searchSelector, &xPlayerMusicSearchWidget::clearFilter, this, &xMainMusicWidget::clearSearchSelectorFilter);
+    connect(searchSelector, &xPlayerMusicSearchWidget::updateFilter, this, &xMainMusicWidget::updateSearchSelectorFilter);
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
     connect(this, &xMainMusicWidget::finishedQueueTracks, musicPlayer, &xMusicPlayer::finishedQueueTracks);
@@ -399,8 +383,20 @@ void xMainMusicWidget::selectAlbumSelector(const QStringList& match, const QStri
     // We need to the matching selectors since search may add to the album matches.
     albumSelectorMatch = match;
     albumSelectorNotMatch = notMatch;
-    musicLibraryFilter.albumMatch = albumSelectorMatch;
-    musicLibraryFilter.albumNotMatch = albumSelectorNotMatch;
+    musicLibraryFilter.setAlbumMatch(albumSelectorMatch, albumSelectorNotMatch);
+    musicLibraryFilter.addSearchMatch(searchSelector->getMatch());
+    emit scan(musicLibraryFilter);
+}
+
+void xMainMusicWidget::clearSearchSelectorFilter() {
+    musicLibraryFilter.clearMatch();
+    musicLibraryFilter.addSearchMatch(searchSelector->getMatch());
+    emit scan(musicLibraryFilter);
+}
+
+void xMainMusicWidget::updateSearchSelectorFilter(const std::tuple<QString,QString,QString>& match) {
+    musicLibraryFilter.setAlbumMatch(albumSelectorMatch, albumSelectorNotMatch);
+    musicLibraryFilter.addSearchMatch(match);
     emit scan(musicLibraryFilter);
 }
 
@@ -518,11 +514,9 @@ void xMainMusicWidget::updatedDatabaseMusicOverlay() {
 void xMainMusicWidget::updatedMusicLibraryAlbumSelectors() {
     albumSelectorList->setSelectors(xPlayerConfiguration::configuration()->getMusicLibraryAlbumSelectorList());
     // Clear match and not match selectors.
-    albumSelectorMatch.clear();
-    albumSelectorNotMatch.clear();
-    // Search may add to the album matches.
-    musicLibraryFilter.albumMatch = albumSelectorMatch;
-    musicLibraryFilter.albumNotMatch = albumSelectorNotMatch;
+    musicLibraryFilter.clearMatch();
+    // Add search matches.
+    musicLibraryFilter.addSearchMatch(searchSelector->getMatch());
     // Rescan.
     emit scan(musicLibraryFilter);
 }

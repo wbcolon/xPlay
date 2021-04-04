@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <list>
 #include <map>
+#include <set>
 
 class xMusicFile;
 
@@ -69,12 +70,42 @@ public:
      * @return true if the track name passes the track name filter, false otherwise.
      */
     [[nodiscard]] bool isMatchingTrackName(const QString& trackName) const;
-
-    // Substrings that artist,album,track match or not match.
-    QStringList artistMatch;
-    QStringList albumMatch;
-    QStringList albumNotMatch;
-    QStringList trackNameMatch;
+    /**
+     * Check if the given artist and album match the database mapping filter.
+     *
+     * @param artist the given artist to be verified.
+     * @param album the given album to be verified.
+     * @return artistAlbumNotMatch if the artist/album are not in the mapping, not artistAlbumNotMatch otherwise.
+     */
+    [[nodiscard]] bool isMatchingDatabaseArtistAndAlbum(const QString& artist, const QString& album) const;
+    /**
+     * Set the album match and not match. Overwrite old setting.
+     *
+     * @param match list of strings that must match.
+     * @param notMatch list of strings that are not allowed to match.
+     */
+    void setAlbumMatch(const QStringList& match, const QStringList& notMatch);
+    /**
+     * Add the search match.
+     *
+     * @param match a tuple of artist, album and track name match.
+     */
+    void addSearchMatch(const std::tuple<QString,QString,QString>& match);
+    /**
+     * Add the database album match and not match.
+     *
+     * @param databaseMatch the artist and albums recorded in the database.
+     * @param databaseNotMatch use databaseMatch to invert matching if true.
+     */
+    void setDatabaseMatch(const std::map<QString,std::set<QString>>& databaseMatch, bool databaseNotMatch);
+    /**
+     * Clear the database album match.
+     */
+    void clearDatabaseMatch();
+    /**
+     * Clear all match and not match strings.
+     */
+    void clearMatch();
 
 private:
     /**
@@ -87,6 +118,16 @@ private:
      * @return true if the any of the list elements matches the text, false otherwise.
      */
     static bool filterMatchesElement(const QStringList& listMatch, const QString& text, bool emptyMatch);
+
+    // Substrings that artist,album,track match or not match.
+    QStringList albumMatch;
+    QStringList albumNotMatch;
+    QString artistSearchMatch;
+    QString albumSearchMatch;
+    QString trackNameSearchMatch;
+    bool useArtistAlbumMatch;
+    std::map<QString,std::set<QString>> artistAlbumMatch;
+    bool artistAlbumNotMatch;
 };
 
 class xMusicLibraryFiles:public QObject {
@@ -204,12 +245,26 @@ class xMusicLibraryScanning:public QThread {
 public:
     explicit xMusicLibraryScanning(QObject* parent=nullptr);
     ~xMusicLibraryScanning() noexcept override;
-
+    /**
+     * Set the base directory for the music library.
+     *
+     * This function does not trigger a scan. The scan must be
+     * triggered explicitly.
+     *
+     * @param dir absolute path to the music library.
+     */
     void setBaseDirectory(const std::filesystem::path& dir);
-
+    /**
+     * Scan the music library for music files.
+     */
     void run() override;
 
 signals:
+    /**
+     * Signal emitted with list of artist after initial scan is finished.
+     *
+     * @param artists list of scanned artists as string.
+     */
     void scannedArtists(const QStringList& artists);
 
 private:
@@ -234,7 +289,6 @@ class xMusicLibrary:public QObject {
 public:
     explicit xMusicLibrary(QObject* parent=nullptr);
     ~xMusicLibrary() override = default;
-
     /**
      * Set base directory for the music library.
      *

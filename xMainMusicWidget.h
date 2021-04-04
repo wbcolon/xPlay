@@ -17,6 +17,7 @@
 #include "xMusicPlayer.h"
 #include "xMusicLibrary.h"
 #include "xPlayerMusicWidget.h"
+#include "xPlayerMusicSearchWidget.h"
 #include "xPlayerSelectorWidget.h"
 #include "xPlayerListWidget.h"
 
@@ -252,6 +253,16 @@ private slots:
      */
     void selectAlbumSelector(const QStringList& match, const QStringList& notMatch);
     /**
+     * Clear the search selector filter.
+     */
+    void clearSearchSelectorFilter();
+    /**
+     * Update the search selector filter.
+     *
+     * @param match the tuple of artist, album and track name match as string.
+     */
+    void updateSearchSelectorFilter(const std::tuple<QString,QString,QString>& match);
+    /**
      * Update the player UI based on the player state.
      *
      * @param state the current state of the player.
@@ -369,6 +380,7 @@ private:
     xPlayerListWidget* trackList;
     QListWidget* artistSelectorList;
     xPlayerSelectorWidget* albumSelectorList;
+    xPlayerMusicSearchWidget* searchSelector;
     QStringList albumSelectorMatch;
     QStringList albumSelectorNotMatch;
     xPlayerListWidget* queueList;
