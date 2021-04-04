@@ -76,7 +76,7 @@ add_executable(xPlay
         ${XPLAYERWIDGETX}
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
-        xPlayerSelectorWidget.cpp
+        xPlayerMusicAlbumSelectorWidget.cpp
         xMainMusicWidget.cpp
         xMainMovieWidget.cpp
         xMainStreamingWidget.cpp

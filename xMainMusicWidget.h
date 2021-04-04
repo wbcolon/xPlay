@@ -18,10 +18,10 @@
 #include "xMusicLibrary.h"
 #include "xPlayerMusicWidget.h"
 #include "xPlayerMusicSearchWidget.h"
-#include "xPlayerSelectorWidget.h"
+#include "xPlayerMusicAlbumSelectorWidget.h"
 #include "xPlayerListWidget.h"
 
-#include <QListWidget>
+#include <QGroupBox>
 #include <QString>
 
 #include <vector>
@@ -251,17 +251,32 @@ private slots:
      * @param match the album must match one element out of this list.
      * @param notMatch the album must not match any element out of this list.
      */
-    void selectAlbumSelector(const QStringList& match, const QStringList& notMatch);
+    void selectAlbumSelectors(const QStringList& match, const QStringList& notMatch);
     /**
-     * Clear the search selector filter.
+     * Filter the list of albums based on a database artist and album mapping.
+     *
+     * @param databaseMatch the artist and album mapping generated based on the database.
+     * @param databaseNotMatch invert the matching if true.
      */
-    void clearSearchSelectorFilter();
+    void selectAlbumDatabaseSelectors(const std::map<QString,std::set<QString>>& databaseMatch, bool databaseNotMatch);
+    /**
+     * Clear the database artist and album mapping filter.
+     */
+    void clearAlbumDatabaseSelectors();
+    /**
+     * Clear all album selector filters. Includes database filters.
+     */
+    void clearAlbumSelectors();
     /**
      * Update the search selector filter.
      *
      * @param match the tuple of artist, album and track name match as string.
      */
     void updateSearchSelectorFilter(const std::tuple<QString,QString,QString>& match);
+    /**
+     * Clear the search selector filter.
+     */
+    void clearSearchSelectorFilter();
     /**
      * Update the player UI based on the player state.
      *
@@ -320,6 +335,18 @@ private slots:
      * Update the album selectors and re-filter albums if necessary.
      */
     void updatedMusicLibraryAlbumSelectors();
+    /**
+     * Update the total time for the track list.
+     *
+     * @param total the total time (in ms) to be displayed, clear if 0.
+     */
+    void updateTracksTotalTime(qint64 total);
+    /**
+     * Update the total time for the queue list.
+     *
+     * @param total the total time (in ms) to be displayed, clear if 0.
+     */
+    void updateQueueTotalTime(qint64 total);
 
 private:
     /**
@@ -378,12 +405,14 @@ private:
     xPlayerListWidget* artistList;
     xPlayerListWidget* albumList;
     xPlayerListWidget* trackList;
+    QGroupBox* trackBox;
     QListWidget* artistSelectorList;
-    xPlayerSelectorWidget* albumSelectorList;
+    xPlayerMusicAlbumSelectorWidget* albumSelectorList;
     xPlayerMusicSearchWidget* searchSelector;
     QStringList albumSelectorMatch;
     QStringList albumSelectorNotMatch;
     xPlayerListWidget* queueList;
+    QGroupBox* queueBox;
     int playedTrack;
     bool useDatabaseMusicOverlay;
     quint64 databaseCutOff;

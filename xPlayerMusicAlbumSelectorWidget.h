@@ -12,22 +12,30 @@
  * GNU General Public License for more details.
  */
 
-#ifndef __XPLAYERSELECTORWIDGET_H__
-#define __XPLAYERSELECTORWIDGET_H__
+#ifndef __XPLAYERMUSICALBUMSELECTORWIDGET_H__
+#define __XPLAYERMUSICALBUMSELECTORWIDGET_H__
 
+#include <QWidget>
 #include <QListWidget>
+#include <QDateTimeEdit>
 
-class xPlayerSelectorWidget:public QListWidget {
+#include <map>
+#include <set>
+
+class xPlayerMusicAlbumSelectorWidget: public QWidget {
     Q_OBJECT
 
 public:
-    explicit xPlayerSelectorWidget(QWidget* parent=nullptr);
-    ~xPlayerSelectorWidget() override = default;
+    explicit xPlayerMusicAlbumSelectorWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerMusicAlbumSelectorWidget() override = default;
 
     void setSelectors(const QStringList& selectors);
 
 signals:
     void updatedSelectors(const QStringList& match, const QStringList& notMatch);
+    void updatedDatabaseSelectors(const std::map<QString,std::set<QString>>& databaseMap, bool databaseNotMatch);
+    void clearDatabaseSelectors();
+    void clearAllSelectors();
 
 private slots:
     void selectorClicked(QListWidgetItem* selectorItem);
@@ -37,6 +45,13 @@ private:
 
     enum xSelectorStates { StateNotUsed, StateMatch, StateNotMatch, StateSpacer };
     QVector<xSelectorStates> selectorState;
+    QListWidget* selectorListWidget;
+    QDateTimeEdit* timestampWidget;
+
+    int currentUserSelectorIndex;
+    int currentDatabaseSelectorIndex;
+    qint64 currentTimestamp;
+    std::map<QString,std::set<QString>> currentArtistAlbumMap;
 };
 
 #endif
