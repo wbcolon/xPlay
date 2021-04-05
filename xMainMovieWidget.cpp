@@ -35,7 +35,7 @@ auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
 }
 
 
-xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
+xMainMovieWidget::xMainMovieWidget(xMoviePlayerX* player, QWidget* parent):
         QStackedWidget(parent),
         currentMovieName(),
         currentMovieTag(),
@@ -80,25 +80,25 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     connect(directoryList, &QListWidget::currentRowChanged, this, &xMainMovieWidget::selectDirectory);
     connect(movieList, &QListWidget::itemDoubleClicked, this, &xMainMovieWidget::selectMovie);
     // Connect to movie player.
-    connect(this, &xMainMovieWidget::setMovie, moviePlayer, &xMoviePlayer::setMovie);
-    connect(this, &xMainMovieWidget::setMovieQueue, moviePlayer, &xMoviePlayer::setMovieQueue);
-    connect(this, &xMainMovieWidget::clearMovieQueue, moviePlayer, &xMoviePlayer::clearMovieQueue);
-    connect(moviePlayer, &xMoviePlayer::currentMovie, this, &xMainMovieWidget::updateSelectedMovie);
-    connect(moviePlayer, &xMoviePlayer::currentMovie, moviePlayerWidget, &xPlayerMovieWidget::currentMovie);
-    connect(moviePlayer, &xMoviePlayer::currentMovie, this, &xMainMovieWidget::updateWindowTitle);
-    connect(moviePlayer, &xMoviePlayer::currentMovieLength, moviePlayerWidget, &xPlayerMovieWidget::currentMovieLength);
-    connect(moviePlayer, &xMoviePlayer::currentMoviePlayed, moviePlayerWidget, &xPlayerMovieWidget::currentMoviePlayed);
-    connect(moviePlayer, &xMoviePlayer::currentSubtitles, moviePlayerWidget, &xPlayerMovieWidget::currentSubtitles);
-    connect(moviePlayer, &xMoviePlayer::currentAudioChannels, moviePlayerWidget, &xPlayerMovieWidget::currentAudioChannels);
-    connect(moviePlayer, &xMoviePlayer::currentState, moviePlayerWidget, &xPlayerMovieWidget::currentState);
+    connect(this, &xMainMovieWidget::setMovie, moviePlayer, &xMoviePlayerX::setMovie);
+    connect(this, &xMainMovieWidget::setMovieQueue, moviePlayer, &xMoviePlayerX::setMovieQueue);
+    connect(this, &xMainMovieWidget::clearMovieQueue, moviePlayer, &xMoviePlayerX::clearMovieQueue);
+    connect(moviePlayer, &xMoviePlayerX::currentMovie, this, &xMainMovieWidget::updateSelectedMovie);
+    connect(moviePlayer, &xMoviePlayerX::currentMovie, moviePlayerWidget, &xPlayerMovieWidget::currentMovie);
+    connect(moviePlayer, &xMoviePlayerX::currentMovie, this, &xMainMovieWidget::updateWindowTitle);
+    connect(moviePlayer, &xMoviePlayerX::currentMovieLength, moviePlayerWidget, &xPlayerMovieWidget::currentMovieLength);
+    connect(moviePlayer, &xMoviePlayerX::currentMoviePlayed, moviePlayerWidget, &xPlayerMovieWidget::currentMoviePlayed);
+    connect(moviePlayer, &xMoviePlayerX::currentSubtitles, moviePlayerWidget, &xPlayerMovieWidget::currentSubtitles);
+    connect(moviePlayer, &xMoviePlayerX::currentAudioChannels, moviePlayerWidget, &xPlayerMovieWidget::currentAudioChannels);
+    connect(moviePlayer, &xMoviePlayerX::currentState, moviePlayerWidget, &xPlayerMovieWidget::currentState);
     // Update stack widget based on player state.
-    connect(moviePlayer, &xMoviePlayer::currentState, this, &xMainMovieWidget::currentState);
+    connect(moviePlayer, &xMoviePlayerX::currentState, this, &xMainMovieWidget::currentState);
     // Connect full window.
     connect(moviePlayerWidget, &xPlayerMovieWidget::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
-    connect(moviePlayer, &xMoviePlayer::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
+    connect(moviePlayer, &xMoviePlayerX::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
     connect(moviePlayerWidget, &xPlayerMovieWidget::autoPlayNextMovie, this, &xMainMovieWidget::setAutoPlayNextMovie);
     // Connect database.
-    connect(moviePlayer, &xMoviePlayer::currentMovie, this, &xMainMovieWidget::currentMovie);
+    connect(moviePlayer, &xMoviePlayerX::currentMovie, this, &xMainMovieWidget::currentMovie);
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMovieOverlay,
             this, &xMainMovieWidget::updatedDatabaseMovieOverlay);
@@ -438,17 +438,17 @@ QString xMainMovieWidget::createWindowTitle() {
     }
 }
 
-void xMainMovieWidget::currentState(xMoviePlayer::State state) {
+void xMainMovieWidget::currentState(xMoviePlayerX::State state) {
     qDebug() << "xMainMovieWidget: state: " << state;
     switch (state) {
-        case xMoviePlayer::PlayingState:
-        case xMoviePlayer::PauseState: {
+        case xMoviePlayerX::PlayingState:
+        case xMoviePlayerX::PauseState: {
             movieStack->setCurrentIndex(1);
         } break;
-        case xMoviePlayer::StoppingState: {
+        case xMoviePlayerX::StoppingState: {
             setFullWindow(false);
         } break;
-        case xMoviePlayer::StopState: {
+        case xMoviePlayerX::StopState: {
             setFullWindow(false);
             movieStack->setCurrentIndex(0);
         } break;

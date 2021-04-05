@@ -19,6 +19,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declaratio
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 option(USE_PHONON "Use the Phonon based media player instead of Qt" ON)
+option(USE_VLC "Use the VLC based movie media player instead of Qt" ON)
 option(USE_QWT "Use the Qwt based player widget instead of Qt" ON)
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
 configure_file(xPlayerConfig.h.in xPlayerConfig.h)
@@ -31,7 +32,6 @@ find_package(Phonon4Qt5)
 find_package(Soci)
 find_package(PkgConfig REQUIRED)
 
-
 pkg_check_modules(TAGLIB taglib)
 set(CMAKE_REQUIRED_INCLUDES "${TAGLIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_LIBRARIES "${TAGLIB_LIBRARIES}")
@@ -43,6 +43,16 @@ if (USE_PHONON)
     set(XMUSICPLAYERX musicplayer/xMusicPlayerPhonon.cpp)
 else()
     set(XMUSICPLAYERX musicplayer/xMusicPlayerQt.cpp)
+endif()
+
+if (USE_VLC)
+    pkg_check_modules(VLCLIB libvlc)
+    set(CMAKE_REQUIRED_INCLUDES "${VLCLIB_INCLUDE_DIRS}")
+    set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
+
+    set(XMOVIEPLAYERX movieplayer/xMoviePlayerVLC.cpp)
+else()
+    set(XMOVIEPLAYERX movieplayer/xMoviePlayerPhonon.cpp)
 endif()
 
 if (USE_QWT)
@@ -62,7 +72,7 @@ add_executable(xPlay
         xMovieLibrary.cpp
         xMusicPlayer.cpp
         xMusicFile.cpp
-        xMoviePlayer.cpp
+        ${XMOVIEPLAYERX}
         ${XMUSICPLAYERX}
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp
@@ -89,9 +99,9 @@ add_executable(xPlay
 target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
 
 if (USE_QWT)
-    target_link_libraries(xPlay Qt5::WebEngineWidgets qwt-qt5 Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} ${SOCI_LIBRARY} ${SOCI_sqlite3_PLUGIN})
+    target_link_libraries(xPlay Qt5::WebEngineWidgets qwt-qt5 Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} ${SOCI_LIBRARY} ${SOCI_sqlite3_PLUGIN} ${VLCLIB_LIBRARIES})
 else()
-    target_link_libraries(xPlay Qt5::WebEngineWidgets Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} ${SOCI_LIBRARY} ${SOCI_sqlite3_PLUGIN})
+    target_link_libraries(xPlay Qt5::WebEngineWidgets Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} ${SOCI_LIBRARY} ${SOCI_sqlite3_PLUGIN} ${VLCLIB_LIBRARIES})
 endif()
 
 QT5_USE_MODULES(xPlay Multimedia MultimediaWidgets)

@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  */
 
-#ifndef __XMOVIEPLAYER_H__
-#define __XMOVIEPLAYER_H__
+#ifndef __XMOVIEPLAYERPHONON_H__
+#define __XMOVIEPLAYERPHONON_H__
 
 #include <phonon/MediaObject>
 #include <phonon/MediaSource>
@@ -22,7 +22,7 @@
 #include <phonon/VideoWidget>
 #include <filesystem>
 
-class xMoviePlayer:public Phonon::VideoWidget {
+class xMoviePlayerPhonon:public Phonon::VideoWidget {
     Q_OBJECT
 
 public:
@@ -36,8 +36,8 @@ public:
         StopState
     };
 
-    explicit xMoviePlayer(QWidget* parent=nullptr);
-    ~xMoviePlayer() override = default;
+    explicit xMoviePlayerPhonon(QWidget* parent=nullptr);
+    ~xMoviePlayerPhonon() = default;
     /**
      * Return the volume for the movie player
      *
@@ -118,7 +118,7 @@ signals:
      *
      * @param state the current state
      */
-    void currentState(xMoviePlayer::State state);
+    void currentState(xMoviePlayerPhonon::State state);
 
 public slots:
     /**
@@ -242,19 +242,19 @@ protected:
      *
      * @param keyEvent the key event observed.
      */
-    void keyPressEvent(QKeyEvent* keyEvent) override;
+    void keyPressEvent(QKeyEvent* keyEvent);
     /**
      * Receive any double-click within the video output.
      *
      * @param mouseEvent the mouse event observed.
      */
-    void mouseDoubleClickEvent(QMouseEvent* mouseEvent) override;
+    void mouseDoubleClickEvent(QMouseEvent* mouseEvent);
     /**
      * Receive any mouse press within the video output.
      *
      * @param mouseEvent the mouse event observed.
      */
-    void mousePressEvent(QMouseEvent* mouseEvent) override;
+    void mousePressEvent(QMouseEvent* mouseEvent);
 
 private:
     /**

@@ -18,7 +18,7 @@
 #include "xMusicPlayerX.h"
 #include "xMainMusicWidget.h"
 #include "xMovieLibrary.h"
-#include "xMoviePlayer.h"
+#include "xMoviePlayerX.h"
 #include "xMainMovieWidget.h"
 #include "xMainStreamingWidget.h"
 #include "xPlayerDBus.h"
@@ -173,7 +173,7 @@ private:
     xMusicPlayerX* musicPlayer;
     xMainMusicWidget* mainMusicWidget;
     xMovieLibrary* movieLibrary;
-    xMoviePlayer* moviePlayer;
+    xMoviePlayerX* moviePlayer;
     xMainMovieWidget* mainMovieWidget;
     xMainStreamingWidget* mainStreamingWidget;
     xPlayerDBus* mainDbus;

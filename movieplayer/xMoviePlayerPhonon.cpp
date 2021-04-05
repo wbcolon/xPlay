@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-#include "xMoviePlayer.h"
+#include "xMoviePlayerPhonon.h"
 
 #include <QEvent>
 #include <QMouseEvent>
@@ -20,7 +20,7 @@
 #include <QTimer>
 #include <cmath>
 
-xMoviePlayer::xMoviePlayer(QWidget *parent):
+xMoviePlayerPhonon::xMoviePlayerPhonon(QWidget *parent):
         Phonon::VideoWidget(parent),
         moviePlayer(nullptr),
         movieController(nullptr),
@@ -31,24 +31,24 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     resetMoviePlayer();
 }
 
-void xMoviePlayer::setMuted(bool mute) {
+void xMoviePlayerPhonon::setMuted(bool mute) {
     audioOutput->setMuted(mute);
 }
 
-bool xMoviePlayer::isMuted() const {
+bool xMoviePlayerPhonon::isMuted() const {
     return audioOutput->isMuted();
 }
 
-void xMoviePlayer::setVolume(int vol) {
+void xMoviePlayerPhonon::setVolume(int vol) {
     vol = std::clamp(vol, 0, 100);
     audioOutput->setVolume(vol/100.0);
 }
 
-int xMoviePlayer::getVolume() const {
+int xMoviePlayerPhonon::getVolume() const {
     return static_cast<int>(std::round(audioOutput->volume()*100.0));
 }
 
-void xMoviePlayer::playPause() {
+void xMoviePlayerPhonon::playPause() {
     // Pause if the media player is in playing state, resume play.
     if (moviePlayer->state() == Phonon::PlayingState) {
         moviePlayer->pause();
@@ -59,12 +59,12 @@ void xMoviePlayer::playPause() {
     }
 }
 
-void xMoviePlayer::seek(qint64 position) {
+void xMoviePlayerPhonon::seek(qint64 position) {
     // Jump to position (in milliseconds) in the current track.
     moviePlayer->seek(position);
 }
 
-void xMoviePlayer::jump(qint64 delta) {
+void xMoviePlayerPhonon::jump(qint64 delta) {
     // Jump to current position + delta (in milliseconds) in the current track.
     qint64 currentPosition = moviePlayer->currentTime() + delta;
     // Do not jump past the end (minus 100ms).
@@ -72,42 +72,42 @@ void xMoviePlayer::jump(qint64 delta) {
     moviePlayer->seek(std::clamp(currentPosition, static_cast<qint64>(0), currentLength));
 }
 
-void xMoviePlayer::stop() {
+void xMoviePlayerPhonon::stop() {
     // Stop the media player.
     moviePlayer->stop();
     emit currentState(State::StopState);
 }
 
-void xMoviePlayer::setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory) {
+void xMoviePlayerPhonon::setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory) {
     resetMoviePlayer();
     moviePlayer->setCurrentSource(QUrl::fromLocalFile(path));
     moviePlayer->play();
     qDebug() << "xMoviePlayer: play: " << path;
     emit currentMovie(path, name, tag, directory);
-    emit currentState(xMoviePlayer::PlayingState);
+    emit currentState(xMoviePlayerPhonon::PlayingState);
 }
 
-void xMoviePlayer::setMovieQueue(const QList<std::pair<QString,QString>>& queue, const QString& tag, const QString& directory) {
+void xMoviePlayerPhonon::setMovieQueue(const QList<std::pair<QString,QString>>& queue, const QString& tag, const QString& directory) {
     movieQueue = queue;
     movieQueueTag = tag;
     movieQueueDirectory = directory;
 }
 
-void xMoviePlayer::clearMovieQueue() {
+void xMoviePlayerPhonon::clearMovieQueue() {
     movieQueue.clear();
 }
 
-void xMoviePlayer::setScaleAndCropMode(bool mode) {
+void xMoviePlayerPhonon::setScaleAndCropMode(bool mode) {
     setScaleMode(mode ? Phonon::VideoWidget::ScaleAndCrop : Phonon::VideoWidget::FitInView);
 }
 
-void xMoviePlayer::toggleScaleAndCropMode() {
+void xMoviePlayerPhonon::toggleScaleAndCropMode() {
     auto mode = (scaleMode() == Phonon::VideoWidget::FitInView);
     setScaleAndCropMode(mode);
     emit scaleAndCropMode(mode);
 }
 
-void xMoviePlayer::availableAudioChannels() {
+void xMoviePlayerPhonon::availableAudioChannels() {
     currentAudioChannelDescriptions = movieController->availableAudioChannels();
     QStringList audioChannels;
     for (const auto& description : currentAudioChannelDescriptions) {
@@ -126,7 +126,7 @@ void xMoviePlayer::availableAudioChannels() {
     qDebug() << "xMoviePlayer: audio channel descriptions: " << currentAudioChannelDescriptions;
 }
 
-void xMoviePlayer::availableSubtitles() {
+void xMoviePlayerPhonon::availableSubtitles() {
     currentSubtitleDescriptions = movieController->availableSubtitles();
     QStringList subtitles;
     for (const auto& description : currentSubtitleDescriptions) {
@@ -144,45 +144,45 @@ void xMoviePlayer::availableSubtitles() {
     qDebug() << "xMoviePlayer: subtitle track descriptions: " << currentSubtitleDescriptions;
 }
 
-void xMoviePlayer::availableChapters(int chapters) {
+void xMoviePlayerPhonon::availableChapters(int chapters) {
     qDebug() << "xMoviePlayer: number of chapters: " << chapters;
 }
 
-void xMoviePlayer::availableTitles(int titles) {
+void xMoviePlayerPhonon::availableTitles(int titles) {
     qDebug() << "xMovie: number of titles: " << titles;
 }
 
-void xMoviePlayer::selectAudioChannel(int index) {
+void xMoviePlayerPhonon::selectAudioChannel(int index) {
     if ((index >= 0) && (index < currentAudioChannelDescriptions.size())) {
         movieController->setCurrentAudioChannel(currentAudioChannelDescriptions[index]);
     }
 }
-void xMoviePlayer::selectSubtitle(int index) {
+void xMoviePlayerPhonon::selectSubtitle(int index) {
     if ((index >= 0) && (index < currentSubtitleDescriptions.size())) {
         movieController->setCurrentSubtitle(currentSubtitleDescriptions[index]);
     }
 }
-void xMoviePlayer::stateChanged(Phonon::State newState, Phonon::State oldState) {
+void xMoviePlayerPhonon::stateChanged(Phonon::State newState, Phonon::State oldState) {
     qDebug() << "xMoviePlayer: new: " << newState << ", old: " << oldState;
     if ((newState == Phonon::StoppedState) && (oldState == Phonon::PlayingState)) {
-        emit currentState(xMoviePlayer::StopState);
+        emit currentState(xMoviePlayerPhonon::StopState);
     }
 }
 
-void xMoviePlayer::aboutToFinish() {
+void xMoviePlayerPhonon::aboutToFinish() {
     if (movieQueue.isEmpty()) {
         qDebug() << "xMoviePlayer: aboutToFinish";
         // Go to stopping state. End full window mode.
-        emit currentState(xMoviePlayer::StoppingState);
+        emit currentState(xMoviePlayerPhonon::StoppingState);
     }
 }
 
-void xMoviePlayer::closeToFinish(qint32 timeLeft) {
+void xMoviePlayerPhonon::closeToFinish(qint32 timeLeft) {
     if (movieQueue.isEmpty()) {
         qDebug() << "xMoviePlayer: closeToFinish: " << timeLeft;
         // Stop the media player.
         moviePlayer->stop();
-        emit currentState(xMoviePlayer::StopState);
+        emit currentState(xMoviePlayerPhonon::StopState);
     } else {
         // Take next movie out of the queue.
         auto nextMovie = movieQueue.takeFirst();
@@ -190,7 +190,7 @@ void xMoviePlayer::closeToFinish(qint32 timeLeft) {
     }
 }
 
-void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
+void xMoviePlayerPhonon::keyPressEvent(QKeyEvent *keyEvent)
 {
     switch (keyEvent->key()) {
         case Qt::Key_Escape: {
@@ -220,10 +220,10 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
         case Qt::Key_Space: {
             if (moviePlayer->state() == Phonon::PlayingState) {
                 moviePlayer->pause();
-                emit currentState(xMoviePlayer::PauseState);
+                emit currentState(xMoviePlayerPhonon::PauseState);
             } else {
                 moviePlayer->play();
-                emit currentState(xMoviePlayer::PlayingState);
+                emit currentState(xMoviePlayerPhonon::PlayingState);
             }
         } break;
         case Qt::Key_S: {
@@ -238,31 +238,31 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
     keyEvent->accept();
 }
 
-void xMoviePlayer::mouseDoubleClickEvent(QMouseEvent* mouseEvent)
+void xMoviePlayerPhonon::mouseDoubleClickEvent(QMouseEvent* mouseEvent)
 {
     emit toggleFullWindow();
     mouseEvent->accept();
 }
 
-void xMoviePlayer::mousePressEvent(QMouseEvent* mouseEvent)
+void xMoviePlayerPhonon::mousePressEvent(QMouseEvent* mouseEvent)
 {
     Phonon::VideoWidget::mousePressEvent(mouseEvent);
 }
 
-void xMoviePlayer::resetMoviePlayer() {
+void xMoviePlayerPhonon::resetMoviePlayer() {
     if (movieController) {
-        disconnect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
-        disconnect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
-        disconnect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
-        disconnect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
+        disconnect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayerPhonon::availableAudioChannels);
+        disconnect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayerPhonon::availableSubtitles);
+        disconnect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayerPhonon::availableTitles);
+        disconnect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayerPhonon::availableChapters);
         delete movieController;
     }
     if (moviePlayer) {
-        disconnect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, this, &xMoviePlayer::currentMovieLength);
-        disconnect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::currentMoviePlayed);
-        disconnect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayer::stateChanged);
-        disconnect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayer::aboutToFinish);
-        disconnect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayer::closeToFinish);
+        disconnect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, this, &xMoviePlayerPhonon::currentMovieLength);
+        disconnect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayerPhonon::currentMoviePlayed);
+        disconnect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayerPhonon::stateChanged);
+        disconnect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayerPhonon::aboutToFinish);
+        disconnect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayerPhonon::closeToFinish);
         delete moviePlayer;
     }
     // Setup the media player.
@@ -274,13 +274,13 @@ void xMoviePlayer::resetMoviePlayer() {
     Phonon::createPath(moviePlayer, audioOutput);
     Phonon::createPath(moviePlayer, this);
     // Connect Phonon signals to out music player signals.
-    connect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
-    connect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
-    connect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
-    connect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
-    connect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, this, &xMoviePlayer::currentMovieLength);
-    connect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::currentMoviePlayed);
-    connect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayer::stateChanged);
-    connect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayer::aboutToFinish);
-    connect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayer::closeToFinish);
+    connect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayerPhonon::availableAudioChannels);
+    connect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayerPhonon::availableSubtitles);
+    connect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayerPhonon::availableTitles);
+    connect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayerPhonon::availableChapters);
+    connect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, this, &xMoviePlayerPhonon::currentMovieLength);
+    connect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayerPhonon::currentMoviePlayed);
+    connect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayerPhonon::stateChanged);
+    connect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayerPhonon::aboutToFinish);
+    connect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayerPhonon::closeToFinish);
 }

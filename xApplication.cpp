@@ -41,7 +41,7 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     mainView = new QStackedWidget(this);
     // Setup players and main widgets
     musicPlayer = new xMusicPlayerX(musicLibrary, mainView);
-    moviePlayer = new xMoviePlayer(mainView);
+    moviePlayer = new xMoviePlayerX(mainView);
     mainMusicWidget = new xMainMusicWidget(musicPlayer, musicLibrary, mainView);
     mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
 #ifdef USE_STREAMING
