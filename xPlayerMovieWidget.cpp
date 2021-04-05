@@ -24,10 +24,10 @@
 #include <QCheckBox>
 #include <QDebug>
 
-xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt::WindowFlags flags):
+xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayerX* player, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         moviePlayer(player),
-        moviePlayerState(xMoviePlayer::StopState) {
+        moviePlayerState(xMoviePlayerX::StopState) {
 
     // Slider widget for showing movie length and played time.
     sliderWidget = new xPlayerSliderWidgetX(this);
@@ -51,20 +51,22 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
 
     audioChannelBox = new QComboBox(controlTabPlayer);
     auto audioChannelLabel = new QLabel(tr("Audio"), controlTabPlayer);
+    audioChannelLabel->setContentsMargins(xPlayerLayout::SmallSpace, 0, 0, 0);
     audioChannelLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
     subtitleBox = new QComboBox(controlTabPlayer);
     auto subtitleLabel = new QLabel(tr("Subtitle"), controlTabPlayer);
     subtitleLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
+    subtitleLabel->setContentsMargins(xPlayerLayout::SmallSpace, 0, 0, 0);
     auto scaleAndCropCheck = new QCheckBox(tr("Scale and Crop"), controlTabPlayer);
     scaleAndCropCheck->setChecked(false);
     auto autoPlayNextCheck = new QCheckBox(tr("Autoplay Next"), controlTabPlayer);
     autoPlayNextCheck->setChecked(false);
     auto volumeWidget = new xPlayerVolumeWidgetX(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
-    connect(volumeWidget, &xPlayerVolumeWidget::volume, moviePlayer, &xMoviePlayer::setVolume);
-    connect(volumeWidget, &xPlayerVolumeWidget::muted, moviePlayer, &xMoviePlayer::setMuted);
-    connect(moviePlayer, &xMoviePlayer::currentMoviePlayed, sliderWidget, &xPlayerSliderWidget::trackPlayed);
-    connect(moviePlayer, &xMoviePlayer::currentMovieLength, sliderWidget, &xPlayerSliderWidget::trackLength);
+    connect(volumeWidget, &xPlayerVolumeWidget::volume, moviePlayer, &xMoviePlayerX::setVolume);
+    connect(volumeWidget, &xPlayerVolumeWidget::muted, moviePlayer, &xMoviePlayerX::setMuted);
+    connect(moviePlayer, &xMoviePlayerX::currentMoviePlayed, sliderWidget, &xPlayerSliderWidget::trackPlayed);
+    connect(moviePlayer, &xMoviePlayerX::currentMovieLength, sliderWidget, &xPlayerSliderWidget::trackLength);
     // Layout
     auto controlLayout = new xPlayerLayout(controlTabPlayer);
     controlLayout->setSpacing(xPlayerLayout::NoSpace);
@@ -94,22 +96,22 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
         controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     } );
     // Connect the buttons to player widget and/or to the music player.
-    connect(controlButtonWidget, &xPlayerControlButtonWidget::playPausePressed, moviePlayer, &xMoviePlayer::playPause);
-    connect(controlButtonWidget, &xPlayerControlButtonWidget::stopPressed, moviePlayer, &xMoviePlayer::stop);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::playPausePressed, moviePlayer, &xMoviePlayerX::playPause);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::stopPressed, moviePlayer, &xMoviePlayerX::stop);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::rewindPressed, [=]() { moviePlayer->jump(-60000); });
     connect(controlButtonWidget, &xPlayerControlButtonWidget::forwardPressed, [=]() { moviePlayer->jump(60000); });
     connect(controlButtonWidget, &xPlayerControlButtonWidget::fullWindowPressed, this, &xPlayerMovieWidget::fullWindowPressed);
     // Connect check boxes.
     connect(autoPlayNextCheck, &QCheckBox::clicked, this, &xPlayerMovieWidget::autoPlayNextMovie);
-    connect(scaleAndCropCheck, &QCheckBox::clicked, moviePlayer, &xMoviePlayer::setScaleAndCropMode);
-    connect(moviePlayer, &xMoviePlayer::scaleAndCropMode, scaleAndCropCheck, &QCheckBox::setChecked);
+    connect(scaleAndCropCheck, &QCheckBox::clicked, moviePlayer, &xMoviePlayerX::setScaleAndCropMode);
+    connect(moviePlayer, &xMoviePlayerX::scaleAndCropMode, scaleAndCropCheck, &QCheckBox::setChecked);
     // Connect combo boxes.
     connect(audioChannelBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectAudioChannel(int)));
     connect(subtitleBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectSubtitle(int)));
     // Seek.
-    connect(sliderWidget, &xPlayerSliderWidgetX::seek, moviePlayer, &xMoviePlayer::seek);
+    connect(sliderWidget, &xPlayerSliderWidgetX::seek, moviePlayer, &xMoviePlayerX::seek);
     // Movie player volume updates.
-    connect(moviePlayer, &xMoviePlayer::currentVolume, volumeWidget, &xPlayerVolumeWidgetX::setVolume);
+    connect(moviePlayer, &xMoviePlayerX::currentVolume, volumeWidget, &xPlayerVolumeWidgetX::setVolume);
     // Setup volume
     volumeWidget->setVolume(moviePlayer->getVolume());
 }
@@ -145,15 +147,15 @@ void xPlayerMovieWidget::currentMovieLength(qint64 length) {
     sliderWidget->trackLength(length);
 }
 
-void xPlayerMovieWidget::currentState(xMoviePlayer::State state) {
+void xPlayerMovieWidget::currentState(xMoviePlayerX::State state) {
     // Update the play/pause button based on the state of the music player.
     moviePlayerState = state;
     switch (moviePlayerState) {
-        case xMoviePlayer::PlayingState: {
+        case xMoviePlayerX::PlayingState: {
             controlButtonWidget->setPlayPauseState(false);
         } break;
-        case xMoviePlayer::PauseState:
-        case xMoviePlayer::StopState: {
+        case xMoviePlayerX::PauseState:
+        case xMoviePlayerX::StopState: {
             controlButtonWidget->setPlayPauseState(true);
         } break;
         default: break;
@@ -161,8 +163,8 @@ void xPlayerMovieWidget::currentState(xMoviePlayer::State state) {
 }
 
 void xPlayerMovieWidget::fullWindowPressed() {
-    if ((moviePlayerState == xMoviePlayer::PlayingState) ||
-        (moviePlayerState == xMoviePlayer::PauseState)) {
+    if ((moviePlayerState == xMoviePlayerX::PlayingState) ||
+        (moviePlayerState == xMoviePlayerX::PauseState)) {
         emit toggleFullWindow();
     }
 }

@@ -15,7 +15,7 @@
 #ifndef __XPLAYERMOVIEWIDGET_H__
 #define __XPLAYERMOVIEWIDGET_H__
 
-#include "xMoviePlayer.h"
+#include "xMoviePlayerX.h"
 #include "xPlayerSliderWidgetX.h"
 #include "xPlayerControlButtonWidget.h"
 #include "xPlayerRotelWidget.h"
@@ -28,7 +28,7 @@ class xPlayerMovieWidget:public QWidget {
     Q_OBJECT
 
 public:
-    explicit xPlayerMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    explicit xPlayerMovieWidget(xMoviePlayerX* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerMovieWidget() override = default;
 
 signals:
@@ -70,7 +70,7 @@ public slots:
      *
      * @param state the current state of the movie player.
      */
-    void currentState(xMoviePlayer::State state);
+    void currentState(xMoviePlayerX::State state);
     /**
      * Retrieve the time played for the current movie.
      *
@@ -108,8 +108,8 @@ private:
     QComboBox* audioChannelBox;
     QLabel* movieLabel;
     xPlayerSliderWidgetX* sliderWidget;
-    xMoviePlayer* moviePlayer;
-    xMoviePlayer::State moviePlayerState;
+    xMoviePlayerX* moviePlayer;
+    xMoviePlayerX::State moviePlayerState;
     xPlayerControlButtonWidget* controlButtonWidget;
     xPlayerRotelWidget* controlTabRotel;
 };
