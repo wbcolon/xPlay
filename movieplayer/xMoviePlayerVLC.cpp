@@ -13,6 +13,7 @@
  */
 
 #include "xMoviePlayerVLC.h"
+#include "xPlayerConfiguration.h"
 
 #include <QEvent>
 #include <QMouseEvent>
@@ -29,6 +30,8 @@ xMoviePlayerVLC::xMoviePlayerVLC(QWidget *parent):
         movieMedia(nullptr),
         movieMediaInitialPlay(false),
         movieMediaLength(0),
+        movieDefaultAudioLanguageIndex(-1),
+        movieDefaultSubtitleLanguageIndex(-1),
         fullWindow(false) {
     // Setup the media player.
     // Create a new libvlc instance. User "--verbose=2" for additional libvlc output.
@@ -41,8 +44,13 @@ xMoviePlayerVLC::xMoviePlayerVLC(QWidget *parent):
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerAudioVolume, handleVLCEvents, this);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerPositionChanged, handleVLCEvents, this);
     // Connect signals used to call out of VLC handler.
-    connect(this, &xMoviePlayerVLC::stopMovie, this, &xMoviePlayerVLC::stop);
-    connect(this, &xMoviePlayerVLC::playMovie, this, &xMoviePlayerVLC::setMovie);
+    connect(this, &xMoviePlayerVLC::eventHandler_stop, this, &xMoviePlayerVLC::stop);
+    connect(this, &xMoviePlayerVLC::eventHandler_setMovie, this, &xMoviePlayerVLC::setMovie);
+    // Connect to configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultAudioLanguage,
+            this, &xMoviePlayerVLC::updatedDefaultAudioLanguage);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultSubtitleLanguage,
+            this, &xMoviePlayerVLC::updatedDefaultSubtitleLanguage);
 }
 
 xMoviePlayerVLC::~xMoviePlayerVLC() noexcept {
@@ -198,9 +206,12 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
         case libvlc_MediaPlayerPlaying: {
             if (self->movieMediaInitialPlay) {
                 self->movieMediaInitialPlay = false;
-                // Disable subtitles by default
-                // TODO: verify if we can directly call or we need to call from another thread (like stop).
-                libvlc_video_set_spu(self->movieMediaPlayer, -1);
+                // Select default audio channel.
+                if (self->movieDefaultAudioLanguageIndex >= 0) {
+                    emit self->currentAudioChannel(self->movieDefaultAudioLanguageIndex);
+                }
+                // Select default subtitle.
+                emit self->currentSubtitle(self->movieDefaultSubtitleLanguageIndex);
                 // Update scale and crop mode.
                 emit self->scaleAndCropMode(true);
             }
@@ -209,10 +220,11 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
             // Supposed to be playing, but state does not match.
             // Play next movie in the queue or stop.
             if (self->movieQueue.isEmpty()) {
-                emit self->stopMovie();
+                emit self->eventHandler_stop();
             } else {
                 auto nextMovie = self->movieQueue.takeFirst();
-                emit self->playMovie(nextMovie.first, nextMovie.second, self->movieQueueTag, self->movieQueueDirectory);
+                emit self->eventHandler_setMovie(nextMovie.first, nextMovie.second, self->movieQueueTag,
+                                                 self->movieQueueDirectory);
             }
         } break;
     }
@@ -230,8 +242,7 @@ void xMoviePlayerVLC::scanForAudioAndSubtitles() {
     for (unsigned i = 0; i < noTracks; ++i) {
          if (movieMediaTracks[i]->i_type == libvlc_track_audio) {
              auto audioChannelDescription = QString(movieMediaTracks[i]->psz_language).toLower();
-             audioChannelDescription.replace("ger", "german").replace("deu","german").
-                     replace("eng", "english").replace("fre", "french");
+             updateAudioAndSubtitleDescription(audioChannelDescription);
              auto description = QString(movieMediaTracks[i]->psz_description).toLower();
              if ((!description.isEmpty()) && (description.compare("stereo") != 0)) {
                  audioChannelDescription += QString(" (%1)").arg(description);
@@ -246,8 +257,7 @@ void xMoviePlayerVLC::scanForAudioAndSubtitles() {
          }
         if (movieMediaTracks[i]->i_type == libvlc_track_text) {
             auto subtitleDescription = QString(movieMediaTracks[i]->psz_language);
-            subtitleDescription.replace("ger", "german").replace("deu","german").
-                    replace("eng", "english").replace("fre", "french");
+            updateAudioAndSubtitleDescription(subtitleDescription);
             auto description = QString(movieMediaTracks[i]->psz_description).toLower();
             if (!description.isEmpty()) {
                 subtitleDescription += QString(" (%1)").arg(movieMediaTracks[i]->psz_description).toLower();
@@ -261,8 +271,46 @@ void xMoviePlayerVLC::scanForAudioAndSubtitles() {
         }
     }
     libvlc_media_tracks_release(movieMediaTracks, noTracks);
+    // Check if we have a default audio language.
+    movieDefaultAudioLanguageIndex = -1;
+    if (!movieDefaultAudioLanguage.isEmpty()) {
+        for (auto i = 0; i < audioChannels.count(); ++i) {
+            // Find the first match.
+            if (audioChannels[i].contains(movieDefaultAudioLanguage, Qt::CaseInsensitive)) {
+                movieDefaultAudioLanguageIndex = i;
+                break;
+            }
+        }
+    }
+    // Check if we have a default audio language.
+    movieDefaultSubtitleLanguageIndex = 0;
+    if (!movieDefaultSubtitleLanguage.isEmpty()) {
+        for (auto i = 0; i < subtitles.count(); ++i) {
+            // Find the first match.
+            if (subtitles[i].contains(movieDefaultSubtitleLanguage, Qt::CaseInsensitive)) {
+                movieDefaultSubtitleLanguageIndex = i;
+                break;
+            }
+        }
+    }
+    // Emit the updates.
     emit currentAudioChannels(audioChannels);
     emit currentSubtitles(subtitles);
+}
+
+void xMoviePlayerVLC::updateAudioAndSubtitleDescription(QString& description) {
+    description.replace("ger", "german");
+    description.replace("deu", "german");
+    description.replace("eng", "english");
+    description.replace("fre", "french");
+}
+
+void xMoviePlayerVLC::updatedDefaultAudioLanguage() {
+    movieDefaultAudioLanguage = xPlayerConfiguration::configuration()->getMovieDefaultAudioLanguage();
+}
+
+void xMoviePlayerVLC::updatedDefaultSubtitleLanguage() {
+    movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
 }
 
 void xMoviePlayerVLC::keyPressEvent(QKeyEvent *keyEvent)

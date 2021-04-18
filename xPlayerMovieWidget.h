@@ -102,7 +102,7 @@ private:
      * @param comboBox an existing combo box widget with entries.
      * @param entries list of new entries to update combo box.
      */
-    void updateComboBoxEntries(QComboBox* comboBox, const QStringList& entries);
+    static void updateComboBoxEntries(QComboBox* comboBox, const QStringList& entries);
 
     QComboBox* subtitleBox;
     QComboBox* audioChannelBox;

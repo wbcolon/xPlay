@@ -53,11 +53,23 @@ public:
 
 signals:
     /**
+     * Signal the audio channel for the current movie.
+     *
+     * @param audioChannel the index of audio channel.
+     */
+    void currentAudioChannel(int audioChannel);
+    /**
      * Signal the audio channels available in the current movie.
      *
      * @param audioChannels the audio channels as list of strings.
      */
     void currentAudioChannels(const QStringList& audioChannels);
+    /**
+     * Signal the subtitle for the current movie.
+     *
+     * @param subtitle the index of the subtitle.
+     */
+    void currentSubtitle(int subtitle);
     /**
      * Signal the subtitles available in the current movie.
      *
@@ -235,6 +247,14 @@ private slots:
      * @param timeLeft time left to play in milliseconds.
      */
     void closeToFinish(qint32 timeLeft);
+    /**
+     * Called if default audio language has been changed.
+     */
+    void updatedDefaultAudioLanguage();
+    /**
+     * Called if default subtitle language has been changed.
+     */
+    void updatedDefaultSubtitleLanguage();
 
 protected:
     /**
@@ -258,6 +278,12 @@ protected:
 
 private:
     /**
+     * Update the audio channel/subtitle description. Expand language strings.
+     *
+     * @param decription the current description as string.
+     */
+    static void updateAudioAndSubtitleDescription(QString& description);
+    /**
      * Reset the movie player.
      *
      * All signals are disconnected. The movie player and controller are
@@ -274,6 +300,8 @@ private:
     QList<std::pair<QString,QString>> movieQueue;
     QString movieQueueTag;
     QString movieQueueDirectory;
+    QString movieDefaultAudioLanguage;
+    QString movieDefaultSubtitleLanguage;
     bool fullWindow;
 };
 

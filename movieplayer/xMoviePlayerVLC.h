@@ -50,11 +50,23 @@ public:
 
 signals:
     /**
+     * Signal the audio channel for the current movie.
+     *
+     * @param audioChannel the index of audio channel.
+     */
+    void currentAudioChannel(int audioChannel);
+    /**
      * Signal the audio channels available in the current movie.
      *
      * @param audioChannels the audio channels as list of strings.
      */
     void currentAudioChannels(const QStringList& audioChannels);
+    /**
+     * Signal the subtitle for the current movie.
+     *
+     * @param subtitle the index of the subtitle.
+     */
+    void currentSubtitle(int subtitle);
     /**
      * Signal the subtitles available in the current movie.
      *
@@ -119,11 +131,11 @@ signals:
     /**
      * Helper signal to call stop from event handler callback.
      */
-    void stopMovie();
+    void eventHandler_stop();
     /**
      * Helper signal to call setMovie from event handler callback.
      */
-    void playMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    void eventHandler_setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
 
 public slots:
     /**
@@ -202,6 +214,16 @@ public slots:
      */
     void selectSubtitle(int index);
 
+private slots:
+    /**
+     * Called if default audio language has been changed.
+     */
+    void updatedDefaultAudioLanguage();
+    /**
+     * Called if default subtitle language has been changed.
+     */
+    void updatedDefaultSubtitleLanguage();
+
 protected:
     /**
      * Receive the pressed keys within the video output.
@@ -228,6 +250,12 @@ private:
      * Scan the media file for tracks and length.
      */
     void scanForAudioAndSubtitles();
+    /**
+     * Update the audio channel/subtitle description. Expand language strings.
+     *
+     * @param decription the current description as string.
+     */
+    static void updateAudioAndSubtitleDescription(QString& description);
 
     libvlc_instance_t* movieInstance;
     libvlc_media_player_t* movieMediaPlayer;
@@ -242,6 +270,10 @@ private:
     QList<std::pair<QString,QString>> movieQueue;
     QString movieQueueTag;
     QString movieQueueDirectory;
+    QString movieDefaultAudioLanguage;
+    QString movieDefaultSubtitleLanguage;
+    int movieDefaultAudioLanguageIndex;
+    int movieDefaultSubtitleLanguageIndex;
     bool fullWindow;
 };
 

@@ -13,6 +13,7 @@
  */
 
 #include "xMoviePlayerPhonon.h"
+#include "xPlayerConfiguration.h"
 
 #include <QEvent>
 #include <QMouseEvent>
@@ -29,6 +30,11 @@ xMoviePlayerPhonon::xMoviePlayerPhonon(QWidget *parent):
     audioOutput = new Phonon::AudioOutput(Phonon::VideoCategory, this);
     audioOutput->setMuted(false);
     resetMoviePlayer();
+    // Connect to configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultAudioLanguage,
+            this, &xMoviePlayerPhonon::updatedDefaultAudioLanguage);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultSubtitleLanguage,
+            this, &xMoviePlayerPhonon::updatedDefaultSubtitleLanguage);
 }
 
 void xMoviePlayerPhonon::setMuted(bool mute) {
@@ -111,9 +117,10 @@ void xMoviePlayerPhonon::availableAudioChannels() {
     currentAudioChannelDescriptions = movieController->availableAudioChannels();
     QStringList audioChannels;
     for (const auto& description : currentAudioChannelDescriptions) {
-        auto audioChannel = description.name();
+        auto audioChannel = description.name().toLower();
+        updateAudioAndSubtitleDescription(audioChannel);
         if (!description.description().isEmpty()) {
-            audioChannel += QString(" (%1)").arg(description.description());
+            audioChannel += QString(" (%1)").arg(description.description().toLower());
         }
         // Shorten a few audio descriptions.
         audioChannel.replace("Free Lossless Audio Codec (FLAC)", "FLAC");
@@ -124,24 +131,62 @@ void xMoviePlayerPhonon::availableAudioChannels() {
     }
     emit currentAudioChannels(audioChannels);
     qDebug() << "xMoviePlayer: audio channel descriptions: " << currentAudioChannelDescriptions;
+    // Find default audio language.
+    if (!movieDefaultAudioLanguage.isEmpty()) {
+        // Phonon player has the movie default as index 0.
+        auto defaultIndex = 0;
+        for (auto i = 0; i < audioChannels.count(); ++i) {
+            if (audioChannels[i].contains(movieDefaultAudioLanguage, Qt::CaseInsensitive)) {
+                defaultIndex = i;
+                break;
+            }
+        }
+        emit currentAudioChannel(defaultIndex);
+    }
 }
 
 void xMoviePlayerPhonon::availableSubtitles() {
     currentSubtitleDescriptions = movieController->availableSubtitles();
     QStringList subtitles;
     for (const auto& description : currentSubtitleDescriptions) {
-        auto subtitle = description.name();
+        auto subtitle = description.name().toLower();
+        updateAudioAndSubtitleDescription(subtitle);
         if (!description.description().isEmpty()) {
-            subtitle += QString(" (%1)").arg(description.description());
+            subtitle += QString(" (%1)").arg(description.description().toLower());
         }
         subtitles.push_back(subtitle);
     }
     emit currentSubtitles(subtitles);
     if (currentSubtitleDescriptions.count() > 0) {
-        // Disable subtitles on default.
-        movieController->setCurrentSubtitle(currentSubtitleDescriptions[0]);
+        // Find default subtitle.
+        if (movieDefaultSubtitleLanguage.isEmpty()) {
+            emit currentSubtitle(0);
+        } else {
+            // The default is disabled if we do not find the subtitle.
+            auto defaultIndex = 0;
+            for (auto i = 0; i < subtitles.count(); ++i) {
+                if (subtitles[i].contains(movieDefaultSubtitleLanguage, Qt::CaseInsensitive)) {
+                    defaultIndex = i;
+                    break;
+                }
+            }
+            emit currentSubtitle(defaultIndex);
+        }
     }
     qDebug() << "xMoviePlayer: subtitle track descriptions: " << currentSubtitleDescriptions;
+}
+
+void xMoviePlayerPhonon::updateAudioAndSubtitleDescription(QString& description) {
+    if (description.size() > 2) {
+        // Avoid unwanted conversions.
+        description.replace("de ", "german ");
+        description.replace("en ", "english ");
+        description.replace("fr ", "french ");
+    } else {
+        description.replace("de", "german");
+        description.replace("en", "english");
+        description.replace("fr", "french");
+    }
 }
 
 void xMoviePlayerPhonon::availableChapters(int chapters) {
@@ -188,6 +233,14 @@ void xMoviePlayerPhonon::closeToFinish(qint32 timeLeft) {
         auto nextMovie = movieQueue.takeFirst();
         setMovie(nextMovie.first, nextMovie.second, movieQueueTag, movieQueueDirectory);
     }
+}
+
+void xMoviePlayerPhonon::updatedDefaultAudioLanguage() {
+    movieDefaultAudioLanguage = xPlayerConfiguration::configuration()->getMovieDefaultAudioLanguage();
+}
+
+void xMoviePlayerPhonon::updatedDefaultSubtitleLanguage() {
+    movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
 }
 
 void xMoviePlayerPhonon::keyPressEvent(QKeyEvent *keyEvent)

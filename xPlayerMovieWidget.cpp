@@ -108,6 +108,9 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayerX* player, QWidget *parent, Q
     // Connect combo boxes.
     connect(audioChannelBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectAudioChannel(int)));
     connect(subtitleBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectSubtitle(int)));
+    // Following change in combobox will also trigger a select of the audio channel or subtitle.
+    connect(moviePlayer, &xMoviePlayerX::currentAudioChannel, audioChannelBox, &QComboBox::setCurrentIndex);
+    connect(moviePlayer, &xMoviePlayerX::currentSubtitle, subtitleBox, &QComboBox::setCurrentIndex);
     // Seek.
     connect(sliderWidget, &xPlayerSliderWidgetX::seek, moviePlayer, &xMoviePlayerX::seek);
     // Movie player volume updates.
@@ -128,6 +131,8 @@ void xPlayerMovieWidget::currentMovie(const QString& path, const QString& movie,
     Q_UNUSED(path)
     Q_UNUSED(tag)
     Q_UNUSED(directory)
+    audioChannelBox->clear();
+    subtitleBox->clear();
     movieLabel->setText(movie);
 }
 
