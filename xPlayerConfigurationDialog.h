@@ -21,6 +21,7 @@
 #include <QDateEdit>
 #include <QSpinBox>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QPushButton>
 #include <QLineEdit>
 #include <QListWidget>
@@ -128,6 +129,8 @@ private:
     QLineEdit* movieLibraryTagWidget;
     QLineEdit* movieLibraryDirectoryWidget;
     QLineEdit* movieLibraryExtensionsWidget;
+    QComboBox* movieDefaultAudioLanguageWidget;
+    QComboBox* movieDefaultSubtitleLanguageWidget;
     QLineEdit* streamingNameWidget;
     QLineEdit* streamingUrlWidget;
     QListWidget* movieLibraryListWidget;

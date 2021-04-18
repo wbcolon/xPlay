@@ -16,6 +16,7 @@
 #include "xPlayerUI.h"
 
 #include <QGroupBox>
+#include <QComboBox>
 #include <QFileDialog>
 #include <QDialogButtonBox>
 #include <QLabel>
@@ -65,6 +66,14 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     movieLibraryListWidget->setSortingEnabled(true);
     auto movieLibraryExtensionsLabel = new QLabel(tr("Extensions"), movieLibraryTab);
     movieLibraryExtensionsWidget = new QLineEdit(movieLibraryTab);
+    auto movieDefaultAudioLanguageLabel = new QLabel(tr("Default Audio Channel Language"), movieLibraryTab);
+    movieDefaultAudioLanguageWidget = new QComboBox(movieLibraryTab);
+    movieDefaultAudioLanguageWidget->addItem(tr("movie default"));
+    movieDefaultAudioLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
+    auto movieDefaultSubtitleLanguageLabel = new QLabel(tr("Default Subtitle Language"), movieLibraryTab);
+    movieDefaultSubtitleLanguageWidget = new QComboBox(movieLibraryTab);
+    movieDefaultSubtitleLanguageWidget->addItem(tr("disable"));
+    movieDefaultSubtitleLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
     movieLibraryLayout->addWidget(movieLibraryTagLabel, 0, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryTagWidget, 1, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryDirectoryLabel, 2, 0, 1, 5);
@@ -74,7 +83,12 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     movieLibraryLayout->addWidget(movieLibraryButtons, 7, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryExtensionsLabel, 8, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryExtensionsWidget, 9, 0, 1, 5);
-    movieLibraryLayout->addRowStretcher(10);
+    movieLibraryLayout->addRowSpacer(10, xPlayerLayout::LargeSpace);
+    movieLibraryLayout->addWidget(movieDefaultAudioLanguageLabel, 11, 0, 1, 2);
+    movieLibraryLayout->addWidget(movieDefaultAudioLanguageWidget, 12, 0, 1, 2);
+    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageLabel, 11, 3, 1, 2);
+    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
+    movieLibraryLayout->addRowStretcher(13);
     movieLibraryTab->setLayout(movieLibraryLayout);
     // Setup music library with directory and extensions.
     auto musicLibraryLayout = new xPlayerLayout();
@@ -112,7 +126,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     streamingSitesLayout->addWidget(streamingUrlWidget, 1, 2, 1, 3);
     streamingSitesLayout->addWidget(streamingSitesListWidget, 2, 0, 3, 5);
     streamingSitesLayout->addWidget(streamingSitesButtons, 5, 0, 1, 5);
-    streamingSitesLayout->addRowStretcher(6);
+    streamingSitesLayout->setRowStretch(2, 2);
     streamingSitesTab->setLayout(streamingSitesLayout);
     // Setup rotel amp with network address and port.
     auto rotelLayout = new xPlayerLayout();
@@ -196,6 +210,8 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto [rotelNetworkAddress, rotelNetworkPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
     auto movieLibraryTagAndDirectory = xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectory();
     auto movieLibraryExtensions = xPlayerConfiguration::configuration()->getMovieLibraryExtensions();
+    auto movieDefaultAudioLanguage = xPlayerConfiguration::configuration()->getMovieDefaultAudioLanguage();
+    auto movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
     auto databaseDirectory = xPlayerConfiguration::configuration()->getDatabaseDirectory();
     auto databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
     auto streamingSites = xPlayerConfiguration::configuration()->getStreamingSites();
@@ -230,6 +246,16 @@ void xPlayerConfigurationDialog::loadSettings() {
             movieLibraryListWidget->addItem(QString("(%1) - %2").arg(splitEntry.first).arg(splitEntry.second));
         }
     }
+    if (movieDefaultAudioLanguage.isEmpty()) {
+        movieDefaultAudioLanguageWidget->setCurrentIndex(0);
+    } else {
+        movieDefaultAudioLanguageWidget->setCurrentText(movieDefaultAudioLanguage);
+    }
+    if (movieDefaultSubtitleLanguage.isEmpty()) {
+        movieDefaultSubtitleLanguageWidget->setCurrentIndex(0);
+    } else {
+        movieDefaultSubtitleLanguageWidget->setCurrentText(movieDefaultSubtitleLanguage);
+    }
     streamingSitesListWidget->clear();
     if (!streamingSites.isEmpty()) {
         for (const auto& entry : streamingSites) {
@@ -247,6 +273,10 @@ void xPlayerConfigurationDialog::saveSettings() {
     auto rotelNetworkAddress = rotelNetworkAddressWidget->text();
     auto rotelNetworkPort = rotelNetworkPortWidget->value();
     auto movieLibraryExtensions = movieLibraryExtensionsWidget->text();
+    auto movieDefaultAudioLanguage =
+            movieDefaultAudioLanguageWidget->currentIndex() ? movieDefaultAudioLanguageWidget->currentText() : "";
+    auto movieDefaultSubtitleLanguage =
+            movieDefaultSubtitleLanguageWidget->currentIndex() ? movieDefaultSubtitleLanguageWidget->currentText() : "";
     auto databaseDirectory = databaseDirectoryWidget->text();
     quint64 databaseCutOff = 0;
     if (databaseCutOffCheck->isChecked()) {
@@ -277,6 +307,8 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: rotelNetworkPort: " << rotelNetworkPort;
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryDirectory: " << movieLibraryTagAndDirectory;
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryExtensions: " << movieLibraryExtensions;
+    qDebug() << "xPlayerConfigurationDialog: save: movieDefaultAudioLanguage: " << movieDefaultAudioLanguage;
+    qDebug() << "xPlayerConfigurationDialog: save: movieDefaultSubtitleLanguage: " << movieDefaultSubtitleLanguage;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSites: " << streamingSites;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSitesDefault: " << streamingSitesDefault;
     qDebug() << "xPlayerConfigurationDialog: save: databaseDirectory: " << databaseDirectory;
@@ -292,6 +324,8 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setRotelNetworkAddress(rotelNetworkAddress, rotelNetworkPort);
     xPlayerConfiguration::configuration()->setMovieLibraryTagAndDirectory(movieLibraryTagAndDirectory);
     xPlayerConfiguration::configuration()->setMovieLibraryExtensions(movieLibraryExtensions);
+    xPlayerConfiguration::configuration()->setMovieDefaultAudioLanguage(movieDefaultAudioLanguage);
+    xPlayerConfiguration::configuration()->setMovieDefaultSubtitleLanguage(movieDefaultSubtitleLanguage);
     xPlayerConfiguration::configuration()->setStreamingSites(streamingSites);
     xPlayerConfiguration::configuration()->setStreamingSitesDefault(streamingSitesDefault);
     xPlayerConfiguration::configuration()->setDatabaseDirectory(databaseDirectory);

@@ -30,6 +30,8 @@ const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddr
 const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" };
 const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDirectory" };
 const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" };
+const QString xPlayerConfiguration_MovieDefaultAudioLanguage { "xPlay/MovieDefaultAudioLanguage" };
+const QString xPlayerConfiguration_MovieDefaultSubtitleLanguage { "xPlay/MovieSubtitleAudioLanguage" };
 const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" };
 const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" };
 const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory" };
@@ -45,6 +47,8 @@ const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites 
         { "qobuz", QUrl("https://play.qobuz.com/login") },
         { "youtube", QUrl("https://www.youtube.com") },
 };
+const QStringList xPlayerConfiguration_MovieDefaultLanguages { "english", "german" };
+
 
 // singleton object.
 xPlayerConfiguration* xPlayerConfiguration::playerConfiguration = nullptr;
@@ -124,6 +128,22 @@ void xPlayerConfiguration::setMovieLibraryExtensions(const QString& extensions) 
         settings->setValue(xPlayerConfiguration_MovieLibraryExtensions, extensions);
         settings->sync();
         emit updatedMovieLibraryExtensions();
+    }
+}
+
+void xPlayerConfiguration::setMovieDefaultAudioLanguage(const QString& language) {
+    if (language != getMovieDefaultAudioLanguage()) {
+        settings->setValue(xPlayerConfiguration_MovieDefaultAudioLanguage, language);
+        settings->sync();
+        emit updatedMovieDefaultAudioLanguage();
+    }
+}
+
+void xPlayerConfiguration::setMovieDefaultSubtitleLanguage(const QString& language) {
+    if (language != getMovieDefaultSubtitleLanguage()) {
+        settings->setValue(xPlayerConfiguration_MovieDefaultSubtitleLanguage, language);
+        settings->sync();
+        emit updatedMovieDefaultSubtitleLanguage();
     }
 }
 
@@ -325,6 +345,18 @@ QStringList xPlayerConfiguration::getMovieLibraryExtensionList() {
     }
 }
 
+QString xPlayerConfiguration::getMovieDefaultAudioLanguage() {
+    return settings->value(xPlayerConfiguration_MovieDefaultAudioLanguage, "").toString();
+}
+
+QString xPlayerConfiguration::getMovieDefaultSubtitleLanguage() {
+    return settings->value(xPlayerConfiguration_MovieDefaultSubtitleLanguage, "").toString();
+}
+
+const QStringList& xPlayerConfiguration::getMovieDefaultLanguages() {
+    return xPlayerConfiguration_MovieDefaultLanguages;
+}
+
 std::pair<QString,QString> xPlayerConfiguration::splitMovieLibraryTagAndDirectory(const QString& tagDir) {
     QRegularExpression regExp("\\((?<tag>.*)\\) - (?<directory>.*)");
     QRegularExpressionMatch regExpMatch = regExp.match(tagDir);
@@ -353,6 +385,8 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedRotelNetworkAddress();
     emit updatedMovieLibraryTagsAndDirectories();
     emit updatedMovieLibraryExtensions();
+    emit updatedMovieDefaultAudioLanguage();
+    emit updatedMovieDefaultSubtitleLanguage();
     emit updatedStreamingSites();
     emit updatedStreamingSitesDefault();
     emit updatedDatabaseMusicOverlay();

@@ -76,6 +76,18 @@ public:
      */
     void setMovieLibraryExtensions(const QString& extensions);
     /**
+     * Set the default language for movie audio channels.
+     *
+     * @param language the language as string. No default if empty.
+     */
+    void setMovieDefaultAudioLanguage(const QString& language);
+    /**
+     * Set the default language for movie subtitles.
+     *
+     * @param language the language as string. Disable if empty.
+     */
+    void setMovieDefaultSubtitleLanguage(const QString& language);
+    /**
      * Set the list of sites available in the streaming view.
      *
      * @param sites list of pairs of short name and URL.
@@ -193,6 +205,24 @@ public:
      */
     [[nodiscard]] QStringList getMovieLibraryExtensionList();
     /**
+     * Get the default language for movie audio channels.
+     *
+     * @return the language as string, empty if movie default.
+     */
+    [[nodiscard]] QString getMovieDefaultAudioLanguage();
+    /**
+     * Get the default subtitle language for movie subtitles.
+     *
+     * @return the language as string, empty if disabled.
+     */
+    [[nodiscard]] QString getMovieDefaultSubtitleLanguage();
+    /**
+     * Get the list of languages used for default audio channel and subtitles.
+     *
+     * @return the languages as string.
+     */
+    [[nodiscard]] static const QStringList& getMovieDefaultLanguages();
+    /**
      * Get the list of streaming sites.
      *
      * @return list of pair of short name and URL.
@@ -268,6 +298,14 @@ signals:
      * Signal an update of the accepted movie file extensions.
      */
     void updatedMovieLibraryExtensions();
+    /**
+     * Signal an update of the default movie audio channel language.
+     */
+    void updatedMovieDefaultAudioLanguage();
+    /**
+     * Signal and update of the default movie subtitle language.
+     */
+    void updatedMovieDefaultSubtitleLanguage();
     /**
      * Signal an update of the visibility of the Rotel amp widget.
      */
