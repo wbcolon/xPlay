@@ -269,7 +269,7 @@ public:
      *
      * @return true, if update errors are ignored, false otherwise.
      */
-    [[nodiscard]] bool getDatabaseIgnoreUpdateErrors();
+    [[nodiscard]] bool getDatabaseIgnoreUpdateErrors() const;
     /**
      * Trigger all update configuration signals.
      *

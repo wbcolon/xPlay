@@ -198,8 +198,8 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     connect(configurationButtons->button(QDialogButtonBox::Cancel), &QPushButton::pressed, this, &QDialog::reject);
     // Load and resize.
     loadSettings();
-    setMinimumWidth(static_cast<int>(sizeHint().height()*1.5));
-    setMinimumHeight(sizeHint().height());
+    setMinimumWidth(static_cast<int>(sizeHint().height()*1.5)); // NOLINT
+    setMinimumHeight(sizeHint().height()); // NOLINT
 }
 
 void xPlayerConfigurationDialog::loadSettings() {
@@ -232,7 +232,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     databaseMovieOverlayCheck->setChecked(xPlayerConfiguration::configuration()->getDatabaseMovieOverlay());
     if (databaseCutOff) {
         databaseCutOffCheck->setChecked(true);
-        databaseCutOffDate->setDate(QDateTime::fromMSecsSinceEpoch(databaseCutOff).date());
+        databaseCutOffDate->setDate(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(databaseCutOff)).date());
     } else {
         databaseCutOffCheck->setChecked(false);
         databaseCutOffDate->setEnabled(false);
@@ -243,7 +243,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     if (movieLibraryTagAndDirectory.count() > 0) {
         for (const auto& entry : movieLibraryTagAndDirectory) {
             auto splitEntry = splitMovieLibraryEntry(entry);
-            movieLibraryListWidget->addItem(QString("(%1) - %2").arg(splitEntry.first).arg(splitEntry.second));
+            movieLibraryListWidget->addItem(QString("(%1) - %2").arg(splitEntry.first, splitEntry.second));
         }
     }
     if (movieDefaultAudioLanguage.isEmpty()) {
@@ -259,7 +259,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     streamingSitesListWidget->clear();
     if (!streamingSites.isEmpty()) {
         for (const auto& entry : streamingSites) {
-            streamingSitesListWidget->addItem(QString("(%1) - %2").arg(entry.first).arg(entry.second.toString()));
+            streamingSitesListWidget->addItem(QString("(%1) - %2").arg(entry.first, entry.second.toString()));
         }
     }
     updateStreamingSitesDefault();
@@ -383,7 +383,7 @@ void xPlayerConfigurationDialog::movieLibraryAdd() {
     auto currentDirectory = movieLibraryDirectoryWidget->text();
     if ((!currentTag.isEmpty()) && (!currentDirectory.isEmpty())) {
         if (!xPlayerConfigurationDialog::isEntryInListWidget(movieLibraryListWidget, currentTag, currentDirectory)) {
-            movieLibraryListWidget->addItem(QString("(%1) - %2").arg(currentTag).arg(currentDirectory));
+            movieLibraryListWidget->addItem(QString("(%1) - %2").arg(currentTag, currentDirectory));
         }
     }
 }
@@ -411,7 +411,7 @@ void xPlayerConfigurationDialog::streamingSiteAdd() {
     auto currentUrl = streamingUrlWidget->text();
     if ((!currentName.isEmpty()) && (!currentUrl.isEmpty())) {
         if (!xPlayerConfigurationDialog::isEntryInListWidget(streamingSitesListWidget, currentName, currentUrl)) {
-            streamingSitesListWidget->addItem(QString("(%1) - %2").arg(currentName).arg(currentUrl));
+            streamingSitesListWidget->addItem(QString("(%1) - %2").arg(currentName, currentUrl));
         }
         updateStreamingSitesDefault();
     }
@@ -439,7 +439,7 @@ void xPlayerConfigurationDialog::streamingSiteDefault() {
 }
 void xPlayerConfigurationDialog::updateStreamingSitesDefault() {
     // Streaming sites list widget is sorting. Therefore we now have to update the default.
-    auto streamingSitesDefaultString = QString("(%1) - %2").arg(streamingSitesDefault.first).arg(streamingSitesDefault.second.toString());
+    auto streamingSitesDefaultString = QString("(%1) - %2").arg(streamingSitesDefault.first, streamingSitesDefault.second.toString());
     for (int i = 0; i < streamingSitesListWidget->count(); ++i) {
         auto streamingSitesItem = streamingSitesListWidget->item(i);
         if (streamingSitesItem->text() == streamingSitesDefaultString) {
@@ -460,7 +460,7 @@ void xPlayerConfigurationDialog::openDatabaseDirectory() {
 }
 
 bool xPlayerConfigurationDialog::isEntryInListWidget(QListWidget* list, const QString& first, const QString& second) {
-    auto entry = QString("(%1) - %2").arg(first).arg(second);
+    auto entry = QString("(%1) - %2").arg(first, second);
     for (int i = 0; i < list->count(); ++i) {
         if (list->item(i)->text() == entry) {
             return true;

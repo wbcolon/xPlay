@@ -23,7 +23,7 @@
 #include <QLabel>
 #include <QDebug>
 
-const QVector<QColor> xPlayerMusicAlbumSelectorWidget_StateColors {QColor(Qt::white), QColor(Qt::green), QColor(Qt::red) };
+const QVector<QColor> xPlayerMusicAlbumSelectorWidget_StateColors {QColor(Qt::white), QColor(Qt::green), QColor(Qt::red) }; // NOLINT
 
 xPlayerMusicAlbumSelectorWidget::xPlayerMusicAlbumSelectorWidget(QWidget* parent, Qt::WindowFlags flags):
         QWidget(parent, flags),

@@ -21,40 +21,40 @@
 #include <QSpinBox>
 
 // Valid sources for the Rotel A14 or A12 amp
-const QList<QString> Rotel_Sources {
+const QList<QString> Rotel_Sources { // NOLINT
         "cd", "coax1", "coax2", "opt1", "opt2", "aux1", "aux2", "tuner", "phono", "usb", "bluetooth", "pc_usb"
 };
 // Special source indicating power off command.
-const QString Rotel_Source_PowerOff = "power off";
+const QString Rotel_Source_PowerOff = "power off"; // NOLINT
 // Limit the maximal volume.
 const int Rotel_MaximumVolume = 60;
 // Command strings in order to communicate to and from the Rotel A14 or A12 amp.
 // Volume
-const QString Rotel_RequestVolume = "amp:volume?";
-const QString Rotel_ResponsePrefixVolume = "amp:volume=";
-const QString Rotel_SetVolume = "amp:vol_%1!";
+const QString Rotel_RequestVolume = "amp:volume?"; // NOLINT
+const QString Rotel_ResponsePrefixVolume = "amp:volume="; // NOLINT
+const QString Rotel_SetVolume = "amp:vol_%1!"; // NOLINT
 // Bass
-const QString Rotel_RequestBass = "amp:bass?";
-const QString Rotel_ResponsePrefixBass = "amp:bass=";
-const QString Rotel_SetBass = "amp:bass_%1%2!";
+const QString Rotel_RequestBass = "amp:bass?"; // NOLINT
+const QString Rotel_ResponsePrefixBass = "amp:bass="; // NOLINT
+const QString Rotel_SetBass = "amp:bass_%1%2!"; // NOLINT
 // Volume
-const QString Rotel_RequestTreble = "amp:treble?";
-const QString Rotel_ResponsePrefixTreble = "amp:treble=";
-const QString Rotel_SetTreble = "amp:treble_%1%2!";
+const QString Rotel_RequestTreble = "amp:treble?"; // NOLINT
+const QString Rotel_ResponsePrefixTreble = "amp:treble="; // NOLINT
+const QString Rotel_SetTreble = "amp:treble_%1%2!"; // NOLINT
 // Input source
-const QString Rotel_RequestSource = "amp:source?";
-const QString Rotel_ResponsePrefixSource = "amp:source=";
-const QString Rotel_SetSource = "amp:%1!";
+const QString Rotel_RequestSource = "amp:source?"; // NOLINT
+const QString Rotel_ResponsePrefixSource = "amp:source="; // NOLINT
+const QString Rotel_SetSource = "amp:%1!"; // NOLINT
 // Mute
-const QString Rotel_RequestMute = "amp:mute?";
-const QString Rotel_ResponsePrefixMute = "amp:mute=";
-const QString Rotel_SetMute = "amp:mute_%1!";
+const QString Rotel_RequestMute = "amp:mute?"; // NOLINT
+const QString Rotel_ResponsePrefixMute = "amp:mute="; // NOLINT
+const QString Rotel_SetMute = "amp:mute_%1!"; // NOLINT
 // Mute
-const QString Rotel_RequestBalance = "amp:balance?";
-const QString Rotel_ResponsePrefixBalance = "amp:balance=";
-const QString Rotel_SetBalance = "amp:balance_%1!";
+const QString Rotel_RequestBalance = "amp:balance?"; // NOLINT
+const QString Rotel_ResponsePrefixBalance = "amp:balance="; // NOLINT
+const QString Rotel_SetBalance = "amp:balance_%1!"; // NOLINT
 // Power off
-const QString Rotel_PowerOff = "amp:power_off!";
+const QString Rotel_PowerOff = "amp:power_off!"; // NOLINT
 
 xPlayerRotelControls* xPlayerRotelControls::rotelControls = nullptr;
 
@@ -358,7 +358,7 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     QObject::connect(rotelVolume, &xPlayerVolumeWidgetX::muted, rotelControls, &xPlayerRotelControls::setMuted);
     QObject::connect(rotelBass, SIGNAL(valueChanged(int)), rotelControls, SLOT(setBass(int)));
     QObject::connect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
-    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(const QString&)), rotelControls, SLOT(setSource(const QString&)));
+    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
     QObject::connect(rotelBalance, &xPlayerBalanceWidgetX::balance, rotelControls, &xPlayerRotelControls::setBalance);
     // Connect Rotel controls to Rotel widget.
     QObject::connect(rotelControls, &xPlayerRotelControls::volume, this, &xPlayerRotelWidget::updateVolume);
@@ -403,9 +403,9 @@ void xPlayerRotelWidget::updateBalance(int b) {
 
 void xPlayerRotelWidget::updateSource(const QString& source) {
     qDebug() << "xPlayerRotel: updateSource: " << source;
-    QObject::disconnect(rotelSource, SIGNAL(currentIndexChanged(const QString&)), rotelControls, SLOT(setSource(const QString&)));
+    QObject::disconnect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
     rotelSource->setCurrentIndex(Rotel_Sources.indexOf(source));
-    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(const QString&)), rotelControls, SLOT(setSource(const QString&)));
+    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
 }
 
 void xPlayerRotelWidget::updateMuted(bool mute) {

@@ -166,5 +166,5 @@ int main(int argc, char* argv[])
         app.resize(1920, 1080);
         app.show();
     }
-    return playApp.exec();
+    return playApp.exec(); // NOLINT
 }

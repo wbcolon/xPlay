@@ -18,7 +18,6 @@
 #include "xPlayerConfiguration.h"
 
 #include <QTabWidget>
-#include <QIcon>
 #include <taglib/fileref.h>
 
 xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):

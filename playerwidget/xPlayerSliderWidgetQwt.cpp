@@ -45,7 +45,7 @@ xPlayerSliderWidgetQwt::xPlayerSliderWidgetQwt(QWidget *parent, Qt::WindowFlags 
     // Connect the track slider to the music player. Do proper conversion using lambdas.
     connect(trackSlider, &QwtSlider::sliderMoved, [=](double position) { emit seek(static_cast<qint64>(position)); } );
     // Setup max sections.
-    useScaleSections(10);
+    useScaleSections(10); // NOLINT
 }
 
 void xPlayerSliderWidgetQwt::clear() {

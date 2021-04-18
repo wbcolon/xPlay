@@ -12,7 +12,6 @@
  * GNU General Public License for more details.
  */
 #include <QMenuBar>
-#include <QFileDialog>
 #include <QDialogButtonBox>
 #include <QMessageBox>
 #include <QApplication>
@@ -63,15 +62,14 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     createMenus();
     // Connect music library with main music widget.
     // Commands for the music library.
-    connect(mainMusicWidget, SIGNAL(scan(const xMusicLibraryFilter&)),
-            musicLibrary, SLOT(scan(const xMusicLibraryFilter&)));
-    connect(mainMusicWidget, SIGNAL(scanForArtist(const QString&, const xMusicLibraryFilter&)),
-            musicLibrary, SLOT(scanForArtist(const QString&, const xMusicLibraryFilter&)));
+    connect(mainMusicWidget, SIGNAL(scan(xMusicLibraryFilter)), musicLibrary, SLOT(scan(xMusicLibraryFilter)));
+    connect(mainMusicWidget, SIGNAL(scanForArtist(QString,xMusicLibraryFilter)),
+            musicLibrary, SLOT(scanForArtist(QString,xMusicLibraryFilter)));
     connect(mainMusicWidget, &xMainMusicWidget::scanForArtistAndAlbum, musicLibrary, &xMusicLibrary::scanForArtistAndAlbum);
-    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForArtist(const QString&, const xMusicLibraryFilter&)),
-            musicLibrary, SLOT(scanAllAlbumsForArtist(const QString&, const xMusicLibraryFilter&)));
-    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForListArtists(const QStringList&, const xMusicLibraryFilter&)),
-            musicLibrary, SLOT(scanAllAlbumsForListArtists(const QStringList&, const xMusicLibraryFilter&)));
+    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForArtist(QString,xMusicLibraryFilter)),
+            musicLibrary, SLOT(scanAllAlbumsForArtist(QString,xMusicLibraryFilter)));
+    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter)),
+            musicLibrary, SLOT(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter&)));
     // Results back to the main music widget.
     connect(musicLibrary, &xMusicLibrary::scannedArtists, mainMusicWidget, &xMainMusicWidget::scannedArtists);
     connect(musicLibrary, &xMusicLibrary::scannedAlbums, mainMusicWidget, &xMainMusicWidget::scannedAlbums);
@@ -281,7 +279,7 @@ int xApplication::unknownEntriesDialog(const QString& dialogTitle, const std::li
     auto unknownEntriesList = new QListWidget(unknownDialog);
     // Fill list widget.
     for (const auto& entry : entries) {
-        unknownEntriesList->addItem(QString("%1/%2/%3").arg(std::get<0>(entry)).arg(std::get<1>(entry)).arg(std::get<2>(entry)));
+        unknownEntriesList->addItem(QString("%1/%2/%3").arg(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry)));
     }
     auto unknownDialogButtons = new QDialogButtonBox(unknownDialog);
     unknownDialogButtons->addButton(QDialogButtonBox::Discard);

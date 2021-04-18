@@ -29,7 +29,7 @@ xPlayerDatabase::xPlayerDatabase(QObject* parent):
             this, &xPlayerDatabase::updatedDatabaseDirectory);
 }
 
-xPlayerDatabase::~xPlayerDatabase() {
+xPlayerDatabase::~xPlayerDatabase() noexcept {
     // Close database.
     try {
         sqlDatabase.close();
@@ -443,7 +443,7 @@ bool xPlayerDatabase::updateMusicPlaylist(const QString& name, const std::vector
             if (!addMusicEntries.empty()) {
                 addMusicEntries += ", ";
             }
-            addMusicEntries += QString(R"(("%1", 0, -1, "%2", "%3", "%4", 0, 0))").arg(QString::fromStdString(hash)).arg(artist).arg(album).arg(track).toStdString();
+            addMusicEntries += QString(R"(("%1", 0, -1, "%2", "%3", "%4", 0, 0))").arg(QString::fromStdString(hash), artist, album, track).toStdString();
         } else {
            qDebug() << "xPlayerDatabase::updateMusicPlaylist: skip: " << QString::fromStdString(hash);
         }

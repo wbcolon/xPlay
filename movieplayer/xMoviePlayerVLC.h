@@ -34,7 +34,7 @@ public:
     };
 
     explicit xMoviePlayerVLC(QWidget* parent=nullptr);
-    ~xMoviePlayerVLC() override;
+    ~xMoviePlayerVLC() noexcept override;
     /**
      * Return the volume for the movie player
      *

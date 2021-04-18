@@ -17,12 +17,10 @@
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
-#include <QPushButton>
 #include <QGroupBox>
 #include <QComboBox>
 #include <QTabWidget>
 #include <QCheckBox>
-#include <QDebug>
 
 xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayerX* player, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),

@@ -428,7 +428,7 @@ void xMusicLibraryScanning::scan() {
  */
 
 // Use "/tmp" as default path
-const std::string defaultBaseDirectory{ "/tmp" };
+const std::string defaultBaseDirectory{ "/tmp" }; // NOLINT
 
 xMusicLibrary::xMusicLibrary(QObject* parent):
         QObject(parent),

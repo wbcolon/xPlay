@@ -232,7 +232,7 @@ private:
      * @param boxLabel contains the label for the surrounding groupbox.
      * @return pair of pointer to the created QGroupBox and QListWidget.
      */
-    auto addGroupBox(const QString& boxLabel, QWidget* parent);
+    static auto addGroupBox(const QString& boxLabel, QWidget* parent);
 
     xPlayerListWidget* tagList;
     xPlayerListWidget* directoryList;

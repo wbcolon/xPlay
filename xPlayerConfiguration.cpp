@@ -22,32 +22,32 @@
 #include <QDebug>
 
 // Configuration strings.
-const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" };
-const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" };
-const QString xPlayerConfiguration_MusicLibraryAlbumSelectors { "xPlay/MusicLibraryAlbumSelectors" };
-const QString xPlayerConfiguration_RotelWidget { "xPlay/RotelWidget" };
-const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddress" };
-const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" };
-const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDirectory" };
-const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" };
-const QString xPlayerConfiguration_MovieDefaultAudioLanguage { "xPlay/MovieDefaultAudioLanguage" };
-const QString xPlayerConfiguration_MovieDefaultSubtitleLanguage { "xPlay/MovieSubtitleAudioLanguage" };
-const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" };
-const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" };
-const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory" };
-const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" };
-const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" };
-const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOverlay" };
+const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" }; // NOLINT
+const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" }; // NOLINT
+const QString xPlayerConfiguration_MusicLibraryAlbumSelectors { "xPlay/MusicLibraryAlbumSelectors" }; // NOLINT
+const QString xPlayerConfiguration_RotelWidget { "xPlay/RotelWidget" }; // NOLINT
+const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddress" }; // NOLINT
+const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" }; // NOLINT
+const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDirectory" }; // NOLINT
+const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" }; // NOLINT
+const QString xPlayerConfiguration_MovieDefaultAudioLanguage { "xPlay/MovieDefaultAudioLanguage" }; // NOLINT
+const QString xPlayerConfiguration_MovieDefaultSubtitleLanguage { "xPlay/MovieSubtitleAudioLanguage" }; // NOLINT
+const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" }; // NOLINT
+const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" }; // NOLINT
+const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory" }; // NOLINT
+const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" }; // NOLINT
+const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" }; // NOLINT
+const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOverlay" }; // NOLINT
 
 // Configuration defaults.
-const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" };
-const QString xPlayerConfiguration_MusicLibraryAlbumSelectors_Default { "(live) [hd] [mp3]" };
-const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" };
-const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = {
+const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" }; // NOLINT
+const QString xPlayerConfiguration_MusicLibraryAlbumSelectors_Default { "(live) [hd] [mp3]" }; // NOLINT
+const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
+const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = { // NOLINT
         { "qobuz", QUrl("https://play.qobuz.com/login") },
         { "youtube", QUrl("https://www.youtube.com") },
 };
-const QStringList xPlayerConfiguration_MovieDefaultLanguages { "english", "german" };
+const QStringList xPlayerConfiguration_MovieDefaultLanguages { "english", "german" }; // NOLINT
 
 
 // singleton object.
@@ -151,9 +151,9 @@ void xPlayerConfiguration::setStreamingSites(const QList<std::pair<QString,QUrl>
     if ((sites != getStreamingSites()) || (sites == xPlayerConfiguration_StreamingDefaultSites)) {
         QString nameUrlString;
         if (!sites.isEmpty()) {
-            nameUrlString = QString("(%1) - %2").arg(sites.at(0).first).arg(sites.at(0).second.toString());
+            nameUrlString = QString("(%1) - %2").arg(sites.at(0).first, sites.at(0).second.toString());
             for (int i = 1; i < sites.size(); ++i) {
-                nameUrlString += QString("|(%1) - %2").arg(sites.at(i).first).arg(sites.at(i).second.toString());
+                nameUrlString += QString("|(%1) - %2").arg(sites.at(i).first, sites.at(i).second.toString());
             }
         }
         settings->setValue(xPlayerConfiguration_StreamingSites, nameUrlString);
@@ -207,7 +207,7 @@ void xPlayerConfiguration::setDatabaseIgnoreUpdateErrors(bool enabled) {
 
 void xPlayerConfiguration::setStreamingSitesDefault(const std::pair<QString,QUrl>& site) {
     if (site != getStreamingSitesDefault()) {
-        auto nameUrlString = QString("(%1) - %2").arg(site.first).arg(site.second.toString());
+        auto nameUrlString = QString("(%1) - %2").arg(site.first, site.second.toString());
         settings->setValue(xPlayerConfiguration_StreamingSitesDefault, nameUrlString);
         settings->sync();
         emit updatedStreamingSitesDefault();
@@ -296,8 +296,8 @@ std::pair<QString,QUrl> xPlayerConfiguration::getStreamingSitesDefault() {
 QString xPlayerConfiguration::getDatabaseDirectory() {
     auto path = settings->value(xPlayerConfiguration_DatabaseDirectory, "").toString();
     if (path.isEmpty()) {
-        path = QString("%1/%2/").arg(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)).
-                arg(xPlayerConfiguration::OrganisationName);
+        path = QString("%1/%2/").arg(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation),
+                                     xPlayerConfiguration::OrganisationName);
     }
     return path;
 }
@@ -318,7 +318,7 @@ bool xPlayerConfiguration::getDatabaseMovieOverlay() {
     return settings->value(xPlayerConfiguration_DatabaseMovieOverlay, true).toBool();
 }
 
-bool xPlayerConfiguration::getDatabaseIgnoreUpdateErrors() {
+bool xPlayerConfiguration::getDatabaseIgnoreUpdateErrors() const {
     return databaseIgnoreUpdateErrors;
 }
 

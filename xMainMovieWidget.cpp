@@ -352,10 +352,10 @@ void xMainMovieWidget::updatePlayedMovies() {
                 auto playCount = std::get<1>(*playedMovie);
                 if (playCount > 1) {
                     movieItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(std::get<2>(*playedMovie))).toString(Qt::DefaultLocaleLongDate)));
                 } else {
                     movieItem->addToolTip(QString(tr("played once, last time on %1")).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(std::get<2>(*playedMovie))).toString(Qt::DefaultLocaleLongDate)));
                 }
                 // Remove element to speed up search in the next iteration.
                 playedMovies.erase(playedMovie);
@@ -406,10 +406,10 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
         moviePlayedItem->setIcon(":images/xplay-star.svg");
         if (playCount > 1) {
             moviePlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(timeStamp)).toString(Qt::DefaultLocaleLongDate)));
         } else {
             moviePlayedItem->addToolTip(QString(tr("played once, last time on %1")).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(timeStamp)).toString(Qt::DefaultLocaleLongDate)));
         }
     }
 }
@@ -427,11 +427,9 @@ void xMainMovieWidget::updateWindowTitle(const QString& path, const QString& nam
 QString xMainMovieWidget::createWindowTitle() {
     if (fullWindow) {
         if (currentMovieDirectory == ".") {
-            return QString("%1 - (%2) - %3").arg(QApplication::applicationName()).
-                    arg(currentMovieTag).arg(currentMovieName);
+            return QString("%1 - (%2) - %3").arg(QApplication::applicationName(), currentMovieTag, currentMovieName);
         } else {
-            return QString("%1 - (%2/%3) - %4").arg(QApplication::applicationName()).
-                    arg(currentMovieTag).arg(currentMovieDirectory).arg(currentMovieName);
+            return QString("%1 - (%2/%3) - %4").arg(QApplication::applicationName(), currentMovieTag, currentMovieDirectory, currentMovieName);
         }
     } else {
         return QApplication::applicationName();

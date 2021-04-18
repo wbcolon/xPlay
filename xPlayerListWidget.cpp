@@ -18,7 +18,6 @@
 
 #include <QApplication>
 #include <QResizeEvent>
-#include <QPixmap>
 #include <QDebug>
 
 xPlayerListItemWidget::xPlayerListItemWidget(const QString& text, QWidget* parent):
@@ -45,7 +44,7 @@ xPlayerListItemWidget::xPlayerListItemWidget(const QString& text, QWidget* paren
     itemLayout->setColumnStretch(2, 2);
     itemLayout->addColumnSpacer(10, xPlayerLayout::SmallSpace);
     setLayout(itemLayout);
-    setFixedHeight(sizeHint().height());
+    setFixedHeight(sizeHint().height()); // NOLINT
 }
 
 xPlayerListItemWidget::xPlayerListItemWidget(xMusicFile* file, QWidget* parent):
@@ -84,8 +83,8 @@ xPlayerListItemWidget::xPlayerListItemWidget(xMusicFile* file, QWidget* parent):
     itemLayout->setColumnStretch(11, 0);
     itemLayout->setColumnStretch(12, 0);
     setLayout(itemLayout);
-    setFixedHeight(sizeHint().height());
-    updateTrackName(sizeHint().width());
+    setFixedHeight(sizeHint().height()); // NOLINT
+    updateTrackName(sizeHint().width()); // NOLINT
 }
 
 void xPlayerListItemWidget::setIcon(const QString& fileName) {

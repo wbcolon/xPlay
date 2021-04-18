@@ -28,9 +28,7 @@
 #include <QRandomGenerator>
 #include <QDateTime>
 #include <QCheckBox>
-#include <QRadioButton>
 #include <QButtonGroup>
-#include <QLineEdit>
 #include <random>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
@@ -233,7 +231,7 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
     for (const auto& albumTrack : albumTracks) {
         for (const auto& track : albumTrack.second) {
             // Add to the playlist (queue)
-            queueList->addItemWidget(track, QString("%1 - %2").arg(artist).arg(albumTrack.first));
+            queueList->addItemWidget(track, QString("%1 - %2").arg(artist, albumTrack.first));
         }
         emit queueTracks(artist, albumTrack.first, albumTrack.second);
     }
@@ -248,7 +246,7 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
         for (const auto& albumTrack : listTrack.second) {
             for (const auto& track : albumTrack.second) {
                 // Add to the playlist (queue)
-                queueList->addItemWidget(track, QString("%1 - %2").arg(listTrack.first).arg(albumTrack.first));
+                queueList->addItemWidget(track, QString("%1 - %2").arg(listTrack.first, albumTrack.first));
             }
             emit queueTracks(listTrack.first, albumTrack.first, albumTrack.second);
         }
@@ -358,7 +356,7 @@ void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
                 trackObjects.push_back(trackObject);
             }
             // Add to the playlist (queue)
-            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(artistName).arg(albumName));
+            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(artistName, albumName));
         }
         // Signal the set tracks to be queued by the music player.
         emit queueTracks(artistName, albumName, trackObjects);
@@ -577,7 +575,7 @@ void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
         }
         trackObjects.push_back(trackObject);
         // Add to the playlist (queue)
-        queueList->addItemWidget(trackObject,QString("%1 - %2").arg(artistName).arg(albumName));
+        queueList->addItemWidget(trackObject,QString("%1 - %2").arg(artistName, albumName));
         // Signal the set tracks to be queued by the music player.
         emit queueTracks(artistName, albumName, trackObjects);
         // Signal finish adding tracks.
@@ -692,10 +690,10 @@ void xMainMusicWidget::updatePlayedTracks() {
                 auto playCount = std::get<1>(*playedMusicTrack);
                 if (playCount > 1) {
                     trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(std::get<2>(*playedMusicTrack))).toString(Qt::DefaultLocaleLongDate)));
                 } else {
                     trackItem->addToolTip(QString(tr("played once, last time on %1")).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(std::get<2>(*playedMusicTrack))).toString(Qt::DefaultLocaleLongDate)));
                 }
                 // Remove element to speed up search in the next iteration.
                 playedMusicTracks.erase(playedMusicTrack);
@@ -743,10 +741,10 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
         trackPlayedItem->setIcon(":images/xplay-star.svg");
         if (playCount > 1) {
             trackPlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(timeStamp)).toString(Qt::DefaultLocaleLongDate)));
         } else {
             trackPlayedItem->addToolTip(QString(tr("played once, last time on %1")).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(timeStamp)).toString(Qt::DefaultLocaleLongDate)));
         }
     }
 }
@@ -760,7 +758,7 @@ void xMainMusicWidget::playlist(const std::vector<std::tuple<QString,QString,QSt
         // Add to the playlist (queue)
         auto trackObject = musicLibrary->getMusicFile(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
         if (trackObject) {
-            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(std::get<0>(entry)).arg(std::get<1>(entry)));
+            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(std::get<0>(entry), std::get<1>(entry)));
         }
     }
     // Update items.

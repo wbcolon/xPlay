@@ -60,7 +60,7 @@ xPlayerPlaylistDialog::xPlayerPlaylistDialog(const QStringList& playlistNames, Q
             this, &xPlayerPlaylistDialog::removePlaylistItem);
     connect(playlistButtons->button(QDialogButtonBox::Cancel), &QPushButton::pressed, this, &xPlayerPlaylistDialog::close);
     // Set the minimum width as 3/2 of its height.
-    setMinimumWidth(sizeHint().height()*3/2);
+    setMinimumWidth(sizeHint().height()*3/2); // NOLINT
 }
 
 void xPlayerPlaylistDialog::playlistSelected(int index) {
