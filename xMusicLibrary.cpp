@@ -174,6 +174,11 @@ void xMusicLibraryFiles::set(const QString& artist, const QString& album, const 
     musicFilesLock.unlock();
 }
 
+bool xMusicLibraryFiles::isEmpty() const {
+    // No need to lock here. Only read-only check for empty state.
+    return musicFiles.empty();
+}
+
 void xMusicLibraryFiles::clear() {
     musicFilesLock.lock();
     // Remove all the music files.
@@ -420,6 +425,11 @@ void xMusicLibraryScanning::scan() {
         // Clear everything currently scanned.
         musicLibraryFiles->clear();
     }
+
+    if (musicLibraryFiles->isEmpty()) {
+        qCritical() << "Scanning error. Library is empty...";
+        emit scanningError();
+    }
 }
 
 
@@ -435,6 +445,7 @@ xMusicLibrary::xMusicLibrary(QObject* parent):
         baseDirectory(defaultBaseDirectory) {
     musicLibraryScanning = new xMusicLibraryScanning(this);
     connect(musicLibraryScanning, &xMusicLibraryScanning::finished, this, &xMusicLibrary::scanningFinished);
+    connect(musicLibraryScanning, &xMusicLibraryScanning::scanningError, this, &xMusicLibrary::scanningError);
     connect(musicLibraryScanning, &xMusicLibraryScanning::scannedArtists, this, &xMusicLibrary::scannedArtists);
     musicLibraryFiles = xMusicLibraryFiles::files();
 }
@@ -451,6 +462,8 @@ void xMusicLibrary::setBaseDirectory(const std::filesystem::path& base) {
         }
         musicLibraryScanning->setBaseDirectory(base);
         musicLibraryScanning->start(QThread::IdlePriority);
+    } else {
+        emit scanningError();
     }
 }
 

@@ -49,6 +49,10 @@ private slots:
      */
     void setMusicLibraryDirectory();
     /**
+     * Notify about an error while scanning the music library.
+     */
+    void scanningErrorMusicLibrary();
+    /**
      * Set the Rotel network address/port if its configuration has been updated.
      */
     void setRotelNetworkAddress();

@@ -205,6 +205,12 @@ public:
      */
     [[nodiscard]] std::list<std::tuple<QString, QString, xMusicFile*>> get() const;
     /**
+     * Check whether or not the library is empty.
+     *
+     * @return true if the library is empty, false otherwise.
+     */
+    [[nodiscard]] bool isEmpty() const;
+    /**
      * Clear the library.
      */
     void clear();
@@ -266,6 +272,10 @@ signals:
      * @param artists list of scanned artists as string.
      */
     void scannedArtists(const QStringList& artists);
+    /**
+     * Signal emitted on scanning error or empty database.
+     */
+    void scanningError();
 
 private:
     /**
@@ -317,6 +327,10 @@ public:
     void cleanup();
 
 signals:
+    /**
+     * Signal emitted on scanning error or empty library.
+     */
+    void scanningError();
     /**
      * Signal that the complete scanning process is finished.
      */

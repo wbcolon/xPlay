@@ -71,6 +71,7 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(mainMusicWidget, SIGNAL(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter)),
             musicLibrary, SLOT(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter&)));
     // Results back to the main music widget.
+    connect(musicLibrary, &xMusicLibrary::scanningError, this, &xApplication::scanningErrorMusicLibrary);
     connect(musicLibrary, &xMusicLibrary::scannedArtists, mainMusicWidget, &xMainMusicWidget::scannedArtists);
     connect(musicLibrary, &xMusicLibrary::scannedAlbums, mainMusicWidget, &xMainMusicWidget::scannedAlbums);
     connect(musicLibrary, &xMusicLibrary::scannedTracks, mainMusicWidget, &xMainMusicWidget::scannedTracks);
@@ -305,6 +306,11 @@ void xApplication::setMusicLibraryDirectory() {
     mainMusicWidget->clear();
     musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));
     qInfo() << "Update music library path to " << musicLibraryDirectory;
+}
+
+void xApplication::scanningErrorMusicLibrary() {
+    QMessageBox::critical(this, "Music Library",
+                          "Unable to scan the music error. Please check your configuration.");
 }
 
 void xApplication::setRotelNetworkAddress() {
