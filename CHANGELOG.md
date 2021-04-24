@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1 - 2021-04-24
+
+- Added limited error handling for music library scanning.
+- Added option for default audio and subtitle language for movies.
+- Minor configuration dialog UI layout fixes.  
+- Clang-tidy fixes.
 
 ## 0.7.0 - 2021-04-06
 

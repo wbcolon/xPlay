@@ -214,11 +214,12 @@ The *Help* menu has two entries displaying copyright information about the used 
 #### Configuration Dialog
 
 The configuration dialog is using QSettings to load and store the xPlay configuration. The directory and
-extensions for the music and the movie library can be configured as well as the sites for the streaming view.
-The Rotel widget can be enabled or disabled and its network configuration can be configured.
-The database overlay for the music and movie view can be configured using individual check boxes. A cut-off
-date can be configured for each database query. If specified then entries with a time stamp before the cut-off
-date are ignored. This features enables the user to e.g. see which movies he has seen in the last month.
+extensions for the music and the movie library can be configured as well as the sites for the streaming view. For
+movies, the default audio and subtitle language can be selected. The Rotel widget can be enabled or disabled and its
+network connection can be configured. The database overlay for the music and movie view can be configured using
+individual check boxes. A cut-off date can be set for each database query. If it is specified then entries with a time
+stamp before the cut-off date are ignored. This features enables the user to e.g. display which movies he has seen 
+the last month.
 
 ![Screenshot Configuration Dialog (Music)](screenshots/xplay_screenshot_configuration_dialog_00.png)
 ![Screenshot Configuration Dialog (Movie)](screenshots/xplay_screenshot_configuration_dialog_01.png)
