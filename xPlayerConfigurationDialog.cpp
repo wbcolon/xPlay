@@ -278,7 +278,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     auto movieDefaultSubtitleLanguage =
             movieDefaultSubtitleLanguageWidget->currentIndex() ? movieDefaultSubtitleLanguageWidget->currentText() : "";
     auto databaseDirectory = databaseDirectoryWidget->text();
-    quint64 databaseCutOff = 0;
+    qint64 databaseCutOff = 0;
     if (databaseCutOffCheck->isChecked()) {
         // startOfDay requires Qt 5.14 or higher.
         databaseCutOff = QDateTime(databaseCutOffDate->date()).toMSecsSinceEpoch();

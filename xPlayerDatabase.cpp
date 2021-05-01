@@ -82,7 +82,7 @@ xPlayerDatabase* xPlayerDatabase::database() {
     return playerDatabase;
 }
 
-int xPlayerDatabase::getPlayCount(int bitsPerSample, int sampleRate, quint64 after) {
+int xPlayerDatabase::getPlayCount(int bitsPerSample, int sampleRate, qint64 after) {
     int playCount = -1;
     soci::indicator playCountIndicator;
     try {
@@ -115,7 +115,7 @@ int xPlayerDatabase::getPlayCount(int bitsPerSample, int sampleRate, quint64 aft
     }
 }
 
-int xPlayerDatabase::getPlayCount(const QString& artist, const QString& album, quint64 after) {
+int xPlayerDatabase::getPlayCount(const QString& artist, const QString& album, qint64 after) {
     int playCount = -1;
     soci::indicator playCountIndicator;
     try {
@@ -148,7 +148,7 @@ int xPlayerDatabase::getPlayCount(const QString& artist, const QString& album, q
     }
 }
 
-QStringList xPlayerDatabase::getPlayedArtists(quint64 after) {
+QStringList xPlayerDatabase::getPlayedArtists(qint64 after) {
     QStringList artists;
     try {
         soci::rowset<std::string> distinctArtists = (sqlDatabase.prepare <<
@@ -164,7 +164,7 @@ QStringList xPlayerDatabase::getPlayedArtists(quint64 after) {
     return artists;
 }
 
-QStringList xPlayerDatabase::getPlayedAlbums(const QString& artist, quint64 after) {
+QStringList xPlayerDatabase::getPlayedAlbums(const QString& artist, qint64 after) {
     QStringList albums;
     try {
         soci::rowset<std::string> distinctAlbums = (sqlDatabase.prepare <<
@@ -181,8 +181,8 @@ QStringList xPlayerDatabase::getPlayedAlbums(const QString& artist, quint64 afte
     return albums;
 }
 
-QList<std::tuple<QString,int,quint64>> xPlayerDatabase::getPlayedTracks(const QString& artist, const QString& album, quint64 after) {
-    QList<std::tuple<QString,int,quint64>> tracks;
+QList<std::tuple<QString,int,qint64>> xPlayerDatabase::getPlayedTracks(const QString& artist, const QString& album, qint64 after) {
+    QList<std::tuple<QString,int,qint64>> tracks;
     try {
         soci::rowset<soci::row> playedTracks = (sqlDatabase.prepare <<
                 "SELECT track, playCount, timeStamp FROM music WHERE artist = :artist AND album = :album AND timeStamp >= :after",
@@ -200,7 +200,7 @@ QList<std::tuple<QString,int,quint64>> xPlayerDatabase::getPlayedTracks(const QS
     return tracks;
 }
 
-QStringList xPlayerDatabase::getPlayedTags(quint64 after) {
+QStringList xPlayerDatabase::getPlayedTags(qint64 after) {
     QStringList tags;
     try {
         soci::rowset<std::string> distinctTags = (sqlDatabase.prepare <<
@@ -216,7 +216,7 @@ QStringList xPlayerDatabase::getPlayedTags(quint64 after) {
     return tags;
 }
 
-QStringList xPlayerDatabase::getPlayedDirectories(const QString& tag, quint64 after) {
+QStringList xPlayerDatabase::getPlayedDirectories(const QString& tag, qint64 after) {
     QStringList directories;
     try {
         soci::rowset<std::string> distinctDirectories = (sqlDatabase.prepare <<
@@ -233,8 +233,8 @@ QStringList xPlayerDatabase::getPlayedDirectories(const QString& tag, quint64 af
     return directories;
 }
 
-QList<std::tuple<QString,int,quint64>> xPlayerDatabase::getPlayedMovies(const QString& tag, const QString& directory, quint64 after) {
-    QList<std::tuple<QString,int,quint64>> movies;
+QList<std::tuple<QString,int,qint64>> xPlayerDatabase::getPlayedMovies(const QString& tag, const QString& directory, qint64 after) {
+    QList<std::tuple<QString,int,qint64>> movies;
     try {
         soci::rowset<soci::row> playedMovies = (sqlDatabase.prepare <<
                 "SELECT movie, playCount, timeStamp FROM movie WHERE tag = :tag AND directory = :directory AND timeStamp >= :after",
@@ -252,7 +252,7 @@ QList<std::tuple<QString,int,quint64>> xPlayerDatabase::getPlayedMovies(const QS
     return movies;
 }
 
-std::pair<int,quint64> xPlayerDatabase::updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample) {
+std::pair<int,qint64> xPlayerDatabase::updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample) {
     auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
     try {
@@ -286,7 +286,7 @@ std::pair<int,quint64> xPlayerDatabase::updateMusicFile(const QString& artist, c
     return std::make_pair(0,0);
 }
 
-std::pair<int,quint64> xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, const QString& directory) {
+std::pair<int,qint64> xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, const QString& directory) {
     auto hash = QCryptographicHash::hash((tag+"/"+directory+"/"+movie).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
     try {
@@ -557,7 +557,7 @@ void xPlayerDatabase::removeFromTable(const std::string& tableName, const std::s
         qCritical() << "Unable to remove tracks from " << QString::fromStdString(tableName) << " table, error: " << e.what();
     }
 }
-std::pair<int,quint64> xPlayerDatabase::updateTransition(const QString& fromArtist, const QString& fromAlbum,
+std::pair<int,qint64> xPlayerDatabase::updateTransition(const QString& fromArtist, const QString& fromAlbum,
                                                          const QString& toArtist, const QString& toAlbum,
                                                          bool shuffleMode) {
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
@@ -599,7 +599,7 @@ std::pair<int,quint64> xPlayerDatabase::updateTransition(const QString& fromArti
     return std::make_pair(0,0);
 }
 
-std::map<QString,std::set<QString>> xPlayerDatabase::getAllAlbums(quint64 after) {
+std::map<QString,std::set<QString>> xPlayerDatabase::getAllAlbums(qint64 after) {
     std::map<QString,std::set<QString>> mapArtistAlbum;
     try {
         soci::rowset<soci::row> artistAlbumRows = (sqlDatabase.prepare <<

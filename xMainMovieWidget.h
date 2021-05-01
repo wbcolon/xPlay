@@ -210,7 +210,7 @@ private:
      * @param playCount the play count for the currently played movie.
      * @param timeStamp the last played time stamp in milli seconds for the currently played movie.
      */
-    void updatePlayedMovie(const QString& tag, const QString& directory, const QString& movie, int playCount, quint64 timeStamp);
+    void updatePlayedMovie(const QString& tag, const QString& directory, const QString& movie, int playCount, qint64 timeStamp);
     /**
      * Emit signal to initiate update of window title with new currently playing movie.
      *
@@ -249,7 +249,7 @@ private:
     bool fullWindow;
     bool autoPlayNextMovie;
     bool useDatabaseMovieOverlay;
-    quint64 databaseCutOff;
+    qint64 databaseCutOff;
 };
 
 #endif

@@ -39,7 +39,7 @@ public:
      * @param after the time stamp after which played files are considered.
      * @return the sum of the play count as integer.
      */
-    int getPlayCount(int bitsPerSample, int sampleRate, quint64 after=0);
+    int getPlayCount(int bitsPerSample, int sampleRate, qint64 after=0);
     /**
      * Return the sum of the play count based on artist and album.
      *
@@ -48,14 +48,14 @@ public:
      * @param after the time stamp after which played files are considered.
      * @return the sum of the play count as integer.
      */
-    int getPlayCount(const QString& artist, const QString& album, quint64 after=0);
+    int getPlayCount(const QString& artist, const QString& album, qint64 after=0);
     /**
      * Return a list of played artists.
      *
      * @param after the time stamp used in the query the played tracks.
      * @return a list of artists played.
      */
-    QStringList getPlayedArtists(quint64 after);
+    QStringList getPlayedArtists(qint64 after);
     /**
      * Return a list of played albums.
      *
@@ -63,7 +63,7 @@ public:
      * @param after the time stamp used in the query the played tracks.
      * @return a list of albums played.
      */
-    QStringList getPlayedAlbums(const QString& artist, quint64 after);
+    QStringList getPlayedAlbums(const QString& artist, qint64 after);
     /**
      * Return a list of played tracks, their play count and the last time played.
      *
@@ -72,14 +72,14 @@ public:
      * @param after the time stamp used in the query the played tracks.
      * @return a list of tuples of tracks played with play count and time stamp.
      */
-    QList<std::tuple<QString,int,quint64>> getPlayedTracks(const QString& artist, const QString& album, quint64 after);
+    QList<std::tuple<QString,int,qint64>> getPlayedTracks(const QString& artist, const QString& album, qint64 after);
     /**
      * Return a list of played tags.
      *
      * @param after the time stamp used in the query the played movies.
      * @return a list of tags played.
      */
-    QStringList getPlayedTags(quint64 after);
+    QStringList getPlayedTags(qint64 after);
     /**
      * Return a list of played directories.
      *
@@ -87,7 +87,7 @@ public:
      * @param after the time stamp used in the query the played movies.
      * @return a list of directories played.
      */
-    QStringList getPlayedDirectories(const QString& tag, quint64 after);
+    QStringList getPlayedDirectories(const QString& tag, qint64 after);
     /**
      * Return a list of played movies, their play count and the last time played.
      *
@@ -96,7 +96,7 @@ public:
      * @param after the time stamp used in the query the played movies.
      * @return a list of tuples of movies played with play count and time stamp.
      */
-    QList<std::tuple<QString,int,quint64>> getPlayedMovies(const QString& tag, const QString& directory, quint64 after);
+    QList<std::tuple<QString,int,qint64>> getPlayedMovies(const QString& tag, const QString& directory, qint64 after);
     /**
      * Record the playing music file in the music table of the database.
      *
@@ -111,7 +111,7 @@ public:
      * @param bitsPerSample the bits per sample for the music file played.
      * @return the pair of play count and time stamp for updated track.
      */
-    std::pair<int,quint64> updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample);
+    std::pair<int,qint64> updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample);
     /**
      * Record the playing movie file in the movie table of the database.
      *
@@ -124,7 +124,7 @@ public:
      * @param directory the directory the movie file played belongs to.
      * @return the pair of play count and time stamp for updated movie.
      */
-    std::pair<int,quint64> updateMovieFile(const QString& movie, const QString& tag, const QString& directory);
+    std::pair<int,qint64> updateMovieFile(const QString& movie, const QString& tag, const QString& directory);
     /**
      * Remove the playlist and its entries from the database.
      *
@@ -205,7 +205,7 @@ public:
      * @param shuffleMode state of the shuffle mode.
      * @return a pair of transition count and time stamp.
      */
-    std::pair<int,quint64> updateTransition(const QString& fromArtist, const QString& fromAlbum,
+    std::pair<int,qint64> updateTransition(const QString& fromArtist, const QString& fromAlbum,
                                             const QString& toArtist, const QString& toAlbum,
                                             bool shuffleMode);
     /**
@@ -215,7 +215,7 @@ public:
      *
      * @return a map from artist to a set of album.
      */
-    std::map<QString,std::set<QString>> getAllAlbums(quint64 after);
+    std::map<QString,std::set<QString>> getAllAlbums(qint64 after);
 
 signals:
     void databaseUpdateError();

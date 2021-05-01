@@ -110,7 +110,7 @@ public:
      *
      * @param cutOff the time stamp if ms since epoch.
      */
-    void setDatabaseCutOff(quint64 cutOff);
+    void setDatabaseCutOff(qint64 cutOff);
     /**
      * Set the mode for the database overlay for the music view.
      *
@@ -251,7 +251,7 @@ public:
      *
      * @return the cut-off time stamp in ms since epoch.
      */
-    [[nodiscard]] quint64 getDatabaseCutOff();
+    [[nodiscard]] qint64 getDatabaseCutOff();
     /**
      * Get the mode for the database overlay for the music view.
      *

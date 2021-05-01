@@ -690,10 +690,10 @@ void xMainMusicWidget::updatePlayedTracks() {
                 auto playCount = std::get<1>(*playedMusicTrack);
                 if (playCount > 1) {
                     trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                            arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(std::get<2>(*playedMusicTrack))).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
                 } else {
                     trackItem->addToolTip(QString(tr("played once, last time on %1")).
-                            arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(std::get<2>(*playedMusicTrack))).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
                 }
                 // Remove element to speed up search in the next iteration.
                 playedMusicTracks.erase(playedMusicTrack);
@@ -709,7 +709,7 @@ void xMainMusicWidget::updatePlayedTracks() {
 }
 
 void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& album,
-                                         const QString& track, int playCount, quint64 timeStamp) {
+                                         const QString& track, int playCount, qint64 timeStamp) {
     // Only update if the database overlay is enabled.
     if (!useDatabaseMusicOverlay) {
         return;
@@ -741,10 +741,10 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
         trackPlayedItem->setIcon(":images/xplay-star.svg");
         if (playCount > 1) {
             trackPlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                    arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(timeStamp)).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
         } else {
             trackPlayedItem->addToolTip(QString(tr("played once, last time on %1")).
-                    arg(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(timeStamp)).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
         }
     }
 }

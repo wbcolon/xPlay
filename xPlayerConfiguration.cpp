@@ -175,7 +175,7 @@ void xPlayerConfiguration::setDatabaseDirectory(const QString& dir) {
     }
 }
 
-void xPlayerConfiguration::setDatabaseCutOff(quint64 cutOff) {
+void xPlayerConfiguration::setDatabaseCutOff(qint64 cutOff) {
     if (cutOff != getDatabaseCutOff()) {
         settings->setValue(xPlayerConfiguration_DatabaseCutOff, cutOff);
         settings->sync();
@@ -306,8 +306,8 @@ QString xPlayerConfiguration::getDatabasePath() {
     return getDatabaseDirectory()+dataBaseFile;
 }
 
-quint64 xPlayerConfiguration::getDatabaseCutOff() {
-    return settings->value(xPlayerConfiguration_DatabaseCutOff, 0).toULongLong();
+qint64 xPlayerConfiguration::getDatabaseCutOff() {
+    return settings->value(xPlayerConfiguration_DatabaseCutOff, 0).toLongLong();
 }
 
 bool xPlayerConfiguration::getDatabaseMusicOverlay() {

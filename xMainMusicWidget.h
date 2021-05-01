@@ -370,7 +370,7 @@ private:
      * @param playCount the play count for the currently played track.
      * @param timeStamp the last played time stamp in milli seconds for the currently played track.
      */
-    void updatePlayedTrack(const QString& artist, const QString& album, const QString& track, int playCount, quint64 timeStamp);
+    void updatePlayedTrack(const QString& artist, const QString& album, const QString& track, int playCount, qint64 timeStamp);
     /**
      * Update the list of artists.
      *
@@ -415,7 +415,7 @@ private:
     QGroupBox* queueBox;
     int playedTrack;
     bool useDatabaseMusicOverlay;
-    quint64 databaseCutOff;
+    qint64 databaseCutOff;
     /**
      * Store the current list of unfiltered artists and albums for later filtering.
      */
