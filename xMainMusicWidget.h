@@ -23,6 +23,7 @@
 
 #include <QGroupBox>
 #include <QString>
+#include <QThread>
 
 #include <vector>
 #include <list>
@@ -362,6 +363,10 @@ private:
      */
     void updatePlayedTracks();
     /**
+     * Clear track list and stop a running track list updater thread.
+     */
+    void clearTrackList();
+    /**
      * Update the database overlay for currently played track and add tooltips.
      *
      * @param artist the artist for the currently played track.
@@ -425,6 +430,7 @@ private:
      */
     QString currentArtist;
     QString currentAlbum;
+    QThread* updateTrackListThread;
 };
 
 #endif

@@ -185,7 +185,7 @@ QList<std::tuple<QString,int,qint64>> xPlayerDatabase::getPlayedTracks(const QSt
     QList<std::tuple<QString,int,qint64>> tracks;
     try {
         soci::rowset<soci::row> playedTracks = (sqlDatabase.prepare <<
-                "SELECT track, playCount, timeStamp FROM music WHERE artist = :artist AND album = :album AND timeStamp >= :after",
+                "SELECT track, playCount, timeStamp FROM music WHERE artist = :artist AND album = :album AND timeStamp >= :after GROUP BY track",
                 soci::use(artist.toStdString()), soci::use(album.toStdString()), soci::use(after));
         for (const auto& playedTrack : playedTracks) {
             auto track = playedTrack.get<std::string>(0);

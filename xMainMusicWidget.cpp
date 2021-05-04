@@ -54,7 +54,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         useDatabaseMusicOverlay(true),
         databaseCutOff(0),
         currentArtist(),
-        currentAlbum() {
+        currentAlbum(),
+        updateTrackListThread(nullptr) {
     // Create and group boxes with embedded list widgets.
     auto [artistBox, artistList_] = addGroupBox(tr("Artists"));
     auto [albumBox, albumList_] = addGroupBox(tr("Albums"));
@@ -196,7 +197,7 @@ void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
     // Clear artist, album and track lists
     artistList->clearItems();
     albumList->clearItems();
-    trackList->clearItems();
+    clearTrackList();
     // Not very efficient to use a filtered and the unfiltered list, but easier to read.
     for (const auto& artist : filterArtists(artists)) {
         artistList->addItemWidget(artist);
@@ -208,22 +209,22 @@ void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
 void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
     // Clear album and track lists
     albumList->clearItems();
-    trackList->clearItems();
-    //unfilteredAlbums = albums;
+    clearTrackList();
     albumList->addItemWidgets(albums);
     // Update database overlay for albums.
     updatePlayedAlbums();
 }
 
 void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
-    // Clear only track list
-    trackList->clearItems();
+    // Clear only track list and stop potential running update thread.
+    clearTrackList();
     for (const auto& track : tracks) {
         trackList->addItemWidget(track);
     }
     trackList->updateItems();
-    // Update database overlay for tracks.
-    updatePlayedTracks();
+    // Update database overlay for tracks. Run in separate thread.
+    updateTrackListThread = QThread::create([this]() { updatePlayedTracks(); });
+    updateTrackListThread->start();
 }
 
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,
@@ -238,6 +239,8 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
     emit finishedQueueTracks();
     // Update items.
     queueList->updateItems();
+    // Restore the waiting cursor.
+    QApplication::restoreOverrideCursor();
 }
 
 void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString,
@@ -254,6 +257,8 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
     emit finishedQueueTracks();
     // Update items.
     queueList->updateItems();
+    // Restore the waiting cursor.
+    QApplication::restoreOverrideCursor();
 }
 
 void xMainMusicWidget::updateScannedArtistsSelectors(const std::set<QString> &selectors) {
@@ -314,6 +319,7 @@ void xMainMusicWidget::queueArtist(QListWidgetItem *artistItem) {
     auto artist = artistList->row(artistItem);
     if ((artist >= 0) && (artist < artistList->count())) {
         // Retrieve selected artist name and trigger scanAllAlbumsForArtist
+        QApplication::setOverrideCursor(Qt::WaitCursor);
         emit scanAllAlbumsForArtist(artistList->itemWidget(artist)->text(), musicLibraryFilter);
     }
 }
@@ -392,6 +398,7 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
             listArtists.push_back(artistList->itemWidget(i)->text());
         }
         // Trigger scanAllAlbumsForListArtist with given list of artists.
+        QApplication::setOverrideCursor(Qt::WaitCursor);
         emit scanAllAlbumsForListArtists(listArtists, musicLibraryFilter);
     }
 }
@@ -614,7 +621,6 @@ void xMainMusicWidget::updateQueueTotalTime(qint64 total) {
     }
 }
 
-
 void xMainMusicWidget::updatePlayedArtists() {
     // Only update if database overlay is enabled. Exit otherwise.
     if (!useDatabaseMusicOverlay) {
@@ -676,34 +682,30 @@ void xMainMusicWidget::updatePlayedTracks() {
     auto artist = artistItem->text();
     auto album = albumItem->text();
     auto playedMusicTracks = xPlayerDatabase::database()->getPlayedTracks(artist, album, databaseCutOff);
-    for (auto i = 0; i < trackList->count(); ++i) {
+    // Both lists are sorted. We therefore update in one walk-through.
+    auto playedMusicTrack = playedMusicTracks.begin();
+    for (auto i = 0; (i < trackList->count()) && (playedMusicTrack != playedMusicTracks.end()); ++i) {
         auto trackItem = trackList->itemWidget(i);
         auto track = trackItem->text();
-        // Clear icon and tooltip.
-        trackItem->removeIcon();
-        trackItem->removeToolTip();
-        for (auto playedMusicTrack = playedMusicTracks.begin(); playedMusicTrack != playedMusicTracks.end(); ++playedMusicTrack) {
-            // Update icon and tooltip if track already played.
-            if (std::get<0>(*playedMusicTrack) == track) {
-                trackItem->setIcon(":images/xplay-star.svg");
-                // Adjust tooltip to play count "once" vs "x times".
-                auto playCount = std::get<1>(*playedMusicTrack);
-                if (playCount > 1) {
-                    trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
-                } else {
-                    trackItem->addToolTip(QString(tr("played once, last time on %1")).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(Qt::DefaultLocaleLongDate)));
-                }
-                // Remove element to speed up search in the next iteration.
-                playedMusicTracks.erase(playedMusicTrack);
-                // End update if no more tracks need to be marked.
-                if (playedMusicTracks.isEmpty()) {
-                    return;
-                }
-                // Break loop and move on to the next movie item.
-                break;
+        if (std::get<0>(*playedMusicTrack) == track) {
+            trackItem->setIcon(":images/xplay-star.svg");
+            // Adjust tooltip to play count "once" vs "x times".
+            auto playCount = std::get<1>(*playedMusicTrack);
+            if (playCount > 1) {
+                trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
+                        arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(
+                        Qt::DefaultLocaleLongDate)));
+            } else {
+                trackItem->addToolTip(QString(tr("played once, last time on %1")).
+                        arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(
+                        Qt::DefaultLocaleLongDate)));
             }
+            // Move to the next element in the list.
+            ++playedMusicTrack;
+        } else {
+            // Clear icon and tooltip.
+            trackItem->removeIcon();
+            trackItem->removeToolTip();
         }
     }
 }
@@ -747,6 +749,16 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
                     arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
         }
     }
+}
+
+void xMainMusicWidget::clearTrackList() {
+    // Is another updater thread running. Wait for it to finish.
+    if ((updateTrackListThread) && (updateTrackListThread->isRunning())) {
+        updateTrackListThread->wait();
+        delete updateTrackListThread;
+    }
+    // Clear only track list
+    trackList->clearItems();
 }
 
 void xMainMusicWidget::playlist(const std::vector<std::tuple<QString,QString,QString>>& entries) {
