@@ -67,6 +67,12 @@ public:
      */
     [[nodiscard]] const QString& text() const;
     /**
+     * Return the music file for the list item widget.
+     *
+     * @return a pointer to the music file, nullptr if no attached.
+     */
+    [[nodiscard]] xMusicFile* musicFile() const;
+    /**
      * Update the time for the list item widget.
      */
     qint64 updateTime();

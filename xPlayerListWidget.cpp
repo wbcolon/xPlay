@@ -120,6 +120,10 @@ const QString& xPlayerListItemWidget::text() const {
     return itemText;
 }
 
+xMusicFile* xPlayerListItemWidget::musicFile() const {
+    return itemFile;
+}
+
 qint64 xPlayerListItemWidget::updateTime() {
     if ((!itemTimeUpdated) && (itemFile)) {
         itemTime = itemFile->getLength();
@@ -279,7 +283,7 @@ QList<xPlayerListItemWidget*> xPlayerListWidget::findItemWidgets(const QString& 
 }
 
 void xPlayerListWidget::clearItems() {
-    if (updateItemsThread) {
+    if ((updateItemsThread) && (updateItemsThread->isRunning())){
         // We need to cleanly end the update thread.
         updateItemsThread->requestInterruption();
         updateItemsThread->wait();
@@ -294,7 +298,7 @@ void xPlayerListWidget::clearItems() {
 }
 
 void xPlayerListWidget::updateItems() {
-    if (updateItemsThread) {
+    if ((updateItemsThread) && (updateItemsThread->isRunning())) {
         updateItemsThread->requestInterruption();
         updateItemsThread->wait();
         delete updateItemsThread;
