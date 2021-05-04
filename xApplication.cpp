@@ -69,7 +69,7 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(mainMusicWidget, SIGNAL(scanAllAlbumsForArtist(QString,xMusicLibraryFilter)),
             musicLibrary, SLOT(scanAllAlbumsForArtist(QString,xMusicLibraryFilter)));
     connect(mainMusicWidget, SIGNAL(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter)),
-            musicLibrary, SLOT(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter&)));
+            musicLibrary, SLOT(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter)));
     // Results back to the main music widget.
     connect(musicLibrary, &xMusicLibrary::scanningError, this, &xApplication::scanningErrorMusicLibrary);
     connect(musicLibrary, &xMusicLibrary::scannedArtists, mainMusicWidget, &xMainMusicWidget::scannedArtists);
