@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.2 - 2021-05-13
+
+- Added busy cursor for artist and selector queue operations.
+- Improved database overlay update for played tracks.  
+- Fix audio and subtitle default selection.
+- Exit if dbus command cannot connect to dbus interface of xPlay (not running).
+- Minor fixes.
+
 ## 0.7.1 - 2021-04-24
 
 - Added limited error handling for music library scanning.
