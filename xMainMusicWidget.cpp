@@ -54,8 +54,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         useDatabaseMusicOverlay(true),
         databaseCutOff(0),
         currentArtist(),
-        currentAlbum(),
-        updateTrackListThread(nullptr) {
+        currentAlbum() {
     // Create and group boxes with embedded list widgets.
     auto [artistBox, artistList_] = addGroupBox(tr("Artists"));
     auto [albumBox, albumList_] = addGroupBox(tr("Albums"));
@@ -221,10 +220,10 @@ void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
     for (const auto& track : tracks) {
         trackList->addItemWidget(track);
     }
-    trackList->updateItems();
     // Update database overlay for tracks. Run in separate thread.
-    updateTrackListThread = QThread::create([this]() { updatePlayedTracks(); });
-    updateTrackListThread->start();
+    updatePlayedTracks();
+    // Update track times.
+    trackList->updateItems();
 }
 
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,
@@ -752,11 +751,6 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
 }
 
 void xMainMusicWidget::clearTrackList() {
-    // Is another updater thread running. Wait for it to finish.
-    if ((updateTrackListThread) && (updateTrackListThread->isRunning())) {
-        updateTrackListThread->wait();
-        delete updateTrackListThread;
-    }
     // Clear only track list
     trackList->clearItems();
 }

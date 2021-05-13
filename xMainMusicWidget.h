@@ -430,7 +430,6 @@ private:
      */
     QString currentArtist;
     QString currentAlbum;
-    QThread* updateTrackListThread;
 };
 
 #endif
