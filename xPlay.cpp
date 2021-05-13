@@ -144,8 +144,11 @@ bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser)
             }
         }
         return true;
+    } else {
+        // Do not start xPlay if it is not yet running and a dbus commandline was given.
+        qCritical() << "Unable to connect to the dbus interface.";
+        return true;
     }
-    return false;
 }
 
 int main(int argc, char* argv[])
