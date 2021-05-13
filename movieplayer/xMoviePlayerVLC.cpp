@@ -29,6 +29,8 @@ xMoviePlayerVLC::xMoviePlayerVLC(QWidget *parent):
         movieMediaEventManager(nullptr),
         movieMedia(nullptr),
         movieMediaInitialPlay(false),
+        movieMediaParsed(false),
+        movieMediaPlaying(false),
         movieMediaLength(0),
         movieDefaultAudioLanguageIndex(-1),
         movieDefaultSubtitleLanguageIndex(-1),
@@ -113,7 +115,7 @@ void xMoviePlayerVLC::jump(qint64 delta) {
         return;
     }
     // Jump to current position + delta (in milliseconds) in the current track.
-    auto currentPosition = static_cast<qint64>(libvlc_media_player_get_position(movieMediaPlayer)*movieMediaLength);
+    auto currentPosition = static_cast<qint64>(libvlc_media_player_get_position(movieMediaPlayer)*movieMediaLength); // NOLINT
     seek(currentPosition+delta);
 }
 
@@ -121,6 +123,9 @@ void xMoviePlayerVLC::stop() {
     // Stop the media player.
     libvlc_media_player_stop(movieMediaPlayer);
     movieMediaInitialPlay = true;
+    // Reset parsing and playing state. We need them to recover from receiving events in the wrong order.
+    movieMediaParsed = false;
+    movieMediaPlaying = false;
     emit currentState(State::StopState);
     emit currentMoviePlayed(0);
 }
@@ -143,6 +148,9 @@ void xMoviePlayerVLC::setMovie(const QString& path, const QString& name, const Q
     libvlc_media_player_set_xwindow(movieMediaPlayer, winId());
     libvlc_media_player_play(movieMediaPlayer);
     movieMediaInitialPlay = true;
+    // Handle events coming in any order.
+    movieMediaParsed = false;
+    movieMediaPlaying = false;
     emit currentMovie(path, name, tag, directory);
     emit currentState(xMoviePlayerVLC::PlayingState);
 }
@@ -193,6 +201,7 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
                 libvlc_event_detach(self->movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, self);
                 libvlc_media_release(self->movieMedia);
                 self->movieMedia = nullptr;
+                self->movieMediaParsed = true;
             }
         } break;
         case libvlc_MediaPlayerAudioVolume: {
@@ -200,21 +209,11 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
             emit self->currentVolume(volume);
         } break;
         case libvlc_MediaPlayerPositionChanged: {
-            auto movieMediaPos = static_cast<qint64>(event->u.media_player_position_changed.new_position*self->movieMediaLength);
+            auto movieMediaPos = static_cast<qint64>(event->u.media_player_position_changed.new_position*self->movieMediaLength); // NOLINT
             emit self->currentMoviePlayed(movieMediaPos);
         } break;
         case libvlc_MediaPlayerPlaying: {
-            if (self->movieMediaInitialPlay) {
-                self->movieMediaInitialPlay = false;
-                // Select default audio channel.
-                if (self->movieDefaultAudioLanguageIndex >= 0) {
-                    emit self->currentAudioChannel(self->movieDefaultAudioLanguageIndex);
-                }
-                // Select default subtitle.
-                emit self->currentSubtitle(self->movieDefaultSubtitleLanguageIndex);
-                // Update scale and crop mode.
-                emit self->scaleAndCropMode(true);
-            }
+            self->movieMediaPlaying = true;
         } break;
         case libvlc_MediaPlayerEndReached: {
             // Supposed to be playing, but state does not match.
@@ -227,6 +226,20 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
                                                  self->movieQueueDirectory);
             }
         } break;
+    }
+    // Movie is parsed and playing.
+    if ((self->movieMediaPlaying) && (self->movieMediaParsed)) {
+        if (self->movieMediaInitialPlay) {
+            self->movieMediaInitialPlay = false;
+            // Select default audio channel.
+            if (self->movieDefaultAudioLanguageIndex >= 0) {
+                emit self->currentAudioChannel(self->movieDefaultAudioLanguageIndex);
+            }
+            // Select default subtitle.
+            emit self->currentSubtitle(self->movieDefaultSubtitleLanguageIndex);
+            // Update scale and crop mode.
+            emit self->scaleAndCropMode(true);
+        }
     }
 }
 

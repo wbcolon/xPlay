@@ -263,6 +263,8 @@ private:
     libvlc_event_manager_t* movieMediaEventManager;
     libvlc_media_t* movieMedia;
     bool movieMediaInitialPlay;
+    bool movieMediaParsed;
+    bool movieMediaPlaying;
     qint64 movieMediaLength;
 
     QList<std::pair<int,QString>> currentSubtitleDescriptions;
