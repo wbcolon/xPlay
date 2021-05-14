@@ -130,7 +130,6 @@ void xPlayerMusicAlbumSelectorWidget::selectorClicked(QListWidgetItem* selectorI
                     currentTimestamp = timestampWidget->dateTime().toMSecsSinceEpoch();
                     // Always ask database as it may have been updated in between.
                     currentArtistAlbumMap = xPlayerDatabase::database()->getAllAlbums(currentTimestamp);
-                    qDebug() << "MAP: " << currentArtistAlbumMap.size();
                     emit updatedDatabaseSelectors(currentArtistAlbumMap, state == xSelectorStates::StateNotMatch);
                 } else {
                     currentArtistAlbumMap.clear();

@@ -270,7 +270,7 @@ private slots:
     /**
      * Clear all album selector filters. Includes database filters.
      */
-    void clearAlbumSelectors();
+    void clearAllAlbumSelectors();
     /**
      * Update the search selector filter.
      *
@@ -417,8 +417,6 @@ private:
     QListWidget* artistSelectorList;
     xPlayerMusicAlbumSelectorWidget* albumSelectorList;
     xPlayerMusicSearchWidget* searchSelector;
-    QStringList albumSelectorMatch;
-    QStringList albumSelectorNotMatch;
     xPlayerListWidget* queueList;
     QGroupBox* queueBox;
     int playedTrack;

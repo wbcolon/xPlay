@@ -86,11 +86,11 @@ public:
      */
     void setAlbumMatch(const QStringList& match, const QStringList& notMatch);
     /**
-     * Add the search match.
+     * Set the search match.
      *
      * @param match a tuple of artist, album and track name match.
      */
-    void addSearchMatch(const std::tuple<QString,QString,QString>& match);
+    void setSearchMatch(const std::tuple<QString,QString,QString>& match);
     /**
      * Add the database album match and not match.
      *
@@ -99,26 +99,23 @@ public:
      */
     void setDatabaseMatch(const std::map<QString,std::set<QString>>& databaseMatch, bool databaseNotMatch);
     /**
+     * Clear the album match.
+     */
+    void clearAlbumMatch();
+    /**
      * Clear the database album match.
      */
     void clearDatabaseMatch();
+    /**
+     * Clear the search match.
+     */
+    void clearSearchMatch();
     /**
      * Clear all match and not match strings.
      */
     void clearMatch();
 
 private:
-    /**
-     * Helper function checking any of list elements matches the given text.
-     *
-     * @param listMatch the list of matches as strings.
-     * @param text the text to compare to.
-     * @param emptyMatch the result if list of matches is empty.
-     *
-     * @return true if the any of the list elements matches the text, false otherwise.
-     */
-    static bool filterMatchesElement(const QStringList& listMatch, const QString& text, bool emptyMatch);
-
     // Substrings that artist,album,track match or not match.
     QStringList albumMatch;
     QStringList albumNotMatch;

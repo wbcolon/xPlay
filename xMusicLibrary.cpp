@@ -49,10 +49,16 @@ bool xMusicLibraryFilter::isMatchingAlbum(const QString& album) const {
     if (!album.contains(albumSearchMatch, Qt::CaseInsensitive)) {
         return false;
     }
-    if (filterMatchesElement(albumNotMatch, album, false)) {
+    if ((!albumNotMatch.isEmpty()) &&
+        (std::any_of(albumNotMatch.begin(), albumNotMatch.end(), [&album](const QString& notMatch) {
+            return album.contains(notMatch, Qt::CaseInsensitive);
+        }))) {
         return false;
     }
-    return filterMatchesElement(albumMatch, album, true);
+
+    return (std::all_of(albumMatch.begin(), albumMatch.end(), [&album](const QString& match) {
+        return album.contains(match, Qt::CaseInsensitive);
+    }));
 }
 
 bool xMusicLibraryFilter::isMatchingTrackName(const QString& trackName) const {
@@ -73,27 +79,12 @@ bool xMusicLibraryFilter::isMatchingDatabaseArtistAndAlbum(const QString& artist
     return artistAlbumNotMatch;
 }
 
-bool xMusicLibraryFilter::filterMatchesElement(const QStringList& listMatch, const QString& text, bool emptyMatch) {
-    // The text always matches an empty list.
-    if (listMatch.isEmpty()) {
-        return emptyMatch;
-    }
-    if (std::any_of(listMatch.begin(), listMatch.end(),
-                    [&text](const QString& match) { return text.contains(match, Qt::CaseInsensitive); })) {
-        return true;
-    }
-    return false;
-}
-
 void xMusicLibraryFilter::setAlbumMatch(const QStringList& match, const QStringList& notMatch) {
     albumMatch = match;
     albumNotMatch = notMatch;
-    artistSearchMatch.clear();
-    albumSearchMatch.clear();
-    trackNameSearchMatch.clear();
 }
 
-void xMusicLibraryFilter::addSearchMatch(const std::tuple<QString,QString,QString>& match) {
+void xMusicLibraryFilter::setSearchMatch(const std::tuple<QString,QString,QString>& match) {
     artistSearchMatch = std::get<0>(match);
     albumSearchMatch = std::get<1>(match);
     trackNameSearchMatch = std::get<2>(match);
@@ -105,18 +96,26 @@ void xMusicLibraryFilter::setDatabaseMatch(const std::map<QString,std::set<QStri
     artistAlbumNotMatch = databaseNotMatch;
 }
 
+void xMusicLibraryFilter::clearAlbumMatch() {
+    albumMatch.clear();
+    albumNotMatch.clear();
+}
+
 void xMusicLibraryFilter::clearDatabaseMatch() {
     useArtistAlbumMatch = false;
     artistAlbumMatch.clear();
     artistAlbumNotMatch = false;
 }
 
-void xMusicLibraryFilter::clearMatch() {
-    albumMatch.clear();
-    albumNotMatch.clear();
+void xMusicLibraryFilter::clearSearchMatch() {
     artistSearchMatch.clear();
     albumSearchMatch.clear();
     trackNameSearchMatch.clear();
+}
+
+void xMusicLibraryFilter::clearMatch() {
+    clearAlbumMatch();
+    clearSearchMatch();
     clearDatabaseMatch();
 }
 

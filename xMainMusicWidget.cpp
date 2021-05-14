@@ -48,8 +48,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         QWidget(parent, flags),
         musicPlayer(player),
         musicLibrary(library),
-        albumSelectorMatch(),
-        albumSelectorNotMatch(),
         playedTrack(0),
         useDatabaseMusicOverlay(true),
         databaseCutOff(0),
@@ -133,7 +131,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             &xMainMusicWidget::selectAlbumDatabaseSelectors);
     connect(albumSelectorList, &xPlayerMusicAlbumSelectorWidget::clearDatabaseSelectors,
             this, &xMainMusicWidget::clearAlbumDatabaseSelectors);
-    connect(albumSelectorList, &xPlayerMusicAlbumSelectorWidget::clearAllSelectors, this, &xMainMusicWidget::clearAlbumSelectors);
+    connect(albumSelectorList, &xPlayerMusicAlbumSelectorWidget::clearAllSelectors, this,
+            &xMainMusicWidget::clearAllAlbumSelectors);
     connect(searchSelector, &xPlayerMusicSearchWidget::updateFilter, this, &xMainMusicWidget::updateSearchSelectorFilter);
     connect(searchSelector, &xPlayerMusicSearchWidget::clearFilter, this, &xMainMusicWidget::clearSearchSelectorFilter);
     // Connect main widget to music player
@@ -405,10 +404,7 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
 
 void xMainMusicWidget::selectAlbumSelectors(const QStringList& match, const QStringList& notMatch) {
     // We need to the matching selectors since search may add to the album matches.
-    albumSelectorMatch = match;
-    albumSelectorNotMatch = notMatch;
-    musicLibraryFilter.setAlbumMatch(albumSelectorMatch, albumSelectorNotMatch);
-    musicLibraryFilter.addSearchMatch(searchSelector->getMatch());
+    musicLibraryFilter.setAlbumMatch(match, notMatch);
     emit scan(musicLibraryFilter);
 }
 
@@ -423,21 +419,19 @@ void xMainMusicWidget::clearAlbumDatabaseSelectors() {
     emit scan(musicLibraryFilter);
 }
 
-void xMainMusicWidget::clearAlbumSelectors() {
-    musicLibraryFilter.clearMatch();
-    musicLibraryFilter.addSearchMatch(searchSelector->getMatch());
+void xMainMusicWidget::clearAllAlbumSelectors() {
+    musicLibraryFilter.clearAlbumMatch();
+    musicLibraryFilter.clearDatabaseMatch();
     emit scan(musicLibraryFilter);
 }
 
 void xMainMusicWidget::clearSearchSelectorFilter() {
-    musicLibraryFilter.clearMatch();
-    musicLibraryFilter.addSearchMatch(searchSelector->getMatch());
+    musicLibraryFilter.clearSearchMatch();
     emit scan(musicLibraryFilter);
 }
 
 void xMainMusicWidget::updateSearchSelectorFilter(const std::tuple<QString,QString,QString>& match) {
-    musicLibraryFilter.setAlbumMatch(albumSelectorMatch, albumSelectorNotMatch);
-    musicLibraryFilter.addSearchMatch(match);
+    musicLibraryFilter.setSearchMatch(match);
     emit scan(musicLibraryFilter);
 }
 
@@ -570,9 +564,7 @@ void xMainMusicWidget::updatedDatabaseMusicOverlay() {
 void xMainMusicWidget::updatedMusicLibraryAlbumSelectors() {
     albumSelectorList->setSelectors(xPlayerConfiguration::configuration()->getMusicLibraryAlbumSelectorList());
     // Clear match and not match selectors.
-    musicLibraryFilter.clearMatch();
-    // Add search matches.
-    musicLibraryFilter.addSearchMatch(searchSelector->getMatch());
+    musicLibraryFilter.clearAlbumMatch();
     // Rescan.
     emit scan(musicLibraryFilter);
 }
