@@ -143,7 +143,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Connect player widget to main widget
     connect(playerWidget, &xPlayerMusicWidget::clearQueue, this, &xMainMusicWidget::clearQueue);
     // Connect queue to main widget
-    connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackClicked);
+    connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackDoubleClicked);
+    connect(queueList, &QListWidget::itemClicked, this, &xMainMusicWidget::currentQueueTrackCtrlClicked);
     connect(queueList, &xPlayerListWidget::totalTime, this, &xMainMusicWidget::updateQueueTotalTime);
     // Connect shuffle mode.
     connect(queueShuffleCheck, &QCheckBox::clicked, musicPlayer, &xMusicPlayer::setShuffleMode);
@@ -501,7 +502,22 @@ void xMainMusicWidget::currentQueueTrack(int index) {
     queueList->setCurrentRow(index);
 }
 
-void xMainMusicWidget::currentQueueTrackClicked(QListWidgetItem* trackItem) {
+void xMainMusicWidget::currentQueueTrackCtrlClicked(QListWidgetItem* trackItem) {
+    if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
+        auto track = queueList->row(trackItem);
+        if ((track >= 0) && (track< queueList->count())) {
+            // Access the information stored in the track.
+            auto musicFile = queueList->itemWidget(track)->musicFile();
+            // Try to select the artist.
+            if (artistList->setCurrentWidgetItem(musicFile->getArtist())) {
+                // Try to select the album.
+                albumList->setCurrentWidgetItem(musicFile->getAlbum());
+            }
+        }
+    }
+}
+
+void xMainMusicWidget::currentQueueTrackDoubleClicked(QListWidgetItem* trackItem) {
     auto track = queueList->row(trackItem);
     if ((track >= 0) && (track< queueList->count())) {
         currentQueueTrack(track);

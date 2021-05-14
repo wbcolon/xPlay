@@ -214,6 +214,9 @@ private slots:
      * @param trackItem pointer to the currently selected row.
      */
     void selectTrack(QListWidgetItem* trackItem);
+
+    void currentQueueTrackCtrlClicked(QListWidgetItem* trackItem);
+
     /**
      * Append single track to the playlist (queue)
      *
@@ -307,7 +310,7 @@ private slots:
      *
      * @param trackItem pointer to the double-clicked item.
      */
-    void currentQueueTrackClicked(QListWidgetItem* trackItem);
+    void currentQueueTrackDoubleClicked(QListWidgetItem* trackItem);
     /**
      *  Remove the current track from the playlist (queue).
      *

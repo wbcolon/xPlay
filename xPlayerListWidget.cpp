@@ -282,6 +282,16 @@ QList<xPlayerListItemWidget*> xPlayerListWidget::findItemWidgets(const QString& 
     return findWidgets;
 }
 
+bool xPlayerListWidget::setCurrentWidgetItem(const QString& text) {
+    for (const auto& entry : mapItems) {
+        if (entry.second->text() == text) {
+            QListWidget::setCurrentItem(entry.first);
+            return true;
+        }
+    }
+    return false;
+}
+
 void xPlayerListWidget::clearItems() {
     if ((updateItemsThread) && (updateItemsThread->isRunning())){
         // We need to cleanly end the update thread.

@@ -168,6 +168,13 @@ public:
      */
     QList<xPlayerListItemWidget*> findItemWidgets(const QString& text);
     /**
+     * Select the item widget that matches the given text.
+     *
+     * @param text the text of the item widget to be selected.
+     * @return true if the item widget could be selected, false otherwise.
+     */
+    bool setCurrentWidgetItem(const QString& text);
+    /**
      * Return the item widget of the currently selected element.
      *
      * @return a pointer to the selected item widget.
