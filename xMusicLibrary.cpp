@@ -333,7 +333,7 @@ std::list<xMusicFile*> xMusicLibraryFiles::scanForAlbumTracks(xMusicFile* albumP
     // Add all files in the album path
     for (const auto& trackFile : std::filesystem::directory_iterator(albumPath->getFilePath())) {
         if (isMusicFile(trackFile)) {
-            auto trackFileObject = new xMusicFile(trackFile.path(), albumPath->getArtist(), albumPath->getArtist(),
+            auto trackFileObject = new xMusicFile(trackFile.path(), albumPath->getArtist(), albumPath->getAlbum(),
                                         QString::fromStdString(trackFile.path().filename()));
             trackList.push_back(trackFileObject);
         }

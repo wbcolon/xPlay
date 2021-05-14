@@ -50,7 +50,7 @@ xMusicFile::xMusicFile(const xMusicFile& file):
         QObject(file.parent()),
         filePath(file.filePath),
         fileArtist(file.fileArtist),
-        fileAlbum(file.fileArtist),
+        fileAlbum(file.fileAlbum),
         fileTrackName(file.fileTrackName),
         fileLength(file.fileLength),
         fileBitsPerSample(file.fileBitsPerSample),
