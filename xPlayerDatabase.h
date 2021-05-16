@@ -196,6 +196,26 @@ public:
      */
     void removeMovies(const std::list<std::tuple<QString,QString,QString>>& entries);
     /**
+     * Update the url for the given artist in the artistInfo table of the database.
+     *
+     * @param artist the artist name as string.
+     * @param url the new url as string.
+     */
+    void updateArtistURL(const QString& artist, const QString& url);
+    /**
+     * Return the url for the given artist.
+     *
+     * @param artist the artist name as string.
+     * @return the url as string if existent, an empty string otherwise.
+     */
+    QString getArtistURL(const QString& artist);
+    /**
+     * Remove the url stored for the given artist.
+     *
+     * @param artist the artist name as string.
+     */
+    void removeArtistURL(const QString& artist);
+    /**
      * Update the transitions between artists and albums.
      *
      * @param fromArtist name of artist played before.

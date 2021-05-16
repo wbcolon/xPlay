@@ -57,6 +57,8 @@ void xPlayerDatabase::loadDatabase() {
     }
     try {
         // The following create table commands will fail if database already exists.
+        // Create artistInfo table.
+        sqlDatabase << "CREATE TABLE artistInfo (artist VARCHAR PRIMARY KEY, url VARCHAR)";
         // Create artist transition table.
         sqlDatabase << "CREATE TABLE transition (ID INTEGER PRIMARY KEY AUTOINCREMENT, fromArtist VARCHAR, fromAlbum VARCHAR, "
                        "toArtist VARCHAR, toAlbum VARCHAR, transitionCount INTEGER, timeStamp BIGINT)";
@@ -548,15 +550,51 @@ std::list<std::string> xPlayerDatabase::convertEntriesToWhereArguments(const std
     return whereArguments;
 }
 
-void xPlayerDatabase::removeFromTable(const std::string& tableName, const std::string& whereArgument) {
-    // Remove entries from given table.
+QString xPlayerDatabase::getArtistURL(const QString& artist) {
     try {
-        // Insert playlist name.
-        sqlDatabase << "DELETE FROM " + tableName + whereArgument;
+        soci::rowset<std::string> artistURLs = (sqlDatabase.prepare << "SELECT url FROM artistInfo WHERE artist = :artist",
+                soci::use(artist.toStdString()));
+        for (const auto& artistURL : artistURLs) {
+            return QString::fromStdString(artistURL);
+        }
     } catch (soci::soci_error& e) {
-        qCritical() << "Unable to remove tracks from " << QString::fromStdString(tableName) << " table, error: " << e.what();
+        qCritical() << "xPlayerDatabase::getArtistURL: error: " << e.what();
+        emit databaseUpdateError();
+    }
+    return QString();
+}
+
+void xPlayerDatabase::updateArtistURL(const QString& artist, const QString& url) {
+    try {
+        std::string urlEntry;
+        soci::indicator urlEntryIndicator;
+        sqlDatabase << "SELECT url FROM artistInfo WHERE artist=:artist LIMIT 1",
+                soci::into(urlEntry, urlEntryIndicator), soci::use(artist.toStdString());
+        if (urlEntryIndicator == soci::i_ok) {
+            sqlDatabase << "UPDATE artistInfo SET url=:url WHERE artist=:artist",
+                    soci::use(url.toStdString()), soci::use(artist.toStdString());
+            qDebug() << "xPlayerDatabase: update artist URL: " << artist << url;
+        } else {
+            // Insert into the database if no element exists.
+            sqlDatabase << "INSERT INTO artistInfo VALUES (:artist,:url)",
+                    soci::use(artist.toStdString()), soci::use(url.toStdString());
+            qDebug() << "xPlayerDatabase: insert artist URL: " << artist << url;
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "xPlayerDatabase::updateArtistURL: error: " << e.what();
+        emit databaseUpdateError();
     }
 }
+
+void xPlayerDatabase::removeArtistURL(const QString& artist) {
+    // Remove url from artistInfo table.
+    try {
+        sqlDatabase << "DELETE FROM artistInfo WHERE artist=:artist", soci::use(artist.toStdString());
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to remove url from artistInfo table, error: " << e.what();
+    }
+}
+
 std::pair<int,qint64> xPlayerDatabase::updateTransition(const QString& fromArtist, const QString& fromAlbum,
                                                          const QString& toArtist, const QString& toAlbum,
                                                          bool shuffleMode) {
@@ -619,3 +657,14 @@ std::map<QString,std::set<QString>> xPlayerDatabase::getAllAlbums(qint64 after) 
     return mapArtistAlbum;
 
 }
+
+void xPlayerDatabase::removeFromTable(const std::string& tableName, const std::string& whereArgument) {
+    // Remove entries from given table.
+    try {
+        // Insert playlist name.
+        sqlDatabase << "DELETE FROM " + tableName + whereArgument;
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to remove tracks from " << QString::fromStdString(tableName) << " table, error: " << e.what();
+    }
+}
+
