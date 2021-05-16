@@ -51,16 +51,22 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     auto backButton = new QPushButton(tr("Back"), controlBox);
     auto fwdButton = new QPushButton(tr("Fwd"), controlBox);
     auto reloadButton = new QPushButton(tr("Reload"), controlBox);
+    auto zoomBox = new QComboBox(controlBox);
+    for (const auto& factor : xPlayerConfiguration::getWebsiteZoomFactors()) {
+        zoomBox->addItem(QString("%1%").arg(factor));
+    }
     muteAudio = new QCheckBox(tr("Mute Site"), controlBox);
     // Layout.
     auto controlLayout = new xPlayerLayout();
     controlLayout->setSpacing(xPlayerLayout::NoSpace);
-    controlLayout->addWidget(homeButton, 0, 0, 1, 2);
+    controlLayout->addWidget(homeButton, 0, 0, 1, 1);
+    controlLayout->addWidget(reloadButton, 0, 1, 1, 1);
     controlLayout->addWidget(backButton, 1, 0, 1, 1);
     controlLayout->addWidget(fwdButton, 1, 1, 1, 1);
-    controlLayout->addWidget(reloadButton, 2, 0, 1, 2);
-    controlLayout->addRowSpacer(3, xPlayerLayout::SmallSpace);
-    controlLayout->addWidget(muteAudio, 4, 0, 1, 2);
+    controlLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
+    controlLayout->addWidget(zoomBox, 3, 0, 1, 2);
+    controlLayout->addRowSpacer(4, xPlayerLayout::SmallSpace);
+    controlLayout->addWidget(muteAudio, 5, 0, 1, 2);
     controlBox->setLayout(controlLayout);
     // Sites box.
     auto sitesBox = new QGroupBox(tr("Sites"), this);
@@ -105,11 +111,14 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     connect(clearButton, &QPushButton::pressed, [=] () {
         clearData(historyCheckBox->isChecked(), cookiesCheckBox->isChecked(), cacheCheckBox->isChecked());
     } );
+    connect(zoomBox, SIGNAL(currentIndexChanged(int)), this, SLOT(updateZoomFactor(int)));
+    connect(streamingWebView, &QWebEngineView::loadFinished, this, &xMainStreamingWidget::currentSiteLoadFinished);
     // Connect Combo Box.
     connect(sitesCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(updateCurrentSites(int)));
     // Set user agent to firefox.
     streamingWebView->page()->profile()->setHttpUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0");
     streamingWebView->page()->setAudioMuted(false);
+    zoomBox->setCurrentIndex(xPlayerConfiguration::configuration()->getWebsiteZoomFactorIndex());
 }
 
 void xMainStreamingWidget::initializeView() {
@@ -165,6 +174,22 @@ void xMainStreamingWidget::updateCurrentSites(int index) {
             qCritical() << "Url not valid: " << currentSite.second;
         }
     }
+}
+
+void xMainStreamingWidget::currentSiteLoadFinished(bool ok) {
+    Q_UNUSED(ok)
+    streamingWebView->page()->setZoomFactor(zoomFactor);
+}
+
+void xMainStreamingWidget::updateZoomFactor(int index) {
+    try {
+        auto zoomFactors = xPlayerConfiguration::getWebsiteZoomFactors();
+        zoomFactor = zoomFactors[index] / 100.0;
+    } catch (...) {
+        // Revert to default factor.
+        zoomFactor = 1.0;
+    }
+    streamingWebView->page()->setZoomFactor(zoomFactor);
 }
 
 void xMainStreamingWidget::clearData(bool history, bool cookies, bool cache) {

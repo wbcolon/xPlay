@@ -94,6 +94,18 @@ private slots:
      */
     void updateCurrentSites(int index);
     /**
+     * Called if the current site has been loaded.
+     *
+     * @param ok true if loaded properly, false otherwise.
+     */
+    void currentSiteLoadFinished(bool ok);
+    /**
+     * Update the zoom factor based on the selected entry in the Combo Box.
+     *
+     * @param index the position of the entry currently selected.
+     */
+    void updateZoomFactor(int index);
+    /**
      * Clear the data for the currently selected site.
      *
      * @param history clear history if true.
@@ -109,6 +121,7 @@ private:
     QList<std::pair<QString,QUrl>> streamingSites;
     std::pair<QString,QUrl> streamingSitesDefault;
     std::pair<QString,QUrl> currentSite;
+    double zoomFactor;
 };
 
 #endif
