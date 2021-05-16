@@ -43,6 +43,8 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     databaseBox->setFlat(xPlayerUseFlatGroupBox);
     auto rotelBox = new QGroupBox(tr("Rotel Configuration"), additionalTab);
     rotelBox->setFlat(xPlayerUseFlatGroupBox);
+    auto websiteBox = new QGroupBox(tr("Website Configuration"), additionalTab);
+    websiteBox->setFlat(xPlayerUseFlatGroupBox);
     configurationTab->addTab(musicLibraryTab, tr("Music Library"));
     configurationTab->addTab(movieLibraryTab, tr("Movie Library"));
     configurationTab->addTab(streamingSitesTab, tr("Streaming Sites"));
@@ -164,11 +166,23 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     databaseLayout->addWidget(databaseCutOffDate, 5, 3, 1, 2);
     databaseLayout->addWidget(databaseIgnoreUpdateErrorsCheck, 6, 0, 1, 5);
     databaseBox->setLayout(databaseLayout);
+    // Setup website default zoom factor.
+    auto websiteLayout = new xPlayerLayout();
+    auto websiteZoomFactorLabel = new QLabel(tr("Zoom Factor"), websiteBox);
+    websiteZoomFactors = new QComboBox(websiteBox);
+    for (const auto& factor : xPlayerConfiguration::getWebsiteZoomFactors()) {
+        websiteZoomFactors->addItem(QString("%1%").arg(factor));
+    }
+    websiteLayout->addWidget(websiteZoomFactorLabel, 0, 0, 1, 5);
+    websiteLayout->addWidget(websiteZoomFactors, 1, 0);
+    websiteBox->setLayout(websiteLayout);
     // Additional tab layout.
-    additionalLayout->addWidget(databaseBox, 0, 0, 2, 2);
+    additionalLayout->addWidget(databaseBox, 0, 0, 2, 4);
     additionalLayout->addRowSpacer(2, xPlayerLayout::HugeSpace);
-    additionalLayout->addWidget(rotelBox, 3, 0, 1, 2);
-    additionalLayout->addRowStretcher(4);
+    additionalLayout->addWidget(rotelBox, 3, 0, 1, 4);
+    additionalLayout->addRowSpacer(4, xPlayerLayout::HugeSpace);
+    additionalLayout->addWidget(websiteBox, 5, 0, 1, 4);
+    additionalLayout->addRowStretcher(6);
     additionalTab->setLayout(additionalLayout);
     // Configuration layout.
     configurationLayout->addWidget(configurationTab, 0, 0, 4, 4);
@@ -216,6 +230,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
     auto streamingSites = xPlayerConfiguration::configuration()->getStreamingSites();
     streamingSitesDefault = xPlayerConfiguration::configuration()->getStreamingSitesDefault();
+    auto zoomFactorIndex = xPlayerConfiguration::configuration()->getWebsiteZoomFactorIndex();
     // Update the configuration dialog UI.
     musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
     musicLibraryExtensionsWidget->setText(musicLibraryExtensions);
@@ -263,6 +278,7 @@ void xPlayerConfigurationDialog::loadSettings() {
         }
     }
     updateStreamingSitesDefault();
+    websiteZoomFactors->setCurrentIndex(zoomFactorIndex);
 }
 
 void xPlayerConfigurationDialog::saveSettings() {
@@ -316,6 +332,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: databaseMusicOverlay: " << databaseMusicOverlayCheck->isChecked();
     qDebug() << "xPlayerConfigurationDialog: save: databaseMovieOverlay: " << databaseMovieOverlayCheck->isChecked();
     qDebug() << "xPlayerConfigurationDialog: save: databaseIgnoreUpdateErrors: " << databaseIgnoreUpdateErrorsCheck->isChecked();
+    qDebug() << "xPlayerConfigurationDialog: save: websiteZoomFactor: " << websiteZoomFactors->currentIndex();
     // Save settings.
     xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
     xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
@@ -333,6 +350,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setDatabaseMusicOverlay(databaseMusicOverlayCheck->isChecked());
     xPlayerConfiguration::configuration()->setDatabaseMovieOverlay(databaseMovieOverlayCheck->isChecked());
     xPlayerConfiguration::configuration()->setDatabaseIgnoreUpdateErrors(databaseIgnoreUpdateErrorsCheck->isChecked());
+    xPlayerConfiguration::configuration()->setWebsiteZoomFactorIndex(websiteZoomFactors->currentIndex());
     // End dialog.
     accept();
 }

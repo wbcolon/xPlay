@@ -38,6 +38,7 @@ const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory"
 const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOverlay" }; // NOLINT
+const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor" }; // NOLINT
 
 // Configuration defaults.
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" }; // NOLINT
@@ -48,6 +49,7 @@ const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites 
         { "youtube", QUrl("https://www.youtube.com") },
 };
 const QStringList xPlayerConfiguration_MovieDefaultLanguages { "english", "german" }; // NOLINT
+const QList<int> xPlayerConfiguration_WebsiteZoomFactors { 50, 75, 100, 125, 150, 175, 200 }; // NOLINT
 
 
 // singleton object.
@@ -214,6 +216,14 @@ void xPlayerConfiguration::setStreamingSitesDefault(const std::pair<QString,QUrl
     }
 }
 
+void xPlayerConfiguration::setWebsiteZoomFactorIndex(int index) {
+    if (index != getWebsiteZoomFactorIndex()) {
+        settings->setValue(xPlayerConfiguration_WebsiteZoomFactor, index);
+        settings->sync();
+        emit updatedWebsiteZoomFactor();
+    }
+}
+
 QString xPlayerConfiguration::getMusicLibraryDirectory() {
     return settings->value(xPlayerConfiguration_MusicLibraryDirectory, "").toString();
 }
@@ -357,6 +367,15 @@ const QStringList& xPlayerConfiguration::getMovieDefaultLanguages() {
     return xPlayerConfiguration_MovieDefaultLanguages;
 }
 
+int xPlayerConfiguration::getWebsiteZoomFactorIndex() {
+    // Default entry at index 2 is 100%
+    return settings->value(xPlayerConfiguration_WebsiteZoomFactor, 2).toInt();
+}
+
+const QList<int>& xPlayerConfiguration::getWebsiteZoomFactors() {
+    return xPlayerConfiguration_WebsiteZoomFactors;
+}
+
 std::pair<QString,QString> xPlayerConfiguration::splitMovieLibraryTagAndDirectory(const QString& tagDir) {
     QRegularExpression regExp("\\((?<tag>.*)\\) - (?<directory>.*)");
     QRegularExpressionMatch regExpMatch = regExp.match(tagDir);
@@ -391,4 +410,5 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedStreamingSitesDefault();
     emit updatedDatabaseMusicOverlay();
     emit updatedDatabaseMovieOverlay();
+    emit updatedWebsiteZoomFactor();
 }

@@ -133,6 +133,12 @@ public:
      */
     void setDatabaseIgnoreUpdateErrors(bool enabled);
     /**
+     * Set the index for the zoom factor for websites.
+     *
+     * @param index the new index for the zoom factor as integer.
+     */
+    void setWebsiteZoomFactorIndex(int index);
+    /**
      * Get the base directory of the music library.
      *
      * @return the music library directory as string.
@@ -271,6 +277,18 @@ public:
      */
     [[nodiscard]] bool getDatabaseIgnoreUpdateErrors() const;
     /**
+     * Get the default zoom factor for websites.
+     *
+     * @return the index for the zoom factor.
+     */
+    [[nodiscard]] int getWebsiteZoomFactorIndex();
+    /**
+     * Get the available zoom factors for websites in percent.
+     *
+     * @return list of integers.
+     */
+    [[nodiscard]] static const QList<int>& getWebsiteZoomFactors();
+    /**
      * Trigger all update configuration signals.
      *
      * Useful on application start, when the entire configuration is initially read.
@@ -334,6 +352,10 @@ signals:
      * Signal an update of the database overlay for the movie view.
      */
     void updatedDatabaseMovieOverlay();
+    /**
+     * Signal an update of the zoom factor.
+     */
+    void updatedWebsiteZoomFactor();
 
 private:
     xPlayerConfiguration();
