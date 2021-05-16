@@ -87,10 +87,11 @@ xPlay has a music view, a movie view and a streaming view.
 ### Music View
 
 ![Screenshot Music View](screenshots/xplay_screenshot_music_view_00.png)
-![Screenshot Music View (shuffl)](screenshots/xplay_screenshot_music_view_01.png)
+![Screenshot Music View (shuffle)](screenshots/xplay_screenshot_music_view_01.png)
 ![Screenshot Music View (database)](screenshots/xplay_screenshot_music_view_02.png)
 ![Screenshot Music View (search)](screenshots/xplay_screenshot_music_view_03.png)
 ![Screenshot Music View (playlists)](screenshots/xplay_screenshot_music_view_04.png)
+![Screenshot Music View (artistinfo)](screenshots/xplay_screenshot_music_view_05.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select)
@@ -115,6 +116,13 @@ The player itself displays the artist, album and track currently played. It incl
 currently played file. In addition there is player control section with a *play/pause*, *stop*, *prev*, *next*
 and *clear queue* buttons and a volume dialer. If you double-click on an entry of the queue then the player jumps
 to this track. Right-clicking on a queue entry will remove this track from the queue.
+
+The artist info can be accessed through a context menu by a right-click on an entry in the artist list. The artist
+info is a small simple web browser with minimal navigational control buttons such as home, back and forward as well
+as selecting a zoom factor. Pressing the *close* button will end the artist info view. A white filled star icon
+indicates that no URL is currently stored within our database. A grey filled star indicates that the URL was taken
+out of our database. Clicking on a white filled star will store the current URL to the database. The database entry
+is removed if we click on a grey filled star.
 
 The Rotel widget allows to control a Rotel A12 or A14 amp via a network connection. The volume can be adjusted
 (maximum of 60) and the input can be selected. The values for bass and treble can be adjusted (from -10 to +10)

@@ -1,19 +1,31 @@
 # Changelog
 
+## 0.8.0 - 2021-05-16
+
+- Add artist info for music view.
+- Add zoom factor to streaming view.
+- Add default zoom factor in configuration.
+- Fix album initializer for music file.
+- Added feature that selects artist and album for queued track (ctrl+click).
+- Improve album and search selectors.
+
+
 ## 0.7.2 - 2021-05-13
 
 - Added busy cursor for artist and selector queue operations.
-- Improved database overlay update for played tracks.  
+- Improved database overlay update for played tracks.
 - Fix audio and subtitle default selection.
 - Exit if dbus command cannot connect to dbus interface of xPlay (not running).
 - Minor fixes.
+
 
 ## 0.7.1 - 2021-04-24
 
 - Added limited error handling for music library scanning.
 - Added option for default audio and subtitle language for movies.
-- Minor configuration dialog UI layout fixes.  
+- Minor configuration dialog UI layout fixes.
 - Clang-tidy fixes.
+
 
 ## 0.7.0 - 2021-04-06
 
@@ -151,7 +163,7 @@
 
 ## 0.3.0 - 2020-10-31
 
-- Added a movie player view, movie library scanning. 
+- Added a movie player view, movie library scanning.
 - Bugfixes
 
 
