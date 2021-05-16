@@ -20,10 +20,12 @@
 #include "xPlayerMusicSearchWidget.h"
 #include "xPlayerMusicAlbumSelectorWidget.h"
 #include "xPlayerListWidget.h"
+#include "xPlayerArtistInfo.h"
 
 #include <QGroupBox>
 #include <QString>
 #include <QThread>
+#include <QStackedWidget>
 
 #include <vector>
 #include <list>
@@ -185,6 +187,8 @@ private slots:
      * @param artistItem pointer to the currently selected row.
      */
     void queueArtist(QListWidgetItem* artistItem);
+
+    void currentArtistContextMenu(const QPoint& point);
     /**
      * Scan for tracks of the selected artist/album.
      *
@@ -402,10 +406,14 @@ private:
      * Helper function creating a QGroupBox with an QListWidget.
      *
      * @param boxLabel contains the label for the surrounding groupbox.
+     * @param parent pointer to the parent widget.
      * @return pair of pointer to the created QGroupBox and QListWidget.
      */
-    auto addGroupBox(const QString& boxLabel);
+    auto addGroupBox(const QString& boxLabel, QWidget* parent);
 
+    QStackedWidget* musicStacked;
+    QWidget* musicListView;
+    xPlayerArtistInfo* musicInfoView;
     xMusicPlayer* musicPlayer;
     xMusicLibrary* musicLibrary;
     xMusicLibraryFilter musicLibraryFilter;

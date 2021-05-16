@@ -29,13 +29,14 @@
 #include <QDateTime>
 #include <QCheckBox>
 #include <QButtonGroup>
+#include <QMenu>
 #include <random>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
-auto xMainMusicWidget::addGroupBox(const QString& boxLabel) {
+auto xMainMusicWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
-    auto groupBox = new QGroupBox(boxLabel, this);
+    auto groupBox = new QGroupBox(boxLabel, parent);
     groupBox->setFlat(xPlayerUseFlatGroupBox);
     auto list = new xPlayerListWidget(groupBox);
     auto boxLayout = new QVBoxLayout();
@@ -53,40 +54,25 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         databaseCutOff(0),
         currentArtist(),
         currentAlbum() {
+
+    musicStacked = new QStackedWidget(this);
     // Create and group boxes with embedded list widgets.
-    auto [artistBox, artistList_] = addGroupBox(tr("Artists"));
-    auto [albumBox, albumList_] = addGroupBox(tr("Albums"));
-    auto [trackBox_, trackList_] = addGroupBox(tr("Tracks"));
-    playerWidget = new xPlayerMusicWidget(musicPlayer, this);
+    musicListView = new QWidget(musicStacked);
+    auto [artistBox, artistList_] = addGroupBox(tr("Artists"), musicListView);
+    auto [albumBox, albumList_] = addGroupBox(tr("Albums"), musicListView);
+    auto [trackBox_, trackList_] = addGroupBox(tr("Tracks"), musicListView);
     // Sort entries in artist/album/track
     artistList = artistList_;
     artistList->enableSorting(false);
-    // auto artistFont = artistList->font();
-    // artistFont.setPointSizeF(artistFont.pointSizeF()*1.3);
-    // artistList->setFont(artistFont);
+    artistList->setContextMenuPolicy(Qt::CustomContextMenu);
     albumList = albumList_;
     albumList->enableSorting(true);
     trackList = trackList_;
     trackList->enableSorting(true);
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
     trackBox = trackBox_;
-    // Queue list.
-    queueBox = new QGroupBox(tr("Queue"), this);
-    queueBox->setFlat(xPlayerUseFlatGroupBox);
-    auto queueBoxLayout = new xPlayerLayout();
-    queueList = new xPlayerListWidget(queueBox);
-    queueList->setContextMenuPolicy(Qt::CustomContextMenu);
-    auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
-    // Playlist menu.
-    auto queuePlaylistButton = new QPushButton("Playlist", queueBox);
-    queuePlaylistButton->setFlat(false);
-    queueBoxLayout->addWidget(queueList, 0, 0, 8, 3);
-    queueBoxLayout->addRowSpacer(8, xPlayerLayout::MediumSpace);
-    queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
-    queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
-    queueBox->setLayout(queueBoxLayout);
     // Selector Tabs.
-    auto selectorTabs = new QTabWidget(this);
+    auto selectorTabs = new QTabWidget(musicListView);
     selectorTabs->setStyleSheet("QTabWidget::pane { border: none; }");
     // Artist selector.
     auto artistSelectorTab = new QWidget(selectorTabs);
@@ -107,14 +93,48 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     selectorTabs->addTab(albumSelectorList, tr("Album Selector"));
     selectorTabs->addTab(searchSelector, tr("Search"));
     selectorTabs->setFixedHeight(artistSelectorList->height()+selectorTabs->tabBar()->sizeHint().height());
+    // Setup layout for list view.
+    auto musicListViewLayout = new xPlayerLayout(musicListView);
+    musicListViewLayout->setContentsMargins(0, 0, 0, 0);
+    musicListViewLayout->setSpacing(xPlayerLayout::SmallSpace);
+    musicListViewLayout->addWidget(artistBox, 0, 0, 7, 3);
+    musicListViewLayout->addWidget(albumBox, 0, 3, 7, 5);
+    musicListViewLayout->addWidget(trackBox, 0, 8, 7, 4);
+    musicListViewLayout->addWidget(selectorTabs, 7, 0, 1, 12);
+    musicInfoView = new xPlayerArtistInfo(musicStacked);
+    musicStacked->addWidget(musicListView);
+    musicStacked->addWidget(musicInfoView);
+    musicStacked->setCurrentWidget(musicListView);
+
+    playerWidget = new xPlayerMusicWidget(musicPlayer, this);
+
+
+    // Queue list.
+    queueBox = new QGroupBox(tr("Queue"), this);
+    queueBox->setFlat(xPlayerUseFlatGroupBox);
+    auto queueBoxLayout = new xPlayerLayout();
+    queueList = new xPlayerListWidget(queueBox);
+    queueList->setContextMenuPolicy(Qt::CustomContextMenu);
+    auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
+    // Playlist menu.
+    auto queuePlaylistButton = new QPushButton("Playlist", queueBox);
+    queuePlaylistButton->setFlat(false);
+    queueBoxLayout->addWidget(queueList, 0, 0, 8, 3);
+    queueBoxLayout->addRowSpacer(8, xPlayerLayout::MediumSpace);
+    queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
+    queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
+    queueBox->setLayout(queueBoxLayout);
+
+
     // Setup layout for main widget.
     auto mainWidgetLayout = new xPlayerLayout(this);
     mainWidgetLayout->setSpacing(xPlayerLayout::SmallSpace);
     mainWidgetLayout->addWidget(playerWidget, 0, 0, 1, 12);
-    mainWidgetLayout->addWidget(artistBox, 1, 0, 7, 3);
-    mainWidgetLayout->addWidget(albumBox, 1, 3, 7, 5);
-    mainWidgetLayout->addWidget(trackBox, 1, 8, 7, 4);
-    mainWidgetLayout->addWidget(selectorTabs, 8, 0, 1, 12);
+    mainWidgetLayout->addWidget(musicStacked, 1, 0, 8, 12);
+    //mainWidgetLayout->addWidget(artistBox, 1, 0, 7, 3);
+    //mainWidgetLayout->addWidget(albumBox, 1, 3, 7, 5);
+    //mainWidgetLayout->addWidget(trackBox, 1, 8, 7, 4);
+    //mainWidgetLayout->addWidget(selectorTabs, 8, 0, 1, 12);
     mainWidgetLayout->addWidget(queueBox, 0, 12, 9, 4);
     // Connect artist, album, track and selector widgets
     connect(artistList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtist);
@@ -135,6 +155,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             &xMainMusicWidget::clearAllAlbumSelectors);
     connect(searchSelector, &xPlayerMusicSearchWidget::updateFilter, this, &xMainMusicWidget::updateSearchSelectorFilter);
     connect(searchSelector, &xPlayerMusicSearchWidget::clearFilter, this, &xMainMusicWidget::clearSearchSelectorFilter);
+    // Connect artist info view
+    connect(musicInfoView, &xPlayerArtistInfo::close, this, [=]() { musicStacked->setCurrentWidget(musicListView); });
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
     connect(this, &xMainMusicWidget::finishedQueueTracks, musicPlayer, &xMusicPlayer::finishedQueueTracks);
@@ -151,6 +173,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Connect queue playlist menu.
     connect(queuePlaylistButton, &QPushButton::pressed, this, &xMainMusicWidget::playlistMenu);
     // Right click.
+    connect(artistList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentArtistContextMenu);
     connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::selectSingleTrack);
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRemoved);
     // Connect music player to main widget for queue update.
@@ -320,6 +343,19 @@ void xMainMusicWidget::queueArtist(QListWidgetItem *artistItem) {
         // Retrieve selected artist name and trigger scanAllAlbumsForArtist
         QApplication::setOverrideCursor(Qt::WaitCursor);
         emit scanAllAlbumsForArtist(artistList->itemWidget(artist)->text(), musicLibraryFilter);
+    }
+}
+
+void xMainMusicWidget::currentArtistContextMenu(const QPoint& point) {
+    auto artistItem = artistList->itemWidgetAt(point);
+    if (artistItem) {
+        auto globalPoint = artistList->mapToGlobal(point);
+        QMenu artistMenu;
+        artistMenu.addAction("Artist Info", this, [=] () {
+            musicStacked->setCurrentWidget(musicInfoView);
+            musicInfoView->show(artistItem->text());
+        });
+        artistMenu.exec(globalPoint);
     }
 }
 

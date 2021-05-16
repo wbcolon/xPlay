@@ -74,6 +74,7 @@ add_executable(xPlay
         xMusicFile.cpp
         ${XMOVIEPLAYERX}
         ${XMUSICPLAYERX}
+        xPlayerArtistInfo.cpp
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp
         xPlayerListWidget.cpp
