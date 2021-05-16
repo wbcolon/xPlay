@@ -9,5 +9,6 @@
     <file>images/xplay-forward.svg</file>
     <file>images/xplay-rewind.svg</file>
     <file>images/xplay-star.svg</file>
+    <file>images/xplay-empty-star.svg</file>
 </qresource>
 </RCC>
