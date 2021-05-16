@@ -189,9 +189,17 @@ public:
     xPlayerListItemWidget* itemWidget(int index);
     /**
      * Remove the item including widget at the given index.
+     *
      * @param index the index as integer.
      */
     void takeItemWidget(int index);
+    /**
+     * Return the item widget at the given point.
+     *
+     * @param point the given point position.
+     * @return pointer to the item widget or nullptr.
+     */
+    xPlayerListItemWidget* itemWidgetAt(const QPoint& point);
     /**
      * Update all item widgets.
      *

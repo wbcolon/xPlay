@@ -268,6 +268,15 @@ void xPlayerListWidget::takeItemWidget(int index) {
     }
 }
 
+xPlayerListItemWidget* xPlayerListWidget::itemWidgetAt(const QPoint& point) {
+    auto item = QListWidget::itemAt(point);
+    auto pos = mapItems.find(item);
+    if (pos != mapItems.end()) {
+        return pos->second;
+    }
+    return nullptr;
+}
+
 xPlayerListItemWidget* xPlayerListWidget::currentItemWidget() {
     return itemWidget(QListWidget::currentRow());
 }
