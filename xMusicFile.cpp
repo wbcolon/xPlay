@@ -106,6 +106,10 @@ void xMusicFile::scan() const {
     // Use taglib to determine the sample rate, bitrate, bits per sample and length.
     TagLib::FileRef currentTrack(filePath.c_str(), true, TagLib::AudioProperties::Fast);
     TagLib::AudioProperties* currentTrackProperties = currentTrack.audioProperties();
+    if (currentTrackProperties == nullptr) {
+        qCritical() << "xMusicFile: unable to get audio proprties.";
+        return;
+    }
     // Most files do only support 16 bits per sample.
     fileBitsPerSample = 16;
     try {
