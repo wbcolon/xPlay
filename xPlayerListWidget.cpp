@@ -27,6 +27,7 @@ xPlayerListItemWidget::xPlayerListItemWidget(const QString& text, QWidget* paren
         itemTime(0),
         itemText(text),
         itemTextShortened(false),
+        itemInitialized(false),
         itemToolTip(),
         itemFile(nullptr) {
     itemLayout = new xPlayerLayout();
@@ -44,6 +45,7 @@ xPlayerListItemWidget::xPlayerListItemWidget(const QString& text, QWidget* paren
     itemLayout->setColumnStretch(2, 2);
     itemLayout->addColumnSpacer(10, xPlayerLayout::SmallSpace);
     setLayout(itemLayout);
+    // Setting fixed height will trigger update event. We will ignore this first one.
     setFixedHeight(sizeHint().height()); // NOLINT
 }
 
@@ -53,8 +55,10 @@ xPlayerListItemWidget::xPlayerListItemWidget(xMusicFile* file, QWidget* parent):
         itemTime(0),
         itemText(),
         itemTextShortened(false),
+        itemInitialized(false),
         itemToolTip(),
         itemFile(file) {
+    static auto timeLabelWidth = QFontMetrics(QApplication::font()).width("99:99");
     itemLayout = new xPlayerLayout();
     itemLayout->setSpacing(0);
     itemLayout->setAlignment(Qt::AlignCenter);
@@ -67,7 +71,7 @@ xPlayerListItemWidget::xPlayerListItemWidget(xMusicFile* file, QWidget* parent):
     itemTextLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
     itemTimeLabel = new QLabel(this);
     itemTimeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    itemTimeLabel->setFixedWidth(QFontMetrics(QApplication::font()).width("99:99"));
+    itemTimeLabel->setFixedWidth(timeLabelWidth);
     // Only update the time in the constructor if it was already scanned. The update will force a scan if necessary.
     if (itemFile->isScanned()) {
         updateTime();
@@ -83,8 +87,10 @@ xPlayerListItemWidget::xPlayerListItemWidget(xMusicFile* file, QWidget* parent):
     itemLayout->setColumnStretch(11, 0);
     itemLayout->setColumnStretch(12, 0);
     setLayout(itemLayout);
+    itemInitialized = false;
+    // Setting fixed height will trigger update event. We will ignore this first one.
     setFixedHeight(sizeHint().height()); // NOLINT
-    updateTrackName(sizeHint().width()); // NOLINT
+    //updateTrackName(sizeHint().width()); // NOLINT
 }
 
 void xPlayerListItemWidget::setIcon(const QString& fileName) {
@@ -137,7 +143,11 @@ qint64 xPlayerListItemWidget::updateTime() {
 void xPlayerListItemWidget::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     if (event != nullptr) {
-        updateTrackName(event->size().width());
+        if (itemInitialized) {
+            updateTrackName(event->size().width());
+        } else {
+            itemInitialized = true;
+        }
     }
 }
 
@@ -146,11 +156,12 @@ void xPlayerListItemWidget::updateTrackName(int width) {
     if (itemTimeLabel == nullptr) {
         return;
     }
+    static auto textFontMetrics = QFontMetrics(QApplication::font());
     auto fixedWith = itemTimeLabel->sizeHint().width() + xPlayerLayout::HugeSpace;
     if (itemIconLabel) {
         fixedWith += itemIconLabel->sizeHint().width();
     }
-    auto textWidth = QFontMetrics(QApplication::font()).width(itemText);
+    auto textWidth = textFontMetrics.width(itemText);
     if (width < textWidth+fixedWith) {
         itemTextLabel->setText(shortenedTrackName(width-fixedWith));
         // Only update if the state has changed.
@@ -186,11 +197,12 @@ void xPlayerListItemWidget::updateToolTip() {
 
 QString xPlayerListItemWidget::shortenedTrackName(int width) {
     auto text = itemText;
-    auto dotsWidth = QFontMetrics(QApplication::font()).width("...");
+    static auto textFontMetrics = QFontMetrics(QApplication::font());
+    static auto dotsWidth = textFontMetrics.width("...");
     do {
         // Keep on removing the last character.
         text.remove(-1, 1);
-    } while ((!text.isEmpty()) && (QFontMetrics(QApplication::font()).width(text)+dotsWidth > width));
+    } while ((!text.isEmpty()) && (textFontMetrics.width(text)+dotsWidth > width));
     return text+"...";
 }
 
@@ -239,15 +251,34 @@ void xPlayerListWidget::addItemWidget(xMusicFile* file, const QString& tooltip) 
     addListWidgetItem(item, file->getTrackName());
     auto widget = new xPlayerListItemWidget(file, this);
     // Update tooltip.
-    if (tooltip.isEmpty()) {
-        widget->removeToolTip();
-    } else {
+    if (!tooltip.isEmpty()) {
         widget->addToolTip(tooltip);
     }
     setItemWidget(item, widget);
     item->setSizeHint(widget->sizeHint());
     mapItems[item] = widget;
 }
+
+void xPlayerListWidget::addItemWidgets(std::vector<xMusicFile*> files, const QString& tooltip) {
+
+    for (const auto& file : files) {
+        auto item = new QListWidgetItem();
+        if (!sortItems) {
+            QListWidget::addItem(item);
+        } else {
+            addListWidgetItem(item, file->getTrackName());
+        }
+        auto widget = new xPlayerListItemWidget(file, this);
+        // Update tooltip.
+        if (!tooltip.isEmpty()) {
+            widget->addToolTip(tooltip);
+        }
+        setItemWidget(item, widget);
+        item->setSizeHint(widget->sizeHint());
+        mapItems[item] = widget;
+    }
+}
+
 
 xPlayerListItemWidget* xPlayerListWidget::itemWidget(int index) {
     auto item = QListWidget::item(index);

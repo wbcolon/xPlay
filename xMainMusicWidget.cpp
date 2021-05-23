@@ -105,16 +105,15 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
     musicStacked->setCurrentWidget(musicListView);
-
+    // Player widget.
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
-
-
     // Queue list.
     queueBox = new QGroupBox(tr("Queue"), this);
     queueBox->setFlat(xPlayerUseFlatGroupBox);
     auto queueBoxLayout = new xPlayerLayout();
     queueList = new xPlayerListWidget(queueBox);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
+    queueList->setLayoutMode(QListView::Batched);
     auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
     // Playlist menu.
     auto queuePlaylistButton = new QPushButton("Playlist", queueBox);
@@ -125,8 +124,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
     queueBoxLayout->setColumnStretch(1, 2);
     queueBox->setLayout(queueBoxLayout);
-
-
     // Setup layout for main widget.
     auto mainWidgetLayout = new xPlayerLayout(this);
     mainWidgetLayout->setSpacing(xPlayerLayout::SmallSpace);
@@ -222,7 +219,8 @@ void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
     albumList->clearItems();
     clearTrackList();
     // Not very efficient to use a filtered and the unfiltered list, but easier to read.
-    for (const auto& artist : filterArtists(artists)) {
+    filteredArtists = filterArtists(artists);
+    for (const auto& artist : filteredArtists) {
         artistList->addItemWidget(artist);
     }
     // Update database overlay for artists.
@@ -253,10 +251,7 @@ void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,
                                              std::vector<xMusicFile*>>>& albumTracks) {
     for (const auto& albumTrack : albumTracks) {
-        for (const auto& track : albumTrack.second) {
-            // Add to the playlist (queue)
-            queueList->addItemWidget(track, QString("%1 - %2").arg(artist, albumTrack.first));
-        }
+        queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(artist, albumTrack.first));
         emit queueTracks(artist, albumTrack.first, albumTrack.second);
     }
     emit finishedQueueTracks();
@@ -268,18 +263,21 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
 
 void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString,
                                                         std::vector<xMusicFile*>>>>>& listTracks) {
+    // Update queue list UI.
     for (const auto& listTrack : listTracks) {
         for (const auto& albumTrack : listTrack.second) {
-            for (const auto& track : albumTrack.second) {
-                // Add to the playlist (queue)
-                queueList->addItemWidget(track, QString("%1 - %2").arg(listTrack.first, albumTrack.first));
-            }
+            queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(listTrack.first, albumTrack.first));
+        }
+    }
+    // Update items.
+    queueList->updateItems();
+    // Queue the tracks.
+    for (const auto& listTrack : listTracks) {
+        for (const auto& albumTrack : listTrack.second) {
             emit queueTracks(listTrack.first, albumTrack.first, albumTrack.second);
         }
     }
     emit finishedQueueTracks();
-    // Update items.
-    queueList->updateItems();
     // Restore the waiting cursor.
     QApplication::restoreOverrideCursor();
 }
@@ -429,13 +427,9 @@ void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
         QStringList listArtists;
         // Call with stored list in order to update artist filtering.
         updateScannedArtists(unfilteredArtists);
-        // Scan for all filtered artists.
-        for (auto i = 0; i < artistList->count(); ++i) {
-            listArtists.push_back(artistList->itemWidget(i)->text());
-        }
         // Trigger scanAllAlbumsForListArtist with given list of artists.
         QApplication::setOverrideCursor(Qt::WaitCursor);
-        emit scanAllAlbumsForListArtists(listArtists, musicLibraryFilter);
+        emit scanAllAlbumsForListArtists(filteredArtists, musicLibraryFilter);
     }
 }
 

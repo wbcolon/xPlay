@@ -113,6 +113,7 @@ private:
     qint64 itemTime;
     QString itemText;
     bool itemTextShortened;
+    bool itemInitialized;
     QString itemToolTip;
     xMusicFile* itemFile;
 };
@@ -160,6 +161,13 @@ public:
      * @param tooltip the text of the tooltip as string.
      */
     void addItemWidget(xMusicFile* file, const QString& tooltip);
+    /**
+     * Add vector of item widgets with tooltip to the list.
+     *
+     * @param files vector of pointer to the associated music file objects.
+     * @param tooltip  the text of the tooltip as string.
+     */
+    void addItemWidgets(std::vector<xMusicFile*> files, const QString& tooltip);
     /**
      * Find the item widgets that match the given text.
      *

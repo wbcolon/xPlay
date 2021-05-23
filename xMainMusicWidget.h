@@ -434,6 +434,7 @@ private:
      * Store the current list of unfiltered artists and albums for later filtering.
      */
     QStringList unfilteredArtists;
+    QStringList filteredArtists;
     /**
      * Currently played artist and album. May differ from currently selected artist and album.
      */
