@@ -65,8 +65,6 @@ xPlayerArtistInfo::xPlayerArtistInfo(QWidget* parent, Qt::WindowFlags flags):
     layout->addWidget(closeButton, 0, 14);
     layout->addRowSpacer(1, xPlayerLayout::SmallSpace);
     layout->addWidget(urlView, 2, 0, 10, 15);
-    layout->setColumnStretch(2, 2);
-    layout->setRowStretch(2, 2);
     setLayout(layout);
     // Connect navigation buttons.
     connect(homeButton, &QPushButton::pressed, [=]() { show(artistName); } );

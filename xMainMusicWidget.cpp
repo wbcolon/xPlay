@@ -123,6 +123,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueBoxLayout->addRowSpacer(8, xPlayerLayout::MediumSpace);
     queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
+    queueBoxLayout->setColumnStretch(1, 2);
     queueBox->setLayout(queueBoxLayout);
 
 
