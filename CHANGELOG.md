@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.1 - 2021-05-23
+
+- Fix UI resizing issue affecting queue list.
+- Improve performance for queueing tracks.
+- Fix segfault if audio properties are not available.
+
+
 ## 0.8.0 - 2021-05-16
 
 - Add artist info for music view.
