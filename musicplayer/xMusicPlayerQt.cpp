@@ -21,7 +21,8 @@
 #include <QMediaGaplessPlaybackControl>
 
 xMusicPlayerQt::xMusicPlayerQt(xMusicLibrary* library, QObject* parent):
-        xMusicPlayer(library, parent) {
+        xMusicPlayer(library, parent),
+        useShuffleMode(false) {
     // Setup the media player.
     musicPlayer = new QMediaPlayer(this, QMediaPlayer::LowLatency);
     musicPlayer->setMuted(false);
@@ -68,6 +69,47 @@ void xMusicPlayerQt::queueTracks(const QString& artist, const QString& album, co
 
 void xMusicPlayerQt::finishedQueueTracks() {
     // No need to do anything here.
+}
+
+void xMusicPlayerQt::moveQueueTracks(int fromIndex, int toIndex) {
+    if (useShuffleMode) {
+        return;
+    }
+    if (fromIndex == toIndex) {
+        return;
+    }
+    // Move the elements in our list.
+    qDebug() << "xMusicPlayerQt::moveQueueTracks: from " << fromIndex << " to " << toIndex;
+    auto currentMedia = musicPlaylist->currentMedia();
+    auto currentIndex = musicPlaylist->currentIndex();
+    if (fromIndex < toIndex) {
+        for (auto index = fromIndex+1; index < toIndex; ++index) {
+            std::swap(musicPlaylistEntries[index-1], musicPlaylistEntries[index]);
+        }
+    } else {
+        for (auto index = fromIndex; index > toIndex; --index) {
+            std::swap(musicPlaylistEntries[index], musicPlaylistEntries[index-1]);
+        }
+    }
+    if (!musicPlaylist->moveMedia(fromIndex, toIndex)) {
+        qCritical() << "xMusicPlayerQt::moveQueueTracks: unable to move tracks; stop and clear queue.";
+        musicPlayer->stop();
+        musicPlaylist->clear();
+        emit clearQueue();
+    }
+    for (int i = 0; i < musicPlaylist->mediaCount(); ++i) {
+        if (currentMedia == musicPlaylist->media(i)) {
+            if (i != currentIndex) {
+                currentIndex = i;
+                musicPlaylist->setCurrentIndex(currentIndex);
+                break;
+            }
+        }
+    }
+    // Update queue list.
+    auto entryObject = std::get<2>(musicPlaylistEntries[currentIndex]);
+    emit currentTrack(currentIndex, entryObject->getArtist(), entryObject->getAlbum(), entryObject->getTrackName(),
+                      entryObject->getBitrate(), entryObject->getSampleRate(), entryObject->getBitsPerSample());
 }
 
 void xMusicPlayerQt::dequeTrack(int index) {

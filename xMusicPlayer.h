@@ -170,6 +170,13 @@ public slots:
      */
     virtual void finishedQueueTracks() = 0;
     /**
+     * Move the queue track after drag-drop action.
+     *
+     * @param fromIndex start index of the queued track that is moved.
+     * @param toIndex destination index the queued track is inserted before.
+     */
+    virtual void moveQueueTracks(int fromIndex, int toIndex) = 0;
+    /**
      * Remove the track from the queue.
      *
      * @param index the position of the track in the queue.

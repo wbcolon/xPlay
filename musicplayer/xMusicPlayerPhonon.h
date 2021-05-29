@@ -67,6 +67,13 @@ public slots:
      */
     void finishedQueueTracks() override;
     /**
+     * Move the queue track after drag-drop action.
+     *
+     * @param fromIndex start index of the queued track that is moved.
+     * @param toIndex destination index the queued track is inserted before.
+     */
+    void moveQueueTracks(int fromIndex, int toIndex) override;
+    /**
      * Remove the track from the queue.
      *
      * @param index the position of the track in the queue.

@@ -117,6 +117,42 @@ void xMusicPlayerPhonon::finishedQueueTracks() {
     }
 }
 
+void xMusicPlayerPhonon::moveQueueTracks(int fromIndex, int toIndex) {
+    if (useShuffleMode) {
+        return;
+    }
+    if (fromIndex == toIndex) {
+        return;
+    }
+    qDebug() << "xMusicPlayerPhonon::moveQueueTracks: from " << fromIndex << " to " << toIndex;
+    // Move the elements in our list.
+    if (fromIndex < toIndex) {
+        for (auto index = fromIndex+1; index < toIndex; ++index) {
+            std::swap(musicPlaylistEntries[index-1], musicPlaylistEntries[index]);
+        }
+        // Adjust toIndex since element removed changes to toIndex position.
+        musicPlaylist.move(fromIndex, toIndex-1);
+    } else {
+        for (auto index = fromIndex; index > toIndex; --index) {
+            std::swap(musicPlaylistEntries[index], musicPlaylistEntries[index-1]);
+        }
+        musicPlaylist.move(fromIndex, toIndex);
+    }
+    // Update playlist.
+    auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
+    if ((fromIndex >= currentIndex) || (toIndex >= currentIndex)) {
+        // Repopulate playlist if move affected the elements to be played.
+        musicPlayer->clearQueue();
+        for (size_t i = currentIndex+1; i < musicPlaylistEntries.size(); ++i) {
+            musicPlayer->enqueue(musicPlaylist[i]);
+        }
+    }
+    // Update queue list.
+    auto entryObject = std::get<2>(musicPlaylistEntries[currentIndex]);
+    emit currentTrack(currentIndex, entryObject->getArtist(), entryObject->getAlbum(), entryObject->getTrackName(),
+                      entryObject->getBitrate(), entryObject->getSampleRate(), entryObject->getBitsPerSample());
+}
+
 void xMusicPlayerPhonon::dequeTrack(int index) {
     // We do not allow deque tracks if in shuffle mode.
     if (useShuffleMode) {

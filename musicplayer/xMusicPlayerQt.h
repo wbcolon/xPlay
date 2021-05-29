@@ -62,6 +62,13 @@ public slots:
      */
     void finishedQueueTracks() override;
     /**
+     * Move the queue track after drag-drop action.
+     *
+     * @param fromIndex start index of the queued track that is moved.
+     * @param toIndex destination index the queued track is inserted before.
+     */
+    void moveQueueTracks(int fromIndex, int toIndex) override;
+    /**
      * Remove track from the current playlist
      *
      * @param index of the track to be removed.
@@ -128,7 +135,7 @@ public slots:
      *
      * @param shuffle enabled shuffle mode if true disable otherwise.
      */
-    virtual void setShuffleMode(bool shuffle) override;
+    void setShuffleMode(bool shuffle) override;
     /**
      * Set the volume
      *
