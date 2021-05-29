@@ -22,6 +22,11 @@ const double xPlayerSelectorHeightFontFactor = 1.6;
 const int xPlayerVolumeWidgetWidth = 168;
 const int xPlayerControlButtonWidgetWidth = 200;
 
+const int xPlayerArtistListMinimumWidth = 350;
+const int xPlayerAlbumListMinimumWidth = 550;
+const int xPlayerTracksListMinimumWidth = 400;
+const int xPlayerQueueListMinimumWidth = 400;
+
 class xPlayerLayout:public QGridLayout {
 public:
     static const int NoSpace = 0;

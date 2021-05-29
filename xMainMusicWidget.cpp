@@ -65,11 +65,14 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     artistList = artistList_;
     artistList->enableSorting(false);
     artistList->setContextMenuPolicy(Qt::CustomContextMenu);
+    artistList->setMinimumWidth(xPlayerArtistListMinimumWidth);
     albumList = albumList_;
     albumList->enableSorting(true);
+    albumList->setMinimumWidth(xPlayerAlbumListMinimumWidth);
     trackList = trackList_;
     trackList->enableSorting(true);
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
+    trackList->setMinimumWidth(xPlayerTracksListMinimumWidth);
     trackBox = trackBox_;
     // Selector Tabs.
     auto selectorTabs = new QTabWidget(musicListView);
@@ -114,6 +117,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueList = new xPlayerListWidget(queueBox);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
     queueList->setLayoutMode(QListView::Batched);
+    queueList->setMinimumWidth(xPlayerQueueListMinimumWidth);
     auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
     // Playlist menu.
     auto queuePlaylistButton = new QPushButton("Playlist", queueBox);
@@ -122,7 +126,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueBoxLayout->addRowSpacer(8, xPlayerLayout::MediumSpace);
     queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
-    queueBoxLayout->setColumnStretch(1, 2);
+    queueBoxLayout->setColumnStretch(1, 3);
     queueBox->setLayout(queueBoxLayout);
     // Setup layout for main widget.
     auto mainWidgetLayout = new xPlayerLayout(this);
