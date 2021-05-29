@@ -167,7 +167,7 @@ public:
      * @param files vector of pointer to the associated music file objects.
      * @param tooltip  the text of the tooltip as string.
      */
-    void addItemWidgets(std::vector<xMusicFile*> files, const QString& tooltip);
+    void addItemWidgets(const std::vector<xMusicFile*>& files, const QString& tooltip);
     /**
      * Find the item widgets that match the given text.
      *
@@ -220,7 +220,36 @@ public:
     void clearItems();
 
 signals:
+    /**
+     * Signal emitted if total time of all list elements has been computed.
+     *
+     * @param total the total time in ms.
+     */
     void totalTime(qint64 total);
+    /**
+     * Sinal emitted if an element was moved via drag and drop.
+     *
+     * @param fromIndex the initial index of the element moved.
+     * @param toIndex the index the element is inserted before.
+     */
+    void dragDrop(int fromIndex, int toIndex);
+
+protected:
+    /**
+     * Called upon the start of the drag-and-drop operation.
+     *
+     * @param event a pointer to the drag enter event.
+     */
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    /**
+     * Called upon the end of the drag-and-drop operation.
+     *
+     * This function will emit a dragDrop signal upon successful
+     * completion of the drag-and-drop operation.
+     *
+     * @param event a pointer to the drop event.
+     */
+    void dropEvent(QDropEvent* event) override;
 
 private:
     /**
@@ -246,6 +275,8 @@ private:
     bool sortItems;
     std::map<QListWidgetItem*,xPlayerListItemWidget*> mapItems;
     QThread* updateItemsThread;
+    int dragDropFromIndex;
+    int dragDropToIndex;
 };
 
 #endif

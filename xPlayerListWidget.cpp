@@ -211,7 +211,9 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent):
         QListWidget(parent),
         sortItems(false),
         mapItems(),
-        updateItemsThread(nullptr) {
+        updateItemsThread(nullptr),
+        dragDropFromIndex(-1),
+        dragDropToIndex(-1) {
 }
 
 void xPlayerListWidget::enableSorting(bool sorted) {
@@ -259,7 +261,7 @@ void xPlayerListWidget::addItemWidget(xMusicFile* file, const QString& tooltip) 
     mapItems[item] = widget;
 }
 
-void xPlayerListWidget::addItemWidgets(std::vector<xMusicFile*> files, const QString& tooltip) {
+void xPlayerListWidget::addItemWidgets(const std::vector<xMusicFile*>& files, const QString& tooltip) {
 
     for (const auto& file : files) {
         auto item = new QListWidgetItem();
@@ -386,3 +388,34 @@ void xPlayerListWidget::addListWidgetItem(QListWidgetItem *item, const QString& 
         QListWidget::addItem(item);
     }
 }
+
+void xPlayerListWidget::dragEnterEvent(QDragEnterEvent* event) {
+    if (event) {
+        // currentRow is more accurate than using the event position.
+        // converting the position sometimes leads to an incorrect index.
+        dragDropFromIndex = currentRow();
+        QListWidget::dragEnterEvent(event);
+    }
+}
+
+void xPlayerListWidget::dropEvent(QDropEvent* event) {
+    if (event) {
+        auto dragDropToItem = itemAt(event->pos());
+        if (dragDropToItem) {
+            dragDropToIndex = row(dragDropToItem);
+            // We insert before the current element if the position is in the upper half of the item widget.
+            auto toItemHeight = QListWidget::itemWidget(dragDropToItem)->height() / 2;
+            auto dragDropToIndexMinus = row(itemAt(event->pos()-QPoint(0, toItemHeight)));
+            // Determine if we insert after or before the drop index.
+            if (dragDropToIndex == dragDropToIndexMinus) {
+                ++dragDropToIndex;
+            }
+        } else {
+            // No item at position means move to the end of the list.
+            dragDropToIndex = count();
+        }
+        QListWidget::dropEvent(event);
+        emit dragDrop(dragDropFromIndex, dragDropToIndex);
+    }
+}
+
