@@ -19,6 +19,7 @@
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerPlaylistDialog.h"
+#include "xPlayerTagsDialog.h"
 
 #include <QGroupBox>
 #include <QListWidget>
@@ -117,15 +118,19 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueList = new xPlayerListWidget(queueBox);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
     queueList->setLayoutMode(QListView::Batched);
+    queueList->setDragDropMode(QListWidget::InternalMove);
     queueList->setMinimumWidth(xPlayerQueueListMinimumWidth);
     auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
+    // Tags menu.
+    auto queueTagsButton = new QPushButton(tr("Tags"), queueBox);
     // Playlist menu.
-    auto queuePlaylistButton = new QPushButton("Playlist", queueBox);
+    auto queuePlaylistButton = new QPushButton(tr("Playlist"), queueBox);
     queuePlaylistButton->setFlat(false);
-    queueBoxLayout->addWidget(queueList, 0, 0, 8, 3);
+    queueBoxLayout->addWidget(queueList, 0, 0, 8, 4);
     queueBoxLayout->addRowSpacer(8, xPlayerLayout::MediumSpace);
     queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
-    queueBoxLayout->addWidget(queuePlaylistButton, 9, 2);
+    queueBoxLayout->addWidget(queueTagsButton, 9, 2);
+    queueBoxLayout->addWidget(queuePlaylistButton, 9, 3);
     queueBoxLayout->setColumnStretch(1, 3);
     queueBox->setLayout(queueBoxLayout);
     // Setup layout for main widget.
@@ -133,10 +138,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     mainWidgetLayout->setSpacing(xPlayerLayout::SmallSpace);
     mainWidgetLayout->addWidget(playerWidget, 0, 0, 1, 12);
     mainWidgetLayout->addWidget(musicStacked, 1, 0, 8, 12);
-    //mainWidgetLayout->addWidget(artistBox, 1, 0, 7, 3);
-    //mainWidgetLayout->addWidget(albumBox, 1, 3, 7, 5);
-    //mainWidgetLayout->addWidget(trackBox, 1, 8, 7, 4);
-    //mainWidgetLayout->addWidget(selectorTabs, 8, 0, 1, 12);
     mainWidgetLayout->addWidget(queueBox, 0, 12, 9, 4);
     // Connect artist, album, track and selector widgets
     connect(artistList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtist);
@@ -169,15 +170,18 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackDoubleClicked);
     connect(queueList, &QListWidget::itemClicked, this, &xMainMusicWidget::currentQueueTrackCtrlClicked);
     connect(queueList, &xPlayerListWidget::totalTime, this, &xMainMusicWidget::updateQueueTotalTime);
+    connect(queueList, &xPlayerListWidget::dragDrop, musicPlayer, &xMusicPlayer::moveQueueTracks);
     // Connect shuffle mode.
     connect(queueShuffleCheck, &QCheckBox::clicked, musicPlayer, &xMusicPlayer::setShuffleMode);
     connect(queueShuffleCheck, &QCheckBox::clicked, queueList, &QListWidget::setDisabled);
-    // Connect queue playlist menu.
-    connect(queuePlaylistButton, &QPushButton::pressed, this, &xMainMusicWidget::playlistMenu);
+    // Connect queue tags dialog.
+    connect(queueTagsButton, &QPushButton::pressed, this, &xMainMusicWidget::showTagsDialog);
+    // Connect queue playlist dialog.
+    connect(queuePlaylistButton, &QPushButton::pressed, this, &xMainMusicWidget::showPlaylistDialog);
     // Right click.
     connect(artistList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentArtistContextMenu);
-    connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::selectSingleTrack);
-    connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRemoved);
+    connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentTrackRightClicked);
+    connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRightClicked);
     // Connect music player to main widget for queue update.
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
     // Connect update for current track. Update queue, database and database overlay.
@@ -352,13 +356,24 @@ void xMainMusicWidget::queueArtist(QListWidgetItem *artistItem) {
 void xMainMusicWidget::currentArtistContextMenu(const QPoint& point) {
     auto artistItem = artistList->itemWidgetAt(point);
     if (artistItem) {
-        auto globalPoint = artistList->mapToGlobal(point);
         QMenu artistMenu;
-        artistMenu.addAction("Artist Info", this, [=] () {
+        // Add section for artist info website.
+        artistMenu.addSection(tr("Artist Info"));
+        artistMenu.addAction(tr("Link To Website"), this, [=] () {
             musicStacked->setCurrentWidget(musicInfoView);
             musicInfoView->show(artistItem->text());
         });
-        artistMenu.exec(globalPoint);
+        // Add section for artist transitions.
+        auto artistTransitions = xPlayerDatabase::database()->getArtistTransitions(artistItem->text());
+        if (!artistTransitions.empty()) {
+            artistMenu.addSection(tr("Other Artists"));
+            for (size_t i = 0; (i < artistTransitions.size()) && (i < 10); ++i) {
+                artistMenu.addAction(artistTransitions[i].first, [=]() {
+                    artistList->setCurrentWidgetItem(artistTransitions[i].first);
+                });
+            }
+        }
+        artistMenu.exec(artistList->mapToGlobal(point));
     }
 }
 
@@ -554,14 +569,16 @@ void xMainMusicWidget::currentQueueTrackDoubleClicked(QListWidgetItem* trackItem
     }
 }
 
-void xMainMusicWidget::currentQueueTrackRemoved(const QPoint& point) {
-    // Currently unused
-    Q_UNUSED(point)
-    // Retrieve currently selected element
-    auto track = queueList->currentRow();
-    if ((track >= 0) && (track< queueList->count())) {
-        queueList->takeItemWidget(track);
-        emit dequeueTrack(track);
+void xMainMusicWidget::currentQueueTrackRightClicked(const QPoint& point) {
+    if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
+        // Retrieve currently selected element
+        auto track = queueList->currentRow();
+        if ((track >= 0) && (track< queueList->count())) {
+            queueList->takeItemWidget(track);
+            emit dequeueTrack(track);
+        }
+    } else {
+        tagPopupMenu(queueList, point);
     }
 }
 
@@ -604,33 +621,35 @@ void xMainMusicWidget::updatedMusicLibraryAlbumSelectors() {
     emit scan(musicLibraryFilter);
 }
 
-void xMainMusicWidget::selectSingleTrack(const QPoint& point) {
-    // Currently unused
-    Q_UNUSED(point)
-    // Retrieve currently selected element
-    auto track = trackList->currentRow();
-    if ((track >= 0) && (track< trackList->count())) {
-        // Retrieve selected artist and album name.
-        auto artistName = artistList->currentItemWidget()->text();
-        auto albumName = albumList->currentItemWidget()->text();
-        // Retrieve only selected track
-        std::vector<xMusicFile*> trackObjects;
-        QString trackName = trackList->itemWidget(track)->text();
-        auto trackObject = musicLibrary->getMusicFile(artistName, albumName, trackName);
-        if (trackObject == nullptr) {
-            qCritical() << "xMainMusicWidget: unable to find music file object in library for "
-                        << artistName+"/"+albumName+"/"+trackName;
-            return;
+void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
+    if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
+        // Retrieve currently selected element
+        auto track = trackList->currentRow();
+        if ((track >= 0) && (track < trackList->count())) {
+            // Retrieve selected artist and album name.
+            auto artistName = artistList->currentItemWidget()->text();
+            auto albumName = albumList->currentItemWidget()->text();
+            // Retrieve only selected track
+            std::vector<xMusicFile *> trackObjects;
+            QString trackName = trackList->itemWidget(track)->text();
+            auto trackObject = musicLibrary->getMusicFile(artistName, albumName, trackName);
+            if (trackObject == nullptr) {
+                qCritical() << "xMainMusicWidget: unable to find music file object in library for "
+                            << artistName + "/" + albumName + "/" + trackName;
+                return;
+            }
+            trackObjects.push_back(trackObject);
+            // Add to the playlist (queue)
+            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(artistName, albumName));
+            // Signal the set tracks to be queued by the music player.
+            emit queueTracks(artistName, albumName, trackObjects);
+            // Signal finish adding tracks.
+            emit finishedQueueTracks();
+            // Update items.
+            queueList->updateItems();
         }
-        trackObjects.push_back(trackObject);
-        // Add to the playlist (queue)
-        queueList->addItemWidget(trackObject,QString("%1 - %2").arg(artistName, albumName));
-        // Signal the set tracks to be queued by the music player.
-        emit queueTracks(artistName, albumName, trackObjects);
-        // Signal finish adding tracks.
-        emit finishedQueueTracks();
-        // Update items.
-        queueList->updateItems();
+    } else {
+        tagPopupMenu(trackList, point);
     }
 }
 
@@ -814,7 +833,7 @@ void xMainMusicWidget::playlist(const std::vector<std::tuple<QString,QString,QSt
     queueList->updateItems();
 }
 
-void xMainMusicWidget::playlistMenu() {
+void xMainMusicWidget::showPlaylistDialog() {
     auto playlistNames = xPlayerDatabase::database()->getMusicPlaylists();
     auto playlistDialog = new xPlayerPlaylistDialog(playlistNames, this);
     connect(playlistDialog, &xPlayerPlaylistDialog::savePlaylist, musicPlayer, &xMusicPlayer::saveQueueToPlaylist);
@@ -822,4 +841,57 @@ void xMainMusicWidget::playlistMenu() {
     connect(playlistDialog, &xPlayerPlaylistDialog::removePlaylist,
             [=](const QString& name) { xPlayerDatabase::database()->removeMusicPlaylist(name); });
     playlistDialog->exec();
+}
+
+void xMainMusicWidget::showTagsDialog() {
+    auto tags = xPlayerConfiguration::configuration()->getMusicLibraryTags();
+    if (!tags.empty()) {
+        auto tagsDialog = new xPlayerTagsDialog(tags, this);
+        connect(tagsDialog, &xPlayerTagsDialog::loadFromTag, musicPlayer, &xMusicPlayer::loadQueueFromTag);
+        //connect(tagsDialog, &xPlayerTagsDialog::removeFromTag, this, &xMainMusicWidget::removeTagFromQueue);
+        tagsDialog->exec();
+    }
+}
+
+void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point) {
+    auto item = list->itemWidgetAt(point);
+    if (!item) {
+        // No item at the current position. No need for the tag menu.
+        return;
+    }
+    auto menuTags = xPlayerConfiguration::configuration()->getMusicLibraryTags();
+    if (menuTags.isEmpty()) {
+        // No tags defined.
+        return;
+    }
+    // Track info.
+    auto artist = item->musicFile()->getArtist();
+    auto album = item->musicFile()->getAlbum();
+    auto trackname = item->musicFile()->getTrackName();
+    // Read current tags for track.
+    auto tags = xPlayerDatabase::database()->getTags(artist, album, trackname);
+    // Get all available tags.
+    // Create menu.
+    QMenu menu;
+    menu.addSection(tr("Tags"));
+    for (const auto& menuTag : menuTags) {
+        auto action = new QAction(menuTag);
+        action->setCheckable(true);
+        // Adjust checked state of menu entry.
+        action->setChecked(tags.contains(menuTag));
+        // Add the tag if the menu entry is selected, remove it otherwise.
+        connect(action, &QAction::triggered, [=](bool checked) {
+            if (checked) {
+                xPlayerDatabase::database()->addTag(artist, album, trackname, menuTag);
+            } else {
+                xPlayerDatabase::database()->removeTag(artist, album, trackname, menuTag);
+            }
+        });
+        menu.addAction(action);
+    }
+    menu.addSeparator();
+    menu.addAction(tr("Remove All Tags"), [=]() {
+        xPlayerDatabase::database()->removeAllTags(artist, album, trackname);
+    });
+    menu.exec(list->mapToGlobal(point));
 }

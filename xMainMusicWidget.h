@@ -218,9 +218,6 @@ private slots:
      * @param trackItem pointer to the currently selected row.
      */
     void selectTrack(QListWidgetItem* trackItem);
-
-    void currentQueueTrackCtrlClicked(QListWidgetItem* trackItem);
-
     /**
      * Append single track to the playlist (queue)
      *
@@ -230,7 +227,7 @@ private slots:
      *
      * @param point position of the right-click.
      */
-    void selectSingleTrack(const QPoint& point);
+    void currentTrackRightClicked(const QPoint& point);
     /**
      * Filter the list of artists.
      *
@@ -316,11 +313,21 @@ private slots:
      */
     void currentQueueTrackDoubleClicked(QListWidgetItem* trackItem);
     /**
+     * Select artist and album in the corresponding lists.
+     *
+     * Function is triggered by a ctrl-click on an entry in the list of
+     * queued tracks. The artist and album is only selected if they are
+     * currently visible according to the selectors.
+     *
+     * @param trackItem pointer to the currently selected row.
+     */
+    void currentQueueTrackCtrlClicked(QListWidgetItem* trackItem);
+    /**
      *  Remove the current track from the playlist (queue).
      *
      * @param point position of the right-click.
      */
-    void currentQueueTrackRemoved(const QPoint& point);
+    void currentQueueTrackRightClicked(const QPoint& point);
     /**
      * Clear the list of queued tracks.
      */
@@ -334,7 +341,11 @@ private slots:
     /**
      * Show playlist dialog.
      */
-    void playlistMenu();
+    void showPlaylistDialog();
+    /**
+     * Show tags dialog.
+     */
+    void showTagsDialog();
     /**
      * Update the music database overlay on configuration changes.
      */
@@ -402,6 +413,13 @@ private:
      * @return filtered list of artists that start with the selector string.
      */
     [[nodiscard]] QStringList filterArtists(const QStringList& artists);
+    /**
+     * Show tag selection popup menu.
+     *
+     * @param list the list widget for which the popup menu is shown.
+     * @param point the point where the popup menu is shown.
+     */
+    void tagPopupMenu(xPlayerListWidget* list, const QPoint& point);
     /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
