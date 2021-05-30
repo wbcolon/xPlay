@@ -133,6 +133,7 @@ void xMusicPlayerQt::loadQueueFromPlaylist(const QString& name) {
         const auto& [entryArtist, entryAlbum, entryTrackName] = entry;
         auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
         if (entryObject) {
+            musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
             musicPlaylist->addMedia(QUrl::fromLocalFile(QString::fromStdString(entryObject->getFilePath().generic_string())));
         }
     }
@@ -150,6 +151,42 @@ void xMusicPlayerQt::saveQueueToPlaylist(const QString& name) {
     auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, databasePlaylistEntries);
     emit playlistState(name, saved);
 }
+
+void xMusicPlayerQt::loadQueueFromTag(const QString& tag, bool extend) {
+    // Load the playlist from the database.
+    auto taggedEntries = xPlayerDatabase::database()->getAllForTag(tag);
+    if (!extend) {
+        clearQueue();
+    }
+    // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
+    for (const auto& entry : taggedEntries) {
+        // Split up tuple
+        const auto& [entryArtist, entryAlbum, entryTrackName] = entry;
+        auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        if ((extend) && (std::find_if(musicPlaylistEntries.begin(), musicPlaylistEntries.end(),
+                                      [entryObject](const std::tuple<QString,QString,xMusicFile*>& entry) {
+                                          return (std::get<2>(entry) == entryObject);
+                                      }) != musicPlaylistEntries.end())) {
+            continue;
+        }
+        if (entryObject) {
+            musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
+            musicPlaylist->addMedia(QUrl::fromLocalFile(QString::fromStdString(entryObject->getFilePath().generic_string())));
+        }
+    }
+    // Update tagged entries if we extend.
+    if (extend) {
+        taggedEntries.clear();
+        for (const auto& entry : musicPlaylistEntries) {
+            auto entryObject = std::get<2>(entry);
+            taggedEntries.emplace_back(std::make_tuple(entryObject->getArtist(),
+                                                       entryObject->getAlbum(),
+                                                       entryObject->getTrackName()));
+        }
+    }
+    emit playlist(taggedEntries);
+}
+
 
 void xMusicPlayerQt::playPause() {
     // Pause if the media player is in playing state, resume play.

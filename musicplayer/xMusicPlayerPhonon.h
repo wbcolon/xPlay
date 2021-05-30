@@ -96,6 +96,13 @@ public slots:
      */
     void saveQueueToPlaylist(const QString& name) override;
     /**
+     * Load the playlist with tagged songs from the database.
+     *
+     * @param tag the tag name as string.
+     * @param extend extend the playlist if true, replace it otherwise.
+     */
+    void loadQueueFromTag(const QString& tag, bool extend) override;
+    /**
      * Play or pause depending on the current media player state.
      */
     void playPause() override;

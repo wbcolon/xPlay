@@ -230,6 +230,53 @@ void xMusicPlayerPhonon::loadQueueFromPlaylist(const QString& name) {
     finishedQueueTracks();
 }
 
+void xMusicPlayerPhonon::loadQueueFromTag(const QString& tag, bool extend) {
+    // Load the playlist from the database.
+    auto taggedEntries = xPlayerDatabase::database()->getAllForTag(tag);
+    if (!extend) {
+        clearQueue();
+    }
+    // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
+    for (auto entry = taggedEntries.begin(); entry != taggedEntries.end(); ++entry) {
+        // Split up tuple
+        const auto& [entryArtist, entryAlbum, entryTrackName] = *entry;
+        auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        if (entryObject == nullptr) {
+            // Remove invalid entries from the list.
+            taggedEntries.erase(entry);
+            continue;
+        }
+        if ((extend) && (std::find_if(musicPlaylistEntries.begin(), musicPlaylistEntries.end(),
+                                      [entryObject](const std::tuple<QString,QString,xMusicFile*>& entry) {
+                                          return (std::get<2>(entry) == entryObject);
+                                      }) != musicPlaylistEntries.end())) {
+            continue;
+        }
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(entryObject->getFilePath().generic_string())));
+        if (queueSource.type() != Phonon::MediaSource::Invalid) {
+            musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
+            musicPlaylist.push_back(queueSource);
+            // Enqueue entries.
+            musicPlayer->enqueue(queueSource);
+        } else {
+            // Remove invalid entries from the list.
+            taggedEntries.erase(entry);
+        }
+    }
+    // Update tagged entries if we extend.
+    if (extend) {
+        taggedEntries.clear();
+        for (const auto& entry : musicPlaylistEntries) {
+            auto entryObject = std::get<2>(entry);
+            taggedEntries.emplace_back(std::make_tuple(entryObject->getArtist(),
+                                                       entryObject->getAlbum(),
+                                                       entryObject->getTrackName()));
+        }
+    }
+    emit playlist(taggedEntries);
+    finishedQueueTracks();
+}
+
 void xMusicPlayerPhonon::saveQueueToPlaylist(const QString& name) {
     // Store the current queue to the database.
     // First convert to database format.

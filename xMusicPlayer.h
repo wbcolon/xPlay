@@ -198,6 +198,13 @@ public slots:
      * @param name the name for the playlist.
      */
     virtual void saveQueueToPlaylist(const QString& name) = 0;
+    /**
+     * Load the playlist with tagged songs from the database.
+     *
+     * @param tag the tag name as string.
+     * @param extend extend the playlist if true, replace it otherwise.
+     */
+    virtual void loadQueueFromTag(const QString& tag, bool extend) = 0;
 
 protected:
     xMusicLibrary* musicLibrary;
