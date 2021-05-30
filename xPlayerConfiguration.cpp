@@ -25,6 +25,7 @@
 const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors { "xPlay/MusicLibraryAlbumSelectors" }; // NOLINT
+const QString xPlayerConfiguration_MusicLibraryTags { "xPlay/MusicLibraryTags" }; // NOLINT
 const QString xPlayerConfiguration_RotelWidget { "xPlay/RotelWidget" }; // NOLINT
 const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddress" }; // NOLINT
 const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" }; // NOLINT
@@ -43,6 +44,7 @@ const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor"
 // Configuration defaults.
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors_Default { "(live) [hd] [mp3]" }; // NOLINT
+const QString xPlayerConfiguration_MusicLibraryTags_Default { "[ballads] [epics] [favorites]" }; // NOLINT
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
 const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = { // NOLINT
         { "qobuz", QUrl("https://play.qobuz.com/login") },
@@ -92,6 +94,14 @@ void xPlayerConfiguration::setMusicLibraryAlbumSelectors(const QString& selector
         settings->setValue(xPlayerConfiguration_MusicLibraryAlbumSelectors, selectors);
         settings->sync();
         emit updatedMusicLibraryAlbumSelectors();
+    }
+}
+
+void xPlayerConfiguration::setMusicLibraryTags(const QStringList& tags) {
+    if (tags != getMusicLibraryTags()) {
+        settings->setValue(xPlayerConfiguration_MusicLibraryTags, tags.join(" "));
+        settings->sync();
+        emit updatedMusicLibraryTags();
     }
 }
 
@@ -260,6 +270,16 @@ QStringList xPlayerConfiguration::getMusicLibraryAlbumSelectorList() {
     }
 }
 
+QStringList xPlayerConfiguration::getMusicLibraryTags() {
+    auto tags = settings->value(xPlayerConfiguration_MusicLibraryTags,
+                                xPlayerConfiguration_MusicLibraryTags_Default).toString();
+    if (tags.isEmpty()) {
+        return QStringList();
+    } else {
+        return tags.split(" ");
+    }
+}
+
 bool xPlayerConfiguration::rotelWidget() {
     return settings->value(xPlayerConfiguration_RotelWidget, true).toBool();
 }
@@ -401,6 +421,7 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMusicLibraryDirectory();
     emit updatedMusicLibraryExtensions();
     emit updatedMusicLibraryAlbumSelectors();
+    emit updatedMusicLibraryTags();
     emit updatedRotelNetworkAddress();
     emit updatedMovieLibraryTagsAndDirectories();
     emit updatedMovieLibraryExtensions();

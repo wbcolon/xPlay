@@ -50,6 +50,10 @@ public:
      * @param selectors a space separated list of album selectors.
      */
     void setMusicLibraryAlbumSelectors(const QString& selectors);
+
+
+    void setMusicLibraryTags(const QStringList& tags);
+
     /**
      * Set availability of the Rotel amp widget.
      *
@@ -174,6 +178,12 @@ public:
      * @return the list of selectors.
      */
     [[nodiscard]] QStringList getMusicLibraryAlbumSelectorList();
+    /**
+     * Get the list of tags for the tracks.
+     *
+     * @return the list of tags as strings.
+     */
+    [[nodiscard]] QStringList getMusicLibraryTags();
     /**
      * Return the availability of the Rotel amp widget.
      *
@@ -308,6 +318,10 @@ signals:
      * Signal an update of the album selectors.
      */
     void updatedMusicLibraryAlbumSelectors();
+    /**
+     * Signal an update of the tag list.
+     */
+    void updatedMusicLibraryTags();
     /**
      * Signal an update of the movie library directory.
      */

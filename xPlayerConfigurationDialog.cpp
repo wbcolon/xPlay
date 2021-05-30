@@ -101,6 +101,8 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryExtensionsWidget = new QLineEdit(musicLibraryTab);
     auto musicLibraryAlbumSelectorsLabel = new QLabel(tr("Album Selectors"), musicLibraryTab);
     musicLibraryAlbumSelectorsWidget = new QLineEdit(musicLibraryTab);
+    auto musicLibraryTagsLabel = new QLabel(tr("Tags"), musicLibraryTab);
+    musicLibraryTagsWidget = new QLineEdit(musicLibraryTab);
     musicLibraryLayout->addWidget(musicLibraryDirectoryLabel, 0, 0, 1, 5);
     musicLibraryLayout->addWidget(musicLibraryDirectoryWidget, 1, 0, 1, 4);
     musicLibraryLayout->addWidget(musicLibraryDirectoryOpenButton, 1, 4);
@@ -108,7 +110,10 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryLayout->addWidget(musicLibraryExtensionsWidget, 3, 0, 1, 5);
     musicLibraryLayout->addWidget(musicLibraryAlbumSelectorsLabel, 4, 0, 1, 5);
     musicLibraryLayout->addWidget(musicLibraryAlbumSelectorsWidget, 5, 0, 1, 5);
-    musicLibraryLayout->addRowStretcher(6);
+    musicLibraryLayout->addRowSpacer(6, xPlayerLayout::LargeSpace);
+    musicLibraryLayout->addWidget(musicLibraryTagsLabel, 7, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryTagsWidget, 8, 0, 1, 5);
+    musicLibraryLayout->addRowStretcher(9);
     musicLibraryTab->setLayout(musicLibraryLayout);
     // Setup streaming sites with URL and short name.
     auto streamingSitesLayout = new xPlayerLayout();
@@ -220,6 +225,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto musicLibraryDirectory = xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
     auto musicLibraryExtensions = xPlayerConfiguration::configuration()->getMusicLibraryExtensions();
     auto musicLibraryAlbumSelectors = xPlayerConfiguration::configuration()->getMusicLibraryAlbumSelectors();
+    auto musicLibraryTags = xPlayerConfiguration::configuration()->getMusicLibraryTags();
     auto rotelWidget = xPlayerConfiguration::configuration()->rotelWidget();
     auto [rotelNetworkAddress, rotelNetworkPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
     auto movieLibraryTagAndDirectory = xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectory();
@@ -235,6 +241,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
     musicLibraryExtensionsWidget->setText(musicLibraryExtensions);
     musicLibraryAlbumSelectorsWidget->setText(musicLibraryAlbumSelectors);
+    musicLibraryTagsWidget->setText(musicLibraryTags.join(" "));
     rotelNetworkAddressWidget->setText(rotelNetworkAddress);
     rotelNetworkPortWidget->setValue(rotelNetworkPort);
     if (!rotelWidget) {
@@ -286,6 +293,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     auto musicLibraryDirectory = musicLibraryDirectoryWidget->text();
     auto musicLibraryExtensions = musicLibraryExtensionsWidget->text();
     auto musicLibraryAlbumSelectors = musicLibraryAlbumSelectorsWidget->text();
+    auto musicLibraryTags = musicLibraryTagsWidget->text().split(" ");
     auto rotelNetworkAddress = rotelNetworkAddressWidget->text();
     auto rotelNetworkPort = rotelNetworkPortWidget->value();
     auto movieLibraryExtensions = movieLibraryExtensionsWidget->text();
@@ -318,6 +326,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryDirectory: " << musicLibraryDirectory;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryExtensions: " << musicLibraryExtensions;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryAlbumSelectors: " << musicLibraryAlbumSelectors;
+    qDebug() << "xPlayerConfigurationDialog: save: musicLibraryTags: " << musicLibraryTags;
     qDebug() << "xPlayerConfigurationDialog: save: rotelEnableWidget: " << rotelEnableWidget->isEnabled();
     qDebug() << "xPlayerConfigurationDialog: save: rotelNetworkAddress: " << rotelNetworkAddress;
     qDebug() << "xPlayerConfigurationDialog: save: rotelNetworkPort: " << rotelNetworkPort;
@@ -337,6 +346,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
     xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
     xPlayerConfiguration::configuration()->setMusicLibraryAlbumSelectors(musicLibraryAlbumSelectors);
+    xPlayerConfiguration::configuration()->setMusicLibraryTags(musicLibraryTags);
     xPlayerConfiguration::configuration()->setRotelWidget(rotelNetworkAddressWidget->isEnabled());
     xPlayerConfiguration::configuration()->setRotelNetworkAddress(rotelNetworkAddress, rotelNetworkPort);
     xPlayerConfiguration::configuration()->setMovieLibraryTagAndDirectory(movieLibraryTagAndDirectory);
