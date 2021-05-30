@@ -77,6 +77,7 @@ add_executable(xPlay
         xPlayerArtistInfo.cpp
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp
+        xPlayerTagsDialog.cpp
         xPlayerListWidget.cpp
         xPlayerMusicSearchWidget.cpp
         xPlayerMusicWidget.cpp
