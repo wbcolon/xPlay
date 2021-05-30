@@ -117,12 +117,19 @@ currently played file. In addition there is player control section with a *play/
 and *clear queue* buttons and a volume dialer. If you double-click on an entry of the queue then the player jumps
 to this track. Right-clicking on a queue entry will remove this track from the queue.
 
-The artist info can be accessed through a context menu by a right-click on an entry in the artist list. The artist
-info is a small simple web browser with minimal navigational control buttons such as home, back and forward as well
-as selecting a zoom factor. Pressing the *close* button will end the artist info view. A white filled star icon
-indicates that no URL is currently stored within our database. A grey filled star indicates that the URL was taken
-out of our database. Clicking on a white filled star will store the current URL to the database. The database entry
-is removed if we click on a grey filled star.
+The artist popup menu can be accessed through a context menu by a right-click on an entry in the artist list. The 
+menu entry *Link To Website* leads to the artist info which is a small simple web browser with minimal navigational 
+control buttons such as home, back and forward as well as selecting a zoom factor. Pressing the *close* button will end
+the artist info view. A white filled star icon indicates that no URL is currently stored within our database. A grey
+filled star indicates that the URL was taken out of our database. Clicking on a white filled star will store the current
+URL to the database. The database entry is removed if we click on a grey filled star.
+The artist popup will also show other artists in the *Other Artists* section that have been played before or after 
+the selected artist in the past. You can jump to this artist by selecting the corresponding artist popup menu entry.
+
+Tags can be added and removed by the tag popup menu which can be accessed through a context menu by a right-click on an
+entry in the track list or the queue. The tags are stored in the database. The tag dialog can be accessed by pressing 
+the *Tags* button at the bottom of the queue list. The tag dialog allows to load or extend the queue with tracks that
+have a specific tag.
 
 The Rotel widget allows to control a Rotel A12 or A14 amp via a network connection. The volume can be adjusted
 (maximum of 60) and the input can be selected. The values for bass and treble can be adjusted (from -10 to +10)

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0 - 2021-05-30
+
+- Add tag functionality.
+- Add drag-and-drop move support for queue.
+- Add artist transitions to artist popup menu.  
+- Minor UI fixes.
+
+
 ## 0.8.1 - 2021-05-23
 
 - Fix UI resizing issue affecting queue list.
