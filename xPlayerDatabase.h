@@ -229,6 +229,64 @@ public:
                                             const QString& toArtist, const QString& toAlbum,
                                             bool shuffleMode);
     /**
+     * Get the transitions from or to a given artist.
+     *
+     * @param artist name of the artist in the transition.
+     * @return a sorted vector of pairs of artist name and transition count.
+     */
+    std::vector<std::pair<QString,int>> getArtistTransitions(const QString& artist);
+    /**
+     * Add tag to the specified song.
+     *
+     * @param artist the artist name for the song.
+     * @param album the album name for the song.
+     * @param track the track name for the song.
+     * @param tag the new tag assigned to the song.
+     */
+    void addTag(const QString& artist, const QString& album, const QString& track, const QString& tag);
+    /**
+     * Remove tag from the specified song.
+     *
+     * @param artist the artist name for the song.
+     * @param album the album name for the song.
+     * @param track the track name for the song.
+     * @param tags all tags assigned to the song.
+     */
+    void removeTag(const QString& artist, const QString& album, const QString& track, const QString& tag);
+    /**
+     * Remove all tag from the specified song.
+     *
+     * @param artist the artist name for the song.
+     * @param album the album name for the song.
+     * @param track the track name for the song.
+     */
+    void removeAllTags(const QString& artist, const QString& album, const QString& track);
+    /**
+     * Update the tags for the specified song.
+     *
+     * @param artist the artist name for the song.
+     * @param album the album name for the song.
+     * @param track the track name for the song.
+     * @param tags all tags assigned to the song.
+     */
+    void updateTags(const QString& artist, const QString& album, const QString& track, const QStringList& tags);
+    /**
+     * Get the tags assigned to the specified song
+     *
+     * @param artist the artist name for the song.
+     * @param album the album name for the song.
+     * @param track the track name for the song.
+     * @return a list of tags assigned to the song, or an empty list.
+     */
+    QStringList getTags(const QString& artist, const QString& album, const QString& track);
+    /**
+     * Get all songs for the specified tag.
+     *
+     * @param tag the tag used in the database query.
+     * @return a vector of tuples of artist, album and track name.
+     */
+    std::vector<std::tuple<QString,QString,QString>> getAllForTag(const QString& tag);
+    /**
      * Retrieve all played artist and albums with their latest timestamp.
      *
      * @param after the time stamp used in the query the played movies.
@@ -238,6 +296,9 @@ public:
     std::map<QString,std::set<QString>> getAllAlbums(qint64 after);
 
 signals:
+    /**
+     * Signal emitted in a database error occured.
+     */
     void databaseUpdateError();
 
 private slots:

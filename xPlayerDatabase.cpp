@@ -57,6 +57,8 @@ void xPlayerDatabase::loadDatabase() {
     }
     try {
         // The following create table commands will fail if database already exists.
+        // Create taggedSongs table.
+        sqlDatabase << "CREATE TABLE taggedSongs (ID INTEGER PRIMARY KEY AUTOINCREMENT, tag VARCHAR, hash VARCHAR)";
         // Create artistInfo table.
         sqlDatabase << "CREATE TABLE artistInfo (artist VARCHAR PRIMARY KEY, url VARCHAR)";
         // Create artist transition table.
@@ -637,6 +639,120 @@ std::pair<int,qint64> xPlayerDatabase::updateTransition(const QString& fromArtis
     return std::make_pair(0,0);
 }
 
+std::vector<std::pair<QString,int>> xPlayerDatabase::getArtistTransitions(const QString& artist) {
+    std::vector<std::pair<QString,int>> artistTransitions;
+    try {
+        auto artistStd = artist.toStdString();
+        soci::rowset<soci::row> artistTransitionRows = (sqlDatabase.prepare <<
+            "SELECT artist, SUM(count) FROM ( "
+            "SELECT toArtist as artist, SUM(transitionCount) as count FROM transition WHERE fromArtist == :fromArtist GROUP BY toArtist "
+            "UNION ALL "
+            "SELECT fromArtist as artist, SUM(transitionCount) as count FROM transition WHERE toArtist == :toArtist GROUP BY fromArtist "
+            "ORDER BY 1 "
+            ") GROUP BY artist ORDER BY 2 DESC", soci::use(artistStd), soci::use(artistStd));
+        for (const auto& artistTransitionRow : artistTransitionRows) {
+            artistTransitions.emplace_back(std::make_pair(
+                    QString::fromStdString(artistTransitionRow.get<std::string>(0)),
+                    std::stoi(artistTransitionRow.get<std::string>(1))
+            ));
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "xPlayerDatabase::getArtistTransitions: error: " << e.what();
+        artistTransitions.clear();
+        emit databaseUpdateError();
+    }
+    return artistTransitions;
+}
+
+void xPlayerDatabase::addTag(const QString& artist, const QString& album, const QString& track, const QString& tag) {
+    auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
+    try {
+        // Add new tag.
+        sqlDatabase << "INSERT INTO taggedSongs (tag, hash) VALUES (:tag,:hash)", soci::use(tag.toStdString()), soci::use(hash);
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to add tag for track, error: " << e.what();
+    }
+}
+
+void xPlayerDatabase::removeTag(const QString& artist, const QString& album, const QString& track, const QString& tag) {
+    auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
+    try {
+        // Remove given tag.
+        sqlDatabase << "DELETE FROM taggedSongs WHERE tag == :tag and hash == :hash", soci::use(tag.toStdString()), soci::use(hash);
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to remove tag for track, error: " << e.what();
+    }
+}
+
+void xPlayerDatabase::removeAllTags(const QString& artist, const QString& album, const QString& track) {
+    auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
+    try {
+        // Remove given tag.
+        sqlDatabase << "DELETE FROM taggedSongs WHERE hash == :hash", soci::use(hash);
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to remove all tags for track, error: " << e.what();
+    }
+}
+
+void xPlayerDatabase::updateTags(const QString& artist, const QString& album, const QString& track,
+                                 const QStringList& tags) {
+    auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
+    // Remove old tags.
+    removeFromTable("taggedSongs", " WHERE hash == \"" + hash + "\"");
+    // Add new tags.
+    try {
+        std::string insertTags;
+        for (const auto& tag : tags) {
+            insertTags += "(\"" + tag.toStdString() + "\", \"" + hash + "\")";
+        }
+        if (!insertTags.empty()) {
+            sqlDatabase << "INSERT INTO taggedSongs (tag, hash) VALUES " + insertTags;
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to add tags for track, error: " << e.what();
+    }
+}
+
+QStringList xPlayerDatabase::getTags(const QString& artist, const QString& album, const QString& track) {
+    auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
+    QStringList tags;
+    try {
+        soci::rowset<std::string> tagRows = (sqlDatabase.prepare <<
+                "SELECT tag FROM taggedSongs WHERE hash == :hash", soci::use(hash));
+        for (const auto& tagRow : tagRows) {
+            tags.push_back(QString::fromStdString(tagRow));
+        }
+    } catch (soci::soci_error& e) {
+        qCritical() << "Unable to query database for tags, error: " << e.what();
+        tags.clear();
+    }
+    return tags;
+}
+
+std::vector<std::tuple<QString, QString, QString>> xPlayerDatabase::getAllForTag(const QString& tag) {
+    std::vector<std::tuple<QString,QString,QString>> entries;
+    try {
+        soci::rowset<soci::row> taggedSongsEntries = (sqlDatabase.prepare <<
+            "SELECT music.artist, music.album, music.track FROM taggedSongs INNER JOIN "
+            "music ON music.hash = taggedSongs.hash WHERE tag = :tag", soci::use(tag.toStdString()));
+        for (const auto& taggedSongsEntry : taggedSongsEntries) {
+            auto artist = taggedSongsEntry.get<std::string>(0);
+            auto album = taggedSongsEntry.get<std::string>(1);
+            auto track = taggedSongsEntry.get<std::string>(2);
+            entries.emplace_back(std::make_tuple(QString::fromStdString(artist), QString::fromStdString(album), QString::fromStdString(track)));
+        }
+    } catch (soci::soci_error& e)  {
+        qCritical() << "Unable to query database for taggedSongs, error: " << e.what();
+        entries.clear();
+    }
+    return entries;
+}
+
 std::map<QString,std::set<QString>> xPlayerDatabase::getAllAlbums(qint64 after) {
     std::map<QString,std::set<QString>> mapArtistAlbum;
     try {
@@ -655,16 +771,15 @@ std::map<QString,std::set<QString>> xPlayerDatabase::getAllAlbums(qint64 after) 
         mapArtistAlbum.clear();
     }
     return mapArtistAlbum;
-
 }
 
 void xPlayerDatabase::removeFromTable(const std::string& tableName, const std::string& whereArgument) {
     // Remove entries from given table.
     try {
-        // Insert playlist name.
+        // Generic delete command. Append table name and where argument.
         sqlDatabase << "DELETE FROM " + tableName + whereArgument;
     } catch (soci::soci_error& e) {
-        qCritical() << "Unable to remove tracks from " << QString::fromStdString(tableName) << " table, error: " << e.what();
+        qCritical() << "Unable to remove entries from " << QString::fromStdString(tableName) << " table, error: " << e.what();
     }
 }
 
