@@ -29,7 +29,7 @@ find_package(Qt5Multimedia REQUIRED)
 find_package(Qt5MultimediaWidgets REQUIRED)
 find_package(Qt5WebEngineWidgets REQUIRED)
 find_package(Phonon4Qt5)
-find_package(Soci)
+find_package(SQLite3)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(TAGLIB taglib)
@@ -61,7 +61,7 @@ else()
     set(XPLAYERWIDGETX playerwidget/xPlayerSliderWidgetQt.cpp playerwidget/xPlayerVolumeWidgetQt.cpp playerwidget/xPlayerBalanceWidgetQt.cpp)
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR} ${SOCI_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR} ${SQLITE3_INCLUDE_DIRS})
 
 add_executable(xPlay
         xPlayerConfig.h
@@ -101,9 +101,9 @@ add_executable(xPlay
 target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
 
 if (USE_QWT)
-    target_link_libraries(xPlay Qt5::WebEngineWidgets qwt-qt5 Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} ${SOCI_LIBRARY} ${SOCI_sqlite3_PLUGIN} ${VLCLIB_LIBRARIES})
+    target_link_libraries(xPlay Qt5::WebEngineWidgets qwt-qt5 Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} sqlite3 ${VLCLIB_LIBRARIES})
 else()
-    target_link_libraries(xPlay Qt5::WebEngineWidgets Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} ${SOCI_LIBRARY} ${SOCI_sqlite3_PLUGIN} ${VLCLIB_LIBRARIES})
+    target_link_libraries(xPlay Qt5::WebEngineWidgets Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} sqlite3 ${VLCLIB_LIBRARIES})
 endif()
 
 QT5_USE_MODULES(xPlay Multimedia MultimediaWidgets)

@@ -17,8 +17,7 @@
 
 #include <QObject>
 #include <QStringList>
-#include <soci.h>
-#include <sqlite3/soci-sqlite3.h>
+#include <sqlite3.h>
 #include <set>
 
 class xPlayerDatabase:public QObject {
@@ -301,6 +300,8 @@ signals:
      */
     void databaseUpdateError();
 
+    void databaseError();
+
 private slots:
     /**
      * Called upon changing the directory where the database is stored.
@@ -315,13 +316,19 @@ private:
      */
     void loadDatabase();
     /**
+     * Wrapper that converts return results into runtime_errors.
+     *
+     * @param result the result of the sqlite3 command.
+     * @param expectedResult the expected result.
+     */
+    void dbCheck(int result, int expectedResult=SQLITE_OK);
+    /**
      * Generic function to remove entries from a table in the database.
      *
      * @param tableName the table name the entries are removed from.
      * @param whereArgument the where argument that is attached to the delete statement.
      */
     void removeFromTable(const std::string& tableName, const std::string& whereArgument);
-
     /**
      * Convert the a list of entries into a list of where arguments with hashes.
      *
@@ -334,7 +341,7 @@ private:
     static std::list<std::string> convertEntriesToWhereArguments(const std::list<std::tuple<QString,QString,QString>>& entries);
 
     static xPlayerDatabase* playerDatabase;
-    soci::session sqlDatabase;
+    sqlite3* sqlDatabase;
 };
 
 #endif

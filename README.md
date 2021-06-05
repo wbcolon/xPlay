@@ -252,7 +252,7 @@ and the KDE 5.x breeze icons.
 * Qt 5.x (https://www.qt.io/)
 * Phonon (https://github.com/KDE/phonon)
 * Qwt 6.x for Qt5 (http://qwt.sf.net) (optional, deactivate with USE_QWT=OFF)
-* SOCI - The C++ Database Access Library (http://soci.sourceforge.net/)
+* SQLite3 - The Database Access Library (https://sqlite.org/)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
 * libVLC Library (https://wiki.videolan.org/LibVLC/)
 * C++17
