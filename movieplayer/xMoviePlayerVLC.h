@@ -136,6 +136,14 @@ signals:
      * Helper signal to call setMovie from event handler callback.
      */
     void eventHandler_setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    /*
+     * Helper signal to call selectAudioChannel from the event handler callback.
+     */
+    void eventHandler_selectAudioChannel(int audioChannel);
+    /*
+     * Helper signal to call selectSubtitle from the event handler callback.
+     */
+    void eventHandler_selectSubtitle(int subtitle);
 
 public slots:
     /**

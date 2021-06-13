@@ -48,6 +48,8 @@ xMoviePlayerVLC::xMoviePlayerVLC(QWidget *parent):
     // Connect signals used to call out of VLC handler.
     connect(this, &xMoviePlayerVLC::eventHandler_stop, this, &xMoviePlayerVLC::stop);
     connect(this, &xMoviePlayerVLC::eventHandler_setMovie, this, &xMoviePlayerVLC::setMovie);
+    connect(this, &xMoviePlayerVLC::eventHandler_selectAudioChannel, this, &xMoviePlayerVLC::selectAudioChannel);
+    connect(this, &xMoviePlayerVLC::eventHandler_selectSubtitle, this, &xMoviePlayerVLC::selectSubtitle);
     // Connect to configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultAudioLanguage,
             this, &xMoviePlayerVLC::updatedDefaultAudioLanguage);
@@ -231,12 +233,14 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
     if ((self->movieMediaPlaying) && (self->movieMediaParsed)) {
         if (self->movieMediaInitialPlay) {
             self->movieMediaInitialPlay = false;
-            // Select default audio channel.
+            // Select default audio channel in the UI and the player.
             if (self->movieDefaultAudioLanguageIndex >= 0) {
                 emit self->currentAudioChannel(self->movieDefaultAudioLanguageIndex);
+                emit self->eventHandler_selectAudioChannel(self->movieDefaultAudioLanguageIndex);
             }
-            // Select default subtitle.
+            // Select default subtitle in the UI and the player.
             emit self->currentSubtitle(self->movieDefaultSubtitleLanguageIndex);
+            emit self->eventHandler_selectSubtitle(self->movieDefaultSubtitleLanguageIndex);
             // Update scale and crop mode.
             emit self->scaleAndCropMode(true);
         }
