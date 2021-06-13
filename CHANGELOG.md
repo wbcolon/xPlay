@@ -1,10 +1,16 @@
 # Changelog
 
+## 0.9.1 - 2021-06-13
+
+- Replace libsoci with libsqlite3.
+- Fix subtitle and audio channel defaults for VLC movie player.
+
+
 ## 0.9.0 - 2021-05-30
 
 - Add tag functionality.
 - Add drag-and-drop move support for queue.
-- Add artist transitions to artist popup menu.  
+- Add artist transitions to artist popup menu.
 - Minor UI fixes.
 
 
