@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Replace close pushbutton with close icon toolbutton.
+
+
 ## 0.9.1 - 2021-06-13
 
 - Replace libsoci with libsqlite3.
