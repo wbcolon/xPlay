@@ -87,6 +87,18 @@ void xPlayerMusicAlbumSelectorWidget::setSelectors(const QStringList& selectors)
     }
 }
 
+void xPlayerMusicAlbumSelectorWidget::clear() {
+    // Clear all selectors.
+    for (auto i = 0; i < selectorListWidget->count(); ++i) {
+        if (selectorState[i] != xPlayerMusicAlbumSelectorWidget::StateSpacer) {
+            selectorState[i] = xPlayerMusicAlbumSelectorWidget::StateNotUsed;
+            // Update the background color
+            selectorListWidget->item(i)->setBackgroundColor(xPlayerMusicAlbumSelectorWidget_StateColors[selectorState[i]]);
+        }
+    }
+    emit clearAllSelectors();
+}
+
 void xPlayerMusicAlbumSelectorWidget::selectorClicked(QListWidgetItem* selectorItem) {
     if (selectorListWidget->count() != selectorState.count()) {
         qCritical() << "xPlayerMusicAlbumSelectorWidget: item count does not match state count.";

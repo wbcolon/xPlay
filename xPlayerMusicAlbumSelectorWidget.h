@@ -28,8 +28,16 @@ class xPlayerMusicAlbumSelectorWidget: public QWidget {
 public:
     explicit xPlayerMusicAlbumSelectorWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerMusicAlbumSelectorWidget() override = default;
-
+    /**
+     * Setup the selectors displayed in in the selector widget.
+     *
+     * @param selectors a list strings of selectors.
+     */
     void setSelectors(const QStringList& selectors);
+    /**
+     * Clear all selectors.
+     */
+    void clear();
 
 signals:
     void updatedSelectors(const QStringList& match, const QStringList& notMatch);
