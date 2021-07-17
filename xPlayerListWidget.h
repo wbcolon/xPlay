@@ -219,6 +219,14 @@ public:
      */
     void clearItems();
 
+public slots:
+    /**
+     * Update filter used to decide which items to show.
+     *
+     * @param match the substring the items text must match.
+     */
+    void updateFilter(const QString& match);
+
 signals:
     /**
      * Signal emitted if total time of all list elements has been computed.
@@ -277,6 +285,7 @@ private:
     QThread* updateItemsThread;
     int dragDropFromIndex;
     int dragDropToIndex;
+    QString currentMatch;
 };
 
 #endif

@@ -213,7 +213,8 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent):
         mapItems(),
         updateItemsThread(nullptr),
         dragDropFromIndex(-1),
-        dragDropToIndex(-1) {
+        dragDropToIndex(-1),
+        currentMatch() {
 }
 
 void xPlayerListWidget::enableSorting(bool sorted) {
@@ -236,6 +237,7 @@ void xPlayerListWidget::addItemWidget(const QString& text, const QString& toolti
     setItemWidget(item, widget);
     item->setSizeHint(widget->sizeHint());
     mapItems[item] = widget;
+    updateFilter(currentMatch);
 }
 
 void xPlayerListWidget::addItemWidget(xMusicFile* file) {
@@ -246,6 +248,7 @@ void xPlayerListWidget::addItemWidgets(const QStringList& list) {
     for (const auto& element : list) {
         addItemWidget(element);
     }
+    updateFilter(currentMatch);
 }
 
 void xPlayerListWidget::addItemWidget(xMusicFile* file, const QString& tooltip) {
@@ -259,6 +262,7 @@ void xPlayerListWidget::addItemWidget(xMusicFile* file, const QString& tooltip) 
     setItemWidget(item, widget);
     item->setSizeHint(widget->sizeHint());
     mapItems[item] = widget;
+    updateFilter(currentMatch);
 }
 
 void xPlayerListWidget::addItemWidgets(const std::vector<xMusicFile*>& files, const QString& tooltip) {
@@ -279,6 +283,7 @@ void xPlayerListWidget::addItemWidgets(const std::vector<xMusicFile*>& files, co
         item->setSizeHint(widget->sizeHint());
         mapItems[item] = widget;
     }
+    updateFilter(currentMatch);
 }
 
 
@@ -347,6 +352,19 @@ void xPlayerListWidget::clearItems() {
     QListWidget::clear();
     // Clear any total time displayed.
     emit totalTime(0);
+}
+
+void xPlayerListWidget::updateFilter(const QString &match) {
+    currentMatch = match;
+    if (match.isEmpty()) {
+        for (auto& item : mapItems) {
+            item.first->setHidden(false);
+        }
+    } else {
+        for (auto& item : mapItems) {
+            item.first->setHidden(!item.second->text().contains(match, Qt::CaseInsensitive));
+        }
+    }
 }
 
 void xPlayerListWidget::updateItems() {
