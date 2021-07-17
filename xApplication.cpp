@@ -231,24 +231,33 @@ void xApplication::dbus_selectView(const QString& view) {
 }
 
 void xApplication::dbus_muteRotel() {
-    // Mute the Rotel amp.
-    auto rotelControls = xPlayerRotelControls::controls();
-    rotelControls->setMuted(!rotelControls->isMuted());
+    if (mainDbusMutex.try_lock()) {
+        // Mute the Rotel amp.
+        auto rotelControls = xPlayerRotelControls::controls();
+        rotelControls->setMuted(!rotelControls->isMuted());
+        mainDbusMutex.unlock();
+    }
 }
 
 void xApplication::dbus_changeRotelVolume(int delta) {
-    // Set the volume for the Rotel amp.
-    auto rotelControls = xPlayerRotelControls::controls();
-    auto rotelVolume = rotelControls->getVolume();
-    // Only adjust volume if getVolume was successful.
-    if (rotelVolume >= 0) {
-        rotelControls->setVolume(rotelVolume+delta);
+    if (mainDbusMutex.try_lock()) {
+        // Set the volume for the Rotel amp.
+        auto rotelControls = xPlayerRotelControls::controls();
+        auto rotelVolume = rotelControls->getVolume();
+        // Only adjust volume if getVolume was successful.
+        if (rotelVolume >= 0) {
+            rotelControls->setVolume(rotelVolume+delta);
+        }
+        mainDbusMutex.unlock();
     }
 }
 
 void xApplication::dbus_selectRotelSource(const QString& source) {
-    // Set a new source for the Rotel amp.
-    xPlayerRotelControls::controls()->setSource(source);
+    if (mainDbusMutex.try_lock()) {
+        // Set a new source for the Rotel amp.
+        xPlayerRotelControls::controls()->setSource(source);
+        mainDbusMutex.unlock();
+    }
 }
 
 void xApplication::unknownTracks(const std::list<std::tuple<QString,QString,QString>>& entries) {
@@ -314,8 +323,11 @@ void xApplication::scanningErrorMusicLibrary() {
 }
 
 void xApplication::setRotelNetworkAddress() {
-    auto [rotelAddress,rotelPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
-    xPlayerRotelControls::controls()->connect(rotelAddress, rotelPort);
+    if (mainDbusMutex.try_lock()) {
+        auto [rotelAddress,rotelPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
+        xPlayerRotelControls::controls()->connect(rotelAddress, rotelPort);
+        mainDbusMutex.unlock();
+    }
 }
 
 void xApplication::setMovieLibraryTagsAndDirectories() {
