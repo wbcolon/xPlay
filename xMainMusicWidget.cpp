@@ -33,8 +33,8 @@
 #include <QMenu>
 #include <random>
 
-// Function addGroupBox has to be defined before the constructor due to the auto return.
-auto xMainMusicWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
+// Function addListWidgetGroupBox has to be defined before the constructor due to the auto return.
+auto xMainMusicWidget::addListWidgetGroupBox(const QString& boxLabel, QWidget* parent) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, parent);
@@ -45,6 +45,18 @@ auto xMainMusicWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
     groupBox->setLayout(boxLayout);
     return std::make_pair(groupBox,list);
 }
+
+auto xMainMusicWidget::addLineEditGroupBox(const QString& boxLabel, QWidget* parent) {
+    // Create a QGroupBox with the given label and embed a QLineEdit.
+    auto groupBox = new QGroupBox(boxLabel, parent);
+    groupBox->setFlat(xPlayerUseFlatGroupBox);
+    auto lineEdit = new QLineEdit(groupBox);
+    auto boxLayout = new QVBoxLayout();
+    boxLayout->addWidget(lineEdit);
+    groupBox->setLayout(boxLayout);
+    return std::make_pair(groupBox, lineEdit);
+}
+
 
 xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
@@ -59,9 +71,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicStacked = new QStackedWidget(this);
     // Create and group boxes with embedded list widgets.
     musicListView = new QWidget(musicStacked);
-    auto [artistBox, artistList_] = addGroupBox(tr("Artists"), musicListView);
-    auto [albumBox, albumList_] = addGroupBox(tr("Albums"), musicListView);
-    auto [trackBox_, trackList_] = addGroupBox(tr("Tracks"), musicListView);
+    auto [artistBox, artistList_] = addListWidgetGroupBox(tr("Artists"), musicListView);
+    auto [albumBox, albumList_] = addListWidgetGroupBox(tr("Albums"), musicListView);
+    auto [trackBox_, trackList_] = addListWidgetGroupBox(tr("Tracks"), musicListView);
     // Sort entries in artist/album/track
     artistList = artistList_;
     artistList->enableSorting(false);
@@ -76,7 +88,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     trackList->setMinimumWidth(xPlayerTracksListMinimumWidth);
     trackBox = trackBox_;
     // Selector Tabs.
-    auto selectorTabs = new QTabWidget(musicListView);
+    selectorTabs = new QTabWidget(musicListView);
     selectorTabs->setStyleSheet("QTabWidget::pane { border: none; }");
     // Artist selector.
     auto artistSelectorTab = new QWidget(selectorTabs);
@@ -90,6 +102,16 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     artistSelectorLayout->addColumnSpacer(1, xPlayerLayout::SmallSpace);
     artistSelectorTab->setLayout(artistSelectorLayout);
     artistSelectorTab->setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
+    // Local filters.
+    auto [artistFilterBox_, artistFilterLineEdit_] = addLineEditGroupBox(tr("Filter Artists"), musicListView);
+    auto [albumFilterBox_, albumFilterLineEdit_] = addLineEditGroupBox(tr("Filter Albums"), musicListView);
+    auto [trackFilterBox_, trackFilterLineEdit_] = addLineEditGroupBox(tr("Filter Tracks"), musicListView);
+    artistFilterBox = artistFilterBox_;
+    artistFilterLineEdit = artistFilterLineEdit_;
+    albumFilterBox = albumFilterBox_;
+    albumFilterLineEdit = albumFilterLineEdit_;
+    trackFilterBox = trackFilterBox_;
+    trackFilterLineEdit = trackFilterLineEdit_;
     // Album selector and Search.
     albumSelectorList = new xPlayerMusicAlbumSelectorWidget(selectorTabs);
     searchSelector = new xPlayerMusicSearchWidget(selectorTabs);
@@ -101,10 +123,14 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     auto musicListViewLayout = new xPlayerLayout(musicListView);
     musicListViewLayout->setContentsMargins(0, 0, 0, 0);
     musicListViewLayout->setSpacing(xPlayerLayout::SmallSpace);
-    musicListViewLayout->addWidget(artistBox, 0, 0, 7, 3);
-    musicListViewLayout->addWidget(albumBox, 0, 3, 7, 5);
-    musicListViewLayout->addWidget(trackBox, 0, 8, 7, 4);
-    musicListViewLayout->addWidget(selectorTabs, 7, 0, 1, 12);
+    musicListViewLayout->addWidget(artistBox, 0, 0, 9, 3);
+    musicListViewLayout->addWidget(artistFilterBox, 9, 0, 1, 3);
+    musicListViewLayout->addWidget(albumBox, 0, 3, 9, 5);
+    musicListViewLayout->addWidget(albumFilterBox, 9, 3, 1, 5);
+    musicListViewLayout->addWidget(trackBox, 0, 8, 9, 4);
+    musicListViewLayout->addWidget(trackFilterBox, 9, 8, 1, 4);
+    musicListViewLayout->addWidget(selectorTabs, 10, 0, 1, 12);
+
     musicInfoView = new xPlayerArtistInfo(musicStacked);
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
@@ -158,6 +184,10 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             &xMainMusicWidget::clearAllAlbumSelectors);
     connect(searchSelector, &xPlayerMusicSearchWidget::updateFilter, this, &xMainMusicWidget::updateSearchSelectorFilter);
     connect(searchSelector, &xPlayerMusicSearchWidget::clearFilter, this, &xMainMusicWidget::clearSearchSelectorFilter);
+    // Connect local filters.
+    connect(artistFilterLineEdit, &QLineEdit::textChanged, artistList, &xPlayerListWidget::updateFilter);
+    connect(albumFilterLineEdit, &QLineEdit::textChanged, albumList, &xPlayerListWidget::updateFilter);
+    connect(trackFilterLineEdit, &QLineEdit::textChanged, trackList, &xPlayerListWidget::updateFilter);
     // Connect artist info view
     connect(musicInfoView, &xPlayerArtistInfo::close, this, [=]() { musicStacked->setCurrentWidget(musicListView); });
     // Connect main widget to music player
@@ -193,6 +223,10 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             this, &xMainMusicWidget::updatedDatabaseMusicOverlay);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryAlbumSelectors,
             this, &xMainMusicWidget::updatedMusicLibraryAlbumSelectors);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewSelectors,
+            this, &xMainMusicWidget::updatedMusicViewSelectors);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewFilters,
+            this, &xMainMusicWidget::updatedMusicViewFilters);
 }
 void xMainMusicWidget::initializeView() {
     emit showWindowTitle(QApplication::applicationName());
@@ -585,6 +619,30 @@ void xMainMusicWidget::currentQueueTrackRightClicked(const QPoint& point) {
 void xMainMusicWidget::clearQueue() {
     // Clear playlist (queue).
     queueList->clearItems();
+}
+
+void xMainMusicWidget::updatedMusicViewFilters() {
+    auto visible = xPlayerConfiguration::configuration()->getMusicViewFilters();
+    artistFilterBox->setVisible(visible);
+    albumFilterBox->setVisible(visible);
+    trackFilterBox->setVisible(visible);
+    // Clear local filters if they are not visible
+    if (!visible) {
+        artistFilterLineEdit->clear();
+        albumFilterLineEdit->clear();
+        trackFilterLineEdit->clear();
+    }
+}
+
+void xMainMusicWidget::updatedMusicViewSelectors() {
+    auto visible = xPlayerConfiguration::configuration()->getMusicViewSelectors();
+    selectorTabs->setVisible(visible);
+    // Clear selectors if not visible
+    if (!visible) {
+        artistSelectorList->clear();
+        albumSelectorList->clear();
+        searchSelector->clear();
+    }
 }
 
 void xMainMusicWidget::updatedDatabaseMusicOverlay() {

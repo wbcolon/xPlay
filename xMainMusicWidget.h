@@ -26,6 +26,7 @@
 #include <QString>
 #include <QThread>
 #include <QStackedWidget>
+#include <QToolButton>
 
 #include <vector>
 #include <list>
@@ -347,6 +348,14 @@ private slots:
      */
     void showTagsDialog();
     /**
+     * Show or hide the selector tabs.
+     */
+    void updatedMusicViewSelectors();
+    /**
+     * Show or hide the filters.
+     */
+    void updatedMusicViewFilters();
+    /**
      * Update the music database overlay on configuration changes.
      */
     void updatedDatabaseMusicOverlay();
@@ -427,7 +436,15 @@ private:
      * @param parent pointer to the parent widget.
      * @return pair of pointer to the created QGroupBox and QListWidget.
      */
-    auto addGroupBox(const QString& boxLabel, QWidget* parent);
+    auto addListWidgetGroupBox(const QString& boxLabel, QWidget* parent);
+    /**
+     * Helper function creating a QGroupBox with an QLineEdit.
+     *
+     * @param boxLabel contains the label for the surrounding groupbox.
+     * @param parent pointer to the parent widget.
+     * @return pair of pointer to the created QGroupBox and QLineEdit.
+     */
+    auto addLineEditGroupBox(const QString& boxLabel, QWidget* parent);
 
     QStackedWidget* musicStacked;
     QWidget* musicListView;
@@ -437,9 +454,16 @@ private:
     xMusicLibraryFilter musicLibraryFilter;
     xPlayerMusicWidget* playerWidget;
     xPlayerListWidget* artistList;
+    QGroupBox* artistFilterBox;
+    QLineEdit* artistFilterLineEdit;
     xPlayerListWidget* albumList;
+    QGroupBox* albumFilterBox;
+    QLineEdit* albumFilterLineEdit;
     xPlayerListWidget* trackList;
+    QGroupBox* trackFilterBox;
+    QLineEdit* trackFilterLineEdit;
     QGroupBox* trackBox;
+    QTabWidget* selectorTabs;
     QListWidget* artistSelectorList;
     xPlayerMusicAlbumSelectorWidget* albumSelectorList;
     xPlayerMusicSearchWidget* searchSelector;
