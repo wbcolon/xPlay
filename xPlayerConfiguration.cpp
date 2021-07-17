@@ -26,6 +26,8 @@ const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDi
 const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors { "xPlay/MusicLibraryAlbumSelectors" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryTags { "xPlay/MusicLibraryTags" }; // NOLINT
+const QString xPlayerConfiguration_MusicViewSelectors { "xPlay/MusicViewSelectors" }; // NOLINT
+const QString xPlayerConfiguration_MusicViewFilters { "xPlay/MusicViewFilters" }; // NOLINT
 const QString xPlayerConfiguration_RotelWidget { "xPlay/RotelWidget" }; // NOLINT
 const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddress" }; // NOLINT
 const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" }; // NOLINT
@@ -45,6 +47,8 @@ const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor"
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors_Default { "(live) [hd] [mp3]" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryTags_Default { "[ballads] [epics] [favorites]" }; // NOLINT
+const bool xPlayerConfiguration_MusicViewSelectors_Default = true; // NOLINT
+const bool xPlayerConfiguration_MusicViewFilters_Default = false; // NOLINT
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
 const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = { // NOLINT
         { "qobuz", QUrl("https://play.qobuz.com/login") },
@@ -102,6 +106,22 @@ void xPlayerConfiguration::setMusicLibraryTags(const QStringList& tags) {
         settings->setValue(xPlayerConfiguration_MusicLibraryTags, tags.join(" "));
         settings->sync();
         emit updatedMusicLibraryTags();
+    }
+}
+
+void xPlayerConfiguration::setMusicViewSelectors(bool visible) {
+    if (visible != getMusicViewSelectors()) {
+        settings->setValue(xPlayerConfiguration_MusicViewSelectors, visible);
+        settings->sync();
+        emit updatedMusicViewSelectors();
+    }
+}
+
+void xPlayerConfiguration::setMusicViewFilters(bool visible) {
+    if (visible != getMusicViewFilters()) {
+        settings->setValue(xPlayerConfiguration_MusicViewFilters, visible);
+        settings->sync();
+        emit updatedMusicViewFilters();
     }
 }
 
@@ -280,6 +300,14 @@ QStringList xPlayerConfiguration::getMusicLibraryTags() {
     }
 }
 
+bool xPlayerConfiguration::getMusicViewSelectors() {
+    return settings->value(xPlayerConfiguration_MusicViewSelectors, xPlayerConfiguration_MusicViewSelectors_Default).toBool();
+}
+
+bool xPlayerConfiguration::getMusicViewFilters() {
+    return settings->value(xPlayerConfiguration_MusicViewFilters, xPlayerConfiguration_MusicViewFilters_Default).toBool();
+}
+
 bool xPlayerConfiguration::rotelWidget() {
     return settings->value(xPlayerConfiguration_RotelWidget, true).toBool();
 }
@@ -422,6 +450,8 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMusicLibraryExtensions();
     emit updatedMusicLibraryAlbumSelectors();
     emit updatedMusicLibraryTags();
+    emit updatedMusicViewSelectors();
+    emit updatedMusicViewFilters();
     emit updatedRotelNetworkAddress();
     emit updatedMovieLibraryTagsAndDirectories();
     emit updatedMovieLibraryExtensions();

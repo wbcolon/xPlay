@@ -50,10 +50,24 @@ public:
      * @param selectors a space separated list of album selectors.
      */
     void setMusicLibraryAlbumSelectors(const QString& selectors);
-
-
+    /**
+     * Set the list of tags for music files.
+     *
+     * @param tags list of tags as strings.
+     */
     void setMusicLibraryTags(const QStringList& tags);
-
+    /**
+     * Set the visibility status of the selectors widget.
+     *
+     * @param visible show selectors if true, hide otherwise.
+     */
+    void setMusicViewSelectors(bool visible);
+    /**
+     * Set the visibility status of the filters widget.
+     *
+     * @param visible show filters if true, hide otherwise.
+     */
+    void setMusicViewFilters(bool visible);
     /**
      * Set availability of the Rotel amp widget.
      *
@@ -184,6 +198,18 @@ public:
      * @return the list of tags as strings.
      */
     [[nodiscard]] QStringList getMusicLibraryTags();
+    /**
+     * Get the visibility of the selectors.
+     *
+     * @return true if the selectors are visible, false otherwise.
+     */
+    [[nodiscard]] bool getMusicViewSelectors();
+    /**
+     * Get the visibility of the filters.
+     *
+     * @return true if the filters are visible, false otherwise.
+     */
+    [[nodiscard]] bool getMusicViewFilters();
     /**
      * Return the availability of the Rotel amp widget.
      *
@@ -322,6 +348,14 @@ signals:
      * Signal an update of the tag list.
      */
     void updatedMusicLibraryTags();
+    /**
+     * Signal an update of the selectors visibility.
+     */
+    void updatedMusicViewSelectors();
+    /**
+     * Signal an update of the filters visibility.
+     */
+    void updatedMusicViewFilters();
     /**
      * Signal an update of the movie library directory.
      */
