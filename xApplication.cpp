@@ -405,6 +405,26 @@ void xApplication::createMenus() {
 #ifdef USE_STREAMING
     viewMenu->addAction(viewMenuSelectStreaming);
 #endif
+    viewMenu->addSeparator();
+    auto musicViewMenu = viewMenu->addMenu("Music View");
+    // Create actions for music view submenu.
+    auto musicViewSelectors = new QAction("Selectors", this);
+    musicViewSelectors->setCheckable(true);
+    musicViewSelectors->setChecked(xPlayerConfiguration::configuration()->getMusicViewSelectors());
+    connect(musicViewSelectors, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setMusicViewSelectors(checked);
+    });
+    auto musicViewFilters = new QAction("Filters", this);
+    musicViewFilters->setCheckable(true);
+    musicViewFilters->setChecked(xPlayerConfiguration::configuration()->getMusicViewFilters());
+    connect(musicViewFilters, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setMusicViewFilters(checked);
+    });
+    // Create music view submenu.
+    musicViewMenu->addAction(musicViewSelectors);
+    musicViewMenu->addAction(musicViewFilters);
+
+
     // Create actions for help menu
     auto helpMenuAboutQt = new QAction("About Qt", this);
     auto helpMenuAboutQwt = new QAction("About Qwt", this);

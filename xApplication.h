@@ -30,6 +30,8 @@
 #include <QMenu>
 #include <QAction>
 
+#include <mutex>
+
 class xApplication:public QMainWindow {
 public:
     explicit xApplication(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
@@ -181,6 +183,7 @@ private:
     xMainMovieWidget* mainMovieWidget;
     xMainStreamingWidget* mainStreamingWidget;
     xPlayerDBus* mainDbus;
+    std::mutex mainDbusMutex;
     QStackedWidget* mainView;
 };
 
