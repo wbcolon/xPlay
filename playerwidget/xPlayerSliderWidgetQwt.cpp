@@ -35,13 +35,19 @@ xPlayerSliderWidgetQwt::xPlayerSliderWidgetQwt(QWidget *parent, Qt::WindowFlags 
     trackSlider->setSpacing(2);
     // Create labels for length of the track and time played.
     // Labels located on the left and right of a slider.
-    trackLengthLabel = new QLabel(this);
-    trackLengthLabel->setAlignment(Qt::AlignCenter);
-    trackPlayedLabel = new QLabel(this);
-    trackPlayedLabel->setAlignment(Qt::AlignCenter);
+    trackLengthLabel = new QLCDNumber(this);
+    trackLengthLabel->setSegmentStyle(QLCDNumber::Flat);
+    trackLengthLabel->setFrameStyle(QFrame::NoFrame);
+    trackLengthLabel->setDigitCount(8);
+    trackLengthLabel->setFixedHeight(xPlayerLayout::LargeSpace);
+    trackPlayedLabel = new QLCDNumber(this);
+    trackPlayedLabel->setSegmentStyle(QLCDNumber::Flat);
+    trackPlayedLabel->setFrameStyle(QFrame::NoFrame);
+    trackPlayedLabel->setDigitCount(8);
+    trackPlayedLabel->setFixedHeight(xPlayerLayout::LargeSpace);
     sliderLayout->addWidget(trackPlayedLabel, 0, 0);
     sliderLayout->addWidget(trackLengthLabel, 0, 7);
-    sliderLayout->addWidget(trackSlider, 0, 1, 1, 6);
+    sliderLayout->addWidget(trackSlider, 0, 1, 2, 6);
     // Connect the track slider to the music player. Do proper conversion using lambdas.
     connect(trackSlider, &QwtSlider::sliderMoved, [=](double position) { emit seek(static_cast<qint64>(position)); } );
     // Setup max sections.
@@ -52,19 +58,28 @@ void xPlayerSliderWidgetQwt::clear() {
     // Reset the slider range.
     trackSlider->setLowerBound(0);
     trackSlider->setUpperBound(0);
-    // Clear the labels.
-    trackPlayedLabel->clear();
-    trackLengthLabel->clear();
+    // Clear the lcd numbers.
+    trackPlayedLabel->display("");
+    trackLengthLabel->display("");
 }
 
 void xPlayerSliderWidgetQwt::useHourScale(bool hourScale) {
     scaleDraw->useHourScale(hourScale);
     xPlayerSliderWidget::useHourScale(hourScale);
+    if (hourScale) {
+        // hours:minutes:seconds
+        trackPlayedLabel->setDigitCount(7);
+        trackLengthLabel->setDigitCount(7);
+    } else {
+        // minutes:seconds.hseconds
+        trackPlayedLabel->setDigitCount(8);
+        trackLengthLabel->setDigitCount(8);
+    }
 }
 
 void xPlayerSliderWidgetQwt::trackLength(qint64 length) {
     // Update the length of the current track.
-    trackLengthLabel->setText(millisecondsToLabel(length));
+    trackLengthLabel->display(millisecondsToLabel(length));
     // Set maximum of slider to the length of the track. Reset the slider position-
     trackSlider->setScaleStepSize(determineScaleDivider(length));
     trackSlider->setLowerBound(0);
@@ -74,7 +89,7 @@ void xPlayerSliderWidgetQwt::trackLength(qint64 length) {
 
 void xPlayerSliderWidgetQwt::trackPlayed(qint64 played) {
     // Update the time played for the current track.
-    trackPlayedLabel->setText(millisecondsToLabel(played));
+    trackPlayedLabel->display(millisecondsToLabel(played));
     // Update the slider position.
     trackSlider->setValue(played);
 }

@@ -38,10 +38,9 @@ void xPlayerSliderWidget::useScaleSections(int scaleSections) {
 QString xPlayerSliderWidget::millisecondsToLabel(qint64 ms) const {
 
     if (showHours) {
-        return QString("%1:%2:%3.%4").arg(ms/3600000).
+        return QString("%1:%2:%3").arg(ms/3600000).
                 arg((ms/60000)%60, 2, 10, QChar('0')).
-                arg((ms/1000)%60, 2, 10, QChar('0')).
-                arg((ms%1000)/10, 2, 10, QChar('0'));
+                arg((ms/1000)%60, 2, 10, QChar('0'));
     } else {
         return QString("%1:%2.%3").arg(ms/60000).
                 arg((ms/1000)%60, 2, 10, QChar('0')).

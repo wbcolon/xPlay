@@ -19,6 +19,7 @@
 #include <qwt/qwt_date_scale_draw.h>
 #include <qwt/qwt_slider.h>
 #include <QLabel>
+#include <QLCDNumber>
 #include <cmath>
 
 /*
@@ -79,8 +80,8 @@ public slots:
 private:
     QwtSlider* trackSlider;
     xPlayerWidgetScaleDraw* scaleDraw;
-    QLabel* trackLengthLabel;
-    QLabel* trackPlayedLabel;
+    QLCDNumber* trackLengthLabel;
+    QLCDNumber* trackPlayedLabel;
 };
 
 #endif
