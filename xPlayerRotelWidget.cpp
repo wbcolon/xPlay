@@ -154,7 +154,9 @@ void xPlayerRotelControls::setSource(const QString& src) {
     }
     auto srcIndex = Rotel_Sources.indexOf(src);
     if (srcIndex >= 0) {
-        auto srcResponse = sendCommand(Rotel_SetSource.arg(src));
+        // The command for setting pc usb must be "pcusb" even though the return message is "pc_usb"
+        // Therefore we need to remove any "_" in the set source command.
+        auto srcResponse = sendCommand(Rotel_SetSource.arg(src).remove("_"));
         emit source(src);
         qDebug() << "RotelControls: setSource: " << srcResponse;
     }
@@ -233,6 +235,16 @@ bool xPlayerRotelControls::isMuted() {
     }
 }
 
+QString xPlayerRotelControls::cleanupReplyMessage(const QString& message) {
+    qDebug() << "RotelControls: cleanupReplayMessage (before): " << message;
+    auto replyMessage = message;
+    while (replyMessage.startsWith("amp:freq")) {
+        replyMessage = replyMessage.remove(0, replyMessage.indexOf("$")+1);
+    }
+    qDebug() << "RotelControls: cleanupReplayMessage (after): " << replyMessage;
+    return replyMessage;
+}
+
 void xPlayerRotelControls::controlsConnected() {
     // Update UI if connected.
     emit volume(getVolume());
@@ -292,7 +304,7 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
         qCritical() << "xPlayerRotelControls::sendCommand: state is not connected. Disconnecting.";
         controlsDisconnected();
     }
-    return (readBytes > 0) ? QString(readBuffer) : QString();
+    return (readBytes > 0) ? cleanupReplyMessage(QString(readBuffer)) : QString();
 }
 
 

@@ -189,6 +189,13 @@ private slots:
      * Try to reconnect. If that fails try again in 60 seconds.
      */
     void controlsCheckConnection();
+    /**
+     * Cleanup any response commands that we do not support.
+     *
+     * @param message the raw reply message as string.
+     * @return the cleaned reply message as string.
+     */
+    QString cleanupReplyMessage(const QString& message);
 
 private:
     /**
