@@ -18,6 +18,7 @@
 
 #include <QApplication>
 #include <QResizeEvent>
+#include <QTimer>
 #include <QDebug>
 
 xPlayerListItemWidget::xPlayerListItemWidget(const QString& text, QWidget* parent):
@@ -28,6 +29,7 @@ xPlayerListItemWidget::xPlayerListItemWidget(const QString& text, QWidget* paren
         itemText(text),
         itemTextShortened(false),
         itemInitialized(false),
+        itemCurrentWidth(0),
         itemToolTip(),
         itemFile(nullptr) {
     itemLayout = new xPlayerLayout();
@@ -56,6 +58,7 @@ xPlayerListItemWidget::xPlayerListItemWidget(xMusicFile* file, QWidget* parent):
         itemText(),
         itemTextShortened(false),
         itemInitialized(false),
+        itemCurrentWidth(0),
         itemToolTip(),
         itemFile(file) {
     static auto timeLabelWidth = QFontMetrics(QApplication::font()).width("99:99");
@@ -143,10 +146,14 @@ qint64 xPlayerListItemWidget::updateTime() {
 void xPlayerListItemWidget::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     if (event != nullptr) {
-        if (itemInitialized) {
-            updateTrackName(event->size().width());
-        } else {
-            itemInitialized = true;
+        auto itemWidth = event->size().width();
+        if (itemCurrentWidth != itemWidth) {
+            itemCurrentWidth = itemWidth;
+            if (itemInitialized) {
+                updateTrackName(event->size().width());
+            } else {
+                itemInitialized = true;
+            }
         }
     }
 }
@@ -215,6 +222,7 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent):
         dragDropFromIndex(-1),
         dragDropToIndex(-1),
         currentMatch() {
+    connect(this, &xPlayerListWidget::itemWidgetsIterate, this, &xPlayerListWidget::addItemWidgetsWorker);
 }
 
 void xPlayerListWidget::enableSorting(bool sorted) {
@@ -284,6 +292,26 @@ void xPlayerListWidget::addItemWidgets(const std::vector<xMusicFile*>& files, co
         mapItems[item] = widget;
     }
     updateFilter(currentMatch);
+}
+void xPlayerListWidget::addItemWidgets(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files) {
+    int maxFiles = 0;
+    for (const auto& file : files) {
+        maxFiles += static_cast<int>(file.second.size());
+    }
+    addItemWidgetsWorker(files, files.begin(), 0, maxFiles);
+}
+
+void xPlayerListWidget::addItemWidgetsWorker(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files,
+                                             QList<std::pair<QString, std::vector<xMusicFile*>>>::const_iterator filesIterator,
+                                             int currentFiles, int maxFiles) {
+    qDebug() << "xPlayerListWidget::addItemWidgetsWorker: " << filesIterator->first;
+    addItemWidgets(filesIterator->second, filesIterator->first);
+    currentFiles += static_cast<int>(filesIterator->second.size());
+    emit itemWidgetsProgress(currentFiles, maxFiles);
+    if (filesIterator != files.end()) {
+        auto nextFilesIterator = ++filesIterator;
+        QTimer::singleShot(50, [=]() { emit itemWidgetsIterate(files, nextFilesIterator, currentFiles, maxFiles); });
+    }
 }
 
 

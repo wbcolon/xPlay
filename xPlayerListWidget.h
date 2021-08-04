@@ -114,6 +114,7 @@ private:
     QString itemText;
     bool itemTextShortened;
     bool itemInitialized;
+    int itemCurrentWidth;
     QString itemToolTip;
     xMusicFile* itemFile;
 };
@@ -168,6 +169,12 @@ public:
      * @param tooltip  the text of the tooltip as string.
      */
     void addItemWidgets(const std::vector<xMusicFile*>& files, const QString& tooltip);
+    /**
+     * Add list of pairs of tooltip and item vector.
+     *
+     * @param files list of pairs of tooltip and vector of pointer to associated music file objects.
+     */
+    void addItemWidgets(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files);
     /**
      * Find the item widgets that match the given text.
      *
@@ -241,6 +248,24 @@ signals:
      * @param toIndex the index the element is inserted before.
      */
     void dragDrop(int fromIndex, int toIndex);
+    /**
+     * Signal used to update larger list in stages.
+     *
+     * @param files list of pairs of tooltip and vector of pointer to associated music file objects.
+     * @param fileIterator iterator to the list element to be added.
+     * @param currentFiles current number of files inserted.
+     * @param maxFiles maximal number of files inserted overall.
+     */
+    void itemWidgetsIterate(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files,
+                            QList<std::pair<QString, std::vector<xMusicFile*>>>::const_iterator fileIterator,
+                            int currentFiles, int maxFiles);
+    /**
+     * Signal emitted when inserted in stages.
+     *
+     * @param current the current number of items inserted.
+     * @param max the maximal number of items to be inserted.
+     */
+    void itemWidgetsProgress(int current, int max);
 
 protected:
     /**
@@ -279,6 +304,17 @@ private:
      * Called upon finishing the thread.
      */
     void updateItemsWorkerFinished();
+    /**
+     * Worker used to add items in stages.
+     *
+     * @param files list of pairs of tooltip and vector of pointer to associated music file objects.
+     * @param fileIterator iterator to the list element to be added.
+     * @param currentFiles current number of files inserted.
+     * @param maxFiles maximal number of files inserted overall.
+     */
+    void addItemWidgetsWorker(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files,
+                              QList<std::pair<QString, std::vector<xMusicFile*>>>::const_iterator filesIterator,
+                              int currentFiles, int maxFiles);
 
     bool sortItems;
     std::map<QListWidgetItem*,xPlayerListItemWidget*> mapItems;
