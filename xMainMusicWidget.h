@@ -31,6 +31,7 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <QProgressBar>
 
 class xMainMusicWidget: public QWidget {
     Q_OBJECT
@@ -111,7 +112,7 @@ signals:
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      */
-    void finishedQueueTracks();
+    void finishedQueueTracks(bool autoPlay);
     /**
      * Signal the dequeue of a single track
      *
@@ -188,7 +189,15 @@ private slots:
      * @param artistItem pointer to the currently selected row.
      */
     void queueArtist(QListWidgetItem* artistItem);
-
+    /**
+     * Create context menu for artist info and transitions.
+     *
+     * Function is triggered by a right-click on an artist in the list of
+     * artists. The menu contains the artist info and the top transitions
+     * to and from the current artist.
+     *
+     * @param point position for the context menu.
+     */
     void currentArtistContextMenu(const QPoint& point);
     /**
      * Scan for tracks of the selected artist/album.
@@ -468,6 +477,7 @@ private:
     xPlayerMusicAlbumSelectorWidget* albumSelectorList;
     xPlayerMusicSearchWidget* searchSelector;
     xPlayerListWidget* queueList;
+    QProgressBar* queueProgress;
     QGroupBox* queueBox;
     int playedTrack;
     bool useDatabaseMusicOverlay;

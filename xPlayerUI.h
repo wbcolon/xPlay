@@ -27,6 +27,8 @@ const int xPlayerAlbumListMinimumWidth = 550;
 const int xPlayerTracksListMinimumWidth = 400;
 const int xPlayerQueueListMinimumWidth = 400;
 
+const int xPlayerQueueCriticalNumberEntries = 10000;
+
 const int xPlayerIconSize = 24;
 
 class xPlayerLayout:public QGridLayout {

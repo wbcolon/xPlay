@@ -29,8 +29,8 @@
 #include <QRandomGenerator>
 #include <QDateTime>
 #include <QCheckBox>
-#include <QButtonGroup>
 #include <QMenu>
+#include <QMessageBox>
 #include <random>
 
 // Function addListWidgetGroupBox has to be defined before the constructor due to the auto return.
@@ -151,9 +151,12 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     auto queueTagsButton = new QPushButton(tr("Tags"), queueBox);
     // Playlist menu.
     auto queuePlaylistButton = new QPushButton(tr("Playlist"), queueBox);
+    queueProgress = new QProgressBar(queueBox);
+    queueProgress->setVisible(false);
     queuePlaylistButton->setFlat(false);
-    queueBoxLayout->addWidget(queueList, 0, 0, 8, 4);
-    queueBoxLayout->addRowSpacer(8, xPlayerLayout::MediumSpace);
+    queueBoxLayout->addWidget(queueList, 0, 0, 7, 4);
+    queueBoxLayout->addRowSpacer(7, xPlayerLayout::MediumSpace);
+    queueBoxLayout->addWidget(queueProgress, 8, 0, 1, 4);
     queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
     queueBoxLayout->addWidget(queueTagsButton, 9, 2);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 3);
@@ -228,6 +231,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewFilters,
             this, &xMainMusicWidget::updatedMusicViewFilters);
 }
+
 void xMainMusicWidget::initializeView() {
     emit showWindowTitle(QApplication::applicationName());
     emit showMenuBar(true);
@@ -296,7 +300,7 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
         queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(artist, albumTrack.first));
         emit queueTracks(artist, albumTrack.first, albumTrack.second);
     }
-    emit finishedQueueTracks();
+    emit finishedQueueTracks(true);
     // Update items.
     queueList->updateItems();
     // Restore the waiting cursor.
@@ -305,21 +309,63 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
 
 void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString,
                                                         std::vector<xMusicFile*>>>>>& listTracks) {
-    // Update queue list UI.
-    for (const auto& listTrack : listTracks) {
-        for (const auto& albumTrack : listTrack.second) {
-            queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(listTrack.first, albumTrack.first));
+
+    // Compute the number of files to be inserted.
+    int maxListTracks = 0;
+    for (const auto& listElem : listTracks) {
+        for (const auto& albumTrack : listElem.second) {
+            maxListTracks += static_cast<int>(albumTrack.second.size());
         }
     }
-    // Update items.
+    qDebug() << "scannedListArtistsAllAlbumTracks: maxFiles: " << maxListTracks;
+
+    if (maxListTracks > xPlayerQueueCriticalNumberEntries) {
+        QApplication::restoreOverrideCursor();
+        auto result = QMessageBox::warning(this, tr("Queue"),
+                                           tr("Do you want to add %1 tracks to the queue?\n"
+                                              "This process may takes several minutes and it cannot be aborted.").
+                                                   arg(maxListTracks),  QMessageBox::Cancel | QMessageBox::Ok,
+                                           QMessageBox::Ok);
+        if (result == QMessageBox::Cancel) {
+            return;
+        }
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+    }
+
+    int currentListTracks = 0;
+    // Disable updates for other lists while queueing.
+    artistList->setUpdatesEnabled(false);
+    albumList->setUpdatesEnabled(false);
+    trackList->setUpdatesEnabled(false);
+    queueList->setUpdatesEnabled(false);
+    // Setup and show the progress bar.
+    queueProgress->setRange(0, maxListTracks);
+    queueProgress->setVisible(true);
+    for (const auto& listElem : listTracks) {
+        // Update progress bar including format.
+        queueProgress->setFormat(QString("%1 - %p%").arg(listElem.first));
+        queueProgress->setValue(currentListTracks);
+        for (const auto& albumTrack : listElem.second) {
+            qDebug() << "scannedListArtistsAllAlbumTracks: " << listElem.first << "," << albumTrack.first;
+            // Update queue list UI.
+            queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(listElem.first, albumTrack.first));
+            // Queue items.
+            emit queueTracks(listElem.first, albumTrack.first, albumTrack.second);
+            // Update progress bar.
+            currentListTracks += static_cast<int>(albumTrack.second.size());
+            queueProgress->setValue(currentListTracks);
+        }
+    }
+    // Restore updates on the lists.
+    artistList->setUpdatesEnabled(true);
+    albumList->setUpdatesEnabled(true);
+    trackList->setUpdatesEnabled(true);
+    queueList->setUpdatesEnabled(true);
+    // Update UI and finish queuing.
     queueList->updateItems();
-    // Queue the tracks.
-    for (const auto& listTrack : listTracks) {
-        for (const auto& albumTrack : listTrack.second) {
-            emit queueTracks(listTrack.first, albumTrack.first, albumTrack.second);
-        }
-    }
-    emit finishedQueueTracks();
+    emit finishedQueueTracks(false);
+    // Hide the progress bar again.
+    queueProgress->setVisible(false);
     // Restore the waiting cursor.
     QApplication::restoreOverrideCursor();
 }
@@ -454,7 +500,7 @@ void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
         // Signal the set tracks to be queued by the music player.
         emit queueTracks(artistName, albumName, trackObjects);
         // Finished queueing tracks.
-        emit finishedQueueTracks();
+        emit finishedQueueTracks(true);
         // Update items.
         queueList->updateItems();
     }
@@ -702,7 +748,7 @@ void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
             // Signal the set tracks to be queued by the music player.
             emit queueTracks(artistName, albumName, trackObjects);
             // Signal finish adding tracks.
-            emit finishedQueueTracks();
+            emit finishedQueueTracks(true);
             // Update items.
             queueList->updateItems();
         }
