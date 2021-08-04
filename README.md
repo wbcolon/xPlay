@@ -91,13 +91,16 @@ xPlay has a music view, a movie view and a streaming view.
 ![Screenshot Music View (database)](screenshots/xplay_screenshot_music_view_02.png)
 ![Screenshot Music View (search)](screenshots/xplay_screenshot_music_view_03.png)
 ![Screenshot Music View (playlists)](screenshots/xplay_screenshot_music_view_04.png)
-![Screenshot Music View (artistinfo)](screenshots/xplay_screenshot_music_view_05.png)
+![Screenshot Music View (tags)](screenshots/xplay_screenshot_music_view_05.png)
+![Screenshot Music View (tag popup)](screenshots/xplay_screenshot_music_view_06.png)
+![Screenshot Music View (artistinfo popup)](screenshots/xplay_screenshot_music_view_07.png)
+![Screenshot Music View (artistinfo)](screenshots/xplay_screenshot_music_view_08.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select)
 on an album. If you double-click on a track in the track list, then the track and the following tracks of the list
 are added to the queue. If you right-click on a track in the track list, then only this track will be added to the
-queue. Then entire album can be queued by a double-click on the corresponding album entry. A double-click on an
+queue. Then entire album can be queued by a double click on the corresponding album entry. A double click on an
 artist entry will queue all albums for the clicked artist.
 
 The queue does support a shuffle mode in which the queued tracks will be played at random. The jump to an individual
@@ -113,7 +116,7 @@ track has been played and the last time it was played. The overlay makes it easi
 listen too in some time or at all.
 
 The player itself displays the artist, album and track currently played. It includes a slider to seek within the
-currently played file. In addition there is player control section with a *play/pause*, *stop*, *prev*, *next*
+currently played file. In addition, there is player control section with a *play/pause*, *stop*, *prev*, *next*
 and *clear queue* buttons and a volume dialer. If you double-click on an entry of the queue then the player jumps
 to this track. Right-clicking on a queue entry will remove this track from the queue.
 
@@ -135,10 +138,12 @@ The Rotel widget allows to control a Rotel A12 or A14 amp via a network connecti
 (maximum of 60) and the input can be selected. The values for bass and treble can be adjusted (from -10 to +10)
 as well as the balance (from -5 to +5).
 
-#### Selectors
+#### Selectors and Filters
 
 The selectors are located at the bottom of the music view and include an artist selector, an album selector and
-an a search bar.
+an a search bar. A filter is available that can be applied to the artist, album or track list. 
+The selectors as well as the filters can be made accessible through the *View* menu and the *Music View* sub menu.
+
 
 ##### Artist Selector
 
@@ -177,6 +182,11 @@ artists and albums are displayed that contain a track matching the search text. 
 displayed, not only the tracks matching. The search based filtering will be added on top of the album selector based
 filtering. It is therefore possible to search for a specific track that has not yet been played and that contains the
 *(live)* tag.
+
+##### Filters
+
+The filter is applied on the list widget itself and therefore can be combined with the selectors. A list widget item
+is shown if it matches the given filter string.
 
 
 ### Movie View

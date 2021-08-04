@@ -1,8 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.9.2 - 2021-08-04
 
-- Replace close pushbutton with close icon toolbutton.
+- Replace close pushbutton with close icon tool button.
+- Add filter for list widgets.
+- Add select option for local filter and selector widget.
+- Update QWT slider widget with LCD numbers.
+- Fixed bug in control of Rotel amp.
+- Improve adding tracks to the queue. Show progress bar and possibly warning dialog.
 
 
 ## 0.9.1 - 2021-06-13

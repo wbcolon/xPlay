@@ -6,6 +6,7 @@ TODO:
 (FIXED) - player at last queue song (still playing). Songs added to the queue are not played after last song finished.
 (FIXED) - movie files stopping after the end of playback sometimes problematic.
 (FIXED) rescan of music library while first scan active does not work properly.
-- the same track in queue twice may confuse the queue UI.
+- the same track in queue twice may confuse the queue UI (to be verified).
 - mute volume directly after startup (possibly before playback) does not work.
 - fix selectors if mixed case naming is used (to be verified).
+- changing font sizes while running causes UI layout issues.
