@@ -67,8 +67,9 @@ void xMusicPlayerQt::queueTracks(const QString& artist, const QString& album, co
     }
 }
 
-void xMusicPlayerQt::finishedQueueTracks() {
+void xMusicPlayerQt::finishedQueueTracks(bool autoPlay) {
     // No need to do anything here.
+    Q_UNUSED(autoPlay)
 }
 
 void xMusicPlayerQt::moveQueueTracks(int fromIndex, int toIndex) {

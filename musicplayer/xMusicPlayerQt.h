@@ -60,7 +60,7 @@ public slots:
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      */
-    void finishedQueueTracks() override;
+    void finishedQueueTracks(bool autoPlay) override;
     /**
      * Move the queue track after drag-drop action.
      *

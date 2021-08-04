@@ -60,9 +60,9 @@ void xMusicPlayerPhonon::queueTracks(const QString& artist, const QString& album
     }
 }
 
-void xMusicPlayerPhonon::finishedQueueTracks() {
+void xMusicPlayerPhonon::finishedQueueTracks(bool autoPlay) {
     // Enable auto play if playlist is currently emtpy and we are in a stopped state..
-    bool autoPlay = ((musicPlayer->queue().empty()) && (musicPlayer->state() == Phonon::StoppedState));
+    autoPlay = autoPlay && ((musicPlayer->queue().empty()) && (musicPlayer->state() == Phonon::StoppedState));
     // Check if there is an invalid or empty file.
     bool noMedia = ((musicPlayer->currentSource().type() == Phonon::MediaSource::Invalid) ||
                     (musicPlayer->currentSource().type() == Phonon::MediaSource::Empty));
@@ -227,7 +227,7 @@ void xMusicPlayerPhonon::loadQueueFromPlaylist(const QString& name) {
         }
     }
     emit playlist(playlistEntries);
-    finishedQueueTracks();
+    finishedQueueTracks(false);
 }
 
 void xMusicPlayerPhonon::loadQueueFromTag(const QString& tag, bool extend) {
@@ -274,7 +274,7 @@ void xMusicPlayerPhonon::loadQueueFromTag(const QString& tag, bool extend) {
         }
     }
     emit playlist(taggedEntries);
-    finishedQueueTracks();
+    finishedQueueTracks(false);
 }
 
 void xMusicPlayerPhonon::saveQueueToPlaylist(const QString& name) {

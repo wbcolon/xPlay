@@ -65,7 +65,7 @@ public slots:
      * Called after the one or more queueTracks. The permutation for shuffle mode is computed
      * and the state of autoplay is determined and acted on.
      */
-    void finishedQueueTracks() override;
+    void finishedQueueTracks(bool autoPlay) override;
     /**
      * Move the queue track after drag-drop action.
      *

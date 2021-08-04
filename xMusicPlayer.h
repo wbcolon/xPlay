@@ -168,7 +168,7 @@ public slots:
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      */
-    virtual void finishedQueueTracks() = 0;
+    virtual void finishedQueueTracks(bool autoPlay) = 0;
     /**
      * Move the queue track after drag-drop action.
      *
