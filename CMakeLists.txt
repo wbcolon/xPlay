@@ -5,10 +5,8 @@ project(xPlay)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
-
-if(CMAKE_VERSION VERSION_LESS "3.7.0")
-    set(CMAKE_INCLUDE_CURRENT_DIR ON)
-endif()
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,12 +20,14 @@ option(USE_PHONON "Use the Phonon based media player instead of Qt" ON)
 option(USE_VLC "Use the VLC based movie media player instead of Qt" ON)
 option(USE_QWT "Use the Qwt based player widget instead of Qt" ON)
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
+option(USE_TESTS "Build the tests for xPlay instead of the application" OFF)
 configure_file(xPlayerConfig.h.in xPlayerConfig.h)
 
 find_package(Qt5 COMPONENTS Widgets DBus REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
 find_package(Qt5MultimediaWidgets REQUIRED)
 find_package(Qt5WebEngineWidgets REQUIRED)
+find_package(Qt5Test REQUIRED)
 find_package(Phonon4Qt5)
 find_package(SQLite3)
 find_package(PkgConfig REQUIRED)
@@ -40,9 +40,9 @@ set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 
 if (USE_PHONON)
-    set(XMUSICPLAYERX musicplayer/xMusicPlayerPhonon.cpp)
+    set(xPlay_xMusicPlayerX musicplayer/xMusicPlayerPhonon.cpp)
 else()
-    set(XMUSICPLAYERX musicplayer/xMusicPlayerQt.cpp)
+    set(xPlay_xMusicPlayerX musicplayer/xMusicPlayerQt.cpp)
 endif()
 
 if (USE_VLC)
@@ -50,30 +50,33 @@ if (USE_VLC)
     set(CMAKE_REQUIRED_INCLUDES "${VLCLIB_INCLUDE_DIRS}")
     set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
 
-    set(XMOVIEPLAYERX movieplayer/xMoviePlayerVLC.cpp)
+    set(xPlay_xMoviePlayerX movieplayer/xMoviePlayerVLC.cpp)
 else()
-    set(XMOVIEPLAYERX movieplayer/xMoviePlayerPhonon.cpp)
+    set(xPlay_xMoviePlayerX movieplayer/xMoviePlayerPhonon.cpp)
 endif()
 
 if (USE_QWT)
-    set(XPLAYERWIDGETX playerwidget/xPlayerSliderWidgetQwt.cpp playerwidget/xPlayerVolumeWidgetQwt.cpp playerwidget/xPlayerBalanceWidgetQwt.cpp)
+    set(xPlay_xPlayerWidgetX playerwidget/xPlayerSliderWidgetQwt.cpp playerwidget/xPlayerVolumeWidgetQwt.cpp playerwidget/xPlayerBalanceWidgetQwt.cpp)
+    set(xPlay_xPlayerWidgetX_library qwt-qt5)
 else()
-    set(XPLAYERWIDGETX playerwidget/xPlayerSliderWidgetQt.cpp playerwidget/xPlayerVolumeWidgetQt.cpp playerwidget/xPlayerBalanceWidgetQt.cpp)
+    set(xPlay_xPlayerWidgetX playerwidget/xPlayerSliderWidgetQt.cpp playerwidget/xPlayerVolumeWidgetQt.cpp playerwidget/xPlayerBalanceWidgetQt.cpp)
+    set(xPlay_xPlayerWidgetX_library)
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR} ${SQLITE3_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${SQLITE3_INCLUDE_DIRS})
 
-add_executable(xPlay
+set(xPlay_sources
+        xMusicFile.cpp
+        xMusicLibrary.cpp
+        xMovieLibrary.cpp
         xPlayerConfig.h
         xPlayerUI.cpp
         xPlayerConfiguration.cpp
         xPlayerDatabase.cpp
-        xMusicLibrary.cpp
-        xMovieLibrary.cpp
         xMusicPlayer.cpp
-        xMusicFile.cpp
-        ${XMOVIEPLAYERX}
-        ${XMUSICPLAYERX}
+        ${xPlay_xMoviePlayerX}
+        ${xPlay_xMusicPlayerX}
         xPlayerArtistInfo.cpp
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp
@@ -85,7 +88,7 @@ add_executable(xPlay
         xPlayerSliderWidget.cpp
         xPlayerBalanceWidget.cpp
         xPlayerControlButtonWidget.cpp
-        ${XPLAYERWIDGETX}
+        ${xPlay_xPlayerWidgetX}
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
         xPlayerMusicAlbumSelectorWidget.cpp
@@ -94,16 +97,30 @@ add_executable(xPlay
         xMainStreamingWidget.cpp
         xApplication.cpp
         xPlayerDBus.cpp
-        xPlay.cpp
-        xPlay.qrc
-)
+        )
 
-target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
+set(xPlay_libraries
+        Qt5::WebEngineWidgets Qt5::Widgets Qt5::Multimedia Qt5::MultimediaWidgets Qt5::DBus
+        ${xPlay_xPlayerWidgetX_library}
+        Phonon::phonon4qt5
+        sqlite3
+        ${TAGLIB_LIBRARIES}
+        ${VLCLIB_LIBRARIES})
 
-if (USE_QWT)
-    target_link_libraries(xPlay Qt5::WebEngineWidgets qwt-qt5 Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} sqlite3 ${VLCLIB_LIBRARIES})
+if (USE_TESTS)
+    add_executable(test_xPlay
+            ${xPlay_sources}
+            tests/test_xMusicFile.cpp
+            tests/test_xMusicLibrary.cpp
+            tests/test_xPlay.cpp)
+    target_link_libraries(test_xPlay Qt5::Test ${xPlay_libraries})
 else()
-    target_link_libraries(xPlay Qt5::WebEngineWidgets Qt5::Widgets Qt5::DBus Phonon::phonon4qt5 ${TAGLIB_LIBRARIES} sqlite3 ${VLCLIB_LIBRARIES})
+    add_executable(xPlay
+            ${xPlay_sources}
+            xPlay.cpp
+            xPlay.qrc
+            )
+    target_link_libraries(xPlay ${xPlay_libraries})
+    target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
 endif()
 
-QT5_USE_MODULES(xPlay Multimedia MultimediaWidgets)
