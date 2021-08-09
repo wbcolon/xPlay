@@ -31,6 +31,7 @@
 #include <QCheckBox>
 #include <QMenu>
 #include <QMessageBox>
+#include <QTimer>
 #include <random>
 
 // Function addListWidgetGroupBox has to be defined before the constructor due to the auto return.
@@ -230,6 +231,12 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             this, &xMainMusicWidget::updatedMusicViewSelectors);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewFilters,
             this, &xMainMusicWidget::updatedMusicViewFilters);
+
+#if 0
+    // Part of the alternate implementation for inserting chunks of tracks into the queue.
+    connect(this, &xMainMusicWidget::scanAllAlbumsForListArtistsIterate,
+            this, &xMainMusicWidget::scannedAllAlbumsForListArtistsWorker);
+#endif
 }
 
 void xMainMusicWidget::initializeView() {
@@ -368,6 +375,60 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
     queueProgress->setVisible(false);
     // Restore the waiting cursor.
     QApplication::restoreOverrideCursor();
+
+#if 0
+    // Alternative implementation that does not block the queue during update.
+    // Issue. Blocking occurs later as with approach above, when items are visualized.
+    artistList->setUpdatesEnabled(false);
+    albumList->setUpdatesEnabled(false);
+    trackList->setUpdatesEnabled(false);
+    queueList->setUpdatesEnabled(false);
+
+    queueProgress->setRange(0, maxListTracks);
+    queueProgress->setVisible(true);
+
+    emit scanAllAlbumsForListArtistsIterate(listTracks, listTracks.begin(), 0, maxListTracks);
+#endif
+}
+
+void xMainMusicWidget::scannedAllAlbumsForListArtistsWorker(
+        const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks,
+        const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>::const_iterator& listTracksIterator,
+        int currentFiles, int maxFiles) {
+
+    if (listTracksIterator != listTracks.end()) {
+        // Update progress bar including format.
+        queueProgress->setFormat(QString("%1 - %p%").arg(listTracksIterator->first));
+        queueProgress->setValue(currentFiles);
+        for (const auto& albumTrack : listTracksIterator->second) {
+            qDebug() << "scannedListArtistsAllAlbumTracks: " << listTracksIterator->first << "," << albumTrack.first;
+            // Update queue list UI.
+            queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(listTracksIterator->first, albumTrack.first));
+            // Queue items.
+            emit queueTracks(listTracksIterator->first, albumTrack.first, albumTrack.second);
+            // Update progress bar.
+            currentFiles += static_cast<int>(albumTrack.second.size());
+            queueProgress->setValue(currentFiles);
+        }
+        QTimer::singleShot(50, [=]() {
+            auto nextTracksInterator = listTracksIterator;
+            ++nextTracksInterator;
+            emit scanAllAlbumsForListArtistsIterate(listTracks, nextTracksInterator, currentFiles, maxFiles);
+        });
+    } else {
+        // Restore updates on the lists.
+        artistList->setUpdatesEnabled(true);
+        albumList->setUpdatesEnabled(true);
+        trackList->setUpdatesEnabled(true);
+        queueList->setUpdatesEnabled(true);
+        // Update UI and finish queuing.
+        queueList->updateItems();
+        emit finishedQueueTracks(false);
+        // Hide the progress bar again.
+        queueProgress->setVisible(false);
+        // Restore the waiting cursor.
+        QApplication::restoreOverrideCursor();
+    }
 }
 
 void xMainMusicWidget::updateScannedArtistsSelectors(const std::set<QString> &selectors) {

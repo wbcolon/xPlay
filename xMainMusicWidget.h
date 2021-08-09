@@ -125,6 +125,17 @@ signals:
      * @param index the position of the track in the playlist.
      */
     void play(int index);
+    /**
+     * Signal used to update queue with larger list in stages.
+     *
+     * @param listTracks list of pair of album and list of track objects (sorted) for a list of artists.
+     * @param listTracksIterator iterator to the list element to be added.
+     * @param currentListTracks current number of tracks inserted.
+     * @param maxListTracks maximal number of tracks inserted overall.
+     */
+    void scanAllAlbumsForListArtistsIterate(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks,
+                                            const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>::const_iterator& listTracksIterator,
+                                            int currentListTracks, int maxListTracks);
 
 public slots:
     /**
@@ -384,6 +395,21 @@ private slots:
      * @param total the total time (in ms) to be displayed, clear if 0.
      */
     void updateQueueTotalTime(qint64 total);
+    /**
+     * Worker function that inserts a chunk of tracks into queue.
+     *
+     * The functions inserts the tracks into the list to which the list iterator is currently pointing to.
+     * A signal is emitted in order to insert the the next chunk of tracks into the queue without blocking the
+     * event queue.
+     *
+     * @param listTracks list of pair of album and list of track objects (sorted) for a list of artists.
+     * @param listTracksIterator iterator to the list element to be added.
+     * @param currentListTracks current number of tracks inserted.
+     * @param maxListTracks maximal number of tracks inserted overall.
+     */
+    void scannedAllAlbumsForListArtistsWorker(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks,
+                                              const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>::const_iterator& listTracksIterator,
+                                              int currentListTracks, int maxListTracks);
 
 private:
     /**
