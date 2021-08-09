@@ -60,7 +60,8 @@ xPlayerListItemWidget::xPlayerListItemWidget(xMusicFile* file, QWidget* parent):
         itemInitialized(false),
         itemCurrentWidth(0),
         itemToolTip(),
-        itemFile(file) {
+        itemFile(file),
+        itemTextInitialized(false) {
     static auto timeLabelWidth = QFontMetrics(QApplication::font()).width("99:99");
     itemLayout = new xPlayerLayout();
     itemLayout->setSpacing(0);
@@ -93,7 +94,12 @@ xPlayerListItemWidget::xPlayerListItemWidget(xMusicFile* file, QWidget* parent):
     itemInitialized = false;
     // Setting fixed height will trigger update event. We will ignore this first one.
     setFixedHeight(sizeHint().height()); // NOLINT
-    //updateTrackName(sizeHint().width()); // NOLINT
+    // Compute font related sizes.
+    static auto textFontMetrics = QFontMetrics(QApplication::font());
+    itemTextWidth = textFontMetrics.width(itemText);
+    // Average width of a single character, round upwards.
+    itemTextCharacterWidth = (itemTextWidth + itemText.length() - 1) / itemText.length();
+    itemFixedWidth = itemTimeLabel->width() + xPlayerLayout::HugeSpace + xPlayerLayout::MediumSpace;
 }
 
 void xPlayerListItemWidget::setIcon(const QString& fileName) {
@@ -102,6 +108,7 @@ void xPlayerListItemWidget::setIcon(const QString& fileName) {
     } else {
         itemIconLabel->setPixmap(QIcon(fileName).pixmap(xPlayerLayout::MediumSpace, xPlayerLayout::MediumSpace));
         itemIconLabel->setFixedWidth(xPlayerLayout::MediumSpace);
+        // Re-align due to extra space in second layout columns.
         itemLayout->removeWidget(itemTextLabel);
         itemLayout->addWidget(itemTextLabel, 0, 2, 1, 8);
     }
@@ -111,6 +118,7 @@ void xPlayerListItemWidget::removeIcon() {
     if (itemIconLabel != nullptr) {
         itemIconLabel->clear();
         itemLayout->removeWidget(itemTextLabel);
+        // Re-align due to extra space in second layout columns.
         itemLayout->addWidget(itemTextLabel, 0, 0, 1, 10);
     }
 }
@@ -159,18 +167,13 @@ void xPlayerListItemWidget::resizeEvent(QResizeEvent* event) {
 }
 
 void xPlayerListItemWidget::updateTrackName(int width) {
-    // We do not shorten the track name if we do not have displayed time.
-    if (itemTimeLabel == nullptr) {
+    // We do not shorten the track name if we do not have displayed time or the width is sufficient.
+    if ((itemTimeLabel == nullptr) || ((itemTextInitialized) && (width > itemTextWidth+itemFixedWidth))) {
         return;
     }
-    static auto textFontMetrics = QFontMetrics(QApplication::font());
-    auto fixedWith = itemTimeLabel->sizeHint().width() + xPlayerLayout::HugeSpace;
-    if (itemIconLabel) {
-        fixedWith += itemIconLabel->sizeHint().width();
-    }
-    auto textWidth = textFontMetrics.width(itemText);
-    if (width < textWidth+fixedWith) {
-        itemTextLabel->setText(shortenedTrackName(width-fixedWith));
+    itemTextInitialized = true;
+    if (width < itemTextWidth+itemFixedWidth) {
+        itemTextLabel->setText(shortenedTrackName(width-itemFixedWidth));
         // Only update if the state has changed.
         if (!itemTextShortened) {
             itemTextShortened = true;
@@ -204,12 +207,9 @@ void xPlayerListItemWidget::updateToolTip() {
 
 QString xPlayerListItemWidget::shortenedTrackName(int width) {
     auto text = itemText;
-    static auto textFontMetrics = QFontMetrics(QApplication::font());
-    static auto dotsWidth = textFontMetrics.width("...");
-    do {
-        // Keep on removing the last character.
-        text.remove(-1, 1);
-    } while ((!text.isEmpty()) && (textFontMetrics.width(text)+dotsWidth > width));
+    // Determine the number of characters to be removed in order to fit.
+    auto removeCharacters = 3 + (itemTextWidth - width + itemTextCharacterWidth - 1) / itemTextCharacterWidth;
+    text.remove(-removeCharacters, removeCharacters);
     return text+"...";
 }
 
@@ -245,7 +245,10 @@ void xPlayerListWidget::addItemWidget(const QString& text, const QString& toolti
     setItemWidget(item, widget);
     item->setSizeHint(widget->sizeHint());
     mapItems[item] = widget;
-    updateFilter(currentMatch);
+    // Update filter.
+    if (!currentMatch.isEmpty()) {
+        item->setHidden(!text.contains(currentMatch, Qt::CaseInsensitive));
+    }
 }
 
 void xPlayerListWidget::addItemWidget(xMusicFile* file) {
@@ -256,7 +259,6 @@ void xPlayerListWidget::addItemWidgets(const QStringList& list) {
     for (const auto& element : list) {
         addItemWidget(element);
     }
-    updateFilter(currentMatch);
 }
 
 void xPlayerListWidget::addItemWidget(xMusicFile* file, const QString& tooltip) {
@@ -270,11 +272,14 @@ void xPlayerListWidget::addItemWidget(xMusicFile* file, const QString& tooltip) 
     setItemWidget(item, widget);
     item->setSizeHint(widget->sizeHint());
     mapItems[item] = widget;
-    updateFilter(currentMatch);
+    if (!currentMatch.isEmpty()) {
+        updateFilter(currentMatch);
+    }
 }
 
 void xPlayerListWidget::addItemWidgets(const std::vector<xMusicFile*>& files, const QString& tooltip) {
 
+    auto addTooltip = !tooltip.isEmpty();
     for (const auto& file : files) {
         auto item = new QListWidgetItem();
         if (!sortItems) {
@@ -284,14 +289,17 @@ void xPlayerListWidget::addItemWidgets(const std::vector<xMusicFile*>& files, co
         }
         auto widget = new xPlayerListItemWidget(file, this);
         // Update tooltip.
-        if (!tooltip.isEmpty()) {
+        if (addTooltip) {
             widget->addToolTip(tooltip);
         }
         setItemWidget(item, widget);
         item->setSizeHint(widget->sizeHint());
         mapItems[item] = widget;
+        // Update filter.
+        if (!currentMatch.isEmpty()) {
+            item->setHidden(!item->text().contains(currentMatch, Qt::CaseInsensitive));
+        }
     }
-    updateFilter(currentMatch);
 }
 void xPlayerListWidget::addItemWidgets(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files) {
     int maxFiles = 0;

@@ -117,6 +117,10 @@ private:
     int itemCurrentWidth;
     QString itemToolTip;
     xMusicFile* itemFile;
+    int itemTextWidth;
+    int itemTextCharacterWidth;
+    int itemFixedWidth;
+    bool itemTextInitialized;
 };
 
 class xPlayerListWidget:public QListWidget {
