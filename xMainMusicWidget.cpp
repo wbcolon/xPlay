@@ -66,6 +66,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         playedTrack(0),
         useDatabaseMusicOverlay(true),
         databaseCutOff(0),
+        databaseUpdateThread(nullptr),
         currentArtist(),
         currentAlbum() {
 
@@ -281,24 +282,36 @@ void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
 }
 
 void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
+    // Check for running update thread.
+    updateDatabaseFinished();
     // Clear album and track lists
     albumList->clearItems();
     clearTrackList();
     albumList->addItemWidgets(albums);
-    // Update database overlay for albums.
-    updatePlayedAlbums();
+    // Offload database update into thread.
+    databaseUpdateThread = QThread::create([this]() {
+        // Update database overlay for albums.
+        updatePlayedAlbums();
+    });
+    databaseUpdateThread->start();
 }
 
 void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
+    // Check for running update thread.
+    updateDatabaseFinished();
     // Clear only track list and stop potential running update thread.
     clearTrackList();
     for (const auto& track : tracks) {
         trackList->addItemWidget(track);
     }
-    // Update database overlay for tracks. Run in separate thread.
-    updatePlayedTracks();
-    // Update track times.
-    trackList->updateItems();
+    // Offload database update into thread.
+    databaseUpdateThread = QThread::create([this]() {
+        // Update database overlay for tracks. Run in separate thread.
+        updatePlayedTracks();
+        // Update track times.
+        trackList->updateItems();
+    });
+    databaseUpdateThread->start();
 }
 
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,
@@ -755,6 +768,8 @@ void xMainMusicWidget::updatedMusicViewSelectors() {
 void xMainMusicWidget::updatedDatabaseMusicOverlay() {
     useDatabaseMusicOverlay = xPlayerConfiguration::configuration()->getDatabaseMusicOverlay();
     databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
+    // Wait for database update thread.
+    updateDatabaseFinished();
     if (useDatabaseMusicOverlay) {
         updatePlayedArtists();
         updatePlayedAlbums();
@@ -775,6 +790,15 @@ void xMainMusicWidget::updatedDatabaseMusicOverlay() {
             trackList->itemWidget(i)->removeIcon();
             trackList->itemWidget(i)->removeToolTip();
         }
+    }
+}
+
+void xMainMusicWidget::updateDatabaseFinished() {
+    // Check for running update thread.
+    if ((databaseUpdateThread) && (databaseUpdateThread->isRunning())) {
+        databaseUpdateThread->requestInterruption();
+        databaseUpdateThread->wait();
+        delete databaseUpdateThread;
     }
 }
 
@@ -880,6 +904,10 @@ void xMainMusicWidget::updatePlayedAlbums() {
     auto artist = artistItem->text();
     auto playedAlbums = xPlayerDatabase::database()->getPlayedAlbums(artist, databaseCutOff);
     for (auto i = 0; i < albumList->count(); ++i) {
+        // Check if another update scheduled.
+        if ((databaseUpdateThread) && (databaseUpdateThread->isInterruptionRequested())) {
+            return;
+        }
         auto albumItem = albumList->itemWidget(i);
         auto album = albumItem->text();
         // Clear icon and tooltip.
@@ -911,6 +939,10 @@ void xMainMusicWidget::updatePlayedTracks() {
     // Both lists are sorted. We therefore update in one walk-through.
     auto playedMusicTrack = playedMusicTracks.begin();
     for (auto i = 0; (i < trackList->count()) && (playedMusicTrack != playedMusicTracks.end()); ++i) {
+        // Check if another update scheduled.
+        if ((databaseUpdateThread) && (databaseUpdateThread->isInterruptionRequested())) {
+            return;
+        }
         auto trackItem = trackList->itemWidget(i);
         auto track = trackItem->text();
         if (std::get<0>(*playedMusicTrack) == track) {

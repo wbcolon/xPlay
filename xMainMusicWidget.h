@@ -380,6 +380,10 @@ private slots:
      */
     void updatedDatabaseMusicOverlay();
     /**
+     * Wait for database update thread.
+     */
+    void updateDatabaseFinished();
+    /**
      * Update the album selectors and re-filter albums if necessary.
      */
     void updatedMusicLibraryAlbumSelectors();
@@ -508,6 +512,7 @@ private:
     int playedTrack;
     bool useDatabaseMusicOverlay;
     qint64 databaseCutOff;
+    QThread* databaseUpdateThread;
     /**
      * Store the current list of unfiltered artists and albums for later filtering.
      */
