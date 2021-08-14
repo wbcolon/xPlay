@@ -452,8 +452,6 @@ public slots:
     void scanForUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries);
 
 private slots:
-
-private:
     /*
      * Helper function that only scans all albums and tracks for an artist.
      *
@@ -473,6 +471,8 @@ private:
                                QList<std::pair<QString,std::vector<xMusicFile*>>>& albumTracks,
                                const xMusicLibraryFilter& filter);
 
+
+private:
     std::filesystem::path baseDirectory;
     /**
      * The structure that contains the music library. Tracks are cached after they have
