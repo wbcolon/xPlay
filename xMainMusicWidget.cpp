@@ -20,6 +20,7 @@
 #include "xPlayerConfiguration.h"
 #include "xPlayerPlaylistDialog.h"
 #include "xPlayerTagsDialog.h"
+#include "xMusicDirectory.h"
 
 #include <QGroupBox>
 #include <QListWidget>
@@ -33,6 +34,8 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <random>
+#include <iterator>
+
 
 // Function addListWidgetGroupBox has to be defined before the constructor due to the auto return.
 auto xMainMusicWidget::addListWidgetGroupBox(const QString& boxLabel, QWidget* parent) {
@@ -68,7 +71,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         databaseCutOff(0),
         databaseUpdateThread(nullptr),
         currentArtist(),
-        currentAlbum() {
+        currentAlbum(),
+        currentArtistSelector(),
+        useSortingLatest(false) {
 
     musicStacked = new QStackedWidget(this);
     // Create and group boxes with embedded list widgets.
@@ -82,28 +87,13 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     artistList->setContextMenuPolicy(Qt::CustomContextMenu);
     artistList->setMinimumWidth(xPlayerArtistListMinimumWidth);
     albumList = albumList_;
-    albumList->enableSorting(true);
+    albumList->enableSorting(false);
     albumList->setMinimumWidth(xPlayerAlbumListMinimumWidth);
     trackList = trackList_;
     trackList->enableSorting(true);
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
     trackList->setMinimumWidth(xPlayerTracksListMinimumWidth);
     trackBox = trackBox_;
-    // Selector Tabs.
-    selectorTabs = new QTabWidget(musicListView);
-    selectorTabs->setStyleSheet("QTabWidget::pane { border: none; }");
-    // Artist selector.
-    auto artistSelectorTab = new QWidget(selectorTabs);
-    auto artistSelectorLayout = new xPlayerLayout();
-    artistSelectorLayout->setContentsMargins(0, 0, 0, 0);
-    artistSelectorLayout->setSpacing(0);
-    artistSelectorList = new QListWidget(artistSelectorTab);
-    artistSelectorList->setViewMode(QListView::IconMode);
-    artistSelectorList->setWrapping(false);
-    artistSelectorLayout->addWidget(artistSelectorList, 0, 0);
-    artistSelectorLayout->addColumnSpacer(1, xPlayerLayout::SmallSpace);
-    artistSelectorTab->setLayout(artistSelectorLayout);
-    artistSelectorTab->setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
     // Local filters.
     auto [artistFilterBox_, artistFilterLineEdit_] = addLineEditGroupBox(tr("Filter Artists"), musicListView);
     auto [albumFilterBox_, albumFilterLineEdit_] = addLineEditGroupBox(tr("Filter Albums"), musicListView);
@@ -114,10 +104,14 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     albumFilterLineEdit = albumFilterLineEdit_;
     trackFilterBox = trackFilterBox_;
     trackFilterLineEdit = trackFilterLineEdit_;
-    // Album selector and Search.
+    // Selector Tabs.
+    selectorTabs = new QTabWidget(musicListView);
+    selectorTabs->setStyleSheet("QTabWidget::pane { border: none; }");
+    // Artist, album selector and Search.
+    artistSelectorList = new xPlayerMusicArtistSelectorWidget(selectorTabs);
     albumSelectorList = new xPlayerMusicAlbumSelectorWidget(selectorTabs);
     searchSelector = new xPlayerMusicSearchWidget(selectorTabs);
-    selectorTabs->addTab(artistSelectorTab, tr("Artist Selector"));
+    selectorTabs->addTab(artistSelectorList, tr("Artist Selector"));
     selectorTabs->addTab(albumSelectorList, tr("Album Selector"));
     selectorTabs->addTab(searchSelector, tr("Search"));
     selectorTabs->setFixedHeight(artistSelectorList->height()+selectorTabs->tabBar()->sizeHint().height());
@@ -177,8 +171,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(albumList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueAlbum);
     connect(trackList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::selectTrack);
     connect(trackList, &xPlayerListWidget::totalTime, this, &xMainMusicWidget::updateTracksTotalTime);
-    connect(artistSelectorList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtistSelector);
-    connect(artistSelectorList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueArtistSelector);
+    connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selector, this, &xMainMusicWidget::selectArtistSelector);
+    connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selectorDoubleClicked, this, &xMainMusicWidget::queueArtistSelector);
+    connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::sortingLatest, this, &xMainMusicWidget::selectSortingLatest);
     connect(albumSelectorList, &xPlayerMusicAlbumSelectorWidget::updatedSelectors, this,
             &xMainMusicWidget::selectAlbumSelectors);
     connect(albumSelectorList, &xPlayerMusicAlbumSelectorWidget::updatedDatabaseSelectors, this,
@@ -251,23 +246,23 @@ void xMainMusicWidget::clear() {
     playerWidget->clear();
     clearQueue();
     // Clear artist (including selector), album and track lists.
-    scannedArtists(QStringList());
+    scannedArtists({});
 }
 
-void xMainMusicWidget::scannedArtists(const QStringList& artists) {
+void xMainMusicWidget::scannedArtists(const std::list<xMusicDirectory>& artists) {
     std::set<QString> selectors;
     unfilteredArtists = artists;
     // Use unfiltered list for selectors update
     for (const auto& artist : artists) {
-        selectors.insert(artist.left(1));
+        selectors.insert(artist.name().left(1));
     }
     // Update the selector based upon the added artists
-    updateScannedArtistsSelectors(selectors);
+    artistSelectorList->updateSelectors(selectors);
     // Update the artists.
     updateScannedArtists(artists);
 }
 
-void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
+void xMainMusicWidget::updateScannedArtists(const std::list<xMusicDirectory>& artists) {
     // Clear artist, album and track lists
     artistList->clearItems();
     albumList->clearItems();
@@ -275,19 +270,23 @@ void xMainMusicWidget::updateScannedArtists(const QStringList& artists) {
     // Not very efficient to use a filtered and the unfiltered list, but easier to read.
     filteredArtists = filterArtists(artists);
     for (const auto& artist : filteredArtists) {
-        artistList->addItemWidget(artist);
+        artistList->addItemWidget(artist.name());
     }
     // Update database overlay for artists.
     updatePlayedArtists();
 }
 
-void xMainMusicWidget::scannedAlbums(const QStringList& albums) {
+void xMainMusicWidget::scannedAlbums(const std::list<xMusicDirectory>& albums) {
+    auto sortedAlbums = albums;
+    sortListMusicDirectory(sortedAlbums);
     // Check for running update thread.
     updateDatabaseFinished();
     // Clear album and track lists
     albumList->clearItems();
     clearTrackList();
-    albumList->addItemWidgets(albums);
+    for (const auto& album : sortedAlbums) {
+        albumList->addItemWidget(album.name());
+    }
     // Offload database update into thread.
     databaseUpdateThread = QThread::create([this]() {
         // Update database overlay for albums.
@@ -329,7 +328,6 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
 
 void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString,
                                                         std::vector<xMusicFile*>>>>>& listTracks) {
-
     // Compute the number of files to be inserted.
     int maxListTracks = 0;
     for (const auto& listElem : listTracks) {
@@ -444,66 +442,67 @@ void xMainMusicWidget::scannedAllAlbumsForListArtistsWorker(
     }
 }
 
-void xMainMusicWidget::updateScannedArtistsSelectors(const std::set<QString> &selectors) {
-    // Update artist selectors list widget.
-    artistSelectorList->clear();
-    artistSelectorList->addItem(tr("none"));
-    artistSelectorList->addItem(tr("random"));
-    for (const auto& as : selectors) {
-        artistSelectorList->addItem(as);
-    }
-}
-
-QStringList xMainMusicWidget::filterArtists(const QStringList& artists) {
+std::list<xMusicDirectory> xMainMusicWidget::filterArtists(const std::list<xMusicDirectory>& artists) {
     // Check if a selector is selected. We sort the list if necessary.
-    QStringList filtered;
-    if (artistSelectorList->currentItem()) {
-        QString selected = artistSelectorList->currentItem()->text();
-        // Do not filter if we have selector "none" selected.
-        if (selected.compare(tr("none"), Qt::CaseInsensitive) == 0) {
+    std::list<xMusicDirectory> filtered;
+    if (!currentArtistSelector.isEmpty()) {
+        // Do not filter if we have selector "none" currentArtistSelector.
+        if (currentArtistSelector.compare(tr("none"), Qt::CaseInsensitive) == 0) {
             filtered = artists;
-            filtered.sort();
+            sortListMusicDirectory(filtered);
             return filtered;
         }
-        // Do not filter if we have selector "random" selected. Just randomize list.
-        if (selected.compare(tr("random"), Qt::CaseInsensitive) == 0) {
+        // Do not filter if we have selector "random" currentArtistSelector. Just randomize list.
+        if (currentArtistSelector.compare(tr("random"), Qt::CaseInsensitive) == 0) {
             filtered = artists;
-            std::shuffle(filtered.begin(), filtered.end(), std::mt19937(std::random_device()()));
+            // Not a very efficient way to shuffle the entries...
+            std::vector<xMusicDirectory> shuffleFiltered(artists.begin(), artists.end());
+            std::shuffle(shuffleFiltered.begin(), shuffleFiltered.end(), std::mt19937(std::random_device()()));
+            std::copy(shuffleFiltered.begin(), shuffleFiltered.end(), filtered.begin());
             return filtered;
         }
         // Go through list of artists and only add the ones to the filtered
         // list that start with the selector character.
         for (const auto& artist : artists) {
-            if (artist.startsWith(selected)) {
+            if (artist.name().startsWith(currentArtistSelector)) {
                 filtered.push_back(artist);
             }
         }
-        // Return filtered list of artists.
-        filtered.sort();
+        sortListMusicDirectory(filtered);
         return filtered;
     }
     // No artist selector enabled. Return sorted list of artists.
     filtered = artists;
-    filtered.sort();
+    sortListMusicDirectory(filtered);
     return filtered;
 }
 
-void xMainMusicWidget::selectArtist(int artist) {
+void xMainMusicWidget::sortListMusicDirectory(std::list<xMusicDirectory>& list) {
+    if (useSortingLatest) {
+        list.sort([](const xMusicDirectory& a, const xMusicDirectory& b) {
+            return a.lastWritten() > b.lastWritten();
+        });
+    } else {
+        list.sort();
+    }
+}
+
+void xMainMusicWidget::selectArtist(int index) {
     // Check if artist index is valid.
-    if ((artist >= 0) && (artist < artistList->count())) {
+    if ((index >= 0) && (index < artistList->count())) {
         // Retrieve selected artist name and trigger scanForArtist
-        auto artistName = artistList->itemWidget(artist)->text();
-        emit scanForArtist(artistName, musicLibraryFilter);
+        xMusicDirectory artist(artistList->itemWidget(index)->text());
+        emit scanForArtist(artist, musicLibraryFilter);
     }
 }
 
 void xMainMusicWidget::queueArtist(QListWidgetItem *artistItem) {
     // Retrieve index for the selected item and check if it's valid.
-    auto artist = artistList->row(artistItem);
-    if ((artist >= 0) && (artist < artistList->count())) {
-        // Retrieve selected artist name and trigger scanAllAlbumsForArtist
+    auto index = artistList->row(artistItem);
+    if ((index >= 0) && (index < artistList->count())) {
+        // Retrieve selected index name and trigger scanAllAlbumsForArtist
         QApplication::setOverrideCursor(Qt::WaitCursor);
-        emit scanAllAlbumsForArtist(artistList->itemWidget(artist)->text(), musicLibraryFilter);
+        emit scanAllAlbumsForArtist(xMusicDirectory(artistList->itemWidget(index)->text()), musicLibraryFilter);
     }
 }
 
@@ -531,14 +530,14 @@ void xMainMusicWidget::currentArtistContextMenu(const QPoint& point) {
     }
 }
 
-void xMainMusicWidget::selectAlbum(int album) {
-    // Check if album index is valid.
-    if ((album >= 0) && (album < albumList->count())) {
-        // Retrieve selected artist and album name and
+void xMainMusicWidget::selectAlbum(int index) {
+    // Check if index index is valid.
+    if ((index >= 0) && (index < albumList->count())) {
+        // Retrieve selected artist and index name and
         // trigger scanForArtistAndAlbum
-        auto artistName = artistList->currentItemWidget()->text();
-        auto albumName = albumList->itemWidget(album)->text();
-        emit scanForArtistAndAlbum(artistName, albumName);
+        xMusicDirectory artist(artistList->currentItemWidget()->text());
+        xMusicDirectory album(albumList->itemWidget(index)->text());
+        emit scanForArtistAndAlbum(artist, album);
     }
 }
 
@@ -580,24 +579,25 @@ void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
     }
 }
 
-void xMainMusicWidget::selectArtistSelector(int selector) {
+void xMainMusicWidget::selectArtistSelector(const QString& selector) {
     // Check if index is valid.
-    if ((selector >= 0) && (selector < artistSelectorList->count())) {
+    if (!selector.isEmpty()) {
+        currentArtistSelector = selector;
         // Call with stored list in order to update artist filtering.
         updateScannedArtists(unfilteredArtists);
     }
 }
 
-void xMainMusicWidget::queueArtistSelector(QListWidgetItem* selectorItem) {
+void xMainMusicWidget::selectSortingLatest(bool enabled) {
+    qDebug() << "SELECT_SORTING: " << enabled;
+    useSortingLatest = enabled;
+    updateScannedArtists(unfilteredArtists);
+}
+
+void xMainMusicWidget::queueArtistSelector(const QString& selector) {
     // Currently unused
-    auto selector = artistSelectorList->row(selectorItem);
-    if ((selector >= 0) && (selector < artistSelectorList->count())) {
-        // Do not queue artist selector if random is selected, just randomize again.
-        if (selectorItem->text().compare("random", Qt::CaseInsensitive) == 0) {
-            selectArtistSelector(selector);
-            return;
-        }
-        QStringList listArtists;
+    if (!selector.isEmpty()) {
+        currentArtistSelector = selector;
         // Call with stored list in order to update artist filtering.
         updateScannedArtists(unfilteredArtists);
         // Trigger scanAllAlbumsForListArtist with given list of artists.

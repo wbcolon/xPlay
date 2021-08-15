@@ -18,9 +18,11 @@
 #include "xMusicLibrary.h"
 #include "xPlayerMusicWidget.h"
 #include "xPlayerMusicSearchWidget.h"
+#include "xPlayerMusicArtistSelectorWidget.h"
 #include "xPlayerMusicAlbumSelectorWidget.h"
 #include "xPlayerListWidget.h"
 #include "xPlayerArtistInfo.h"
+#include "xMusicDirectory.h"
 
 #include <QGroupBox>
 #include <QString>
@@ -76,31 +78,31 @@ signals:
     /**
      * Signal to scan and filter albums for an artist.
      *
-     * @param artist name of the artist to scan for.
+     * @param artist the artist to scan for.
      * @param filter the filter to be applied.
      */
-    void scanForArtist(const QString& artist, const xMusicLibraryFilter& filter);
+    void scanForArtist(const xMusicDirectory& artist, const xMusicLibraryFilter& filter);
     /**
      * Signal to scan tracks for an artist/album
      *
-     * @param artist the artist name for the scan.
-     * @param album the album name for the scan.
+     * @param artist the artist for the scan.
+     * @param album the album for the scan.
      */
-    void scanForArtistAndAlbum(const QString& artist, const QString& album);
+    void scanForArtistAndAlbum(const xMusicDirectory& artist, const xMusicDirectory& album);
     /**
      * Signal to scan and filter all albums and tracks for the given artist.
      *
      * @param artist the artist name for which we can all albums and tracks.
      * @param filter the filter to be applied.
      */
-    void scanAllAlbumsForArtist(const QString& artist, const xMusicLibraryFilter& filter);
+    void scanAllAlbumsForArtist(const xMusicDirectory& artist, const xMusicLibraryFilter& filter);
     /**
      * Signal to scan and filter all albums and tracks for a given list of artists.
      *
      * @param listArtist the list of artists name for which we scan all albums and tracks.
      * @param filter the filter to be applied.
      */
-    void scanAllAlbumsForListArtists(const QStringList& listArtist, const xMusicLibraryFilter& filter);
+    void scanAllAlbumsForListArtists(const std::list<xMusicDirectory>& listArtist, const xMusicLibraryFilter& filter);
     /**
      * Signal a set of tracks to be queued in the playlist.
      *
@@ -147,7 +149,7 @@ public slots:
      *
      * @param artists unordered list of artist names.
      */
-    void scannedArtists(const QStringList& artists);
+    void scannedArtists(const std::list<xMusicDirectory>& artists);
     /**
      * Receive the result of the album scan for a given artist.
      *
@@ -156,7 +158,7 @@ public slots:
      *
      * @param albums unordered list of album names.
      */
-    void scannedAlbums(const QStringList& albums);
+    void scannedAlbums(const std::list<xMusicDirectory>& albums);
     /**
      * Receive the result of the track scan for a given artist/album
      *
@@ -187,9 +189,9 @@ private slots:
      * selected. The function then retrieves the artist name and signals
      * a scanForArtists.
      *
-     * @param artist index of the artist in the QListWidget.
+     * @param index index of the artist in the QListWidget.
      */
-    void selectArtist(int artist);
+    void selectArtist(int index);
     /**
      * Queue all albums for the currently selected artists.
      *
@@ -217,9 +219,9 @@ private slots:
      * selected. The function then retrieves the selected artist name and
      * the selected album name. It then signals a scanForArtistAndAlbum.
      *
-     * @param artist index of the artist in the QListWidget.
+     * @param index index of the artist in the QListWidget.
      */
-    void selectAlbum(int album);
+    void selectAlbum(int index);
     /**
      * Queue the currently selected album.
      *
@@ -255,9 +257,15 @@ private slots:
      * Function is triggered whenever an element out of the selectors is selected.
      * The selector is retrieved and used to filter the list of artists.
      *
-     * @param selector position of the first character used to filter artists.
+     * @param selector the currently selected selector as string.
      */
-    void selectArtistSelector(int selector);
+    void selectArtistSelector(const QString& selector);
+    /**
+     * Reorder the list of artists and albums
+     *
+     * @param enabled sort by latest time written if true, by name otherwise.
+     */
+    void selectSortingLatest(bool enabled);
     /**
      * Queue all albums for the currently all artists starting with the selector.
      *
@@ -265,9 +273,9 @@ private slots:
      * is double-clicked. All artists are retrieved and all their albums
      * are queued. A double-click on "none" will queue the entire library.
      *
-     * @param selectorItem pointer to the currently selected row.
+     * @param selector the currently selected artist selector.
      */
-    void queueArtistSelector(QListWidgetItem* selectorItem);
+    void queueArtistSelector(const QString& selector);
     /**
      * Filter the list of albums.
      *
@@ -447,20 +455,23 @@ private:
      *
      * @param artists the list of all unfiltered artists.
      */
-    void updateScannedArtists(const QStringList& artists);
-    /**
-     * Update the list of selectors (and add "none").
-     *
-     * @param selectors a set of characters (as QString) used for filtering artists.
-     */
-    void updateScannedArtistsSelectors(const std::set<QString>& selectors);
+    void updateScannedArtists(const std::list<xMusicDirectory>& artists);
     /**
      * Filter the list of artists based on the selected selector.
      *
      * @param artists unfiltered list of artists.
      * @return filtered list of artists that start with the selector string.
      */
-    [[nodiscard]] QStringList filterArtists(const QStringList& artists);
+    [[nodiscard]] std::list<xMusicDirectory> filterArtists(const std::list<xMusicDirectory>& artists);
+    /**
+     * Sort the list of music directory entries.
+     *
+     * The sorting is performed by last time written if the corresponding flag is
+     * set, otherwise the list is sorted by name.
+     *
+     * @param list the list of directory entries to be sorted.
+     */
+    void sortListMusicDirectory(std::list<xMusicDirectory>& list);
     /**
      * Show tag selection popup menu.
      *
@@ -503,7 +514,7 @@ private:
     QLineEdit* trackFilterLineEdit;
     QGroupBox* trackBox;
     QTabWidget* selectorTabs;
-    QListWidget* artistSelectorList;
+    xPlayerMusicArtistSelectorWidget* artistSelectorList;
     xPlayerMusicAlbumSelectorWidget* albumSelectorList;
     xPlayerMusicSearchWidget* searchSelector;
     xPlayerListWidget* queueList;
@@ -516,13 +527,18 @@ private:
     /**
      * Store the current list of unfiltered artists and albums for later filtering.
      */
-    QStringList unfilteredArtists;
-    QStringList filteredArtists;
+    std::list<xMusicDirectory> unfilteredArtists;
+    std::list<xMusicDirectory> filteredArtists;
     /**
      * Currently played artist and album. May differ from currently selected artist and album.
      */
     QString currentArtist;
     QString currentAlbum;
+    /**
+     * Save current artist selector and sorting mode.
+     */
+    QString currentArtistSelector;
+    bool useSortingLatest;
 };
 
 #endif

@@ -68,6 +68,7 @@ include_directories(${SQLITE3_INCLUDE_DIRS})
 
 set(xPlay_sources
         xMusicFile.cpp
+        xMusicDirectory.cpp
         xMusicLibrary.cpp
         xMovieLibrary.cpp
         xPlayerConfig.h
@@ -91,6 +92,7 @@ set(xPlay_sources
         ${xPlay_xPlayerWidgetX}
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
+        xPlayerMusicArtistSelectorWidget.cpp
         xPlayerMusicAlbumSelectorWidget.cpp
         xMainMusicWidget.cpp
         xMainMovieWidget.cpp
