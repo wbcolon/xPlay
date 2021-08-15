@@ -19,6 +19,7 @@
 #include <QObject>
 #include <QString>
 
+
 class xMusicFile:public QObject {
 public:
     xMusicFile();

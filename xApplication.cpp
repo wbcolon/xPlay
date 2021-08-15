@@ -25,6 +25,7 @@
 #include "xPlayerConfigurationDialog.h"
 #include "xPlayerDatabase.h"
 #include "xPlayerConfig.h"
+#include "xMusicDirectory.h"
 
 xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags) {
@@ -33,6 +34,8 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     qRegisterMetaType<xMusicFile*>();
     qRegisterMetaType<std::list<xMusicFile*>>();
     qRegisterMetaType<std::vector<xMusicFile*>>();
+    qRegisterMetaType<xMusicDirectory>();
+    qRegisterMetaType<std::list<xMusicDirectory>>();
     // Setup music and movie library.
     musicLibrary = new xMusicLibrary(this);
     movieLibrary = new xMovieLibrary(this);

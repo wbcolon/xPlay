@@ -130,3 +130,5 @@ void xMusicFile::scan() const {
     fileSampleRate = currentTrackProperties->sampleRate();
     fileLength = currentTrackProperties->lengthInMilliseconds();
 }
+
+
