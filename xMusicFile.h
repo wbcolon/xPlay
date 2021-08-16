@@ -114,5 +114,6 @@ private:
 };
 
 Q_DECLARE_METATYPE(xMusicFile)
+Q_DECLARE_METATYPE(xMusicFile*)
 
 #endif

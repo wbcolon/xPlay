@@ -553,13 +553,16 @@ void xMusicLibrary::scanForArtistAndAlbum(const xMusicDirectory& artist, const x
     std::list<xMusicFile*> trackList;
     try {
         auto trackObjects = musicLibraryFiles->get(artist, album);
-        // Remove album path used it to scan the directory.
-        // We do not need it for track list.
-        trackObjects.pop_front();
-        // Generate list of tracks for artist/album
-        for (const auto& track : trackObjects) {
-            trackList.push_back(track);
-            qDebug() << "xMusicLibrary::scanAlbum: track: " << track->getTrackName();
+        // Did we find artist/album?
+        if (!trackObjects.empty()) {
+            // Remove album path (if it exists) used it to scan the directory.
+            // We do not need it for track list.
+            trackObjects.pop_front();
+            // Generate list of tracks for artist/album
+            for (const auto& track : trackObjects) {
+                trackList.push_back(track);
+                qDebug() << "xMusicLibrary::scanAlbum: track: " << track->getTrackName();
+            }
         }
     } catch (...) {
         // Clear list on error
