@@ -15,9 +15,23 @@
 #include "test_xMusicFile.h"
 #include "test_xMusicLibrary.h"
 
+#include "xMusicFile.h"
+#include "xMusicDirectory.h"
+
+#include <tuple>
 
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+
+    // Register Type
+    qRegisterMetaType<xMusicFile>();
+    qRegisterMetaType<xMusicFile*>();
+    qRegisterMetaType<std::list<xMusicFile*>>();
+    qRegisterMetaType<std::vector<xMusicFile*>>();
+    qRegisterMetaType<QList<std::pair<QString, std::vector<xMusicFile*>>>>();
+    qRegisterMetaType<QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicFile*>>>>>>();
+    qRegisterMetaType<xMusicDirectory>();
+    qRegisterMetaType<std::list<xMusicDirectory>>();
 
     test_xMusicFile musicFile;
     test_xMusicLibrary musicLibrary;
