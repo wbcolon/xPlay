@@ -246,16 +246,19 @@ void xMainMusicWidget::clear() {
     clearQueue();
     // Clear artist (including selector), album and track lists.
     scannedArtists({});
+    // Disable selector tab on clear. Library needs to be scanned again.
+    selectorTabs->setEnabled(false);
 }
 
 void xMainMusicWidget::scannedArtists(const std::list<xMusicDirectory>& artists) {
     std::set<QString> selectors;
+    // Save unfiltered list.
     unfilteredArtists = artists;
     // Use unfiltered list for selectors update
     for (const auto& artist : artists) {
         selectors.insert(artist.name().left(1));
     }
-    // Update the selector based upon the added artists
+    // Update the selector based upon the added artists.
     artistSelectorList->updateSelectors(selectors);
     // Update the artists.
     updateScannedArtists(artists);
@@ -273,6 +276,10 @@ void xMainMusicWidget::updateScannedArtists(const std::list<xMusicDirectory>& ar
     }
     // Update database overlay for artists.
     updatePlayedArtists();
+    // Enable the selector tab if any artists are in the list
+    if (!filteredArtists.empty()) {
+        selectorTabs->setEnabled(true);
+    }
 }
 
 void xMainMusicWidget::scannedAlbums(const std::list<xMusicDirectory>& albums) {
