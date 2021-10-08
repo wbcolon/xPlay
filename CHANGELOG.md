@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.3 - 2021-10-08
+
+- Add support for sorting artists and albums after last write access time.
+- Add optimizations for xPlayerListWidget.
+- Add initial tests.
+
+
 ## 0.9.2 - 2021-08-04
 
 - Replace close pushbutton with close icon tool button.

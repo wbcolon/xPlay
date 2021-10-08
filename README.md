@@ -151,6 +151,8 @@ The artist selector list can be used to filter the artist list by the first char
 you click on *none*. If a selector is double-clicked then all selected artists with their albums are queue. A
 double-click on *none* will queue the entire music library. The artist selector *random* will randomize the list of
 artists. A double-click on *random* will randomize the artist list again and not add any tracks to the queue.
+The *Sorting Latest* checkbox will sort the artists and albums according to the timestamp they were last modified.
+The tracks ordering is not affected by this option. The checkbox is cleared whenever the *random* selector is chosen.
 
 ##### Album Selector
 
