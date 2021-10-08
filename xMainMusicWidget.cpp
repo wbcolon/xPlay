@@ -583,7 +583,6 @@ void xMainMusicWidget::selectArtistSelector(const QString& selector) {
 }
 
 void xMainMusicWidget::selectSortingLatest(bool enabled) {
-    qDebug() << "SELECT_SORTING: " << enabled;
     useSortingLatest = enabled;
     updateScannedArtists(unfilteredArtists);
 }

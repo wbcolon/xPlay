@@ -56,8 +56,14 @@ void xPlayerMusicArtistSelectorWidget::clear() {
 void xPlayerMusicArtistSelectorWidget::selectArtistSelector(int selectorIndex) {
     // Check if index is valid.
     if ((selectorIndex >= 0) && (selectorIndex < selectorList->count())) {
+        auto selectorText = selectorList->currentItem()->text();
+        if (selectorText.compare("random", Qt::CaseInsensitive) == 0) {
+            // Disable sorting mode on random.
+            sortingLatestBox->setChecked(false);
+            emit sortingLatest(false);
+        }
         // Call with stored list in order to update artist filtering.
-        emit selector(selectorList->currentItem()->text());
+        emit selector(selectorText);
     }
 }
 
@@ -69,6 +75,7 @@ void xPlayerMusicArtistSelectorWidget::doubleClickedArtistSelector(QListWidgetIt
         if (selectorItem->text().compare("random", Qt::CaseInsensitive) == 0) {
             // Disable sorting mode on random.
             sortingLatestBox->setChecked(false);
+            emit sortingLatest(false);
             emit selector("random");
             return;
         }
