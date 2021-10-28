@@ -37,7 +37,8 @@ xMoviePlayerVLC::xMoviePlayerVLC(QWidget *parent):
         fullWindow(false) {
     // Setup the media player.
     // Create a new libvlc instance. User "--verbose=2" for additional libvlc output.
-    const char* const movieVLCArgs[] = { "--quiet" };
+    // const char* const movieVLCArgs[] = { "--vout=gl",  "--verbose=2" };
+    const char* const movieVLCArgs[] = { "--vout=xcb_xv",  "--quiet" };
     movieInstance = libvlc_new(sizeof(movieVLCArgs)/sizeof(movieVLCArgs[0]), movieVLCArgs);
     movieMediaPlayer = libvlc_media_player_new(movieInstance);
     movieMediaPlayerEventManager = libvlc_media_player_event_manager(movieMediaPlayer);
@@ -45,6 +46,9 @@ xMoviePlayerVLC::xMoviePlayerVLC(QWidget *parent):
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerEndReached, handleVLCEvents, this);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerAudioVolume, handleVLCEvents, this);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerPositionChanged, handleVLCEvents, this);
+    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerLengthChanged, handleVLCEvents, this);
+    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerBuffering, handleVLCEvents, this);
+    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerEncounteredError, handleVLCEvents, this);
     // Connect signals used to call out of VLC handler.
     connect(this, &xMoviePlayerVLC::eventHandler_stop, this, &xMoviePlayerVLC::stop);
     connect(this, &xMoviePlayerVLC::eventHandler_setMovie, this, &xMoviePlayerVLC::setMovie);
@@ -63,6 +67,9 @@ xMoviePlayerVLC::~xMoviePlayerVLC() noexcept {
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerEndReached, handleVLCEvents, this);
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerAudioVolume, handleVLCEvents, this);
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerPositionChanged, handleVLCEvents, this);
+    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerLengthChanged, handleVLCEvents, this);
+    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerBuffering, handleVLCEvents, this);
+    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerEncounteredError, handleVLCEvents, this);
     // Stop playing
     libvlc_media_player_stop(movieMediaPlayer);
     // Free the media_player
@@ -136,6 +143,8 @@ void xMoviePlayerVLC::setMovie(const QString& path, const QString& name, const Q
     // Stop parsing if current movie file is still being parsed.
     if (movieMedia) {
         libvlc_event_detach(movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, this);
+        libvlc_event_detach(movieMediaEventManager,libvlc_MediaDurationChanged, handleVLCEvents, this);
+        libvlc_event_detach(movieMediaEventManager,libvlc_MediaStateChanged, handleVLCEvents, this);
         libvlc_media_parse_stop(movieMedia);
         libvlc_media_release(movieMedia);
         movieMedia = nullptr;
@@ -143,6 +152,8 @@ void xMoviePlayerVLC::setMovie(const QString& path, const QString& name, const Q
     movieMedia = libvlc_media_new_path(movieInstance, path.toStdString().c_str());
     movieMediaEventManager = libvlc_media_event_manager(movieMedia);
     libvlc_event_attach(movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, this);
+    libvlc_event_attach(movieMediaEventManager,libvlc_MediaDurationChanged, handleVLCEvents, this);
+    libvlc_event_attach(movieMediaEventManager,libvlc_MediaStateChanged, handleVLCEvents, this);
     // Create a media player playing environment.
     libvlc_media_player_set_media(movieMediaPlayer, movieMedia);
     // Start parsing the file.
@@ -206,6 +217,17 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
                 self->movieMediaParsed = true;
             }
         } break;
+        case libvlc_MediaDurationChanged: {
+            if (event->u.media_duration_changed.new_duration != self->movieMediaLength) {
+                qDebug() << "[libvlc_MediaDurationChanged] duration changed from " << self->movieMediaLength << " to "
+                         << event->u.media_duration_changed.new_duration;
+                self->movieMediaLength = event->u.media_duration_changed.new_duration;
+                emit self->currentMovieLength(self->movieMediaLength);
+            }
+        } break;
+        case libvlc_MediaStateChanged: {
+            qDebug() << "[libvlc_MediaStateChanged] new state: " << event->u.media_state_changed.new_state;
+        } break;
         case libvlc_MediaPlayerAudioVolume: {
             auto volume =  static_cast<int>(event->u.media_player_audio_volume.volume*100);
             emit self->currentVolume(volume);
@@ -216,6 +238,17 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
         } break;
         case libvlc_MediaPlayerPlaying: {
             self->movieMediaPlaying = true;
+        } break;
+        case libvlc_MediaPlayerLengthChanged: {
+            if (event->u.media_player_length_changed.new_length != self->movieMediaLength) {
+                qDebug() << "[libvlc_MediaPlayerLengthChanged] duration changed from " << self->movieMediaLength << " to "
+                         << event->u.media_player_length_changed.new_length;
+                self->movieMediaLength = event->u.media_player_length_changed.new_length;
+                emit self->currentMovieLength(self->movieMediaLength);
+            }
+        } break;
+        case libvlc_MediaPlayerEncounteredError: {
+            qWarning() << "[libvlc_MediaPlayerEncounteredError]";
         } break;
         case libvlc_MediaPlayerEndReached: {
             // Supposed to be playing, but state does not match.
