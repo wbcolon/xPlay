@@ -94,9 +94,11 @@ set(xPlay_sources
         xPlayerMovieWidget.cpp
         xPlayerMusicArtistSelectorWidget.cpp
         xPlayerMusicAlbumSelectorWidget.cpp
+        xPlayerMusicLibraryWidget.cpp
         xMainMusicWidget.cpp
         xMainMovieWidget.cpp
         xMainStreamingWidget.cpp
+        xMainMobileSyncWidget.cpp
         xApplication.cpp
         xPlayerDBus.cpp
         )

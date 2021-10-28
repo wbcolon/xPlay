@@ -46,14 +46,17 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     moviePlayer = new xMoviePlayerX(mainView);
     mainMusicWidget = new xMainMusicWidget(musicPlayer, musicLibrary, mainView);
     mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
+    mainMobileSyncWidget = new xMainMobileSyncWidget(musicLibrary, mainView);
 #ifdef USE_STREAMING
     mainStreamingWidget = new xMainStreamingWidget(mainView);
 #else
     mainStreamingWidget = nullptr;
 #endif
+
     // Add to the stack widget
     mainView->addWidget(mainMusicWidget);
     mainView->addWidget(mainMovieWidget);
+    mainView->addWidget(mainMobileSyncWidget);
 #ifdef USE_STREAMING
     mainView->addWidget(mainStreamingWidget);
 #endif
@@ -225,6 +228,9 @@ void xApplication::dbus_selectView(const QString& view) {
     } else if (!view.compare("movie", Qt::CaseInsensitive)) {
         mainView->setCurrentWidget(mainMovieWidget);
         mainMovieWidget->initializeView();
+    } else if (!view.compare("mobilesync", Qt::CaseInsensitive)) {
+        mainView->setCurrentWidget(mainMobileSyncWidget);
+        mainMobileSyncWidget->initializeView();
     } else if (!view.compare("streaming", Qt::CaseInsensitive)) {
 #ifdef USE_STREAMING
         mainView->setCurrentWidget(mainStreamingWidget);
@@ -386,6 +392,7 @@ void xApplication::createMenus() {
 #ifdef USE_STREAMING
     auto viewMenuSelectStreaming = new QAction("Select Str&eaming View", this);
 #endif
+    auto viewMenuSelectMobileSync = new QAction("Select Mobile S&ync View", this);
     // Connect actions from view menu.
     connect(viewMenuSelectMusic, &QAction::triggered, [=]() {
         mainView->setCurrentWidget(mainMusicWidget);
@@ -401,6 +408,10 @@ void xApplication::createMenus() {
         mainStreamingWidget->initializeView();
     });
 #endif
+    connect(viewMenuSelectMobileSync, &QAction::triggered, [=]() {
+        mainView->setCurrentWidget(mainMobileSyncWidget);
+        mainMobileSyncWidget->initializeView();
+    });
     // Create view menu.
     auto viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(viewMenuSelectMusic);
@@ -408,6 +419,7 @@ void xApplication::createMenus() {
 #ifdef USE_STREAMING
     viewMenu->addAction(viewMenuSelectStreaming);
 #endif
+    viewMenu->addAction(viewMenuSelectMobileSync);
     viewMenu->addSeparator();
     auto musicViewMenu = viewMenu->addMenu("Music View");
     // Create actions for music view submenu.

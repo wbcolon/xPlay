@@ -21,6 +21,7 @@
 #include "xMoviePlayerX.h"
 #include "xMainMovieWidget.h"
 #include "xMainStreamingWidget.h"
+#include "xMainMobileSyncWidget.h"
 #include "xPlayerDBus.h"
 
 #include <QSettings>
@@ -182,6 +183,7 @@ private:
     xMoviePlayerX* moviePlayer;
     xMainMovieWidget* mainMovieWidget;
     xMainStreamingWidget* mainStreamingWidget;
+    xMainMobileSyncWidget* mainMobileSyncWidget;
     xPlayerDBus* mainDbus;
     std::mutex mainDbusMutex;
     QStackedWidget* mainView;
