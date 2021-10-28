@@ -23,8 +23,8 @@
 class xMusicFile:public QObject {
 public:
     xMusicFile();
-    xMusicFile(const std::filesystem::path& file, const QString& artist, const QString& album,
-               const QString& trackName, QObject* parent=nullptr);
+    xMusicFile(const std::filesystem::path& file, std::uintmax_t size,
+               const QString& artist, const QString& album, const QString& trackName, QObject* parent=nullptr);
     xMusicFile(const xMusicFile& file);
     ~xMusicFile() override = default;
     /**
@@ -46,6 +46,12 @@ public:
      * @return the absolute path as std::filesystem::path object.
      */
     [[nodiscard]] const std::filesystem::path& getFilePath() const;
+    /**
+     * Retrieve the file size of the music file.
+     *
+     * @return the size of the file in bytes.
+     */
+    [[nodiscard]] std::uintmax_t getFileSize() const;
     /**
      * Retrieve the artist associated with the music file.
      *
@@ -100,12 +106,20 @@ public:
      * @return the bitrate as integer.
      */
     [[nodiscard]] int getBitrate() const;
+    /**
+     * Compare music files based on artist, album, track name and size.
+     *
+     * @param file the other music file to compare to.
+     * @return true if the music files are equal, false otherwise.
+     */
+    bool operator == (const xMusicFile& file) const;
 
 private:
     std::filesystem::path filePath;
     QString fileArtist;
     QString fileAlbum;
     QString fileTrackName;
+    std::uintmax_t fileSize;
     // make file properties mutable, because we scan the file only on demand.
     mutable qint64 fileLength;
     mutable int fileBitsPerSample;

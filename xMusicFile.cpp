@@ -33,13 +33,14 @@ xMusicFile::xMusicFile():
         fileSampleRate(-1) {
 }
 
-xMusicFile::xMusicFile(const std::filesystem::path& file, const QString& artist, const QString& album,
-                       const QString& trackName, QObject* parent):
+xMusicFile::xMusicFile(const std::filesystem::path& file, std::uintmax_t size,
+                       const QString& artist, const QString& album, const QString& trackName, QObject* parent):
         QObject(parent),
         filePath(file),
         fileArtist(artist),
         fileAlbum(album),
         fileTrackName(trackName),
+        fileSize(size),
         fileLength(-1),
         fileBitsPerSample(-1),
         fileBitrate(-1),
@@ -52,6 +53,7 @@ xMusicFile::xMusicFile(const xMusicFile& file):
         fileArtist(file.fileArtist),
         fileAlbum(file.fileAlbum),
         fileTrackName(file.fileTrackName),
+        fileSize(file.fileSize),
         fileLength(file.fileLength),
         fileBitsPerSample(file.fileBitsPerSample),
         fileBitrate(file.fileBitrate),
@@ -60,6 +62,19 @@ xMusicFile::xMusicFile(const xMusicFile& file):
 
 const std::filesystem::path& xMusicFile::getFilePath() const {
     return filePath;
+}
+
+std::uintmax_t xMusicFile::getFileSize() const {
+    return fileSize;
+}
+
+bool xMusicFile::operator == (const xMusicFile &file) const {
+    // The file path different because music libraries have different base directories.
+    // The other attributes may not match. E.g. if the file is not scanned yet.
+    return ((fileArtist == file.fileArtist) &&
+            (fileAlbum == file.fileAlbum) &&
+            (fileTrackName == file.fileTrackName) &&
+            (fileSize == file.fileSize));
 }
 
 const QString& xMusicFile::getArtist() const {
