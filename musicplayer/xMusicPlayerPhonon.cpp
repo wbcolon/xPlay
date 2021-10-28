@@ -209,7 +209,7 @@ void xMusicPlayerPhonon::loadQueueFromPlaylist(const QString& name) {
     for (auto entry = playlistEntries.begin(); entry != playlistEntries.end(); ++entry) {
         // Split up tuple
         const auto& [entryArtist, entryAlbum, entryTrackName] = *entry;
-        auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        auto entryObject = musicLibrary->getLibraryFiles()->getMusicFile(entryArtist, entryAlbum, entryTrackName);
         if (entryObject == nullptr) {
             // Remove invalid entries from the list.
             playlistEntries.erase(entry);
@@ -240,7 +240,7 @@ void xMusicPlayerPhonon::loadQueueFromTag(const QString& tag, bool extend) {
     for (auto entry = taggedEntries.begin(); entry != taggedEntries.end(); ++entry) {
         // Split up tuple
         const auto& [entryArtist, entryAlbum, entryTrackName] = *entry;
-        auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        auto entryObject = musicLibrary->getLibraryFiles()->getMusicFile(entryArtist, entryAlbum, entryTrackName);
         if (entryObject == nullptr) {
             // Remove invalid entries from the list.
             taggedEntries.erase(entry);

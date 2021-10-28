@@ -135,12 +135,8 @@ class xMusicLibraryFiles:public QObject {
     Q_OBJECT
 
 public:
-    /**
-     * Return the music library files object for thread safe access.
-     *
-     * @return pointer to a singleton of the music library files object.
-     */
-    [[nodiscard]] static xMusicLibraryFiles* files();
+    explicit xMusicLibraryFiles(QObject* parent=nullptr);
+    ~xMusicLibraryFiles() noexcept override;
     /**
      * Set map of albums with tracks for the given artist.
      *
@@ -181,7 +177,7 @@ public:
      * Retrieve the albums for the given artist.
      *
      * @param artist name of the artist as string.
-     * @return a list of strings containing the albums for the specified artist.
+     * @return a list containing the albums for the specified artist.
      */
     [[nodiscard]] std::list<xMusicDirectory> get(const xMusicDirectory& artist) const;
     /**
@@ -189,14 +185,14 @@ public:
      *
      * @param artist name of the artist as string.
      * @param filter the filter to be applied.
-     * @return a list of strings containing the albums for the specified artist and passing the album filter.
+     * @return a list containing the albums for the specified artist and passing the album filter.
      */
     [[nodiscard]] std::list<xMusicDirectory> get(const xMusicDirectory& xMusicDirectory, const xMusicLibraryFilter& filter) const;
     /**
      * Retrieve the filtered artists.
      *
      * @param filter the filter to be applied.
-     * @return a list of strings containing the artists of the library that pass the artist filter.
+     * @return a list containing the artists of the library that pass the artist filter.
      */
     [[nodiscard]] std::list<xMusicDirectory> get(const xMusicLibraryFilter& filter) const;
     /**
@@ -206,11 +202,62 @@ public:
      */
     [[nodiscard]] std::list<std::tuple<xMusicDirectory, xMusicDirectory, xMusicFile*>> get() const;
     /**
+     * Retrieve all artists of the music library.
+     *
+     * @return a vector containing all artists sorted.
+     */
+    [[nodiscard]] std::vector<xMusicDirectory> getArtists() const;
+    /**
+     * Retrieve all albums for a given artist of the music library.
+     *
+     * @param artist the given artist to search for albums.
+     * @return a vector containing all albums sorted for the given artist.
+     */
+    [[nodiscard]] std::vector<xMusicDirectory> getAlbums(const xMusicDirectory& artist) const;
+    /**
+     * Retrieve all tracks for a given artist and album of the music library.
+     *
+     * @param artist the given artist to search for tracks.
+     * @param album the given album for the artists to search for tracks.
+     * @return a vector containing all tracks sorted for the given artist and album.
+     */
+    [[nodiscard]] std::vector<xMusicFile*> getMusicFiles(const xMusicDirectory& artist, const xMusicDirectory& album) const;
+    /**
+     * Retrieve the music file object for the given artist, album and track name.
+     *
+     * @param artist the artist for the music file object.
+     * @param album the album for the music file object.
+     * @param trackName the track name for the music file object.
+     * @return a pointer to corresponding the music file object in the library.
+     */
+    [[nodiscard]] xMusicFile* getMusicFile(const QString& artist, const QString& album, const QString& trackName) const;
+    /**
      * Check whether or not the library is empty.
      *
      * @return true if the library is empty, false otherwise.
      */
     [[nodiscard]] bool isEmpty() const;
+    /**
+     * Compare the current music library files to a given one.
+     *
+     * We compare the libraries based on the difference in artists,
+     * albums and tracks.
+     *
+     * @param library the music library that is compared to.
+     * @param missingArtists set of artists that are not present in given library.
+     * @param additionalArtists set of artists that are only present in the given library.
+     * @param missingAlbums set of albums for present artists that are not present in given library.
+     * @param additionalAlbums set of albums for present artists that are only present in given library.
+     * @param missingTracks list of tracks for present artists and albums that are not present in given library.
+     * @param additionalTracks list of tracks for present artists and albums thar are only present in the given library.
+     */
+    void compare(xMusicLibraryFiles* libraryFiles,
+                 std::set<xMusicDirectory>& missingArtists,
+                 std::set<xMusicDirectory>& additionalArtists,
+                 std::map<xMusicDirectory, std::set<xMusicDirectory>>& missingAlbums,
+                 std::map<xMusicDirectory, std::set<xMusicDirectory>>& additionalAlbums,
+                 std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>& missingTracks,
+                 std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>& additionalTracks) const;
     /**
      * Clear the library.
      */
@@ -230,8 +277,13 @@ private slots:
     void updateMusicExtensions();
 
 private:
-    explicit xMusicLibraryFiles(QObject* parent=nullptr);
-    ~xMusicLibraryFiles() noexcept override;
+    /**
+     * Implement a list difference for music files.
+     */
+    static void listDifference(const std::list<xMusicFile*>& a, const std::list<xMusicFile*>& b,
+                               std::list<xMusicFile*>& missing, std::list<xMusicFile*>& additional,
+                               std::list<xMusicFile*>& equal);
+
     /**
      * Determine if the given file is a music file.
      *
@@ -243,14 +295,13 @@ private:
     std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>> musicFiles;
     QStringList musicExtensions;
     mutable QMutex musicFilesLock;
-    static xMusicLibraryFiles* musicLibraryFiles;
 };
 
 class xMusicLibraryScanning:public QThread {
     Q_OBJECT
 
 public:
-    explicit xMusicLibraryScanning(QObject* parent=nullptr);
+    explicit xMusicLibraryScanning(xMusicLibraryFiles* libraryFiles, QObject* parent=nullptr);
     ~xMusicLibraryScanning() noexcept override;
     /**
      * Set the base directory for the music library.
@@ -316,15 +367,14 @@ public:
      */
     [[nodiscard]] const std::filesystem::path& getBaseDirectory() const;
     /**
-     * Retrieve the music file object for the given artist, album and track name.
+     * Retrieve pointer to music library files object.
      *
-     * @param artist the artist for the music file object.
-     * @param album the album for the music file object.
-     * @param trackName the track name for the music file object.
-     * @return a pointer to corresponding the music file object in the library.
+     * @return the pointer to the music library files object.
      */
-    [[nodiscard]] xMusicFile* getMusicFile(const QString& artist, const QString& album, const QString& trackName);
-
+    [[nodiscard]] const xMusicLibraryFiles* getLibraryFiles() const;
+    /**
+     * Stop any running scan and cleanup library.
+     */
     void cleanup();
 
 signals:

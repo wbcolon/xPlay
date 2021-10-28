@@ -132,7 +132,7 @@ void xMusicPlayerQt::loadQueueFromPlaylist(const QString& name) {
     for (const auto& entry : playlistEntries) {
         // Split up tuple
         const auto& [entryArtist, entryAlbum, entryTrackName] = entry;
-        auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        auto entryObject = musicLibrary->getLibraryFiles()->getMusicFile(entryArtist, entryAlbum, entryTrackName);
         if (entryObject) {
             musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
             musicPlaylist->addMedia(QUrl::fromLocalFile(QString::fromStdString(entryObject->getFilePath().generic_string())));
@@ -163,7 +163,7 @@ void xMusicPlayerQt::loadQueueFromTag(const QString& tag, bool extend) {
     for (const auto& entry : taggedEntries) {
         // Split up tuple
         const auto& [entryArtist, entryAlbum, entryTrackName] = entry;
-        auto entryObject = musicLibrary->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        auto entryObject = musicLibrary->getLibraryFiles()->getMusicFile(entryArtist, entryAlbum, entryTrackName);
         if ((extend) && (std::find_if(musicPlaylistEntries.begin(), musicPlaylistEntries.end(),
                                       [entryObject](const std::tuple<QString,QString,xMusicFile*>& entry) {
                                           return (std::get<2>(entry) == entryObject);
