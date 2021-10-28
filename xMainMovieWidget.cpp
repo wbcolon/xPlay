@@ -76,9 +76,9 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayerX* player, QWidget* parent):
     movieLayout->setColumnStretch(6, 2);
     movieLayout->setRowStretch(8, 2);
     // Connect signals.
-    connect(tagList, &QListWidget::currentRowChanged, this, &xMainMovieWidget::selectTag);
-    connect(directoryList, &QListWidget::currentRowChanged, this, &xMainMovieWidget::selectDirectory);
-    connect(movieList, &QListWidget::itemDoubleClicked, this, &xMainMovieWidget::selectMovie);
+    connect(tagList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMovieWidget::selectTag);
+    connect(directoryList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMovieWidget::selectDirectory);
+    connect(movieList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMovieWidget::selectMovie);
     // Connect to movie player.
     connect(this, &xMainMovieWidget::setMovie, moviePlayer, &xMoviePlayerX::setMovie);
     connect(this, &xMainMovieWidget::setMovieQueue, moviePlayer, &xMoviePlayerX::setMovieQueue);
@@ -153,17 +153,17 @@ void xMainMovieWidget::setFullWindow(bool mode) {
 
 void xMainMovieWidget::scannedTags(const QStringList& tags) {
     tagList->clearItems();
-    tagList->addItemWidgets(tags);
+    tagList->addListItems(tags);
     updatePlayedTags();
 }
 
 void xMainMovieWidget::scannedDirectories(const QStringList& directories) {
     directoryList->clearItems();
     if (!directories.isEmpty()) {
-        directoryList->addItemWidget(".");
-        directoryList->addItemWidgets(directories);
+        directoryList->addListItem(".");
+        directoryList->addListItems(directories);
     } else {
-        auto currentTag = tagList->currentItemWidget();
+        auto currentTag = tagList->currentItem();
         if (currentTag) {
             emit scanForTagAndDirectory(currentTag->text(), ".");
         }
@@ -175,7 +175,7 @@ void xMainMovieWidget::scannedMovies(const std::vector<std::pair<QString,QString
     movieList->clearItems();
     currentMovies.clear();
     for (const auto& movie : movies) {
-        movieList->addItemWidget(movie.first);
+        movieList->addListItem(movie.first);
         currentMovies.push_back(movie.second);
     }
     updatePlayedMovies();
@@ -186,29 +186,29 @@ void xMainMovieWidget::selectTag(int index) {
     if ((index >= 0) && (index < tagList->count())) {
         directoryList->clearItems();
         movieList->clearItems();
-        emit scanForTag(tagList->itemWidget(index)->text());
+        emit scanForTag(tagList->listItem(index)->text());
     }
 }
 
 void xMainMovieWidget::selectDirectory(int index) {
     if ((index >= 0) && (index < directoryList->count())) {
         movieList->clearItems();
-        auto tag = tagList->currentItemWidget()->text();
-        auto directory = directoryList->itemWidget(index)->text();
+        auto tag = tagList->currentItem()->text();
+        auto directory = directoryList->listItem(index)->text();
         emit scanForTagAndDirectory(tag, directory);
     }
 }
 
-void xMainMovieWidget::selectMovie(QListWidgetItem* movieItem) {
-    auto movieIndex = movieList->row(movieItem);
+void xMainMovieWidget::selectMovie(xPlayerListWidgetItem* movieItem) {
+    auto movieIndex = movieList->listIndex(movieItem);
     if ((movieIndex >= 0) && (movieIndex < currentMovies.size())) {
-        QString tag = tagList->currentItemWidget()->text();
+        QString tag = tagList->currentItem()->text();
         QString directory { "." };
         if (directoryList->count() > 0) {
-            directory = directoryList->currentItemWidget()->text();
+            directory = directoryList->currentItem()->text();
         }
         updateMovieQueue(movieIndex);
-        emit setMovie(currentMovies[movieIndex], movieList->itemWidget(movieIndex)->text(), tag, directory);
+        emit setMovie(currentMovies[movieIndex], movieList->listItem(movieIndex)->text(), tag, directory);
     }
 }
 
@@ -216,18 +216,18 @@ void xMainMovieWidget::updateSelectedMovie(const QString& path, const QString& n
     Q_UNUSED(name)
     Q_UNUSED(tag)
     Q_UNUSED(directory)
-    auto movieIndex = movieList->currentRow();
+    auto movieIndex = movieList->currentListIndex();
     auto pathIndex = currentMovies.indexOf(path);
-    // Update selection only if pathIndex is valid and not the currently selected index.
+    // Update selection only if pathIndex is valid and not the currently selected listIndex.
     if ((pathIndex != movieIndex) && (pathIndex >= 0) && (pathIndex < movieList->count())) {
-        movieList->setCurrentItem(movieList->item(pathIndex));
+        movieList->setCurrentListIndex(pathIndex);
         updatePlayedMovies();
     }
 }
 
 void xMainMovieWidget::setAutoPlayNextMovie(bool mode) {
     autoPlayNextMovie = mode;
-    updateMovieQueue(movieList->currentRow());
+    updateMovieQueue(movieList->currentListIndex());
 }
 
 void xMainMovieWidget::updatedDatabaseMovieOverlay() {
@@ -240,16 +240,16 @@ void xMainMovieWidget::updatedDatabaseMovieOverlay() {
     } else {
         // Clear tag list.
         for (auto i = 0; i < tagList->count(); ++i) {
-            tagList->itemWidget(i)->removeIcon();
+            tagList->listItem(i)->removeIcon();
         }
         // Clear directory list.
         for (auto i = 0; i < directoryList->count(); ++i) {
-            directoryList->itemWidget(i)->removeIcon();
+            directoryList->listItem(i)->removeIcon();
         }
         // Clear movie list.
         for (auto i = 0; i < movieList->count(); ++i) {
-            movieList->itemWidget(i)->removeIcon();
-            movieList->itemWidget(i)->removeToolTip();
+            movieList->listItem(i)->removeIcon();
+            movieList->listItem(i)->removeToolTip();
         }
     }
 }
@@ -259,13 +259,13 @@ void xMainMovieWidget::updateMovieQueue(int index) {
         if (autoPlayNextMovie) {
             QList<std::pair<QString,QString>> queue;
             for (auto i = index+1; i < currentMovies.size(); ++i) {
-                qDebug() << "QUEUE: " << movieList->itemWidget(i)->text();
-                queue.push_back(std::make_pair(currentMovies[i], movieList->itemWidget(i)->text()));
+                qDebug() << "QUEUE: " << movieList->listItem(i)->text();
+                queue.push_back(std::make_pair(currentMovies[i], movieList->listItem(i)->text()));
             }
-            QString tag = tagList->currentItemWidget()->text();
+            QString tag = tagList->currentItem()->text();
             QString directory { "." };
             if (directoryList->count() > 0) {
-                directory = directoryList->currentItemWidget()->text();
+                directory = directoryList->currentItem()->text();
             }
             emit setMovieQueue(queue, tag, directory);
         } else {
@@ -283,7 +283,7 @@ void xMainMovieWidget::updatePlayedTags() {
     }
     auto playedTags = xPlayerDatabase::database()->getPlayedTags(databaseCutOff);
     for (auto i = 0; i < tagList->count(); ++i) {
-        auto tagItem = tagList->itemWidget(i);
+        auto tagItem = tagList->listItem(i);
         auto tag = tagItem->text();
         // Clear icon and tooltip.
         tagItem->removeIcon();
@@ -303,14 +303,14 @@ void xMainMovieWidget::updatePlayedDirectories() {
     if (!useDatabaseMovieOverlay) {
         return;
     }
-    auto tagItem = tagList->currentItemWidget();
+    auto tagItem = tagList->currentItem();
     if ((!tagItem) || (directoryList->count() == 0)) {
         return;
     }
     auto tag = tagItem->text();
     auto playedDirectories = xPlayerDatabase::database()->getPlayedDirectories(tag, databaseCutOff);
     for (auto i = 0; i < directoryList->count(); ++i) {
-        auto directoryItem = directoryList->itemWidget(i);
+        auto directoryItem = directoryList->listItem(i);
         auto directory = directoryItem->text();
         // Clear icon and tooltip.
         directoryItem->removeIcon();
@@ -330,16 +330,16 @@ void xMainMovieWidget::updatePlayedMovies() {
     if (!useDatabaseMovieOverlay) {
         return;
     }
-    auto tagItem = tagList->currentItemWidget();
+    auto tagItem = tagList->currentItem();
     // No tag currently selected. We do not need to update.
     if (!tagItem) {
         return;
     }
     auto tag = tagItem->text();
-    auto directory = (directoryList->count() > 0) ? directoryList->currentItemWidget()->text() : ".";
+    auto directory = (directoryList->count() > 0) ? directoryList->currentItem()->text() : ".";
     auto playedMovies = xPlayerDatabase::database()->getPlayedMovies(tag, directory, databaseCutOff);
     for (auto i = 0; i < movieList->count(); ++i) {
-        auto movieItem = movieList->itemWidget(i);
+        auto movieItem = movieList->listItem(i);
         auto movie = movieItem->text();
         // Clear icon and tooltip.
         movieItem->removeIcon();
@@ -363,7 +363,7 @@ void xMainMovieWidget::updatePlayedMovies() {
                 if (playedMovies.isEmpty()) {
                     return;
                 }
-                // Break loop and move on to the next movie item.
+                // Break loop and move on to the next movie listItem.
                 break;
             }
         }
@@ -376,9 +376,9 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
     if (!useDatabaseMovieOverlay) {
         return;
     }
-    auto tagItem = tagList->currentItemWidget();
+    auto tagItem = tagList->currentItem();
     // Update the tags.
-    auto tagPlayedItems = tagList->findItemWidgets(tag);
+    auto tagPlayedItems = tagList->findListItems(tag);
     for (auto& tagPlayedItem : tagPlayedItems) {
         tagPlayedItem->setIcon(":images/xplay-star.svg");
     }
@@ -389,9 +389,9 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
     }
     // Handle special case if we only have the "." directory.
     if (directoryList->count() > 0) {
-        auto directoryItem = directoryList->currentItemWidget();
+        auto directoryItem = directoryList->currentItem();
         // Update the directorys.
-        auto directoryPlayedItems = directoryList->findItemWidgets(directory);
+        auto directoryPlayedItems = directoryList->findListItems(directory);
         for (auto& directoryPlayedItem : directoryPlayedItems) {
             directoryPlayedItem->setIcon(":images/xplay-star.svg");
         }
@@ -401,7 +401,7 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
             return;
         }
     }
-    auto moviePlayedItems = movieList->findItemWidgets(movie);
+    auto moviePlayedItems = movieList->findListItems(movie);
     for (auto& moviePlayedItem : moviePlayedItems) {
         moviePlayedItem->setIcon(":images/xplay-star.svg");
         if (playCount > 1) {

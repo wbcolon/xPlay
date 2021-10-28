@@ -38,12 +38,12 @@
 
 
 // Function addListWidgetGroupBox has to be defined before the constructor due to the auto return.
-auto xMainMusicWidget::addListWidgetGroupBox(const QString& boxLabel, QWidget* parent) {
+auto xMainMusicWidget::addListWidgetGroupBox(const QString& boxLabel, bool displayTime, QWidget* parent) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, parent);
     groupBox->setFlat(xPlayerUseFlatGroupBox);
-    auto list = new xPlayerListWidget(groupBox);
+    auto list = new xPlayerListWidget(groupBox, displayTime);
     auto boxLayout = new QVBoxLayout();
     boxLayout->addWidget(list);
     groupBox->setLayout(boxLayout);
@@ -77,9 +77,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicStacked = new QStackedWidget(this);
     // Create and group boxes with embedded list widgets.
     musicListView = new QWidget(musicStacked);
-    auto [artistBox, artistList_] = addListWidgetGroupBox(tr("Artists"), musicListView);
-    auto [albumBox, albumList_] = addListWidgetGroupBox(tr("Albums"), musicListView);
-    auto [trackBox_, trackList_] = addListWidgetGroupBox(tr("Tracks"), musicListView);
+    auto [artistBox, artistList_] = addListWidgetGroupBox(tr("Artists"), false, musicListView);
+    auto [albumBox, albumList_] = addListWidgetGroupBox(tr("Albums"), false, musicListView);
+    auto [trackBox_, trackList_] = addListWidgetGroupBox(tr("Tracks"), true, musicListView);
     // Sort entries in artist/album/track
     artistList = artistList_;
     artistList->enableSorting(false);
@@ -136,10 +136,10 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueBox = new QGroupBox(tr("Queue"), this);
     queueBox->setFlat(xPlayerUseFlatGroupBox);
     auto queueBoxLayout = new xPlayerLayout();
-    queueList = new xPlayerListWidget(queueBox);
+    queueList = new xPlayerListWidget(queueBox, true);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
-    queueList->setLayoutMode(QListView::Batched);
-    queueList->setDragDropMode(QListWidget::InternalMove);
+    queueList->setDragDropMode(QTreeWidget::InternalMove);
+    queueList->setSelectionMode(QTreeWidget::SingleSelection);
     queueList->setMinimumWidth(xPlayerQueueListMinimumWidth);
     auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
     // Tags menu.
@@ -164,11 +164,11 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     mainWidgetLayout->addWidget(musicStacked, 1, 0, 8, 12);
     mainWidgetLayout->addWidget(queueBox, 0, 12, 9, 4);
     // Connect artist, album, track and selector widgets
-    connect(artistList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectArtist);
-    connect(artistList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueArtist);
-    connect(albumList, &QListWidget::currentRowChanged, this, &xMainMusicWidget::selectAlbum);
-    connect(albumList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::queueAlbum);
-    connect(trackList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::selectTrack);
+    connect(artistList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMusicWidget::selectArtist);
+    connect(artistList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::queueArtist);
+    connect(albumList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMusicWidget::selectAlbum);
+    connect(albumList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::queueAlbum);
+    connect(trackList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::selectTrack);
     connect(trackList, &xPlayerListWidget::totalTime, this, &xMainMusicWidget::updateTracksTotalTime);
     connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selector, this, &xMainMusicWidget::selectArtistSelector);
     connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selectorDoubleClicked, this, &xMainMusicWidget::queueArtistSelector);
@@ -196,8 +196,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Connect player widget to main widget
     connect(playerWidget, &xPlayerMusicWidget::clearQueue, this, &xMainMusicWidget::clearQueue);
     // Connect queue to main widget
-    connect(queueList, &QListWidget::itemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackDoubleClicked);
-    connect(queueList, &QListWidget::itemClicked, this, &xMainMusicWidget::currentQueueTrackCtrlClicked);
+    connect(queueList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::currentQueueTrackDoubleClicked);
+    connect(queueList, &xPlayerListWidget::listItemClicked, this, &xMainMusicWidget::currentQueueTrackCtrlClicked);
     connect(queueList, &xPlayerListWidget::totalTime, this, &xMainMusicWidget::updateQueueTotalTime);
     connect(queueList, &xPlayerListWidget::dragDrop, musicPlayer, &xMusicPlayer::moveQueueTracks);
     // Connect shuffle mode.
@@ -272,7 +272,7 @@ void xMainMusicWidget::updateScannedArtists(const std::list<xMusicDirectory>& ar
     // Not very efficient to use a filtered and the unfiltered list, but easier to read.
     filteredArtists = filterArtists(artists);
     for (const auto& artist : filteredArtists) {
-        artistList->addItemWidget(artist.name());
+        artistList->addListItem(artist.name());
     }
     // Update database overlay for artists.
     updatePlayedArtists();
@@ -289,7 +289,7 @@ void xMainMusicWidget::scannedAlbums(const std::list<xMusicDirectory>& albums) {
     albumList->clearItems();
     clearTrackList();
     for (const auto& album : sortedAlbums) {
-        albumList->addItemWidget(album.name());
+        albumList->addListItem(album.name());
     }
     // Update database overlay for albums.
     updatePlayedAlbums();
@@ -299,7 +299,7 @@ void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
     // Clear only track list and stop potential running update thread.
     clearTrackList();
     for (const auto& track : tracks) {
-        trackList->addItemWidget(track);
+        trackList->addListItem(track);
     }
     // Update database overlay for tracks. Run in separate thread.
     updatePlayedTracks();
@@ -310,7 +310,7 @@ void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,
                                              std::vector<xMusicFile*>>>& albumTracks) {
     for (const auto& albumTrack : albumTracks) {
-        queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(artist, albumTrack.first));
+        queueList->addListItems(albumTrack.second, QString("%1 - %2").arg(artist, albumTrack.first));
         emit queueTracks(artist, albumTrack.first, albumTrack.second);
     }
     emit finishedQueueTracks(true);
@@ -360,7 +360,7 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
         for (const auto& albumTrack : listElem.second) {
             qDebug() << "scannedListArtistsAllAlbumTracks: " << listElem.first << "," << albumTrack.first;
             // Update queue list UI.
-            queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(listElem.first, albumTrack.first));
+            queueList->addListItems(albumTrack.second, QString("%1 - %2").arg(listElem.first, albumTrack.first));
             // Queue items.
             emit queueTracks(listElem.first, albumTrack.first, albumTrack.second);
             // Update progress bar.
@@ -408,7 +408,8 @@ void xMainMusicWidget::scannedAllAlbumsForListArtistsWorker(
         for (const auto& albumTrack : listTracksIterator->second) {
             qDebug() << "scannedListArtistsAllAlbumTracks: " << listTracksIterator->first << "," << albumTrack.first;
             // Update queue list UI.
-            queueList->addItemWidgets(albumTrack.second, QString("%1 - %2").arg(listTracksIterator->first, albumTrack.first));
+            queueList->addListItems(albumTrack.second,
+                                    QString("%1 - %2").arg(listTracksIterator->first, albumTrack.first));
             // Queue items.
             emit queueTracks(listTracksIterator->first, albumTrack.first, albumTrack.second);
             // Update progress bar.
@@ -482,26 +483,26 @@ void xMainMusicWidget::sortListMusicDirectory(std::list<xMusicDirectory>& list) 
 }
 
 void xMainMusicWidget::selectArtist(int index) {
-    // Check if artist index is valid.
+    // Check if artist listIndex is valid.
     if ((index >= 0) && (index < artistList->count())) {
         // Retrieve selected artist name and trigger scanForArtist
-        xMusicDirectory artist(artistList->itemWidget(index)->text());
+        xMusicDirectory artist(artistList->listItem(index)->text());
         emit scanForArtist(artist, musicLibraryFilter);
     }
 }
 
-void xMainMusicWidget::queueArtist(QListWidgetItem *artistItem) {
-    // Retrieve index for the selected item and check if it's valid.
-    auto index = artistList->row(artistItem);
+void xMainMusicWidget::queueArtist(xPlayerListWidgetItem* artistItem) {
+    // Retrieve listIndex for the selected listItem and check if it's valid.
+    auto index = artistList->listIndex(artistItem);
     if ((index >= 0) && (index < artistList->count())) {
-        // Retrieve selected index name and trigger scanAllAlbumsForArtist
+        // Retrieve selected listIndex name and trigger scanAllAlbumsForArtist
         QApplication::setOverrideCursor(Qt::WaitCursor);
-        emit scanAllAlbumsForArtist(xMusicDirectory(artistList->itemWidget(index)->text()), musicLibraryFilter);
+        emit scanAllAlbumsForArtist(xMusicDirectory(artistList->listItem(index)->text()), musicLibraryFilter);
     }
 }
 
 void xMainMusicWidget::currentArtistContextMenu(const QPoint& point) {
-    auto artistItem = artistList->itemWidgetAt(point);
+    auto artistItem = artistList->itemAt(point);
     if (artistItem) {
         QMenu artistMenu;
         // Add section for artist info website.
@@ -516,7 +517,7 @@ void xMainMusicWidget::currentArtistContextMenu(const QPoint& point) {
             artistMenu.addSection(tr("Other Artists"));
             for (size_t i = 0; (i < artistTransitions.size()) && (i < 10); ++i) {
                 artistMenu.addAction(artistTransitions[i].first, [=]() {
-                    artistList->setCurrentWidgetItem(artistTransitions[i].first);
+                    artistList->setCurrentItem(artistTransitions[i].first);
                 });
             }
         }
@@ -525,44 +526,44 @@ void xMainMusicWidget::currentArtistContextMenu(const QPoint& point) {
 }
 
 void xMainMusicWidget::selectAlbum(int index) {
-    // Check if index index is valid.
+    // Check if index listIndex is valid.
     if ((index >= 0) && (index < albumList->count())) {
-        // Retrieve selected artist and index name and
+        // Retrieve selected artist and listIndex name and
         // trigger scanForArtistAndAlbum
-        xMusicDirectory artist(artistList->currentItemWidget()->text());
-        xMusicDirectory album(albumList->itemWidget(index)->text());
+        xMusicDirectory artist(artistList->currentItem()->text());
+        xMusicDirectory album(albumList->listItem(index)->text());
         emit scanForArtistAndAlbum(artist, album);
     }
 }
 
-void xMainMusicWidget::queueAlbum(QListWidgetItem* albumItem) {
+void xMainMusicWidget::queueAlbum(xPlayerListWidgetItem* albumItem) {
     // Emulate behavior of selecting album and clicking on the first track.
     if (albumItem == albumList->currentItem()) {
         if (trackList->count() > 0) {
-            selectTrack(trackList->item(0));
+            selectTrack(trackList->listItem(0));
         }
     }
 }
 
-void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
-    // Retrieve index for the selected item and check if it's valid.
-    auto track = trackList->row(trackItem);
+void xMainMusicWidget::selectTrack(xPlayerListWidgetItem* trackItem) {
+    // Retrieve listIndex for the selected listItem and check if it's valid.
+    auto track = trackList->listIndex(trackItem);
     if ((track >= 0) && (track< trackList->count())) {
         // Retrieve selected artist and album name.
-        auto artistName = artistList->currentItemWidget()->text();
-        auto albumName = albumList->currentItemWidget()->text();
-        // Retrieve all track names from the selected index to
+        auto artistName = artistList->currentItem()->text();
+        auto albumName = albumList->currentItem()->text();
+        // Retrieve all track names from the selected listIndex to
         // the end of the album.
         std::vector<xMusicFile*> trackObjects;
         QString trackName;
         for (auto i = track; i < trackList->count(); ++i) {
-            trackName = trackList->itemWidget(i)->text();
-            auto trackObject = musicLibrary->getMusicFile(artistName, albumName, trackName);
+            trackName = trackList->listItem(i)->text();
+            auto trackObject = musicLibrary->getLibraryFiles()->getMusicFile(artistName, albumName, trackName);
             if (trackObject != nullptr) {
                 trackObjects.push_back(trackObject);
             }
             // Add to the playlist (queue)
-            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(artistName, albumName));
+            queueList->addListItem(trackObject, QString("%1 - %2").arg(artistName, albumName));
         }
         // Signal the set tracks to be queued by the music player.
         emit queueTracks(artistName, albumName, trackObjects);
@@ -574,7 +575,7 @@ void xMainMusicWidget::selectTrack(QListWidgetItem* trackItem) {
 }
 
 void xMainMusicWidget::selectArtistSelector(const QString& selector) {
-    // Check if index is valid.
+    // Check if listIndex is valid.
     if (!selector.isEmpty()) {
         currentArtistSelector = selector;
         // Call with stored list in order to update artist filtering.
@@ -634,7 +635,7 @@ void xMainMusicWidget::updateSearchSelectorFilter(const std::tuple<QString,QStri
 
 void xMainMusicWidget::currentState(xMusicPlayer::State state) {
     // Update the icon for the played track based on the state of the music player.
-    auto currentTrack = queueList->itemWidget(playedTrack);
+    auto currentTrack = queueList->listItem(playedTrack);
     if (!currentTrack) {
         return;
     }
@@ -679,37 +680,37 @@ void xMainMusicWidget::currentTrack(int index, const QString& artist, const QStr
 
 void xMainMusicWidget::currentQueueTrack(int index) {
     // Remove play icon from old track
-    auto oldPlayedItem = queueList->itemWidget(playedTrack);
+    auto oldPlayedItem = queueList->listItem(playedTrack);
     if (oldPlayedItem) {
         oldPlayedItem->removeIcon();
     }
     // Update played track.
     playedTrack = index;
     // Set play icon only for currently played one.
-    auto playedItem = queueList->itemWidget(playedTrack);
+    auto playedItem = queueList->listItem(playedTrack);
     if (playedItem) {
         playedItem->setIcon(":/images/xplay-play.svg");
     }
-    queueList->setCurrentRow(index);
+    queueList->setCurrentListIndex(index);
 }
 
-void xMainMusicWidget::currentQueueTrackCtrlClicked(QListWidgetItem* trackItem) {
+void xMainMusicWidget::currentQueueTrackCtrlClicked(xPlayerListWidgetItem* trackItem) {
     if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
-        auto track = queueList->row(trackItem);
+        auto track = queueList->listIndex(trackItem);
         if ((track >= 0) && (track< queueList->count())) {
             // Access the information stored in the track.
-            auto musicFile = queueList->itemWidget(track)->musicFile();
+            auto musicFile = queueList->listItem(track)->musicFile();
             // Try to select the artist.
-            if (artistList->setCurrentWidgetItem(musicFile->getArtist())) {
+            if (artistList->setCurrentItem(musicFile->getArtist())) {
                 // Try to select the album.
-                albumList->setCurrentWidgetItem(musicFile->getAlbum());
+                albumList->setCurrentItem(musicFile->getAlbum());
             }
         }
     }
 }
 
-void xMainMusicWidget::currentQueueTrackDoubleClicked(QListWidgetItem* trackItem) {
-    auto track = queueList->row(trackItem);
+void xMainMusicWidget::currentQueueTrackDoubleClicked(xPlayerListWidgetItem* trackItem) {
+    auto track = queueList->listIndex(trackItem);
     if ((track >= 0) && (track< queueList->count())) {
         currentQueueTrack(track);
         musicPlayer->play(track);
@@ -719,9 +720,9 @@ void xMainMusicWidget::currentQueueTrackDoubleClicked(QListWidgetItem* trackItem
 void xMainMusicWidget::currentQueueTrackRightClicked(const QPoint& point) {
     if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
         // Retrieve currently selected element
-        auto track = queueList->currentRow();
+        auto track = queueList->currentListIndex();
         if ((track >= 0) && (track< queueList->count())) {
-            queueList->takeItemWidget(track);
+            queueList->takeListItem(track);
             emit dequeueTrack(track);
         }
     } else {
@@ -768,18 +769,18 @@ void xMainMusicWidget::updatedDatabaseMusicOverlay() {
     } else {
         // Clear artist list.
         for (auto i = 0; i < artistList->count(); ++i) {
-            artistList->itemWidget(i)->removeIcon();
-            artistList->itemWidget(i)->removeToolTip();
+            artistList->listItem(i)->removeIcon();
+            artistList->listItem(i)->removeToolTip();
         }
         // Clear album list.
         for (auto i = 0; i < albumList->count(); ++i) {
-            albumList->itemWidget(i)->removeIcon();
-            albumList->itemWidget(i)->removeToolTip();
+            albumList->listItem(i)->removeIcon();
+            albumList->listItem(i)->removeToolTip();
         }
         // Clear track list.
         for (auto i = 0; i < trackList->count(); ++i) {
-            trackList->itemWidget(i)->removeIcon();
-            trackList->itemWidget(i)->removeToolTip();
+            trackList->listItem(i)->removeIcon();
+            trackList->listItem(i)->removeToolTip();
         }
     }
 }
@@ -795,15 +796,15 @@ void xMainMusicWidget::updatedMusicLibraryAlbumSelectors() {
 void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
     if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
         // Retrieve currently selected element
-        auto track = trackList->currentRow();
+        auto track = trackList->currentListIndex();
         if ((track >= 0) && (track < trackList->count())) {
             // Retrieve selected artist and album name.
-            auto artistName = artistList->currentItemWidget()->text();
-            auto albumName = albumList->currentItemWidget()->text();
+            auto artistName = artistList->currentItem()->text();
+            auto albumName = albumList->currentItem()->text();
             // Retrieve only selected track
             std::vector<xMusicFile *> trackObjects;
-            QString trackName = trackList->itemWidget(track)->text();
-            auto trackObject = musicLibrary->getMusicFile(artistName, albumName, trackName);
+            QString trackName = trackList->listItem(track)->text();
+            auto trackObject = musicLibrary->getLibraryFiles()->getMusicFile(artistName, albumName, trackName);
             if (trackObject == nullptr) {
                 qCritical() << "xMainMusicWidget: unable to find music file object in library for "
                             << artistName + "/" + albumName + "/" + trackName;
@@ -811,7 +812,7 @@ void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
             }
             trackObjects.push_back(trackObject);
             // Add to the playlist (queue)
-            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(artistName, albumName));
+            queueList->addListItem(trackObject, QString("%1 - %2").arg(artistName, albumName));
             // Signal the set tracks to be queued by the music player.
             emit queueTracks(artistName, albumName, trackObjects);
             // Signal finish adding tracks.
@@ -860,7 +861,7 @@ void xMainMusicWidget::updatePlayedArtists() {
     }
     auto playedArtists = xPlayerDatabase::database()->getPlayedArtists(databaseCutOff);
     for (auto i = 0; i < artistList->count(); ++i) {
-        auto artistItem = artistList->itemWidget(i);
+        auto artistItem = artistList->listItem(i);
         auto artist = artistItem->text();
         // Clear icon.
         artistItem->removeIcon();
@@ -879,14 +880,14 @@ void xMainMusicWidget::updatePlayedAlbums() {
     if (!useDatabaseMusicOverlay) {
         return;
     }
-    auto artistItem = artistList->currentItemWidget();
+    auto artistItem = artistList->currentItem();
     if (!artistItem) {
         return;
     }
     auto artist = artistItem->text();
     auto playedAlbums = xPlayerDatabase::database()->getPlayedAlbums(artist, databaseCutOff);
     for (auto i = 0; i < albumList->count(); ++i) {
-        auto albumItem = albumList->itemWidget(i);
+        auto albumItem = albumList->listItem(i);
         auto album = albumItem->text();
         // Clear icon and tooltip.
         albumItem->removeIcon();
@@ -905,8 +906,8 @@ void xMainMusicWidget::updatePlayedTracks() {
     if (!useDatabaseMusicOverlay) {
         return;
     }
-    auto artistItem = artistList->currentItemWidget();
-    auto albumItem = albumList->currentItemWidget();
+    auto artistItem = artistList->currentItem();
+    auto albumItem = albumList->currentItem();
     // No artist or album currently selected. We do not need to update.
     if ((!artistItem) || (!albumItem)) {
         return;
@@ -917,7 +918,7 @@ void xMainMusicWidget::updatePlayedTracks() {
     // Both lists are sorted. We therefore update in one walk-through.
     auto playedMusicTrack = playedMusicTracks.begin();
     for (auto i = 0; (i < trackList->count()) && (playedMusicTrack != playedMusicTracks.end()); ++i) {
-        auto trackItem = trackList->itemWidget(i);
+        auto trackItem = trackList->listItem(i);
         auto track = trackItem->text();
         if (std::get<0>(*playedMusicTrack) == track) {
             trackItem->setIcon(":images/xplay-star.svg");
@@ -948,9 +949,9 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     if (!useDatabaseMusicOverlay) {
         return;
     }
-    auto artistItem = artistList->currentItemWidget();
+    auto artistItem = artistList->currentItem();
     // Update the artists.
-    auto artistPlayedItems = artistList->findItemWidgets(artist);
+    auto artistPlayedItems = artistList->findListItems(artist);
     for (auto& artistPlayedItem : artistPlayedItems) {
         artistPlayedItem->setIcon(":images/xplay-star.svg");
     }
@@ -959,9 +960,9 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     if ((!artistItem) || (artistItem->text() != artist)) {
         return;
     }
-    auto albumItem = albumList->currentItemWidget();
+    auto albumItem = albumList->currentItem();
     // Update the albums.
-    auto albumPlayedItems = albumList->findItemWidgets(album);
+    auto albumPlayedItems = albumList->findListItems(album);
     for (auto& albumPlayedItem : albumPlayedItems) {
         albumPlayedItem->setIcon(":images/xplay-star.svg");
     }
@@ -970,7 +971,7 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     if ((!albumItem) || (albumItem->text() != album)) {
         return;
     }
-    auto trackPlayedItems = trackList->findItemWidgets(track);
+    auto trackPlayedItems = trackList->findListItems(track);
     for (auto& trackPlayedItem : trackPlayedItems) {
         trackPlayedItem->setIcon(":images/xplay-star.svg");
         if (playCount > 1) {
@@ -995,9 +996,10 @@ void xMainMusicWidget::playlist(const std::vector<std::tuple<QString,QString,QSt
     queueList->clearItems();
     for (const auto& entry : entries) {
         // Add to the playlist (queue)
-        auto trackObject = musicLibrary->getMusicFile(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
+        auto trackObject = musicLibrary->getLibraryFiles()->
+                getMusicFile(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
         if (trackObject) {
-            queueList->addItemWidget(trackObject, QString("%1 - %2").arg(std::get<0>(entry), std::get<1>(entry)));
+            queueList->addListItem(trackObject, QString("%1 - %2").arg(std::get<0>(entry), std::get<1>(entry)));
         }
     }
     // Update items.
@@ -1025,9 +1027,9 @@ void xMainMusicWidget::showTagsDialog() {
 }
 
 void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point) {
-    auto item = list->itemWidgetAt(point);
+    auto item = list->itemAt(point);
     if (!item) {
-        // No item at the current position. No need for the tag menu.
+        // No listItem at the current position. No need for the tag menu.
         return;
     }
     auto menuTags = xPlayerConfiguration::configuration()->getMusicLibraryTags();

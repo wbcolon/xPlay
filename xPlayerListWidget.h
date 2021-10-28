@@ -17,8 +17,8 @@
 
 #include "xPlayerUI.h"
 
-#include <QListWidget>
-#include <QListWidgetItem>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
 #include <QThread>
 #include <QLabel>
 #include <QString>
@@ -27,25 +27,23 @@
 
 class xMusicFile;
 
-class xPlayerListItemWidget: public QWidget {
-    Q_OBJECT
-
+class xPlayerListWidgetItem:public QTreeWidgetItem {
 public:
-    explicit xPlayerListItemWidget(const QString& text, QWidget* parent=nullptr);
-    explicit xPlayerListItemWidget(xMusicFile* file, QWidget* parent=nullptr);
-    ~xPlayerListItemWidget() override = default;
+    explicit xPlayerListWidgetItem(const QString& text, QTreeWidget* parent);
+    explicit xPlayerListWidgetItem(xMusicFile* file, QTreeWidget* parent);
+    ~xPlayerListWidgetItem() override = default;
     /**
-     * Set an icon for the list item widget.
+     * Set an icon for the list item.
      *
      * @param iconPath path to the icon/pixmap file as string.
      */
     void setIcon(const QString& iconPath);
     /**
-     * Remove the icon from the list item widget.
+     * Remove the icon from the list item.
      */
     void removeIcon();
     /**
-     * Add a tooltip to the list item widget.
+     * Add a tooltip to the list item.
      *
      * The tooltip is added to a possibly shortened track name
      * separated by a newline.
@@ -54,80 +52,56 @@ public:
      */
     void addToolTip(const QString& tooltip);
     /**
-     * Remove the added tooltip from the list item widget.
+     * Update the tooltip to the list item.
+     *
+     * The tooltip is added to a possibly shortened track name
+     * separated by a newline.
+     */
+    void updateToolTip();
+    /**
+     * Remove the added tooltip from the list item.
      *
      * The tooltip used for a shortened track name will still be
      * visible.
      */
     void removeToolTip();
     /**
-     * Return the text of the list item widget.
+     * Return the text of the list item.
      *
      * @return the text of the name label as string.
      */
     [[nodiscard]] const QString& text() const;
     /**
-     * Return the music file for the list item widget.
+     * Return the width of the list item text.
+     *
+     * @return the width as int.
+     */
+    [[nodiscard]] int textWidth() const;
+    /**
+     * Return the music file for the list item.
      *
      * @return a pointer to the music file, nullptr if no attached.
      */
     [[nodiscard]] xMusicFile* musicFile() const;
     /**
-     * Update the time for the list item widget.
+     * Update the time for the list item.
      */
     qint64 updateTime();
 
-protected:
-    /**
-     * Overload the resizeEvent in order to shorten the text if necessary.
-     *
-     * @param event the resize event containing the new size.
-     */
-    void resizeEvent(QResizeEvent* event) override;
-
 private:
-    /**
-     * Update the track name
-     *
-     * @param width the maximum with the text is allowed to have.
-     */
-    void updateTrackName(int width);
-    /**
-     * Shorten the text by cutting ending chars.
-     *
-     * @param width the maximum with the text is allowed to have.
-     * @return the shortened text that fits the allowed width.
-     */
-    QString shortenedTrackName(int width);
-    /**
-     * Update the tool tip.
-     */
-    void updateToolTip();
-
-private:
-    xPlayerLayout* itemLayout;
-    QLabel* itemIconLabel;
-    QLabel* itemTextLabel;
-    QLabel* itemTimeLabel;
     bool itemTimeUpdated;
     qint64 itemTime;
     QString itemText;
-    bool itemTextShortened;
-    bool itemInitialized;
-    int itemCurrentWidth;
-    QString itemToolTip;
-    xMusicFile* itemFile;
     int itemTextWidth;
-    int itemTextCharacterWidth;
-    int itemFixedWidth;
-    bool itemTextInitialized;
+    QString itemTooltip;
+    xMusicFile* itemFile;
 };
 
-class xPlayerListWidget:public QListWidget {
+class xPlayerListWidget:public QTreeWidget {
     Q_OBJECT
 
 public:
-    explicit xPlayerListWidget(QWidget* parent=nullptr);
+    explicit xPlayerListWidget(QWidget* parent=nullptr, bool displayTime=false);
     ~xPlayerListWidget() override = default;
     /**
      * Enable the sorted mode for the list widget.
@@ -136,97 +110,122 @@ public:
      */
     void enableSorting(bool sorted);
     /**
-     * Add item widget without time section to the list.
+     * Add item without time section to the list.
      *
      * @param text the text to be shown as string.
      */
-    void addItemWidget(const QString& text);
+    void addListItem(const QString& text);
     /**
-     * Add item widget with tooltip and without time section to the list.
+     * Add item with tooltip and without time section to the list.
      *
      * @param text the text to be shown as string.
      * @param tooltip the text of the tooltip as string.
      */
-    void addItemWidget(const QString& text, const QString& tooltip);
+    void addListItem(const QString& text, const QString& tooltip);
     /**
-     * Add list of widgets without time section to the list.
+     * Add list of items without time section to the list.
      * @param list a string list of items to be added.
      */
-    void addItemWidgets(const QStringList& list);
+    void addListItems(const QStringList& list);
     /**
-     * Add item widget to the list.
+     * Add item to the list.
      *
      * @param file pointer to the associated music file object.
      */
-    void addItemWidget(xMusicFile* file);
+    void addListItem(xMusicFile* file);
     /**
-     * Add item widget with tooltip to the list.
+     * Add item with tooltip to the list.
      *
      * @param file pointer to the associated music file object.
      * @param tooltip the text of the tooltip as string.
      */
-    void addItemWidget(xMusicFile* file, const QString& tooltip);
+    void addListItem(xMusicFile* file, const QString& tooltip);
     /**
-     * Add vector of item widgets with tooltip to the list.
+     * Add vector of items with tooltip to the list.
      *
      * @param files vector of pointer to the associated music file objects.
      * @param tooltip  the text of the tooltip as string.
      */
-    void addItemWidgets(const std::vector<xMusicFile*>& files, const QString& tooltip);
+    void addListItems(const std::vector<xMusicFile*>& files, const QString& tooltip);
     /**
      * Add list of pairs of tooltip and item vector.
      *
      * @param files list of pairs of tooltip and vector of pointer to associated music file objects.
      */
-    void addItemWidgets(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files);
+    void addListItems(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files);
     /**
-     * Find the item widgets that match the given text.
+     * Find the list item that match the given text.
      *
      * @param text the text we are looking for as string.
      * @return a list of item widget with matching text.
      */
-    QList<xPlayerListItemWidget*> findItemWidgets(const QString& text);
+    QList<xPlayerListWidgetItem*> findListItems(const QString& text);
     /**
      * Select the item widget that matches the given text.
      *
-     * @param text the text of the item widget to be selected.
-     * @return true if the item widget could be selected, false otherwise.
+     * @param text the text of the item to be selected.
+     * @return true if the item could be selected, false otherwise.
      */
-    bool setCurrentWidgetItem(const QString& text);
+    bool setCurrentItem(const QString& text);
     /**
-     * Return the item widget of the currently selected element.
+     * Return the list item of the currently selected element.
      *
-     * @return a pointer to the selected item widget.
+     * @return a pointer to the selected item.
      */
-    xPlayerListItemWidget* currentItemWidget();
+    xPlayerListWidgetItem* currentItem();
     /**
-     * Return the item widget at the given index.
-     *
-     * @param index the index as integer.
-     * @return a pointer to the item widget.
-     */
-    xPlayerListItemWidget* itemWidget(int index);
-    /**
-     * Remove the item including widget at the given index.
+     * Return the list item at the given index.
      *
      * @param index the index as integer.
+     * @return a pointer to the item.
      */
-    void takeItemWidget(int index);
+    xPlayerListWidgetItem* listItem(int index);
     /**
-     * Return the item widget at the given point.
+     * Remove the list item from the given index.
+     *
+     * @param index the index as integer.
+     */
+    void takeListItem(int index);
+    /**
+     * Return the list item at the given point.
      *
      * @param point the given point position.
-     * @return pointer to the item widget or nullptr.
+     * @return pointer to the list item or nullptr.
      */
-    xPlayerListItemWidget* itemWidgetAt(const QPoint& point);
+    xPlayerListWidgetItem* itemAt(const QPoint& point);
     /**
-     * Update all item widgets.
+     * Select the given list item.
      *
-     * Run time consuming item widget updates in a separate thread.
+     * @param index the index of the new currently selected list item.
+     */
+    void setCurrentListIndex(int index);
+    /**
+     * Retrieve the index of the currently selected list item.
+     *
+     * @return the index of the currently selected list item.
+     */
+    int currentListIndex();
+    /**
+     * Retrieve the index for a given list item.
+     *
+     * @param item a pointer to the list widget item.
+     * @return the index of the list item.
+     */
+    int listIndex(xPlayerListWidgetItem* item);
+    /**
+     * Retrieve the number of list items.
+     *
+     * @return the number of list elements as integer.
+     */
+    int count();
+    /**
+     * Update all list items.
+     *
+     * Run time consuming updates in a separate thread.
      */
     void updateItems();
     /**
-     * Clear all item widgets.
+     * Clear all items.
      */
     void clearItems();
 
@@ -239,6 +238,24 @@ public slots:
     void updateFilter(const QString& match);
 
 signals:
+    /**
+     * Signal emitted whenever an item in the list is selected.
+     *
+     * @param index the index of the selected item.
+     */
+    void currentListIndexChanged(int index);
+    /**
+     * Signal emitted if an item in the list is double clicked.
+     *
+     * @param item pointer to the item.
+     */
+    void listItemDoubleClicked(xPlayerListWidgetItem* item);
+    /**
+     * Signal emitted if an item in the list is clicked.
+     *
+     * @param item pointer to the item.
+     */
+    void listItemClicked(xPlayerListWidgetItem* item);
     /**
      * Signal emitted if total time of all list elements has been computed.
      *
@@ -273,6 +290,12 @@ signals:
 
 protected:
     /**
+     * Called upon resizing the tree widget.
+     *
+     * @param event a pointer to the resize event.
+     */
+    void resizeEvent(QResizeEvent* event) override;
+    /**
      * Called upon the start of the drag-and-drop operation.
      *
      * @param event a pointer to the drag enter event.
@@ -290,14 +313,14 @@ protected:
 
 private:
     /**
-     * Add list widget item with the given text.
+     * Add list item with the given text.
      *
-     * Add the item or insert it in ascending order.
+     * Add the list item or insert it in ascending order.
      *
-     * @param item the pointer to the list widget item.
+     * @param item the pointer to the list item.
      * @param text the text to be inserted as string.
      */
-    void addListWidgetItem(QListWidgetItem* item, const QString& text);
+    void addListWidgetItem(xPlayerListWidgetItem* item, const QString& text);
     /**
      * Worker function for updateItems. Function is running in a separate thread.
      *
@@ -321,7 +344,6 @@ private:
                               int currentFiles, int maxFiles);
 
     bool sortItems;
-    std::map<QListWidgetItem*,xPlayerListItemWidget*> mapItems;
     QThread* updateItemsThread;
     int dragDropFromIndex;
     int dragDropToIndex;

@@ -147,21 +147,21 @@ private slots:
     /**
      * Select an entry in the tag list widget.
      *
-     * @param index the index of the selected tag.
+     * @param index the listIndex of the selected tag.
      */
     void selectTag(int index);
     /**
      * Select an entry in the directory list widget.
      *
-     * @param index the index of the selected directory.
+     * @param index the listIndex of the selected directory.
      */
     void selectDirectory(int index);
     /**
      * Select an entry in the movie list widget by double-click.
      *
-     * @param item the pointer to the selected item.
+     * @param item the pointer to the selected listItem.
      */
-    void selectMovie(QListWidgetItem* item);
+    void selectMovie(xPlayerListWidgetItem* item);
     /**
      * Select an entry in the movie list widget based on its path.
      *
@@ -186,7 +186,7 @@ private:
     /**
      * Create movie queue and emit the queue to the player.
      *
-     * @param index the index of the currently selected (played) movie.
+     * @param index the listIndex of the currently selected (played) movie.
      */
     void updateMovieQueue(int index);
     /**

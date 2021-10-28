@@ -189,7 +189,7 @@ private slots:
      * selected. The function then retrieves the artist name and signals
      * a scanForArtists.
      *
-     * @param index index of the artist in the QListWidget.
+     * @param index listIndex of the artist in the QListWidget.
      */
     void selectArtist(int index);
     /**
@@ -199,9 +199,9 @@ private slots:
      * is double-clicked. The artist name is retrieved and all its albums
      * are queued.
      *
-     * @param artistItem pointer to the currently selected row.
+     * @param artistItem pointer to the currently selected listIndex.
      */
-    void queueArtist(QListWidgetItem* artistItem);
+    void queueArtist(xPlayerListWidgetItem* artistItem);
     /**
      * Create context menu for artist info and transitions.
      *
@@ -219,7 +219,7 @@ private slots:
      * selected. The function then retrieves the selected artist name and
      * the selected album name. It then signals a scanForArtistAndAlbum.
      *
-     * @param index index of the artist in the QListWidget.
+     * @param index listIndex of the artist in the QListWidget.
      */
     void selectAlbum(int index);
     /**
@@ -228,9 +228,9 @@ private slots:
      * Function is triggered whenever an album out of the list of albums
      * is double-clicked. The album name is retrieved and queued.
      *
-     * @param albumItem pointer to the currently selected row.
+     * @param albumItem pointer to the currently selected listIndex.
      */
-    void queueAlbum(QListWidgetItem* albumItem);
+    void queueAlbum(xPlayerListWidgetItem* albumItem);
     /**
      * Append tracks to the playlist (queue).
      *
@@ -238,9 +238,9 @@ private slots:
      * tracks. The position of the selected track is determined and the track
      * and the following tracks will be added to the queue.
      *
-     * @param trackItem pointer to the currently selected row.
+     * @param trackItem pointer to the currently selected listIndex.
      */
-    void selectTrack(QListWidgetItem* trackItem);
+    void selectTrack(xPlayerListWidgetItem* trackItem);
     /**
      * Append single track to the playlist (queue)
      *
@@ -338,9 +338,9 @@ private slots:
     /**
      * Select the current track in the playlist (queue).
      *
-     * @param trackItem pointer to the double-clicked item.
+     * @param trackItem pointer to the double-clicked listItem.
      */
-    void currentQueueTrackDoubleClicked(QListWidgetItem* trackItem);
+    void currentQueueTrackDoubleClicked(xPlayerListWidgetItem* trackItem);
     /**
      * Select artist and album in the corresponding lists.
      *
@@ -348,9 +348,9 @@ private slots:
      * queued tracks. The artist and album is only selected if they are
      * currently visible according to the selectors.
      *
-     * @param trackItem pointer to the currently selected row.
+     * @param trackItem pointer to the currently selected listIndex.
      */
-    void currentQueueTrackCtrlClicked(QListWidgetItem* trackItem);
+    void currentQueueTrackCtrlClicked(xPlayerListWidgetItem* trackItem);
     /**
      *  Remove the current track from the playlist (queue).
      *
@@ -479,10 +479,11 @@ private:
      * Helper function creating a QGroupBox with an QListWidget.
      *
      * @param boxLabel contains the label for the surrounding groupbox.
+     * @param displayTime add column to list widget for time display.
      * @param parent pointer to the parent widget.
      * @return pair of pointer to the created QGroupBox and QListWidget.
      */
-    auto addListWidgetGroupBox(const QString& boxLabel, QWidget* parent);
+    auto addListWidgetGroupBox(const QString& boxLabel, bool displayTime, QWidget* parent);
     /**
      * Helper function creating a QGroupBox with an QLineEdit.
      *
