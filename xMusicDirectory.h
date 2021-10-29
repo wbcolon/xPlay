@@ -21,11 +21,11 @@
 #include <QString>
 
 
-class xMusicDirectory: public QObject {
+class xMusicDirectory:public QObject {
 public:
     xMusicDirectory();
     explicit xMusicDirectory(const QString& name, QObject* parent=nullptr);
-    xMusicDirectory(const QString& name, const std::filesystem::file_time_type& lastWritten, QObject* parent=nullptr);
+    explicit xMusicDirectory(const std::filesystem::directory_entry& entry, QObject* parent=nullptr);
     xMusicDirectory(const xMusicDirectory& dir);
     ~xMusicDirectory() override = default;
     /**
@@ -34,6 +34,12 @@ public:
      * @return the name of the directory entry as string.
      */
     [[nodiscard]] const QString& name() const;
+    /**
+     * Retrieve the absolute path of the directory entry.
+     *
+     * @return the absolute path of the directory entry.
+     */
+    [[nodiscard]] const std::filesystem::path& path() const;
     /**
      * Retrieve the last written time stamp of the directory entry.
      *
@@ -57,6 +63,7 @@ public:
 
 private:
     QString directoryName;
+    std::filesystem::path directoryPath;
     std::filesystem::file_time_type directoryLastWritten;
 };
 

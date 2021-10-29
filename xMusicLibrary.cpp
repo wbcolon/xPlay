@@ -367,6 +367,36 @@ xMusicFile* xMusicLibraryFiles::getMusicFile(const QString& artist, const QStrin
     return nullptr;
 }
 
+std::uintmax_t xMusicLibraryFiles::getTotalSize(const xMusicDirectory& artist) const {
+    std::uintmax_t totalSize = 0;
+    musicFilesLock.lock();
+    auto artistAlbums = musicFiles.find(xMusicDirectory(artist));
+    if (artistAlbums != musicFiles.end()) {
+        for (const auto& album : artistAlbums->second) {
+            for (auto track : album.second) {
+                totalSize += track->getFileSize();
+            }
+        }
+    }
+    musicFilesLock.unlock();
+    return totalSize;
+}
+
+std::uintmax_t xMusicLibraryFiles::getTotalSize(const xMusicDirectory& artist, const xMusicDirectory& album) const {
+    std::uintmax_t totalSize = 0;
+    musicFilesLock.lock();
+    auto artistAlbums = musicFiles.find(xMusicDirectory(artist));
+    if (artistAlbums != musicFiles.end()) {
+        auto artistAlbumTracks = artistAlbums->second.find(xMusicDirectory(album));
+        if (artistAlbumTracks != artistAlbums->second.end()) {
+            for (auto track : artistAlbumTracks->second) {
+                totalSize += track->getFileSize();
+            }
+        }
+    }
+    musicFilesLock.unlock();
+    return totalSize;
+}
 
 bool xMusicLibraryFiles::isMusicFile(const std::filesystem::path& file) {
     if (std::filesystem::is_regular_file(file)) {
@@ -402,53 +432,60 @@ void xMusicLibraryFiles::updateMusicExtensions() {
     qDebug() << "xMusicLibraryFiles: extensions: " << musicExtensions;
 }
 
-void xMusicLibraryFiles::compare(xMusicLibraryFiles* libraryFiles,
-                                 std::set<xMusicDirectory> &missingArtists,
-                                 std::set<xMusicDirectory> &additionalArtists,
-                                 std::map<xMusicDirectory, std::set<xMusicDirectory>> &missingAlbums,
-                                 std::map<xMusicDirectory, std::set<xMusicDirectory>> &additionalAlbums,
-                                 std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>> &missingTracks,
-                                 std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>> &additionalTracks) const {
+void xMusicLibraryFiles::compare(const xMusicLibraryFiles* libraryFiles,
+                                 std::list<xMusicDirectory>& missingArtists,
+                                 std::list<xMusicDirectory>& additionalArtists,
+                                 std::map<xMusicDirectory, std::list<xMusicDirectory>>& missingAlbums,
+                                 std::map<xMusicDirectory, std::list<xMusicDirectory>>& additionalAlbums,
+                                 std::list<xMusicFile*>& missingTracks,
+                                 std::list<xMusicFile*>& additionalTracks,
+                                 std::pair<std::list<xMusicFile*>, std::list<xMusicFile*>>& differentTracks) const {
     musicFilesLock.lock();
     // Compare the artists.
-    std::set<xMusicDirectory> equalArtists;
+    std::list<xMusicDirectory> equalArtists;
     for (const auto& artist : musicFiles) {
         if (libraryFiles->musicFiles.find(artist.first) != libraryFiles->musicFiles.end()) {
-            equalArtists.insert(artist.first);
+            equalArtists.emplace_back(artist.first);
         } else {
-            missingArtists.insert(artist.first);
+            missingArtists.emplace_back(artist.first);
         }
     }
     for (const auto& artist : libraryFiles->musicFiles) {
         if (musicFiles.find(artist.first) == musicFiles.end()) {
-            additionalArtists.insert(artist.first);
+            additionalArtists.emplace_back(artist.first);
         }
     }
     // Compare the albums for equal artists.
-    std::map<xMusicDirectory, std::set<xMusicDirectory>> equalAlbums;
+    std::map<xMusicDirectory, std::list<xMusicDirectory>> equalAlbums;
     for (const auto& artist : equalArtists) {
         try {
-            std::set<xMusicDirectory> missing, additional, equal;
+            std::list<xMusicDirectory> missing, additional, equal;
 
             const auto& musicFilesArtistAlbums { musicFiles.at(artist) };
             const auto& libraryMusicFilesArtistAlbums { libraryFiles->musicFiles.at(artist) };
 
             for (const auto& album : musicFilesArtistAlbums) {
                 if (libraryMusicFilesArtistAlbums.find(album.first) != libraryMusicFilesArtistAlbums.end()) {
-                    equal.insert(album.first);
+                    equal.emplace_back(album.first);
                 } else {
-                    missing.insert(album.first);
+                    missing.emplace_back(album.first);
                 }
             }
             for (const auto& album : libraryMusicFilesArtistAlbums) {
                 if (musicFilesArtistAlbums.find(album.first) == musicFilesArtistAlbums.end()) {
-                    additional.insert(album.first);
+                    additional.emplace_back(album.first);
                 }
             }
 
-            missingAlbums[artist] = missing;
-            additionalAlbums[artist] = additional;
-            equalAlbums[artist] = equal;
+            if (!missing.empty()) {
+                missingAlbums[artist] = missing;
+            }
+            if (!additional.empty()) {
+                additionalAlbums[artist] = additional;
+            }
+            if (!equal.empty()) {
+                equalAlbums[artist] = equal;
+            }
         }
         catch (const std::out_of_range& e) {
             qCritical() << "Unable to access artist in music library files: " << e.what();
@@ -458,23 +495,20 @@ void xMusicLibraryFiles::compare(xMusicLibraryFiles* libraryFiles,
             additionalAlbums.clear();
             missingTracks.clear();
             additionalTracks.clear();
+            differentTracks.first.clear();
+            differentTracks.second.clear();
             musicFilesLock.unlock();
             return;
         }
     }
     // Compare the tracks for the equal artist and albums.
     for (const auto& artist : equalAlbums) {
-        std::map<xMusicDirectory, std::list<xMusicFile*>> missingArtistTracks, additionalArtistTracks;
+        std::map<xMusicDirectory, std::list<xMusicFile*>> missingArtistTracks, additionalArtistTracks, differentArtistTracks;
         for (const auto& album : artist.second) {
             try {
-                std::list<xMusicFile *> missing, additional, equal;
-
                 listDifference(musicFiles.at(artist.first).at(album),
                                libraryFiles->musicFiles.at(artist.first).at(album),
-                               missing, additional, equal);
-
-                missingArtistTracks[album] = missing;
-                additionalArtistTracks[album] = additional;
+                               missingTracks, additionalTracks, differentTracks);
             }
             catch (const std::out_of_range& e) {
                 qCritical() << "Unable to access artist or album in music library files: " << e.what();
@@ -484,38 +518,75 @@ void xMusicLibraryFiles::compare(xMusicLibraryFiles* libraryFiles,
                 additionalAlbums.clear();
                 missingTracks.clear();
                 additionalTracks.clear();
+                differentTracks.first.clear();
+                differentTracks.second.clear();
                 musicFilesLock.unlock();
                 return;
             }
         }
-        missingTracks[artist.first] = missingArtistTracks;
-        additionalTracks[artist.first] = additionalArtistTracks;
+    }
+    musicFilesLock.unlock();
+}
+
+void xMusicLibraryFiles::compare(const xMusicLibraryFiles* libraryFiles,
+                                 std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>& equalTracks) const {
+    musicFilesLock.lock();
+    for (const auto& artist : libraryFiles->musicFiles) {
+        auto musicFilesArtist = musicFiles.find(artist.first);
+        if (musicFilesArtist != musicFiles.end()) {
+            std::map<xMusicDirectory, std::list<xMusicFile*>> artistAlbums;
+            for (const auto& album : artist.second) {
+                auto musicFilesArtistAlbums = musicFilesArtist->second.find(album.first);
+                if (musicFilesArtistAlbums != musicFilesArtist->second.end()) {
+                    std::list<xMusicFile*> artistAlbumTracks;
+                    for (auto track : album.second) {
+                        for (auto musicFilesTrack : musicFilesArtistAlbums->second) {
+                            if (track->equal(musicFilesTrack)) {
+                                // Add left side music file to our list.
+                                artistAlbumTracks.emplace_back(musicFilesTrack);
+                                break;
+                            }
+                        }
+                    }
+                    // Add list only if we have equal tracks.
+                    if (!artistAlbumTracks.empty()) {
+                        artistAlbums[album.first] = artistAlbumTracks;
+                    }
+                }
+            }
+            // Add albums if we have any albums with equal tracks.
+            if (!artistAlbums.empty()) {
+                equalTracks[artist.first] = artistAlbums;
+            }
+        }
     }
     musicFilesLock.unlock();
 }
 
 void xMusicLibraryFiles::listDifference(const std::list<xMusicFile*>& a, const std::list<xMusicFile*>& b,
                                         std::list<xMusicFile*>& missing, std::list<xMusicFile*>& additional,
-                                        std::list<xMusicFile*>& equal) {
+                                        std::pair<std::list<xMusicFile*>, std::list<xMusicFile*>>& different) {
 
     for (const auto& aEntry : a) {
         bool found = false;
         for (const auto& bEntry : b) {
-            if (*aEntry == *bEntry) {
+            if (aEntry->equal(bEntry, false)) {
+                if (!aEntry->equal(bEntry)) {
+                    different.first.push_back(aEntry);
+                    different.second.push_back(bEntry);
+                }
                 found = true;
                 break;
             }
         }
-        if (found) {
-            equal.push_back(aEntry);
-        } else {
+        if (!found) {
             missing.push_back(aEntry);
         }
     }
     for (const auto& bEntry : b) {
         bool found = false;
         for (const auto& aEntry : b) {
-            if (*bEntry == *aEntry) {
+            if (bEntry->equal(aEntry, false)) {
                 found = true;
                 break;
             }
@@ -569,33 +640,31 @@ void xMusicLibraryScanning::scan() {
     try {
         std::list<xMusicDirectory> artistList;
         for (const auto& artistDir : std::filesystem::directory_iterator(baseDirectory)) {
-            const auto& artistPath = artistDir.path();
-            if (!std::filesystem::is_directory(artistPath)) {
+            if (!artistDir.is_directory()) {
                 // No directory, no artist.
                 continue;
             }
-            auto artistName = QString::fromStdString(artistPath.filename());
-            auto artist = xMusicDirectory(artistName, artistDir.last_write_time());
+            auto artist = xMusicDirectory(artistDir);
             std::map<xMusicDirectory, std::list<xMusicFile*>> artistAlbumMap;
             // Read all albums for the given artist.
-            for (const auto& albumDir : std::filesystem::directory_iterator(artistPath)) {
-                const auto& albumPath = albumDir.path();
-                if (!std::filesystem::is_directory(albumPath)) {
+            for (const auto& albumDir : std::filesystem::directory_iterator(artistDir)) {
+                if (!albumDir.is_directory()) {
                     // No directory, no album.
                     continue;
                 }
-                auto albumName = QString::fromStdString(albumPath.filename());
-                auto album = xMusicDirectory(albumName, albumDir.last_write_time());
+                auto album = xMusicDirectory(albumDir);
                 //qDebug() << "xMusicLibrary::scanLibrary: artist/album: " << artistName << "/" << albumName;
                 // Do not scan the files in each directory as it is too costly.
                 // Instead add the album path as first element element to track list.
                 // It will be later used to read the tracks on demand.
                 std::list<xMusicFile*> trackList;
-                trackList.push_back(new xMusicFile(albumPath, 0, artistName, albumName, ""));
+                trackList.push_back(new xMusicFile(albumDir.path(), 0, artist.name(), album.name(), ""));
                 artistAlbumMap[album] = trackList;
             }
-            musicLibraryFiles->set(artist, artistAlbumMap);
-            artistList.emplace_back(artist);
+            if (!artistAlbumMap.empty()) {
+                musicLibraryFiles->set(artist, artistAlbumMap);
+                artistList.emplace_back(artist);
+            }
             if (currentThread()->isInterruptionRequested()) {
                 return;
             }

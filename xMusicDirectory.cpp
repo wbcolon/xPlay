@@ -18,6 +18,7 @@
 xMusicDirectory::xMusicDirectory():
         QObject(),
         directoryName(),
+        directoryPath(),
         directoryLastWritten() {
 }
 
@@ -27,20 +28,26 @@ xMusicDirectory::xMusicDirectory(const QString& name, QObject* parent):
         directoryLastWritten() {
 }
 
-xMusicDirectory::xMusicDirectory(const QString& name, const std::filesystem::file_time_type& lastWritten, QObject* parent):
-        QObject(parent),
-        directoryName(name),
-        directoryLastWritten(lastWritten) {
+xMusicDirectory::xMusicDirectory(const std::filesystem::directory_entry& entry, QObject* parent):
+        QObject(parent) {
+    directoryPath = entry.path();
+    directoryName = QString::fromStdString(directoryPath.filename());
+    directoryLastWritten = entry.last_write_time();
 }
 
 xMusicDirectory::xMusicDirectory(const xMusicDirectory& dir):
         QObject(dir.parent()),
         directoryName(dir.directoryName),
+        directoryPath(dir.directoryPath),
         directoryLastWritten(dir.directoryLastWritten) {
 }
 
 const QString& xMusicDirectory::name() const {
     return directoryName;
+}
+
+const std::filesystem::path& xMusicDirectory::path() const {
+    return directoryPath;
 }
 
 const std::filesystem::file_time_type& xMusicDirectory::lastWritten() const {
@@ -53,6 +60,7 @@ bool xMusicDirectory::operator < (const xMusicDirectory& entry) const {
 
 xMusicDirectory& xMusicDirectory::operator = (const xMusicDirectory& entry) {
     directoryName = entry.directoryName;
+    directoryPath = entry.directoryPath;
     directoryLastWritten = entry.directoryLastWritten;
     return *this;
 }

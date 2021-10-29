@@ -232,6 +232,21 @@ public:
      */
     [[nodiscard]] xMusicFile* getMusicFile(const QString& artist, const QString& album, const QString& trackName) const;
     /**
+     * Retrieve the total size of all albums and tracks for the given artist.
+     *
+     * @param artist the given artist.
+     * @return the total size of all tracks for the artist.
+     */
+    [[nodiscard]] std::uintmax_t getTotalSize(const xMusicDirectory& artist) const;
+    /**
+     * Retrieve the total size of all for the given artist and album.
+     *
+     * @param artist the given artist.
+     * @param album the given album.
+     * @return the total size of all tracks for the artist and album.
+     */
+    [[nodiscard]] std::uintmax_t getTotalSize(const xMusicDirectory& artist, const xMusicDirectory& album) const;
+    /**
      * Check whether or not the library is empty.
      *
      * @return true if the library is empty, false otherwise.
@@ -243,21 +258,33 @@ public:
      * We compare the libraries based on the difference in artists,
      * albums and tracks.
      *
-     * @param library the music library that is compared to.
-     * @param missingArtists set of artists that are not present in given library.
-     * @param additionalArtists set of artists that are only present in the given library.
-     * @param missingAlbums set of albums for present artists that are not present in given library.
-     * @param additionalAlbums set of albums for present artists that are only present in given library.
+     * @param libraryFiles the music library that is compared to.
+     * @param missingArtists list of artists that are not present in given library.
+     * @param additionalArtists list of artists that are only present in the given library.
+     * @param missingAlbums list of albums for present artists that are not present in given library.
+     * @param additionalAlbums list of albums for present artists that are only present in given library.
      * @param missingTracks list of tracks for present artists and albums that are not present in given library.
-     * @param additionalTracks list of tracks for present artists and albums thar are only present in the given library.
+     * @param additionalTracks list of tracks for present artists and albums that are only present in the given library.
+     * @param differentTracks pair of list of tracks present in both, but file sizes are different.
      */
-    void compare(xMusicLibraryFiles* libraryFiles,
-                 std::set<xMusicDirectory>& missingArtists,
-                 std::set<xMusicDirectory>& additionalArtists,
-                 std::map<xMusicDirectory, std::set<xMusicDirectory>>& missingAlbums,
-                 std::map<xMusicDirectory, std::set<xMusicDirectory>>& additionalAlbums,
-                 std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>& missingTracks,
-                 std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>& additionalTracks) const;
+    void compare(const xMusicLibraryFiles* libraryFiles,
+                 std::list<xMusicDirectory>& missingArtists,
+                 std::list<xMusicDirectory>& additionalArtists,
+                 std::map<xMusicDirectory, std::list<xMusicDirectory>>& missingAlbums,
+                 std::map<xMusicDirectory, std::list<xMusicDirectory>>& additionalAlbums,
+                 std::list<xMusicFile*>& missingTracks,
+                 std::list<xMusicFile*>& additionalTracks,
+                 std::pair<std::list<xMusicFile*>, std::list<xMusicFile*>>& differentTracks) const;
+    /**
+     * Compare the current music library files to a given one.
+     *
+     * We compare the libraries in order to find equal tracks.
+     *
+     * @param libraryFiles the music library that is compared to.
+     * @param equalTracks map of artist, album and list of tracks that are equal.
+     */
+    void compare(const xMusicLibraryFiles* libraryFiles,
+                 std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>& equalTracks) const;
     /**
      * Clear the library.
      */
@@ -282,7 +309,7 @@ private:
      */
     static void listDifference(const std::list<xMusicFile*>& a, const std::list<xMusicFile*>& b,
                                std::list<xMusicFile*>& missing, std::list<xMusicFile*>& additional,
-                               std::list<xMusicFile*>& equal);
+                               std::pair<std::list<xMusicFile*>, std::list<xMusicFile*>>& different);
 
     /**
      * Determine if the given file is a music file.

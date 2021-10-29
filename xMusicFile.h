@@ -112,7 +112,7 @@ public:
      * @param file the other music file to compare to.
      * @return true if the music files are equal, false otherwise.
      */
-    bool operator == (const xMusicFile& file) const;
+    bool equal(xMusicFile* file, bool checkFileSize=true) const;
 
 private:
     std::filesystem::path filePath;

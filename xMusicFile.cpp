@@ -68,13 +68,13 @@ std::uintmax_t xMusicFile::getFileSize() const {
     return fileSize;
 }
 
-bool xMusicFile::operator == (const xMusicFile &file) const {
+bool xMusicFile::equal(xMusicFile* file, bool checkFileSize) const {
     // The file path different because music libraries have different base directories.
     // The other attributes may not match. E.g. if the file is not scanned yet.
-    return ((fileArtist == file.fileArtist) &&
-            (fileAlbum == file.fileAlbum) &&
-            (fileTrackName == file.fileTrackName) &&
-            (fileSize == file.fileSize));
+    return ((fileArtist == file->fileArtist) &&
+            (fileAlbum == file->fileAlbum) &&
+            (fileTrackName == file->fileTrackName) &&
+            ((fileSize == file->fileSize) || (!checkFileSize)));
 }
 
 const QString& xMusicFile::getArtist() const {
