@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.0 - 2021-11-07
+
+- Add initial mobile sync view.
+- Add support for file sizes and total sizes in music library.
+- Change vout for libVLC based movie player.
+- Improve performance of list widgets used.
+
+
 ## 0.9.3 - 2021-10-08
 
 - Add support for sorting artists and albums after last write access time.

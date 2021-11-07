@@ -229,13 +229,42 @@ be removed. The navigation section allows for a very basic website navigation. A
 available. The browser is limited by the capabilities of QWebEngine, e.g., Netflix did not work for my setup. This
 may change for coming versions of QWebEngine.
 
+### Mobile Sync View
+
+![Screenshot Mobile Sync View](screenshots/xplay_screenshot_mobile_sync_view_00.png)
+![Screenshot Mobile Sync View (Mark Missing)](screenshots/xplay_screenshot_mobile_sync_view_01.png)
+![Screenshot Mobile Sync View (Sync Operations)](screenshots/xplay_screenshot_mobile_sync_view_02.png)
+![Screenshot Mobile Sync View (Mark Existing)](screenshots/xplay_screenshot_mobile_sync_view_03.png)
+![Screenshot Mobile Sync View (Progress)](screenshots/xplay_screenshot_mobile_sync_view_04.png)
+
+The main screen of the mobile sync view is designed to sync a subset of the music library to the so called mobile
+library which is usually located on some external storage. The directory for the mobile library can input directory or 
+conveniently selected via a file dialog when pressing the *Open* button. Press the *Scan* button afterwards to 
+initiate a scan of the mobile library. The widget is updated as soon as the scanning process is finished.
+The music library can be sorted alphabetical by artist name or by total size for each artist if the *Sort by Size*
+checkbox is selected. Pressing the *Compare* button will initiate a compare of the music and the mobile library in order
+to mark missing artists, albums or tracks in red. Partially missing artists or albums are marked using a lighter 
+background pattern. The content of a mobile library can be saved into a so-called existing elements set. This is 
+especially useful if the mobile library is stored on multiple external storage devices. Using the *Mark* popup menu the
+current subset of the mobile library can be saved and all existing elements can be marked in green. These markings help
+to avoid duplicates among multiple external storage devices.
+
+A ctrl+right-click to an element of the music library will add the corresponding artist, album or track to the
+*Add to Mobile Library* list. A ctrl+right-click to an element of the mobile library will add the corresponding
+element to the *Remove from Mobile Library* list. The impact of the listed changes to the mobile library will be
+displayed in a progress bar. The progress bar changes color from green to red in case there is no sufficient storage
+space for the mobile library. Pressing the *Apply* button will perform the removal operations before the add operations.
+A progess bar will show display the progress of the sync operation.
+
+
 ### Menu
 
 The menu has three entries *File*, *View* and *Help*. The *File* menu has four entries. The *Configure* entry
 will open configuration dialog (see below). The entries *Rescan Music Library* and *Rescan Movie Library* trigger
 a rescan of the currently configured music or movie library. The *Check Music Database* and *Check Movie Database*
 will verify the database entries against the database. Any unknown entries will displayed in a dialog box and can be
-removed. The entries *View* menu allows to switch between the *Music View*, *Movie View* or *Streaming View*.
+removed. The entries *View* menu allows to switch between the *Music View*, *Movie View*, *Streaming View* or
+*Mobile Sync View*.
 The *Help* menu has two entries displaying copyright information about the used Qt and Qwt libraries.
 
 #### Configuration Dialog
