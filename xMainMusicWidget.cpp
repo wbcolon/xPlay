@@ -335,7 +335,7 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
         QApplication::restoreOverrideCursor();
         auto result = QMessageBox::warning(this, tr("Queue"),
                                            tr("Do you want to add %1 tracks to the queue?\n"
-                                              "This process may takes several minutes and it cannot be aborted.").
+                                              "This process may take a little longer and it cannot be aborted.").
                                                    arg(maxListTracks),  QMessageBox::Cancel | QMessageBox::Ok,
                                            QMessageBox::Ok);
         if (result == QMessageBox::Cancel) {
