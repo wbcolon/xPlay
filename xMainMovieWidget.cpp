@@ -88,6 +88,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayerX* player, QWidget* parent):
     connect(moviePlayer, &xMoviePlayerX::currentMovie, this, &xMainMovieWidget::updateWindowTitle);
     connect(moviePlayer, &xMoviePlayerX::currentMovieLength, moviePlayerWidget, &xPlayerMovieWidget::currentMovieLength);
     connect(moviePlayer, &xMoviePlayerX::currentMoviePlayed, moviePlayerWidget, &xPlayerMovieWidget::currentMoviePlayed);
+    connect(moviePlayer, &xMoviePlayerX::currentMoviePlayed, this, &xMainMovieWidget::updateWindowTitlePlayBack);
     connect(moviePlayer, &xMoviePlayerX::currentSubtitles, moviePlayerWidget, &xPlayerMovieWidget::currentSubtitles);
     connect(moviePlayer, &xMoviePlayerX::currentAudioChannels, moviePlayerWidget, &xPlayerMovieWidget::currentAudioChannels);
     connect(moviePlayer, &xMoviePlayerX::currentState, moviePlayerWidget, &xPlayerMovieWidget::currentState);
@@ -140,12 +141,14 @@ void xMainMovieWidget::setFullWindow(bool mode) {
         moviePlayer->setParent(this);
         addWidget(moviePlayer);
         setCurrentWidget(moviePlayer);
+        QApplication::setOverrideCursor(Qt::BlankCursor);
     } else {
         removeWidget(moviePlayer);
         moviePlayer->setParent(mainWidget);
         movieStack->addWidget(moviePlayer);
         movieStack->setCurrentWidget(moviePlayer);
         setCurrentWidget(mainWidget);
+        QApplication::restoreOverrideCursor();
     }
     emit showWindowTitle(createWindowTitle());
     emit showMenuBar(!fullWindow);
@@ -423,6 +426,17 @@ void xMainMovieWidget::updateWindowTitle(const QString& path, const QString& nam
         emit showWindowTitle(createWindowTitle());
     }
 }
+
+void xMainMovieWidget::updateWindowTitlePlayBack(qint64 timeStamp) {
+    if (fullWindow) {
+        emit showWindowTitle(QString("%1 - %2:%3:%4").
+                arg(createWindowTitle()).
+                arg(timeStamp/3600000).
+                arg((timeStamp/60000)%60, 2, 10, QChar('0')).
+                arg((timeStamp/1000)%60, 2, 10, QChar('0')));
+    }
+}
+
 
 QString xMainMovieWidget::createWindowTitle() {
     if (fullWindow) {

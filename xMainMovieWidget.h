@@ -181,6 +181,12 @@ private slots:
      * Update the movie database overlay on configuration changes.
      */
     void updatedDatabaseMovieOverlay();
+    /**
+     * Update the playback time in the window title.
+     *
+     * @param timeStamp the playback time in ms.
+     */
+    void updateWindowTitlePlayBack(qint64 timeStamp);
 
 private:
     /**
