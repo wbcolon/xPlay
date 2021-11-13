@@ -17,19 +17,35 @@
 
 #include <QGridLayout>
 
-const bool xPlayerUseFlatGroupBox = true;
-const double xPlayerSelectorHeightFontFactor = 1.6;
-const int xPlayerVolumeWidgetWidth = 168;
-const int xPlayerControlButtonWidgetWidth = 200;
+namespace xPlayer {
 
-const int xPlayerArtistListMinimumWidth = 350;
-const int xPlayerAlbumListMinimumWidth = 550;
-const int xPlayerTracksListMinimumWidth = 400;
-const int xPlayerQueueListMinimumWidth = 400;
+/*
+ * UI configuration values
+ */
+const bool UseFlatGroupBox = true;
+const double SelectorHeightFontFactor = 1.6;
+const int VolumeWidgetWidth = 168;
+const int ControlButtonWidgetWidth = 200;
 
-const int xPlayerQueueCriticalNumberEntries = 50000;
+const int ArtistListMinimumWidth = 350;
+const int AlbumListMinimumWidth = 550;
+const int TracksListMinimumWidth = 400;
+const int QueueListMinimumWidth = 400;
 
-const int xPlayerIconSize = 24;
+const int QueueCriticalNumberEntries = 50000;
+
+const int IconSize = 24;
+
+/**
+ * Convert the time given to human readable time stamp.
+ *
+ * @param ms the given time in ms.
+ * @param showHours show hours if true, ms instead otherwise.
+ * @return the human readable time (hour:min:sec) or (min:sec.ms)as string.
+ */
+QString millisecondsToTimeFormat(qint64 ms, bool showHours);
+
+}
 
 class xPlayerLayout:public QGridLayout {
 public:

@@ -38,7 +38,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     // Rotel Controls.
     auto rotelBox = new QGroupBox(tr("Rotel"), this);
-    rotelBox->setFlat(xPlayerUseFlatGroupBox);
+    rotelBox->setFlat(xPlayer::UseFlatGroupBox);
     auto rotelWidget = new xPlayerRotelWidget(rotelBox, Qt::Vertical);
     auto rotelLayout = new QVBoxLayout();
     rotelLayout->addWidget(rotelWidget);
@@ -46,7 +46,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     rotelBox->setEnabled(xPlayerConfiguration::configuration()->rotelWidget());
     // Control box.
     auto controlBox = new QGroupBox("Navigation", this);
-    controlBox->setFlat(xPlayerUseFlatGroupBox);
+    controlBox->setFlat(xPlayer::UseFlatGroupBox);
     auto homeButton = new QPushButton(tr("Home"), controlBox);
     auto backButton = new QPushButton(tr("Back"), controlBox);
     auto fwdButton = new QPushButton(tr("Fwd"), controlBox);
@@ -70,7 +70,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     controlBox->setLayout(controlLayout);
     // Sites box.
     auto sitesBox = new QGroupBox(tr("Sites"), this);
-    sitesBox->setFlat(xPlayerUseFlatGroupBox);
+    sitesBox->setFlat(xPlayer::UseFlatGroupBox);
     sitesCombo = new QComboBox(sitesBox);
     auto historyCheckBox = new QCheckBox(tr("History"), sitesBox);
     historyCheckBox->setChecked(true);

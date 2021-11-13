@@ -42,7 +42,7 @@ auto xMainMusicWidget::addListWidgetGroupBox(const QString& boxLabel, bool displ
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, parent);
-    groupBox->setFlat(xPlayerUseFlatGroupBox);
+    groupBox->setFlat(xPlayer::UseFlatGroupBox);
     auto list = new xPlayerListWidget(groupBox, displayTime);
     auto boxLayout = new QVBoxLayout();
     boxLayout->addWidget(list);
@@ -53,7 +53,7 @@ auto xMainMusicWidget::addListWidgetGroupBox(const QString& boxLabel, bool displ
 auto xMainMusicWidget::addLineEditGroupBox(const QString& boxLabel, QWidget* parent) {
     // Create a QGroupBox with the given label and embed a QLineEdit.
     auto groupBox = new QGroupBox(boxLabel, parent);
-    groupBox->setFlat(xPlayerUseFlatGroupBox);
+    groupBox->setFlat(xPlayer::UseFlatGroupBox);
     auto lineEdit = new QLineEdit(groupBox);
     auto boxLayout = new QVBoxLayout();
     boxLayout->addWidget(lineEdit);
@@ -84,14 +84,14 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     artistList = artistList_;
     artistList->enableSorting(false);
     artistList->setContextMenuPolicy(Qt::CustomContextMenu);
-    artistList->setMinimumWidth(xPlayerArtistListMinimumWidth);
+    artistList->setMinimumWidth(xPlayer::ArtistListMinimumWidth);
     albumList = albumList_;
     albumList->enableSorting(false);
-    albumList->setMinimumWidth(xPlayerAlbumListMinimumWidth);
+    albumList->setMinimumWidth(xPlayer::AlbumListMinimumWidth);
     trackList = trackList_;
     trackList->enableSorting(true);
     trackList->setContextMenuPolicy(Qt::CustomContextMenu);
-    trackList->setMinimumWidth(xPlayerTracksListMinimumWidth);
+    trackList->setMinimumWidth(xPlayer::TracksListMinimumWidth);
     trackBox = trackBox_;
     // Local filters.
     auto [artistFilterBox_, artistFilterLineEdit_] = addLineEditGroupBox(tr("Filter Artists"), musicListView);
@@ -134,13 +134,13 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
     // Queue list.
     queueBox = new QGroupBox(tr("Queue"), this);
-    queueBox->setFlat(xPlayerUseFlatGroupBox);
+    queueBox->setFlat(xPlayer::UseFlatGroupBox);
     auto queueBoxLayout = new xPlayerLayout();
     queueList = new xPlayerListWidget(queueBox, true);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
     queueList->setDragDropMode(QTreeWidget::InternalMove);
     queueList->setSelectionMode(QTreeWidget::SingleSelection);
-    queueList->setMinimumWidth(xPlayerQueueListMinimumWidth);
+    queueList->setMinimumWidth(xPlayer::QueueListMinimumWidth);
     auto queueShuffleCheck = new QCheckBox(tr("Shuffle Mode"), queueBox);
     // Tags menu.
     auto queueTagsButton = new QPushButton(tr("Tags"), queueBox);
@@ -331,7 +331,7 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
     }
     qDebug() << "scannedListArtistsAllAlbumTracks: maxFiles: " << maxListTracks;
 
-    if (maxListTracks > xPlayerQueueCriticalNumberEntries) {
+    if (maxListTracks > xPlayer::QueueCriticalNumberEntries) {
         QApplication::restoreOverrideCursor();
         auto result = QMessageBox::warning(this, tr("Queue"),
                                            tr("Do you want to add %1 tracks to the queue?\n"

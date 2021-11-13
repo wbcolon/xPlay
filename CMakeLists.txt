@@ -71,7 +71,7 @@ set(xPlay_sources
         xMusicDirectory.cpp
         xMusicLibrary.cpp
         xMovieLibrary.cpp
-        xPlayerConfig.h
+        xPlayerConfig.h.in
         xPlayerUI.cpp
         xPlayerConfiguration.cpp
         xPlayerDatabase.cpp
@@ -122,8 +122,7 @@ else()
     add_executable(xPlay
             ${xPlay_sources}
             xPlay.cpp
-            xPlay.qrc
-            )
+            xPlay.qrc)
     target_link_libraries(xPlay ${xPlay_libraries})
     target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
 endif()

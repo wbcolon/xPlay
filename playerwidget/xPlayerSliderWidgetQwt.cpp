@@ -79,7 +79,7 @@ void xPlayerSliderWidgetQwt::useHourScale(bool hourScale) {
 
 void xPlayerSliderWidgetQwt::trackLength(qint64 length) {
     // Update the length of the current track.
-    trackLengthLabel->display(millisecondsToLabel(length));
+    trackLengthLabel->display(xPlayer::millisecondsToTimeFormat(length, showHours));
     // Set maximum of slider to the length of the track. Reset the slider position-
     trackSlider->setScaleStepSize(determineScaleDivider(length));
     trackSlider->setLowerBound(0);
@@ -89,7 +89,7 @@ void xPlayerSliderWidgetQwt::trackLength(qint64 length) {
 
 void xPlayerSliderWidgetQwt::trackPlayed(qint64 played) {
     // Update the time played for the current track.
-    trackPlayedLabel->display(millisecondsToLabel(played));
+    trackPlayedLabel->display(xPlayer::millisecondsToTimeFormat(played, showHours));
     // Update the slider position.
     trackSlider->setValue(played);
 }

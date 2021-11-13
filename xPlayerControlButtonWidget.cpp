@@ -63,7 +63,7 @@ xPlayerControlButtonWidget::xPlayerControlButtonWidget(xPlayerControlButtonMode 
     controlButtonLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(controlButtonLayout);
     setContentsMargins(0, 0, 0, 0);
-    setFixedWidth(xPlayerControlButtonWidgetWidth);
+    setFixedWidth(xPlayer::ControlButtonWidgetWidth);
 }
 
 void xPlayerControlButtonWidget::setPlayPauseState(bool mode) {

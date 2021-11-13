@@ -32,7 +32,7 @@ xPlayerMusicArtistSelectorWidget::xPlayerMusicArtistSelectorWidget(QWidget* pare
     layout->addWidget(selectorList, 0, 0, 1, 10);
     layout->addColumnSpacer(10, xPlayerLayout::MediumSpace);
     setLayout(layout);
-    setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
+    setFixedHeight(static_cast<int>(fontMetrics().height()*xPlayer::SelectorHeightFontFactor));
 
     connect(selectorList, &QListWidget::currentRowChanged, this, &xPlayerMusicArtistSelectorWidget::selectArtistSelector);
     connect(selectorList, &QListWidget::itemDoubleClicked, this, &xPlayerMusicArtistSelectorWidget::doubleClickedArtistSelector);

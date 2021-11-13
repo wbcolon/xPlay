@@ -35,19 +35,6 @@ void xPlayerSliderWidget::useScaleSections(int scaleSections) {
     maxScaleSections = scaleSections;
 }
 
-QString xPlayerSliderWidget::millisecondsToLabel(qint64 ms) const {
-
-    if (showHours) {
-        return QString("%1:%2:%3").arg(ms/3600000).
-                arg((ms/60000)%60, 2, 10, QChar('0')).
-                arg((ms/1000)%60, 2, 10, QChar('0'));
-    } else {
-        return QString("%1:%2.%3").arg(ms/60000).
-                arg((ms/1000)%60, 2, 10, QChar('0')).
-                arg((ms%1000)/10, 2, 10, QChar('0'));
-    }
-}
-
 int xPlayerSliderWidget::determineScaleDivider(int length) const {
     for (auto scaleDivider : { 10000, 30000, 60000, 120000, 300000, 600000, 1200000, 3000000, 6000000 }) {
         if ((length / scaleDivider) <= maxScaleSections) {

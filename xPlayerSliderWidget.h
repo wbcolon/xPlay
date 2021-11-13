@@ -71,13 +71,6 @@ public slots:
 
 protected:
     /**
-     * Convert milliseconds to a format string.
-     *
-     * @param ms time value in milliseconds.
-     * @return format string "mm:ss.hh" or "hh:mm:ss.hh".
-     */
-    [[nodiscard]] QString millisecondsToLabel(qint64 ms) const;
-    /**
      * Find a scale layout.
      *
      * @param length current length of the for the track slider.

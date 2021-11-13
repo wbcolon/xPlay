@@ -47,7 +47,7 @@ xPlayerArtistInfo::xPlayerArtistInfo(QWidget* parent, Qt::WindowFlags flags):
     auto fwdButton = new QPushButton(tr("Fwd"), this);
     auto closeButton = new QToolButton(this);
     closeButton->setIcon(QIcon(":images/xplay-close-window.svg"));
-    closeButton->setIconSize(QSize(xPlayerIconSize, xPlayerIconSize));
+    closeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     zoomBox = new QComboBox(this);
     for (const auto percent : xPlayerConfiguration::getWebsiteZoomFactors()) {
         zoomBox->addItem(QString("%1%").arg(percent));

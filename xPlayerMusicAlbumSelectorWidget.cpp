@@ -57,7 +57,7 @@ xPlayerMusicAlbumSelectorWidget::xPlayerMusicAlbumSelectorWidget(QWidget* parent
     layout->addWidget(beginTimestampButton, 0, 13, 1, 1);
     layout->addColumnSpacer(14, xPlayerLayout::SmallSpace);
     setLayout(layout);
-    setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
+    setFixedHeight(static_cast<int>(fontMetrics().height()*xPlayer::SelectorHeightFontFactor));
     // Connect signals.
     connect(selectorListWidget, &QListWidget::itemDoubleClicked, this, &xPlayerMusicAlbumSelectorWidget::selectorClicked);
     connect(nowTimestampButton, &QPushButton::pressed, [this]() { timestampWidget->setDateTime(QDateTime::currentDateTime()); });

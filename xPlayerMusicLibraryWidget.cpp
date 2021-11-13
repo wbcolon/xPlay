@@ -214,7 +214,7 @@ xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, con
         musicLibrarySortBySize(false),
         musicLibraryItemBackground() {
 
-    setFlat(xPlayerUseFlatGroupBox);
+    setFlat(xPlayer::UseFlatGroupBox);
     musicLibraryTree = new QTreeWidget(this);
     musicLibraryTree->setColumnCount(2);
     musicLibraryTree->setRootIsDecorated(true);

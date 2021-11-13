@@ -12,6 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xPlayerSliderWidgetQt.h"
+#include "xPlayerUI.h"
 
 #include <QGridLayout>
 
@@ -48,7 +49,7 @@ void xPlayerSliderWidgetQt::clear() {
 
 void xPlayerSliderWidgetQt::trackLength(qint64 length) {
     // Update the length of the current track.
-    trackLengthLabel->setText(millisecondsToLabel(length));
+    trackLengthLabel->setText(xPlayer::millisecondsToTimeFormat(length, showHours));
     // Set maximum of slider to the length of the track. Reset the slider position-
     trackSlider->setTickInterval(determineScaleDivider(length));
     trackSlider->setRange(0, length);
@@ -57,7 +58,7 @@ void xPlayerSliderWidgetQt::trackLength(qint64 length) {
 
 void xPlayerSliderWidgetQt::trackPlayed(qint64 played) {
     // Update the time played for the current track.
-    trackPlayedLabel->setText(millisecondsToLabel(played));
+    trackPlayedLabel->setText(xPlayer::millisecondsToTimeFormat(played, showHours));
     // Update the slider position.
     trackSlider->setValue(played);
 }

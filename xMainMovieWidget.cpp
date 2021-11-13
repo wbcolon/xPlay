@@ -26,7 +26,7 @@ auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, parent);
-    groupBox->setFlat(xPlayerUseFlatGroupBox);
+    groupBox->setFlat(xPlayer::UseFlatGroupBox);
     auto list = new xPlayerListWidget(groupBox);
     auto boxLayout = new QHBoxLayout();
     boxLayout->addWidget(list);

@@ -48,7 +48,7 @@ xPlayerMusicSearchWidget::xPlayerMusicSearchWidget(QWidget* parent, Qt::WindowFl
     layout->addWidget(clearButton, 0, 13);
     layout->addColumnSpacer(14, xPlayerLayout::SmallSpace);
     setLayout(layout);
-    setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayerSelectorHeightFontFactor));
+    setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayer::SelectorHeightFontFactor));
     connect(searchButton, &QPushButton::pressed, this, &xPlayerMusicSearchWidget::searchClicked);
     connect(clearButton, &QPushButton::pressed, this, &xPlayerMusicSearchWidget::clearClicked);
     connect(searchText, &QLineEdit::returnPressed, this, &xPlayerMusicSearchWidget::returnPressed);

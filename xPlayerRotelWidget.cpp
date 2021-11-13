@@ -351,7 +351,7 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     rotelControlButtonLayout->setContentsMargins(0, 0, 0, 0);
     rotelControlButton->setLayout(rotelControlButtonLayout);
     rotelControlButton->setContentsMargins(0, 0, 0, 0);
-    rotelControlButton->setFixedWidth(xPlayerControlButtonWidgetWidth);
+    rotelControlButton->setFixedWidth(xPlayer::ControlButtonWidgetWidth);
     // Add the volume knob, bass, treble and the source input to the layout
     if (orientation == Qt::Horizontal) {
         rotelLayout->addWidget(rotelVolume, 0, 0);
@@ -361,7 +361,7 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
         rotelLayout->addWidget(rotelControlButton, 0, 0);
         rotelLayout->addRowSpacer(1, xPlayerLayout::MediumSpace);
         // Adjust width for vertical layout.
-        rotelVolume->setFixedWidth(xPlayerControlButtonWidgetWidth);
+        rotelVolume->setFixedWidth(xPlayer::ControlButtonWidgetWidth);
         rotelLayout->addWidget(rotelVolume, 2, 0);
     }
     rotelControls = xPlayerRotelControls::controls();
