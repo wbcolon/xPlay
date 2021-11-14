@@ -207,6 +207,10 @@ signals:
      * @param item a pointer to the item in the tree.
      */
     void treeItemCtrlClicked(xPlayerMusicLibraryWidgetItem* item);
+    /**
+     * Signal emitted if the tree is fully constructed.
+     */
+    void treeReady();
 
 private slots:
     /**

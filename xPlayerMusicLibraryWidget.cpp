@@ -228,6 +228,7 @@ xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, con
     setLayout(boxLayout);
 
     connect(musicLibrary, &xMusicLibrary::scanningFinished, this, &xPlayerMusicLibraryWidget::scanningFinished);
+    connect(musicLibrary, &xMusicLibrary::scanningError, this, &xPlayerMusicLibraryWidget::scanningFinished);
     connect(musicLibraryTree, &QTreeWidget::customContextMenuRequested, this, &xPlayerMusicLibraryWidget::openContextMenu);
     connect(musicLibraryTree, &QTreeWidget::itemClicked, [=](QTreeWidgetItem* item) {
         if (item) {
@@ -428,6 +429,7 @@ void xPlayerMusicLibraryWidget::scanningFinished() {
     // Widget now ready for business...
     musicLibraryReady = true;
     updateMusicLibraryTree();
+    emit treeReady();
 }
 
 void xPlayerMusicLibraryWidget::updateMusicLibraryTree() {

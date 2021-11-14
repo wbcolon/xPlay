@@ -19,6 +19,7 @@
 
 #include <QThread>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QProgressBar>
 #include <QListWidget>
 #include <QLineEdit>
@@ -67,6 +68,10 @@ private slots:
      */
     void mobileLibraryFindItem(xPlayerMusicLibraryWidgetItem* item);
     /**
+     * Update mobile library view after scan is finished.
+     */
+    void mobileLibraryReady();
+    /**
      * Compare the music with the mobile directory.
      *
      * The comparison of music and mobile library is perfomed only if both
@@ -80,7 +85,9 @@ private slots:
      * @param item pointer to an item in the mobile library.
      */
     void musicLibraryFindItem(xPlayerMusicLibraryWidgetItem* item);
-
+    /**
+     * Save the existing mobile library entries for later marking.
+     */
     void musicLibrarySaveExisting();
     /**
      * Mark all existing items in the music library.
@@ -90,6 +97,10 @@ private slots:
      * Clear all stored existing items.
      */
     void musicLibraryClearExisting();
+    /**
+     * Update music library view after scan is finished.
+     */
+    void musicLibraryReady();
     /**
      * Insert an "add to" action.
      *
@@ -161,15 +172,22 @@ private:
 
     xMusicLibrary* musicLibrary;
     xPlayerMusicLibraryWidget* musicLibraryWidget;
+    QPushButton* musicLibraryCompareButton;
+    QCheckBox* musicLibrarySortBySize;
+    QPushButton* musicLibraryMarksButton;
     QListWidget* musicLibraryExistingWidget;
     std::map<std::filesystem::path, std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>> musicLibraryExisting;
     xMusicLibrary* mobileLibrary;
+    QPushButton* mobileLibraryDirectoryButton;
+    QPushButton* mobileLibraryScanClearButton;
     QLineEdit* mobileLibraryDirectoryWidget;
     xPlayerMusicLibraryWidget* mobileLibraryWidget;
     QProgressBar* mobileLibraryStorageBar;
     std::filesystem::space_info mobileLibrarySpaceInfo;
     QListWidget* actionAddToWidget;
+    QGroupBox* actionAddToGroupBox;
     QListWidget* actionRemoveFromWidget;
+    QGroupBox* actionRemoveFromGroupBox;
     QProgressBar* actionStorageBar;
     QProgressBar* actionBar;
     QPushButton* actionApplyButton;
