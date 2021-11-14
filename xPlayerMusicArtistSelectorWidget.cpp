@@ -40,17 +40,35 @@ xPlayerMusicArtistSelectorWidget::xPlayerMusicArtistSelectorWidget(QWidget* pare
 }
 
 void xPlayerMusicArtistSelectorWidget::updateSelectors(const std::set<QString>& selectors) {
+    // Save current selector (if available).
+    QString currentSelectorText;
+    bool currentSelectorFound = false;
+
+    if (selectorList->currentItem()) {
+        currentSelectorText = selectorList->currentItem()->text();
+    }
     // Update artist selectors list widget.
     selectorList->clear();
     selectorList->addItem(tr("none"));
     selectorList->addItem(tr("random"));
     for (const auto& as : selectors) {
         selectorList->addItem(as);
+        // Mark the selector again after an update.
+        if ((!currentSelectorFound) && (currentSelectorText == as)) {
+            selectorList->setCurrentRow(selectorList->count()-1);
+            currentSelectorFound = true;
+        }
+    }
+    // If selector no longer available then set to "none".
+    if (!currentSelectorFound) {
+        selectorList->setCurrentRow(0);
     }
 }
 
 void xPlayerMusicArtistSelectorWidget::clear() {
     selectorList->clear();
+    // Reset "Sorting Latest" checkbox.
+    sortingLatestBox->setChecked(false);
 }
 
 void xPlayerMusicArtistSelectorWidget::selectArtistSelector(int selectorIndex) {

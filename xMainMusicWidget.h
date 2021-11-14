@@ -467,7 +467,7 @@ private:
      *
      * @param list the list of directory entries to be sorted.
      */
-    void sortListMusicDirectory(std::list<xMusicDirectory>& list);
+    void sortListMusicDirectory(std::list<xMusicDirectory>& list) const;
     /**
      * Show tag selection popup menu.
      *

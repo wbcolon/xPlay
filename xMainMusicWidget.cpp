@@ -226,12 +226,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             this, &xMainMusicWidget::updatedMusicViewSelectors);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewFilters,
             this, &xMainMusicWidget::updatedMusicViewFilters);
-
-#if 0
-    // Part of the alternate implementation for inserting chunks of tracks into the queue.
-    connect(this, &xMainMusicWidget::scanAllAlbumsForListArtistsIterate,
-            this, &xMainMusicWidget::scannedAllAlbumsForListArtistsWorker);
-#endif
 }
 
 void xMainMusicWidget::initializeView() {
@@ -245,9 +239,16 @@ void xMainMusicWidget::clear() {
     playerWidget->clear();
     clearQueue();
     // Clear artist (including selector), album and track lists.
+    artistSelectorList->clear();
     scannedArtists({});
+    // Clear album and search selector widgets.
+    albumSelectorList->clear();
+    searchSelector->clear();
     // Disable selector tab on clear. Library needs to be scanned again.
     selectorTabs->setEnabled(false);
+    selectorTabs->setCurrentIndex(0);
+    // Clear Sorting Latest.
+    useSortingLatest = false;
 }
 
 void xMainMusicWidget::scannedArtists(const std::list<xMusicDirectory>& artists) {
@@ -380,20 +381,6 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
     queueProgress->setVisible(false);
     // Restore the waiting cursor.
     QApplication::restoreOverrideCursor();
-
-#if 0
-    // Alternative implementation that does not block the queue during update.
-    // Issue. Blocking occurs later as with approach above, when items are visualized.
-    artistList->setUpdatesEnabled(false);
-    albumList->setUpdatesEnabled(false);
-    trackList->setUpdatesEnabled(false);
-    queueList->setUpdatesEnabled(false);
-
-    queueProgress->setRange(0, maxListTracks);
-    queueProgress->setVisible(true);
-
-    emit scanAllAlbumsForListArtistsIterate(listTracks, listTracks.begin(), 0, maxListTracks);
-#endif
 }
 
 void xMainMusicWidget::scannedAllAlbumsForListArtistsWorker(
@@ -472,7 +459,7 @@ std::list<xMusicDirectory> xMainMusicWidget::filterArtists(const std::list<xMusi
     return filtered;
 }
 
-void xMainMusicWidget::sortListMusicDirectory(std::list<xMusicDirectory>& list) {
+void xMainMusicWidget::sortListMusicDirectory(std::list<xMusicDirectory>& list) const {
     if (useSortingLatest) {
         list.sort([](const xMusicDirectory& a, const xMusicDirectory& b) {
             return a.lastWritten() > b.lastWritten();
