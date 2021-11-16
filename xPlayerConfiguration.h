@@ -69,6 +69,12 @@ public:
      */
     void setMusicViewFilters(bool visible);
     /**
+     * Set the visibility status of the music visualization.
+     *
+     * @param visible show the music visualization of true, hide otherwise.
+     */
+    void setMusicViewVisualization(bool visible);
+    /**
      * Set availability of the Rotel amp widget.
      *
      * @param enabled show Rotel widget after restart if true, disable otherwise.
@@ -151,6 +157,18 @@ public:
      */
     void setDatabaseIgnoreUpdateErrors(bool enabled);
     /**
+     * Set the path where to find the configuration for projectM visualization.
+     *
+     * @param path absolute path as string.
+     */
+    void setVisualizationConfigPath(const QString& path);
+    /**
+     * Set the name of the projectM visualization preset.
+     *
+     * @param preset the name of the preset as string.
+     */
+    void setVisualizationPreset(const QString& preset);
+    /**
      * Set the index for the zoom factor for websites.
      *
      * @param index the new index for the zoom factor as integer.
@@ -210,6 +228,12 @@ public:
      * @return true if the filters are visible, false otherwise.
      */
     [[nodiscard]] bool getMusicViewFilters();
+    /**
+     * Get the visibility of the music visualization.
+     *
+     * @return true if the music visualization is visible, false otherwise.
+     */
+    [[nodiscard]] bool getMusicViewVisualization();
     /**
      * Return the availability of the Rotel amp widget.
      *
@@ -313,6 +337,18 @@ public:
      */
     [[nodiscard]] bool getDatabaseIgnoreUpdateErrors() const;
     /**
+     * Get the configuration path for the projectM visualization.
+     *
+     * @return the absolute path as string.
+     */
+    [[nodiscard]] QString getVisualizationConfigPath() const;
+    /**
+     * Get the visualization preset for projectM.
+     *
+     * @return the name of the preset as string.
+     */
+    [[nodiscard]] QString getVisualizationPreset() const;
+    /**
      * Get the default zoom factor for websites.
      *
      * @return the index for the zoom factor.
@@ -357,6 +393,10 @@ signals:
      */
     void updatedMusicViewFilters();
     /**
+     * Signal an update of the filters visibility.
+     */
+    void updatedMusicViewVisualization();
+    /**
      * Signal an update of the movie library directory.
      */
     void updatedMovieLibraryTagsAndDirectories();
@@ -400,6 +440,10 @@ signals:
      * Signal an update of the database overlay for the movie view.
      */
     void updatedDatabaseMovieOverlay();
+    /**
+     * Signal an update of the projectM visualization config path.
+     */
+    void updatedVisualizationConfigPath();
     /**
      * Signal an update of the zoom factor.
      */

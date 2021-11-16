@@ -435,10 +435,16 @@ void xApplication::createMenus() {
     connect(musicViewFilters, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewFilters(checked);
     });
+    auto musicViewVisualization = new QAction("Visualization", this);
+    musicViewVisualization->setCheckable(true);
+    musicViewVisualization->setChecked(xPlayerConfiguration::configuration()->getMusicViewVisualization());
+    connect(musicViewVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
+    });
     // Create music view submenu.
     musicViewMenu->addAction(musicViewSelectors);
     musicViewMenu->addAction(musicViewFilters);
-
+    musicViewMenu->addAction(musicViewVisualization);
 
     // Create actions for help menu
     auto helpMenuAboutQt = new QAction("About Qt", this);

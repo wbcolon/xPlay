@@ -22,6 +22,7 @@
 #include "xPlayerMusicAlbumSelectorWidget.h"
 #include "xPlayerListWidget.h"
 #include "xPlayerArtistInfo.h"
+#include "xPlayerVisualizationWidget.h"
 #include "xMusicDirectory.h"
 
 #include <QGroupBox>
@@ -384,6 +385,10 @@ private slots:
      */
     void updatedMusicViewFilters();
     /**
+     * Show or hide the music visualization.
+     */
+    void updatedMusicViewVisualization();
+    /**
      * Update the music database overlay on configuration changes.
      */
     void updatedDatabaseMusicOverlay();
@@ -403,6 +408,12 @@ private slots:
      * @param total the total time (in ms) to be displayed, clear if 0.
      */
     void updateQueueTotalTime(qint64 total);
+    /**
+     * Update the visualization view based on the state.
+     *
+     * @param playing the playing state of the music player.
+     */
+    void updateVisualizationView(bool playing);
     /**
      * Worker function that inserts a chunk of tracks into queue.
      *
@@ -496,6 +507,8 @@ private:
     QStackedWidget* musicStacked;
     QWidget* musicListView;
     xPlayerArtistInfo* musicInfoView;
+    xPlayerVisualizationWidget* musicVisualizationWidget;
+    bool musicVisualizationEnabled;
     xMusicPlayer* musicPlayer;
     xMusicLibrary* musicLibrary;
     xMusicLibraryFilter musicLibraryFilter;

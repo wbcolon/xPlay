@@ -64,6 +64,7 @@ auto xMainMusicWidget::addLineEditGroupBox(const QString& boxLabel, QWidget* par
 
 xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
+        musicVisualizationEnabled(false),
         musicPlayer(player),
         musicLibrary(library),
         playedTrack(0),
@@ -127,8 +128,11 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicListViewLayout->addWidget(selectorTabs, 10, 0, 1, 12);
 
     musicInfoView = new xPlayerArtistInfo(musicStacked);
+    musicVisualizationWidget = new xPlayerVisualizationWidget(musicStacked);
+    connect(musicPlayer, &xMusicPlayer::visualizationStereo, musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
+    musicStacked->addWidget(musicVisualizationWidget);
     musicStacked->setCurrentWidget(musicListView);
     // Player widget.
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
@@ -188,7 +192,10 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(albumFilterLineEdit, &QLineEdit::textChanged, albumList, &xPlayerListWidget::updateFilter);
     connect(trackFilterLineEdit, &QLineEdit::textChanged, trackList, &xPlayerListWidget::updateFilter);
     // Connect artist info view
-    connect(musicInfoView, &xPlayerArtistInfo::close, this, [=]() { musicStacked->setCurrentWidget(musicListView); });
+    connect(musicInfoView, &xPlayerArtistInfo::close, this, [=]() {
+        musicStacked->setCurrentWidget(musicListView);
+        updateVisualizationView(musicPlayer->isPlaying());
+    });
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
     connect(this, &xMainMusicWidget::finishedQueueTracks, musicPlayer, &xMusicPlayer::finishedQueueTracks);
@@ -226,6 +233,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             this, &xMainMusicWidget::updatedMusicViewSelectors);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewFilters,
             this, &xMainMusicWidget::updatedMusicViewFilters);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewVisualization,
+            this, &xMainMusicWidget::updatedMusicViewVisualization);
 }
 
 void xMainMusicWidget::initializeView() {
@@ -621,6 +630,8 @@ void xMainMusicWidget::updateSearchSelectorFilter(const std::tuple<QString,QStri
 }
 
 void xMainMusicWidget::currentState(xMusicPlayer::State state) {
+    // Update visualization.
+    updateVisualizationView(state == xMusicPlayer::PlayingState);
     // Update the icon for the played track based on the state of the music player.
     auto currentTrack = queueList->listItem(playedTrack);
     if (!currentTrack) {
@@ -663,6 +674,8 @@ void xMainMusicWidget::currentTrack(int index, const QString& artist, const QStr
     }
     currentArtist = artist;
     currentAlbum = album;
+    // Update visualization title.
+    musicVisualizationWidget->showTitle(QString("%1 - %2 - %3").arg(track, artist, album));
 }
 
 void xMainMusicWidget::currentQueueTrack(int index) {
@@ -743,6 +756,18 @@ void xMainMusicWidget::updatedMusicViewSelectors() {
         artistSelectorList->clear();
         albumSelectorList->clear();
         searchSelector->clear();
+    }
+}
+
+void xMainMusicWidget::updatedMusicViewVisualization() {
+    musicVisualizationEnabled = xPlayerConfiguration::configuration()->getMusicViewVisualization();
+    if (musicVisualizationEnabled) {
+        // Switch over to the visualization if in a playing state and currently on the list view.
+        if ((musicStacked->currentWidget() == musicListView) && (musicPlayer->isPlaying())) {
+            musicStacked->setCurrentWidget(musicVisualizationWidget);
+        }
+    } else {
+        musicStacked->setCurrentWidget(musicListView);
     }
 }
 
@@ -838,6 +863,21 @@ void xMainMusicWidget::updateQueueTotalTime(qint64 total) {
         queueBox->setTitle(QString("Queue - %1 Songs - %2").arg(queueList->count()).arg(msToTimeString(total)));
     } else {
         queueBox->setTitle("Queue");
+    }
+}
+
+void xMainMusicWidget::updateVisualizationView(bool playing) {
+    if (musicVisualizationEnabled) {
+        // Switch back-and-forth between visualization and list view only if either of the views is selected.
+        if (playing) {
+            if (musicStacked->currentWidget() == musicListView) {
+                musicStacked->setCurrentWidget(musicVisualizationWidget);
+            }
+        } else {
+            if (musicStacked->currentWidget() == musicVisualizationWidget) {
+                musicStacked->setCurrentWidget(musicListView);
+            }
+        }
     }
 }
 
