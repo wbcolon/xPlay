@@ -44,6 +44,12 @@ public:
      */
     [[nodiscard]] virtual bool isMuted() const = 0;
     /**
+     * Return the playing state for the music player.
+     *
+     * @return true if music player is currently playing a track, false otherwise.
+     */
+    [[nodiscard]] virtual bool isPlaying() const = 0;
+    /**
      * Return the shuffle mode for the music player
      *
      * @return true if the shuffle mode is enabled.
@@ -100,6 +106,15 @@ signals:
      * @param saved true is playlist was saved, false otherwise.
      */
     void playlistState(const QString& name, bool saved);
+    /**
+     * Signal the visualization data for the left and right channel.
+     *
+     * The signal always transmits 512 samples for left and right.
+     *
+     * @param left the data for the left channel.
+     * @param right the data for the right channel.
+     */
+    void visualizationStereo(const QVector<qint16>& left, const QVector<qint16>& right);
 
 public slots:
     /*

@@ -38,6 +38,12 @@ public:
      */
     [[nodiscard]] bool isMuted() const override;
     /**
+     * Return the playing state for the music player.
+     *
+     * @return true if music player is currently playing a track, false otherwise.
+     */
+    [[nodiscard]] bool isPlaying() const override;
+    /**
      * Return the shuffle mode for the music player
      *
      * @return true if the shuffle mode is enabled.

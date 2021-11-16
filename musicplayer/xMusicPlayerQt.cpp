@@ -247,6 +247,10 @@ bool xMusicPlayerQt::isMuted() const {
     return musicPlayer->isMuted();
 }
 
+bool xMusicPlayerQt::isPlaying() const {
+    return musicPlayer->state() == QMediaPlayer::PlayingState;
+}
+
 void xMusicPlayerQt::setShuffleMode(bool shuffle) {
     useShuffleMode = shuffle;
     if (useShuffleMode) {

@@ -19,26 +19,36 @@
 #include <QRandomGenerator>
 #include <cmath>
 
+const int xMusicPlayer_MusicVisualizationSamples = 1024;
+const int xMusicPlayer_MusicVisualizationSamplesFactor = xMusicPlayer_MusicVisualizationSamples * 20;
+
 xMusicPlayerPhonon::xMusicPlayerPhonon(xMusicLibrary* library, QObject* parent):
         xMusicPlayer(library, parent),
         musicPlaylistPermutation(),
+        musicVisualizationSampleRate(44100 / xMusicPlayer_MusicVisualizationSamplesFactor),
         musicPlayerState(State::StopState),
         useShuffleMode(false) {
     // Setup the media player.
     musicPlayer = new Phonon::MediaObject(this);
     musicOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
+    musicVisualization = new Phonon::AudioDataOutput(this);
     Phonon::createPath(musicPlayer, musicOutput);
+    Phonon::createPath(musicPlayer, musicVisualization);
     // Alternate setup, but we need the output to change volume.
     // musicPlayer = Phonon::createPlayer(Phonon::MusicCategory);
     musicPlayer->setTransitionTime(0);
     musicPlayer->setTickInterval(500);
     musicOutput->setMuted(false);
+    musicVisualization->setDataSize(xMusicPlayer_MusicVisualizationSamples);
     // Setup the play list.
     // Connect QMediaPlayer signals to out music player signals.
     connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayerPhonon::currentTrackPlayed);
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayerPhonon::currentTrackSource);
     connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayerPhonon::stateChanged);
     connect(musicPlayer, &Phonon::MediaObject::finished, this, &xMusicPlayerPhonon::finished);
+    // Connect visualization signal.
+    connect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayerPhonon::visualizationUpdate);
+
     // We only need this one to determine the time due to issues with Phonon
     musicPlayerForTime = new QMediaPlayer(this);
     // This player is muted. It is only used to determine the proper duration.
@@ -399,6 +409,10 @@ bool xMusicPlayerPhonon::isMuted() const {
     return musicOutput->isMuted();
 }
 
+bool xMusicPlayerPhonon::isPlaying() const {
+    return musicPlayer->state() == Phonon::PlayingState;
+}
+
 void xMusicPlayerPhonon::setShuffleMode(bool shuffle) {
     useShuffleMode = shuffle;
     if (useShuffleMode) {
@@ -445,6 +459,8 @@ void xMusicPlayerPhonon::currentTrackSource(const Phonon::MediaSource& current) 
         emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
                           entryObject->getTrackName(), entryObject->getBitrate(),
                           entryObject->getSampleRate(), entryObject->getBitsPerSample());
+        // Save sample rate for music visualization scaling
+        musicVisualizationSampleRate = entryObject->getSampleRate() / xMusicPlayer_MusicVisualizationSamplesFactor;
         // Use hack to determine the proper total length.
         // We need the muted musicPlayerForTime to play until the total time has been determined
         // and the durationChanged signal was triggered.
@@ -487,6 +503,28 @@ void xMusicPlayerPhonon::finished() {
     }
 }
 
+void xMusicPlayerPhonon::visualizationUpdate(const QMap<Phonon::AudioDataOutput::Channel, QVector<qint16>>& data) {
+    // Use simple counter to drop audio data.
+    static int sampleCounter = 0;
+    if (sampleCounter++ % musicVisualizationSampleRate) {
+        return;
+    }
+    // Reset sample counter to avoid overflow.
+    sampleCounter = 1;
+    // Transmit data only if we have any.
+    if (data.count() > 0) {
+        QVector<qint16> left, right;
+        // Only extract the left and right channel.
+        left = data[Phonon::AudioDataOutput::LeftChannel];
+        right = data[Phonon::AudioDataOutput::RightChannel];
+        // Ensure that we have the proper amount of samples.
+        left.resize(xMusicPlayer_MusicVisualizationSamples);
+        right.resize(xMusicPlayer_MusicVisualizationSamples);
+        // Emit signal to visualization.
+        emit visualizationStereo(left, right);
+    }
+}
+
 QVector<int> xMusicPlayerPhonon::computePermutation(int elements, int startIndex) {
     QList<int> input;
     QVector<int> permutation;
@@ -513,7 +551,7 @@ QVector<int> xMusicPlayerPhonon::computePermutation(int elements, int startIndex
 QVector<int> xMusicPlayerPhonon::extendPermutation(const QVector<int>& permutation, int elements, int extendIndex) {
     // Return an empty permutation if we do not extend.
     if (elements < permutation.count()) {
-        return QVector<int>();
+        return QVector<int>{};
     }
     QList<int> input;
     QVector<int> ePermutation;

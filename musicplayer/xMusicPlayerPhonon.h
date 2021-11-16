@@ -19,6 +19,7 @@
 #include <phonon/MediaObject>
 #include <phonon/MediaSource>
 #include <phonon/AudioOutput>
+#include <phonon/AudioDataOutput>
 #include <QMediaPlayer>
 
 class xMusicPlayerPhonon:public xMusicPlayer {
@@ -39,6 +40,12 @@ public:
      * @return true if music player is muted, false otherwise.
      */
     [[nodiscard]] bool isMuted() const override;
+    /**
+     * Return the playing state for the music player.
+     *
+     * @return true if music player is currently playing a track, false otherwise.
+     */
+    [[nodiscard]] bool isPlaying() const override;
     /**
      * Return the shuffle mode for the music player
      *
@@ -182,6 +189,12 @@ private slots:
      * Track finished signal from the phonon media player. Track errors.
      */
     void finished();
+    /**
+     * Transform the data from the AudioDataOutput to be used by visualization.
+     *
+     * @param data the map of samples.
+     */
+    void visualizationUpdate(const QMap<Phonon::AudioDataOutput::Channel, QVector<qint16>>& data);
 
 private:
     /**
@@ -207,6 +220,8 @@ private:
     QVector<int> musicPlaylistPermutation;
     Phonon::MediaObject* musicPlayer;
     Phonon::AudioOutput* musicOutput;
+    Phonon::AudioDataOutput* musicVisualization;
+    int musicVisualizationSampleRate;
     xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;
     // Only required due to track length issues with phonon.
