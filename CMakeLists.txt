@@ -23,6 +23,8 @@ option(USE_STREAMING "Enable the streaming view in xPlay" ON)
 option(USE_TESTS "Build the tests for xPlay instead of the application" OFF)
 configure_file(xPlayerConfig.h.in xPlayerConfig.h)
 
+set(OpenGL_GL_PREFERENCE GLVND)
+
 find_package(Qt5 COMPONENTS Widgets DBus REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
 find_package(Qt5MultimediaWidgets REQUIRED)
@@ -30,11 +32,16 @@ find_package(Qt5WebEngineWidgets REQUIRED)
 find_package(Qt5Test REQUIRED)
 find_package(Phonon4Qt5)
 find_package(SQLite3)
+find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(TAGLIB taglib)
 set(CMAKE_REQUIRED_INCLUDES "${TAGLIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_LIBRARIES "${TAGLIB_LIBRARIES}")
+
+pkg_check_modules(PROJECTM libprojectM)
+set(CMAKE_REQUIRED_INCLUDES "${PROJECTM_INCLUDE_DIRS}")
+set(CMAKE_REQUIRED_LIBRARIES "${PROJECTM_LIBRARIES}")
 
 set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
@@ -95,6 +102,7 @@ set(xPlay_sources
         xPlayerMusicArtistSelectorWidget.cpp
         xPlayerMusicAlbumSelectorWidget.cpp
         xPlayerMusicLibraryWidget.cpp
+        xPlayerVisualizationWidget.cpp
         xMainMusicWidget.cpp
         xMainMovieWidget.cpp
         xMainStreamingWidget.cpp
@@ -109,6 +117,8 @@ set(xPlay_libraries
         Phonon::phonon4qt5
         sqlite3
         ${TAGLIB_LIBRARIES}
+        ${PROJECTM_LIBRARIES}
+        OpenGL::GL
         ${VLCLIB_LIBRARIES})
 
 if (USE_TESTS)
