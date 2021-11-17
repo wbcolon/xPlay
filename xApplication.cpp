@@ -425,18 +425,21 @@ void xApplication::createMenus() {
     // Create actions for music view submenu.
     auto musicViewSelectors = new QAction("Selectors", this);
     musicViewSelectors->setCheckable(true);
+    musicViewSelectors->setShortcut(QKeySequence("Ctrl+Alt+S"));
     musicViewSelectors->setChecked(xPlayerConfiguration::configuration()->getMusicViewSelectors());
     connect(musicViewSelectors, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewSelectors(checked);
     });
     auto musicViewFilters = new QAction("Filters", this);
     musicViewFilters->setCheckable(true);
+    musicViewFilters->setShortcut(QKeySequence("Ctrl+Alt+F"));
     musicViewFilters->setChecked(xPlayerConfiguration::configuration()->getMusicViewFilters());
     connect(musicViewFilters, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewFilters(checked);
     });
     auto musicViewVisualization = new QAction("Visualization", this);
     musicViewVisualization->setCheckable(true);
+    musicViewVisualization->setShortcut(QKeySequence("Ctrl+Alt+V"));
     musicViewVisualization->setChecked(xPlayerConfiguration::configuration()->getMusicViewVisualization());
     connect(musicViewVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
