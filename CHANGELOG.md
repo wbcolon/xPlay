@@ -1,5 +1,16 @@
 # Changelog
 
+
+## 0.10.1 - 2021-11-17
+
+- Add played time to window title in full window movie playback.
+- Hide mouse cursor in full window movie playback.
+- Add shortcuts for Music View menu items.
+- Minor UI updates for Mobile Sync view.
+- Minor fixes for selectors when rescanning music library.
+- Add music visualization using projectM.
+
+
 ## 0.10.0 - 2021-11-07
 
 - Add initial mobile sync view.

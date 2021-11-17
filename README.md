@@ -95,6 +95,7 @@ xPlay has a music view, a movie view and a streaming view.
 ![Screenshot Music View (tag popup)](screenshots/xplay_screenshot_music_view_06.png)
 ![Screenshot Music View (artistinfo popup)](screenshots/xplay_screenshot_music_view_07.png)
 ![Screenshot Music View (artistinfo)](screenshots/xplay_screenshot_music_view_08.png)
+![Screenshot Music View (visualization)](screenshots/xplay_screenshot_music_view_09.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select)
@@ -137,6 +138,14 @@ have a specific tag.
 The Rotel widget allows to control a Rotel A12 or A14 amp via a network connection. The volume can be adjusted
 (maximum of 60) and the input can be selected. The values for bass and treble can be adjusted (from -10 to +10)
 as well as the balance (from -5 to +5).
+
+#### Visualization
+
+A music visualization based on projectM is available and can be activated via the *Visualization* entry of the 
+*Music View* sub menu. The visualization (when activated) is displayed whenever the the music player is playing and
+the artist info view is currently not activated. The visualization (when displayed) reverts to the artist, album and
+track view whenever the music player pauses or stops. A right-click on the visualization opens a popup menu that allows
+selecting a projectM preset. A double-click will display the name of the currently selected preset.
 
 #### Selectors and Filters
 
@@ -296,6 +305,7 @@ and the KDE 5.x breeze icons.
 * SQLite3 - The Database Access Library (https://sqlite.org/)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
 * libVLC Library (https://wiki.videolan.org/LibVLC/)
+* projectM library (https://github.com/projectM-visualizer/projectm)
 * C++17
 
 With Qwt the UI has an improved volume knob and track slider.
@@ -309,6 +319,7 @@ With Qwt the UI has an improved volume knob and track slider.
     * The GStreamer backend crashed on Ubuntu 20.04 for some movies. Replacing the library
       */usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgsta52dec.so* from *streamer1.0-plugins-ugly* with the
       corresponding library for Ubuntu 20.10 may solve the issue.
+* Music Visualization is only supported with the Phonon music player backend. 
 
 ## Notes
 
