@@ -129,7 +129,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
 
     musicInfoView = new xPlayerArtistInfo(musicStacked);
     musicVisualizationWidget = new xPlayerVisualizationWidget(musicStacked);
-    connect(musicPlayer, &xMusicPlayer::visualizationStereo, musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
     musicStacked->addWidget(musicVisualizationWidget);
@@ -196,6 +195,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         musicStacked->setCurrentWidget(musicListView);
         updateVisualizationView(musicPlayer->isPlaying());
     });
+    // Connect music visualization view
+    connect(musicPlayer, &xMusicPlayer::visualizationStereo, musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
     connect(this, &xMainMusicWidget::finishedQueueTracks, musicPlayer, &xMusicPlayer::finishedQueueTracks);
@@ -733,6 +734,8 @@ void xMainMusicWidget::currentQueueTrackRightClicked(const QPoint& point) {
 void xMainMusicWidget::clearQueue() {
     // Clear playlist (queue).
     queueList->clearItems();
+    // Stop music player.
+    musicPlayer->stop();
 }
 
 void xMainMusicWidget::updatedMusicViewFilters() {

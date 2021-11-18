@@ -34,6 +34,8 @@ public:
      * @param selectors a set of characters (as QString) used for filtering artists.
      */
     void updateSelectors(const std::set<QString>& selectors);
+
+public slots:
     /**
      * Remove all selectors.
      */

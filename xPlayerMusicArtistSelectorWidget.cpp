@@ -49,8 +49,8 @@ void xPlayerMusicArtistSelectorWidget::updateSelectors(const std::set<QString>& 
     }
     // Update artist selectors list widget.
     selectorList->clear();
-    selectorList->addItem(tr("none"));
-    selectorList->addItem(tr("random"));
+    selectorList->addItem("none");
+    selectorList->addItem("random");
     for (const auto& as : selectors) {
         selectorList->addItem(as);
         // Mark the selector again after an update.
@@ -69,6 +69,8 @@ void xPlayerMusicArtistSelectorWidget::clear() {
     selectorList->clear();
     // Reset "Sorting Latest" checkbox.
     sortingLatestBox->setChecked(false);
+    // Reset selector
+    emit selector("none");
 }
 
 void xPlayerMusicArtistSelectorWidget::selectArtistSelector(int selectorIndex) {

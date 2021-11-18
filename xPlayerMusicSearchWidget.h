@@ -33,6 +33,8 @@ public:
      * @return a tuple of artist, album and track name match as string.
      */
     [[nodiscard]] std::tuple<QString,QString,QString> getMatch() const;
+
+public slots:
     /**
      * Cleanup.
      *
@@ -57,10 +59,6 @@ private slots:
      * Called if search button is clicked. Emit updateFilter signal.
      */
     void searchClicked();
-    /**
-     * Called if clear button is clicked. Clear and emit clearFilter signal.
-     */
-    void clearClicked();
     /**
      * Called if the return key is pressed in the search text input.
      */

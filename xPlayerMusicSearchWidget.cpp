@@ -50,7 +50,7 @@ xPlayerMusicSearchWidget::xPlayerMusicSearchWidget(QWidget* parent, Qt::WindowFl
     setLayout(layout);
     setFixedHeight(static_cast<int>(QFontMetrics(QApplication::font()).height()*xPlayer::SelectorHeightFontFactor));
     connect(searchButton, &QPushButton::pressed, this, &xPlayerMusicSearchWidget::searchClicked);
-    connect(clearButton, &QPushButton::pressed, this, &xPlayerMusicSearchWidget::clearClicked);
+    connect(clearButton, &QPushButton::pressed, this, &xPlayerMusicSearchWidget::clear);
     connect(searchText, &QLineEdit::returnPressed, this, &xPlayerMusicSearchWidget::returnPressed);
 }
 
@@ -68,6 +68,7 @@ void xPlayerMusicSearchWidget::clear() {
     searchArtistButton->setChecked(true);
     currentSearchCategory = -1;
     currentSearchText.clear();
+    emit clearFilter();
 }
 
 void xPlayerMusicSearchWidget::searchClicked() {
@@ -77,13 +78,7 @@ void xPlayerMusicSearchWidget::searchClicked() {
         emit updateFilter(getMatch());
     } else {
         clear();
-        emit clearFilter();
     }
-}
-
-void xPlayerMusicSearchWidget::clearClicked() {
-    clear();
-    emit clearFilter();
 }
 
 void xPlayerMusicSearchWidget::returnPressed() {

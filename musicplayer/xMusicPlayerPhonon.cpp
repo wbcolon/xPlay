@@ -20,7 +20,7 @@
 #include <cmath>
 
 const int xMusicPlayer_MusicVisualizationSamples = 1024;
-const int xMusicPlayer_MusicVisualizationSamplesFactor = xMusicPlayer_MusicVisualizationSamples * 20;
+const int xMusicPlayer_MusicVisualizationSamplesFactor = xMusicPlayer_MusicVisualizationSamples * 10;
 
 xMusicPlayerPhonon::xMusicPlayerPhonon(xMusicLibrary* library, QObject* parent):
         xMusicPlayer(library, parent),
