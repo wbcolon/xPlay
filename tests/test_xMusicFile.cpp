@@ -15,14 +15,15 @@
 #include "test_xMusicFile.h"
 
 void test_xMusicFile::testAccessFunctions() {
-    xMusicFile musicFile(std::filesystem::path("/tmp/artist/album/01 track.flac"), "artist", "album", "01 track.flac");
+    xMusicFile musicFile(std::filesystem::path("/tmp/artist/album/01 track.flac"), 123456, "artist", "album", "01 track.flac");
     QVERIFY(musicFile.getArtist() == QString("artist"));
     QVERIFY(musicFile.getAlbum() == QString("album"));
     QVERIFY(musicFile.getTrackName() == QString("01 track.flac"));
+    QVERIFY(musicFile.getFileSize() == 123456);
 }
 
 void test_xMusicFile::testScanInvalidFile() {
-    xMusicFile musicFile(std::filesystem::path("/tmp/artist/album/01 track.flac"), "artist", "album", "01 track.flac");
+    xMusicFile musicFile(std::filesystem::path("/tmp/artist/album/01 track.flac"), 0, "artist", "album", "01 track.flac");
     QVERIFY(!musicFile.isScanned());
     QVERIFY(musicFile.getLength() <= 0);
     QVERIFY(musicFile.getBitrate() <= 0);
@@ -32,7 +33,7 @@ void test_xMusicFile::testScanInvalidFile() {
 }
 
 void test_xMusicFile::testScanFlacFile() {
-    xMusicFile musicFile(std::filesystem::path("../tests/input/test_file.flac"), "artist", "album", "01 track.flac");
+    xMusicFile musicFile(std::filesystem::path("../tests/input/test_file.flac"), 0, "artist", "album", "01 track.flac");
     QVERIFY(musicFile.getLength() > 0);
     QVERIFY(musicFile.getBitrate() > 0);
     QVERIFY(musicFile.getBitsPerSample() == 16);
@@ -41,7 +42,7 @@ void test_xMusicFile::testScanFlacFile() {
 }
 
 void test_xMusicFile::testScanHDFlacFile() {
-    xMusicFile musicFile(std::filesystem::path("../tests/input/test_file_hd.flac"), "artist", "album", "01 track.flac");
+    xMusicFile musicFile(std::filesystem::path("../tests/input/test_file_hd.flac"), 0, "artist", "album", "01 track.flac");
     QVERIFY(musicFile.getLength() > 0);
     QVERIFY(musicFile.getBitrate() > 0);
     QVERIFY(musicFile.getBitsPerSample() == 24);
@@ -50,7 +51,7 @@ void test_xMusicFile::testScanHDFlacFile() {
 }
 
 void test_xMusicFile::testScanWavpackFile() {
-    xMusicFile musicFile(std::filesystem::path("../tests/input/test_file.wv"), "artist", "album", "01 track.flac");
+    xMusicFile musicFile(std::filesystem::path("../tests/input/test_file.wv"), 0, "artist", "album", "01 track.flac");
     QVERIFY(musicFile.getLength() > 0);
     QVERIFY(musicFile.getBitrate() > 0);
     QVERIFY(musicFile.getBitsPerSample() == 16);
@@ -59,7 +60,7 @@ void test_xMusicFile::testScanWavpackFile() {
 }
 
 void test_xMusicFile::testScanMP3File() {
-    xMusicFile musicFile(std::filesystem::path("../tests/input/test_file.mp3"), "artist", "album", "01 track.flac");
+    xMusicFile musicFile(std::filesystem::path("../tests/input/test_file.mp3"), 0, "artist", "album", "01 track.flac");
     QVERIFY(musicFile.getLength() > 0);
     QVERIFY(musicFile.getBitrate() > 0);
     QVERIFY(musicFile.getBitsPerSample() == 16);

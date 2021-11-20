@@ -13,7 +13,9 @@
  */
 
 #include "test_xMusicFile.h"
+#include "test_xMusicDirectory.h"
 #include "test_xMusicLibrary.h"
+#include "test_xMovieLibrary.h"
 
 #include "xMusicFile.h"
 #include "xMusicDirectory.h"
@@ -32,9 +34,15 @@ int main(int argc, char** argv) {
     qRegisterMetaType<QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicFile*>>>>>>();
     qRegisterMetaType<xMusicDirectory>();
     qRegisterMetaType<std::list<xMusicDirectory>>();
+    qRegisterMetaType<std::vector<std::pair<QString,QString>>>();
 
     test_xMusicFile musicFile;
+    test_xMusicDirectory musicDirectory;
     test_xMusicLibrary musicLibrary;
+    test_xMovieLibrary movieLibrary;
 
-    return QTest::qExec(&musicFile, argc, argv) | QTest::qExec(&musicLibrary, argc, argv);
+    return QTest::qExec(&musicFile, argc, argv) |
+           QTest::qExec(&musicDirectory, argc, argv) |
+           QTest::qExec(&musicLibrary, argc, argv) |
+           QTest::qExec(&movieLibrary, argc, argv);
 }

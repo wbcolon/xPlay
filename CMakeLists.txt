@@ -125,7 +125,9 @@ if (USE_TESTS)
     add_executable(test_xPlay
             ${xPlay_sources}
             tests/test_xMusicFile.cpp
+            tests/test_xMusicDirectory.cpp
             tests/test_xMusicLibrary.cpp
+            tests/test_xMovieLibrary.cpp
             tests/test_xPlay.cpp)
     target_link_libraries(test_xPlay Qt5::Test ${xPlay_libraries})
 else()
