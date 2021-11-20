@@ -805,7 +805,7 @@ void xMusicLibrary::scanForArtistAndAlbum(const xMusicDirectory& artist, const x
         // Clear list on error
         trackList.clear();
     }
-    trackList.sort([](xMusicFile* a, xMusicFile* b) { return (a->getTrackName() < b->getTrackName()); });
+    trackList.sort([](xMusicFile* a, xMusicFile* b) { return (a->compareTrackName(b) < 0); });
     // Update widget
     emit scannedTracks(trackList);
 }
@@ -900,7 +900,7 @@ void xMusicLibrary::getAllAlbumsForArtist(const xMusicDirectory& artist,
         for (const auto& album : albumList) {
             auto trackObjects = musicLibraryFiles->get(artist, album);
             trackObjects.pop_front();
-            trackObjects.sort([](xMusicFile* a, xMusicFile* b) { return (a->getTrackName() < b->getTrackName()); });
+            trackObjects.sort([](xMusicFile* a, xMusicFile* b) { return (a->compareTrackName(b) < 0); });
             std::vector<xMusicFile*> albumTrackObjects;
             for (const auto& track : trackObjects) {
                 albumTrackObjects.emplace_back(track);
@@ -933,7 +933,7 @@ void xMusicLibrary::getAllAlbumsForArtist(const xMusicDirectory& artist,
             // Only add album with tracks if the track filter matches.
             if (!trackObjects.empty()) {
                 trackObjects.pop_front();
-                trackObjects.sort([](xMusicFile* a, xMusicFile* b) { return (a->getTrackName() < b->getTrackName()); });
+                trackObjects.sort([](xMusicFile* a, xMusicFile* b) { return (a->compareTrackName(b) < 0); });
                 std::vector<xMusicFile*> albumTrackObjects;
                 for (const auto& track : trackObjects) {
                     albumTrackObjects.emplace_back(track);

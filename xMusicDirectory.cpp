@@ -55,7 +55,7 @@ const std::filesystem::file_time_type& xMusicDirectory::lastWritten() const {
 }
 
 bool xMusicDirectory::operator < (const xMusicDirectory& entry) const {
-    return directoryName < entry.directoryName;
+    return (directoryName.compare(entry.directoryName, Qt::CaseInsensitive) < 0);
 }
 
 xMusicDirectory& xMusicDirectory::operator = (const xMusicDirectory& entry) {

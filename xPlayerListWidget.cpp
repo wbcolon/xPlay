@@ -323,7 +323,8 @@ void xPlayerListWidget::addListWidgetItem(xPlayerListWidgetItem* item, const QSt
     if ((sortItems) && (topLevelItemCount() > 0)) {
         int insertPos = 0;
         for (; insertPos < topLevelItemCount(); ++insertPos) {
-            if (text < QTreeWidget::itemAt(insertPos, 0)->text(0)) {
+            // Sorting is case-insensitive.
+            if (text.compare(QTreeWidget::itemAt(insertPos, 0)->text(0), Qt::CaseInsensitive) < 0) {
                 break;
             }
         }

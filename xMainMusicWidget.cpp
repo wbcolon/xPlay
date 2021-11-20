@@ -267,7 +267,8 @@ void xMainMusicWidget::scannedArtists(const std::list<xMusicDirectory>& artists)
     unfilteredArtists = artists;
     // Use unfiltered list for selectors update
     for (const auto& artist : artists) {
-        selectors.insert(artist.name().left(1));
+        // Convert selectors to lower-case.
+        selectors.insert(artist.name().left(1).toLower());
     }
     // Update the selector based upon the added artists.
     artistSelectorList->updateSelectors(selectors);
@@ -456,7 +457,8 @@ std::list<xMusicDirectory> xMainMusicWidget::filterArtists(const std::list<xMusi
         // Go through list of artists and only add the ones to the filtered
         // list that start with the selector character.
         for (const auto& artist : artists) {
-            if (artist.name().startsWith(currentArtistSelector)) {
+            // Convert to lower-case before checking against artist selector.
+            if (artist.name().toLower().startsWith(currentArtistSelector)) {
                 filtered.push_back(artist);
             }
         }
