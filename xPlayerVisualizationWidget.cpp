@@ -74,7 +74,7 @@ void xPlayerVisualizationWidget::initializeGL() {
 
         if (visualization) {
             auto configPreset = xPlayerConfiguration::configuration()->getVisualizationPreset();
-            unsigned configPresetIndex = 0;
+            visualizationPresetIndex = 0;
             // Keep the currently selected preset. Do no switch after a certain time.
             visualization->setPresetLock(true);
             // Process the presets.
@@ -82,8 +82,7 @@ void xPlayerVisualizationWidget::initializeGL() {
             for (unsigned i = 0; i < visualization->getPlaylistSize(); ++i) {
                 auto presetName = QString::fromStdString(visualization->getPresetName(i));
                 if (presetName == configPreset) {
-                    visualizationPresetName = presetName;
-                    configPresetIndex = i;
+                    visualizationPresetIndex = i;
                 }
                 // Split up the preset name.
                 auto presetSplit = presetName.split(" - ");
@@ -96,8 +95,8 @@ void xPlayerVisualizationWidget::initializeGL() {
                     visualizationPresetMap[presetAuthor].emplace_back(std::make_pair(i, presetType));
                 }
             }
-            // Select saved preset.
-            visualization->selectPreset(configPresetIndex);
+            // Select saved preset and update preset name.
+            visualization->selectPreset(visualizationPresetIndex);
 
             // Delete old and create new menu from presets.
             delete visualizationPresetMenu;
@@ -108,8 +107,7 @@ void xPlayerVisualizationWidget::initializeGL() {
                 for (const auto &title: preset.second) {
                     titleMenu->addAction(title.second, [=]() {
                         visualization->selectPreset(title.first, true);
-                        visualizationPresetName = preset.first + " - " + title.second;
-                        xPlayerConfiguration::configuration()->setVisualizationPreset(visualizationPresetName);
+                        xPlayerConfiguration::configuration()->setVisualizationPreset(preset.first + " - " + title.second);
                     });
                 }
             }
@@ -144,14 +142,18 @@ bool xPlayerVisualizationWidget::event(QEvent* e) {
     if (e->type() == QEvent::MouseButtonDblClick) {
         auto mouseEvent = reinterpret_cast<QMouseEvent*>(e);
         if (mouseEvent->button() == Qt::LeftButton) {
+            if (mouseEvent->modifiers() & Qt::ControlModifier) {
+                visualizationPresetIndex = (visualizationPresetIndex + 1) % visualization->getPlaylistSize();
+                visualization->selectPreset(visualizationPresetIndex);
+            }
             showTitle(QString());
-            showTitle(visualizationPresetName);
+            showTitle(QString::fromStdString(visualization->getPresetName(visualizationPresetIndex)));
         }
     }
     return QOpenGLWidget::event(e);
 }
 
-void xPlayerVisualizationWidget::showTitle(const QString &title) {
+void xPlayerVisualizationWidget::showTitle(const QString& title) {
     if (visualization) {
         visualization->projectM_setTitle(title.toStdString());
     }

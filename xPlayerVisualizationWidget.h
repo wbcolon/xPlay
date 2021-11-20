@@ -75,7 +75,7 @@ private slots:
 private:
     projectM* visualization;
     QString visualizationConfigPath;
-    QString visualizationPresetName;
+    unsigned visualizationPresetIndex;
     QMenu* visualizationPresetMenu;
     std::map<QString, std::list<std::pair<int, QString>>> visualizationPresetMap;
 };
