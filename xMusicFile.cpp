@@ -71,10 +71,21 @@ std::uintmax_t xMusicFile::getFileSize() const {
 bool xMusicFile::equal(xMusicFile* file, bool checkFileSize) const {
     // The file path different because music libraries have different base directories.
     // The other attributes may not match. E.g. if the file is not scanned yet.
-    return ((fileArtist == file->fileArtist) &&
+    return ((file != nullptr) &&
+            (fileArtist == file->fileArtist) &&
             (fileAlbum == file->fileAlbum) &&
             (fileTrackName == file->fileTrackName) &&
             ((fileSize == file->fileSize) || (!checkFileSize)));
+}
+
+int xMusicFile::compareTrackName(xMusicFile* file) const {
+    if (file) {
+        // Perform comparison case-insensitive.
+        return fileTrackName.compare(file->fileTrackName, Qt::CaseSensitive);
+    } else {
+        // An existing track name is always greater than a non-existing one.
+        return 1;
+    }
 }
 
 const QString& xMusicFile::getArtist() const {

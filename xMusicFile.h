@@ -112,7 +112,16 @@ public:
      * @param file the other music file to compare to.
      * @return true if the music files are equal, false otherwise.
      */
-    bool equal(xMusicFile* file, bool checkFileSize=true) const;
+    [[nodiscard]] bool equal(xMusicFile* file, bool checkFileSize=true) const;
+    /**
+     * Compare the music files according to their track names.
+     *
+     * The comparison is performed case-insensitive.
+     *
+     * @param file the other music file we compare to.
+     * @return the result of the compare on the track names.
+     */
+    [[nodiscard]] int compareTrackName(xMusicFile* file) const;
 
 private:
     std::filesystem::path filePath;
