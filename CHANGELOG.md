@@ -1,6 +1,15 @@
 # Changelog
 
 
+## Unreleased
+
+- Reduce the sample rate for music visualization.
+- Fix clear for artist and search selector.
+- Minor code cleanups and documentation updates.
+- Add support for mixed-case music libraries.
+- Select next visualization preset on ctrl+double-click.
+
+
 ## 0.10.1 - 2021-11-17
 
 - Add played time to window title in full window movie playback.
