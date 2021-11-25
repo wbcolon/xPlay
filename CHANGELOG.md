@@ -1,12 +1,14 @@
 # Changelog
 
 
-## Unreleased
+## 0.10.2 - 2021-11-25
 
 - Reduce the sample rate for music visualization.
 - Fix clear for artist and search selector.
 - Minor code cleanups and documentation updates.
+- Fix and add additional tests.
 - Add support for mixed-case music libraries.
+- Handle music visualization errors better.
 - Select next visualization preset on ctrl+double-click.
 
 
