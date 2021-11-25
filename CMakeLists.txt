@@ -16,9 +16,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-decl
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -DXPLAY_APP_NAME=\\\"xPlay\\\"")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
-option(USE_PHONON "Use the Phonon based media player instead of Qt" ON)
-option(USE_VLC "Use the VLC based movie media player instead of Qt" ON)
-option(USE_QWT "Use the Qwt based player widget instead of Qt" ON)
+option(USE_PHONON "Use the Phonon based music player instead of Qt" ON)
+option(USE_VLC "Use the VLC based movie player instead of Phonon" ON)
+option(USE_QWT "Use the Qwt widgets instead of Qt widgets" ON)
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
 option(USE_TESTS "Build the tests for xPlay instead of the application" OFF)
 configure_file(xPlayerConfig.h.in xPlayerConfig.h)
