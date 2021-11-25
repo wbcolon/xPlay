@@ -128,10 +128,20 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicListViewLayout->addWidget(selectorTabs, 10, 0, 1, 12);
 
     musicInfoView = new xPlayerArtistInfo(musicStacked);
-    musicVisualizationWidget = new xPlayerVisualizationWidget(musicStacked);
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
-    musicStacked->addWidget(musicVisualizationWidget);
+    // Does the music player support visualization.
+    if (musicPlayer->supportsVisualization()) {
+        musicVisualizationWidget = new xPlayerVisualizationWidget(musicStacked);
+        // Connect music visualization view
+        connect(musicPlayer, &xMusicPlayer::visualizationStereo,
+                musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
+        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationError, [=]() {
+            updateVisualizationView(false);
+            emit visualizationError();
+        });
+        musicStacked->addWidget(musicVisualizationWidget);
+    }
     musicStacked->setCurrentWidget(musicListView);
     // Player widget.
     playerWidget = new xPlayerMusicWidget(musicPlayer, this);
@@ -195,8 +205,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         musicStacked->setCurrentWidget(musicListView);
         updateVisualizationView(musicPlayer->isPlaying());
     });
-    // Connect music visualization view
-    connect(musicPlayer, &xMusicPlayer::visualizationStereo, musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
     connect(this, &xMainMusicWidget::finishedQueueTracks, musicPlayer, &xMusicPlayer::finishedQueueTracks);
@@ -678,7 +686,9 @@ void xMainMusicWidget::currentTrack(int index, const QString& artist, const QStr
     currentArtist = artist;
     currentAlbum = album;
     // Update visualization title.
-    musicVisualizationWidget->showTitle(QString("%1 - %2 - %3").arg(track, artist, album));
+    if (musicPlayer->getVisualization()) {
+        musicVisualizationWidget->showTitle(QString("%1 - %2 - %3").arg(track, artist, album));
+    }
 }
 
 void xMainMusicWidget::currentQueueTrack(int index) {
@@ -765,14 +775,17 @@ void xMainMusicWidget::updatedMusicViewSelectors() {
 }
 
 void xMainMusicWidget::updatedMusicViewVisualization() {
-    musicVisualizationEnabled = xPlayerConfiguration::configuration()->getMusicViewVisualization();
-    if (musicVisualizationEnabled) {
-        // Switch over to the visualization if in a playing state and currently on the list view.
-        if ((musicStacked->currentWidget() == musicListView) && (musicPlayer->isPlaying())) {
-            musicStacked->setCurrentWidget(musicVisualizationWidget);
+    if (musicPlayer->supportsVisualization()) {
+        musicVisualizationEnabled = xPlayerConfiguration::configuration()->getMusicViewVisualization();
+        musicPlayer->setVisualization(musicVisualizationEnabled);
+        if (musicVisualizationEnabled) {
+            // Switch over to the visualization if in a playing state and currently on the list view.
+            if ((musicStacked->currentWidget() == musicListView) && (musicPlayer->isPlaying())) {
+                musicStacked->setCurrentWidget(musicVisualizationWidget);
+            }
+        } else {
+            musicStacked->setCurrentWidget(musicListView);
         }
-    } else {
-        musicStacked->setCurrentWidget(musicListView);
     }
 }
 

@@ -42,11 +42,21 @@ public slots:
      */
     void visualizationStereo(const QVector<qint16>& left, const QVector<qint16>& right);
 
+signals:
+    /**
+     * Emitted if we are unable to create a projectM instance.
+     */
+    void visualizationError();
+
 protected:
     /**
      * Initialize OpenGL and projectM object.
      */
     void initializeGL() override;
+    /**
+     * Initialize OpenGL as required by projectM.
+     */
+    void initializeVisualizationGL();
     /**
      * Called upon resize of OpenGL widget.
      *

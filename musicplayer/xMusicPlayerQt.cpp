@@ -268,8 +268,21 @@ void xMusicPlayerQt::setVolume(int vol) {
     musicPlayer->setVolume(vol);
 }
 
+void xMusicPlayerQt::setVisualization(bool enabled) {
+    Q_UNUSED(enabled);
+    // Not supported.
+}
+
 int xMusicPlayerQt::getVolume() const {
     return musicPlayer->volume();
+}
+
+bool xMusicPlayerQt::supportsVisualization() const {
+    return false;
+}
+
+bool xMusicPlayerQt::getVisualization() const {
+    return false;
 }
 
 void xMusicPlayerQt::currentTrackIndex(int index) {

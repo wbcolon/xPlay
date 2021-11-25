@@ -25,6 +25,7 @@ const int xMusicPlayer_MusicVisualizationSamplesFactor = xMusicPlayer_MusicVisua
 xMusicPlayerPhonon::xMusicPlayerPhonon(xMusicLibrary* library, QObject* parent):
         xMusicPlayer(library, parent),
         musicPlaylistPermutation(),
+        musicVisualizationEnabled(false),
         musicVisualizationSampleRate(44100 / xMusicPlayer_MusicVisualizationSamplesFactor),
         musicPlayerState(State::StopState),
         useShuffleMode(false) {
@@ -46,8 +47,6 @@ xMusicPlayerPhonon::xMusicPlayerPhonon(xMusicLibrary* library, QObject* parent):
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayerPhonon::currentTrackSource);
     connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayerPhonon::stateChanged);
     connect(musicPlayer, &Phonon::MediaObject::finished, this, &xMusicPlayerPhonon::finished);
-    // Connect visualization signal.
-    connect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayerPhonon::visualizationUpdate);
 
     // We only need this one to determine the time due to issues with Phonon
     musicPlayerForTime = new QMediaPlayer(this);
@@ -440,8 +439,25 @@ void xMusicPlayerPhonon::setVolume(int vol) {
     musicOutput->setVolume(vol/100.0);
 }
 
+void xMusicPlayerPhonon::setVisualization(bool enabled) {
+    musicVisualizationEnabled = enabled;
+    if (musicVisualizationEnabled) {
+        connect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayerPhonon::visualizationUpdate);
+    } else {
+        disconnect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayerPhonon::visualizationUpdate);
+    }
+}
+
 int xMusicPlayerPhonon::getVolume() const {
     return static_cast<int>(std::round(musicOutput->volume()*100.0));
+}
+
+bool xMusicPlayerPhonon::supportsVisualization() const {
+    return true;
+}
+
+bool xMusicPlayerPhonon::getVisualization() const {
+    return musicVisualizationEnabled;
 }
 
 void xMusicPlayerPhonon::currentTrackDuration(qint64 duration) {

@@ -179,6 +179,7 @@ private:
     xMusicLibrary* musicLibrary;
     xMusicPlayerX* musicPlayer;
     xMainMusicWidget* mainMusicWidget;
+    QAction* musicViewVisualization;
     xMovieLibrary* movieLibrary;
     xMoviePlayerX* moviePlayer;
     xMainMovieWidget* mainMovieWidget;

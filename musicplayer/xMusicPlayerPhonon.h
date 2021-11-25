@@ -35,6 +35,18 @@ public:
      */
     [[nodiscard]] int getVolume() const override;
     /**
+     * Return if support for visualization exists.
+     *
+     * @return true if the music player supports visualization, false otherwise.
+     */
+    [[nodiscard]] bool supportsVisualization() const override;
+    /**
+     * Return the visualization state for the music player
+     *
+     * @return true if visualization support is enabled, false otherwise.
+     */
+    [[nodiscard]] bool getVisualization() const override;
+    /**
      * Return the mute state for the music player
      *
      * @return true if music player is muted, false otherwise.
@@ -161,6 +173,12 @@ public slots:
      * @param vol integer value between 0 (silence) and 100 (full volume)
      */
     void setVolume(int vol) override;
+    /**
+     * Set the visualization support.
+     *
+     * @param enabled add visualization support if true, disable otherwise.
+     */
+    void setVisualization(bool enabled) override;
 
 private slots:
     /**
@@ -221,6 +239,7 @@ private:
     Phonon::MediaObject* musicPlayer;
     Phonon::AudioOutput* musicOutput;
     Phonon::AudioDataOutput* musicVisualization;
+    bool musicVisualizationEnabled;
     int musicVisualizationSampleRate;
     xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;

@@ -38,6 +38,18 @@ public:
      */
     [[nodiscard]] virtual int getVolume() const = 0;
     /**
+     * Return if support for visualization exists.
+     *
+     * @return true if the music player supports visualization, false otherwise.
+     */
+    [[nodiscard]] virtual bool supportsVisualization() const = 0;
+    /**
+     * Return the visualization state for the music player
+     *
+     * @return true if visualization support is enabled, false otherwise.
+     */
+    [[nodiscard]] virtual bool getVisualization() const = 0;
+    /**
      * Return the mute state for the music player
      *
      * @return true if music player is muted, false otherwise.
@@ -172,6 +184,12 @@ public slots:
      * @param vol integer value between 0 (silence) and 100 (full volume)
      */
     virtual void setVolume(int vol) = 0;
+    /**
+     * Set the visualization support.
+     *
+     * @param enable add visualization support if true, disable otherwise.
+     */
+    virtual void setVisualization(bool enable) = 0;
     /**
      * Append the given tracks to the current playlist.
      *

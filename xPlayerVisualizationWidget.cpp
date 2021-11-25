@@ -31,6 +31,7 @@
 xPlayerVisualizationWidget::xPlayerVisualizationWidget(QWidget *parent):
         QOpenGLWidget(parent),
         visualization(nullptr),
+        visualizationPresetIndex(0),
         visualizationPresetMenu(nullptr),
         visualizationPresetMap() {
     // Connect to the configuration changes.
@@ -43,38 +44,22 @@ xPlayerVisualizationWidget::~xPlayerVisualizationWidget() {
 }
 
 void xPlayerVisualizationWidget::initializeGL() {
-    // Initialize OpenGL. Borrowed from qmmp and projectM code.
-    glShadeModel(GL_SMOOTH);
-    glClearColor(0, 0, 0, 0);
-    // Setup our viewport
-    glViewport(0, 0, width(), height());
-    // Change to the projection matrix and set our viewing volume.
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glDrawBuffer(GL_BACK);
-    glReadBuffer(GL_BACK);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_LINE_SMOOTH);
-    glEnable(GL_POINT_SMOOTH);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glLineStipple(2, 0xAAAA);
-
     // Create projectM object if necessary.
     if (visualization == nullptr) {
         try {
             visualization = new projectM(visualizationConfigPath.toStdString());
         } catch (...) {
+            // Problems creating projectM object.
             visualization = nullptr;
+            qCritical() << "Unable to initialize projectM. Check your projectM configuration.";
+            emit visualizationError();
         }
 
         if (visualization) {
             auto configPreset = xPlayerConfiguration::configuration()->getVisualizationPreset();
             visualizationPresetIndex = 0;
+            // Initialize widget.
+            initializeVisualizationGL();
             // Keep the currently selected preset. Do no switch after a certain time.
             visualization->setPresetLock(true);
             // Process the presets.
@@ -114,6 +99,29 @@ void xPlayerVisualizationWidget::initializeGL() {
         }
     }
     QOpenGLWidget::initializeGL();
+}
+
+void xPlayerVisualizationWidget::initializeVisualizationGL() {
+    // Initialize OpenGL. Borrowed from qmmp and projectM code.
+    glShadeModel(GL_SMOOTH);
+    glClearColor(0, 0, 0, 0);
+    // Setup our viewport
+    glViewport(0, 0, width(), height());
+    // Change to the projection matrix and set our viewing volume.
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glDrawBuffer(GL_BACK);
+    glReadBuffer(GL_BACK);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_POINT_SMOOTH);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glLineStipple(2, 0xAAAA);
 }
 
 void xPlayerVisualizationWidget::resizeGL(int glWidth, int glHeight) {

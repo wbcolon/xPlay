@@ -28,7 +28,8 @@
 #include "xMusicDirectory.h"
 
 xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
-        QMainWindow(parent, flags) {
+        QMainWindow(parent, flags),
+        musicViewVisualization(nullptr) {
     // Register Type
     qRegisterMetaType<xMusicFile>();
     qRegisterMetaType<xMusicFile*>();
@@ -437,13 +438,19 @@ void xApplication::createMenus() {
     connect(musicViewFilters, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewFilters(checked);
     });
-    auto musicViewVisualization = new QAction("Visualization", this);
+    musicViewVisualization = new QAction("Visualization", this);
     musicViewVisualization->setCheckable(true);
     musicViewVisualization->setShortcut(QKeySequence("Ctrl+Alt+V"));
     musicViewVisualization->setChecked(xPlayerConfiguration::configuration()->getMusicViewVisualization());
     connect(musicViewVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
     });
+    // Disable the visualization view in case of an error.
+    connect(mainMusicWidget, &xMainMusicWidget::visualizationError, [=]() {
+        musicViewVisualization->setChecked(false);
+        musicViewVisualization->setEnabled(false);
+    });
+
     // Create music view submenu.
     musicViewMenu->addAction(musicViewSelectors);
     musicViewMenu->addAction(musicViewFilters);

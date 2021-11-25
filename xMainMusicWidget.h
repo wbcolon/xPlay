@@ -71,6 +71,10 @@ signals:
      */
     void showMenuBar(bool menu);
     /**
+     * Signal emitted if there is an issue with projectM visualization.
+     */
+    void visualizationError();
+    /**
      * Signal to scan and filter for artists.
      *
      * @param filter the filter to be applied.
