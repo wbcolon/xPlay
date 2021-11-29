@@ -84,9 +84,13 @@ public:
      */
     [[nodiscard]] xMusicFile* musicFile() const;
     /**
-     * Update the time for the list item.
+     * Determine the time for the list item. No UI update.
      */
     qint64 updateTime();
+    /**
+     * Update the displayed time in the list item.
+     */
+    void updateTimeDisplay();
 
 private:
     bool itemTimeUpdated;
@@ -262,6 +266,15 @@ signals:
      * @param total the total time in ms.
      */
     void totalTime(qint64 total);
+    /**
+     * Signal emitted if the time is updated in a list element.
+     *
+     * The update has to be done via signals in order to perform the
+     * UI update from the Qt main loop.
+     *
+     * @param item pointer to the item.
+     */
+    void updateTime(xPlayerListWidgetItem* item);
     /**
      * Sinal emitted if an element was moved via drag and drop.
      *

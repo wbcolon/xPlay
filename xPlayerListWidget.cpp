@@ -19,10 +19,9 @@
 #include <QResizeEvent>
 #include <QHeaderView>
 #include <QTimer>
-#include <QPointer>
 #include <QDebug>
 #include <QTreeWidget>
-#include <QTreeWidgetItem>
+#include <QCoreApplication>
 
 xPlayerListWidgetItem::xPlayerListWidgetItem(const QString& text, QTreeWidget* parent):
         QTreeWidgetItem(parent),
@@ -45,11 +44,13 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicFile* file, QTreeWidget* pare
         itemTooltip(),
         itemFile(file) {
     Q_ASSERT(parent != nullptr);
+    setTextAlignment(1, Qt::AlignRight);
     if (itemFile) {
         itemText = itemFile->getTrackName();
         // Only update the time in the constructor if it was already scanned. The update will force a scan if necessary.
         if (itemFile->isScanned()) {
             updateTime();
+            updateTimeDisplay();
         }
     } else {
         itemText = "<Missing xMusicFile>";
@@ -107,11 +108,15 @@ xMusicFile* xPlayerListWidgetItem::musicFile() const {
 qint64 xPlayerListWidgetItem::updateTime() {
     if ((!itemTimeUpdated) && (itemFile)) {
         itemTime = itemFile->getLength();
-        setTextAlignment(1, Qt::AlignRight);
-        setText(1, QString("%1:%2").arg(itemTime/60000).arg((itemTime/1000)%60, 2, 10, QChar('0')));
         itemTimeUpdated = true;
     }
     return itemTime;
+}
+
+void xPlayerListWidgetItem::updateTimeDisplay() {
+    if (itemTimeUpdated) {
+        setText(1, QString("%1:%2").arg(itemTime/60000).arg((itemTime/1000)%60, 2, 10, QChar('0')));
+    }
 }
 
 
@@ -143,6 +148,9 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
     });
     connect(this, &QTreeWidget::itemClicked, [=](QTreeWidgetItem* item, int) {
         emit listItemClicked(reinterpret_cast<xPlayerListWidgetItem *>(item));
+    });
+    connect(this, &xPlayerListWidget::updateTime, [=](xPlayerListWidgetItem* item) {
+        item->updateTimeDisplay();
     });
 }
 
@@ -205,7 +213,6 @@ void xPlayerListWidget::addListItems(const QList<std::pair<QString, std::vector<
 void xPlayerListWidget::addItemWidgetsWorker(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files,
                                              QList<std::pair<QString, std::vector<xMusicFile*>>>::const_iterator filesIterator,
                                              int currentFiles, int maxFiles) {
-    qDebug() << "xPlayerListWidget::addItemWidgetsWorker: " << filesIterator->first;
     addListItems(filesIterator->second, filesIterator->first);
     currentFiles += static_cast<int>(filesIterator->second.size());
     emit itemWidgetsProgress(currentFiles, maxFiles);
@@ -257,6 +264,9 @@ void xPlayerListWidget::clearItems() {
         delete updateItemsThread;
         updateItemsThread = nullptr;
     }
+    // Clear all posted events for this since time update may still be in the queue.
+    QCoreApplication::removePostedEvents(this);
+    // Clear the tree widget.
     QTreeWidget::clear();
     // Clear any total time displayed.
     emit totalTime(0);
@@ -307,7 +317,9 @@ void xPlayerListWidget::updateItems() {
 void xPlayerListWidget::updateItemsWorker() {
     qint64 total = 0;
     for (int index = 0; index < topLevelItemCount(); ++index) {
-        total += listItem(index)->updateTime();
+        auto item = listItem(index);
+        total += item->updateTime();
+        emit updateTime(item);
         // Check if we want to end the thread.
         if (QThread::currentThread()->isInterruptionRequested()) {
             return;
