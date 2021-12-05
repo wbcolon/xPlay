@@ -178,6 +178,14 @@ public:
      * @param existingTracks the map of tracks that already exist.
      */
     void markExistingItems(const std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>& existingTracks);
+
+public slots:
+    /**
+     * Filter the toplevel artist items according to the given filter.
+     *
+     * @param filter the filter as string the artist name must contain.
+     */
+    void filterArtistItems(const QString& filter);
     /**
      * Clear any markings.
      */
@@ -228,6 +236,8 @@ private slots:
 
 private:
     QTreeWidget* musicLibraryTree;
+    unsigned musicLibraryTreeLevel;
+    QString musicLibraryFilter;
     xMusicLibrary* musicLibrary;
     bool musicLibraryReady;
     bool musicLibrarySortBySize;

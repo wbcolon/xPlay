@@ -209,6 +209,8 @@ QString xPlayerMusicLibraryWidgetItem::description() const {
 
 xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, const QString& name, QWidget* parent):
         QGroupBox(name, parent),
+        musicLibraryTreeLevel(1),
+        musicLibraryFilter(),
         musicLibrary(library),
         musicLibraryReady(false),
         musicLibrarySortBySize(false),
@@ -365,6 +367,21 @@ void xPlayerMusicLibraryWidget::markExistingItems(const std::map<xMusicDirectory
     }
 }
 
+void xPlayerMusicLibraryWidget::filterArtistItems(const QString& filter) {
+    // Hide all artist items that do not match the filter.
+    if (filter.isEmpty()) {
+        for  (int i = 0; i < musicLibraryTree->topLevelItemCount(); ++i) {
+            musicLibraryTree->topLevelItem(i)->setHidden(false);
+        }
+    } else {
+        musicLibraryFilter = filter;
+        for  (int i = 0; i < musicLibraryTree->topLevelItemCount(); ++i) {
+            auto item = musicLibraryTree->topLevelItem(i);
+            item->setHidden(!item->text(0).contains(filter, Qt::CaseInsensitive));
+        }
+    }
+}
+
 void xPlayerMusicLibraryWidget::clearItems() {
     // Remove all markings.
     for  (int i = 0; i < musicLibraryTree->topLevelItemCount(); ++i) {
@@ -421,9 +438,9 @@ void xPlayerMusicLibraryWidget::scanningFinished() {
                 mapTracks[track] = trackItem;
                 albumItem->addChild(trackItem);
             }
-            albumItem->setExpanded(false);
+            albumItem->setExpanded(musicLibraryTreeLevel >= 2);
         }
-        artistItem->setExpanded(true);
+        artistItem->setExpanded(musicLibraryTreeLevel >= 1);
         mapAlbums[artist] = mapAlbumsForArtist;
     }
     // Widget now ready for business...
@@ -452,19 +469,27 @@ void xPlayerMusicLibraryWidget::updateMusicLibraryTree() {
             if (insertIndex >= musicLibraryTree->topLevelItemCount()) {
                 musicLibraryTree->addTopLevelItem(artist.second);
             }
-            artist.second->setExpanded(true);
+            artist.second->setExpanded(musicLibraryTreeLevel >= 1);
+            for (auto albumIndex = 0; albumIndex < artist.second->childCount(); ++albumIndex) {
+                artist.second->child(albumIndex)->setExpanded(musicLibraryTreeLevel >= 2);
+            }
         }
 
     } else {
         for (const auto& artist : mapArtists) {
             musicLibraryTree->addTopLevelItem(artist.second);
-            artist.second->setExpanded(true);
+            artist.second->setExpanded(musicLibraryTreeLevel >= 1);
+            for (auto albumIndex = 0; albumIndex < artist.second->childCount(); ++albumIndex) {
+                artist.second->child(albumIndex)->setExpanded(musicLibraryTreeLevel >= 2);
+            }
         }
     }
     // Save background.
     if (musicLibraryTree->topLevelItemCount() > 0) {
         musicLibraryItemBackground = musicLibraryTree->topLevelItem(0)->background(0);
     }
+    // Replay the current music library filter.
+    filterArtistItems(musicLibraryFilter);
 }
 
 void xPlayerMusicLibraryWidget::openContextMenu(const QPoint &point) {
@@ -481,19 +506,22 @@ void xPlayerMusicLibraryWidget::openContextMenu(const QPoint &point) {
     // Add section for artist info website.
     contextMenu.addSection(tr("Display Options"));
     contextMenu.addAction(tr("Artists Only"), this, [=] () {
+        musicLibraryTreeLevel = 0;
         musicLibraryTree->collapseAll();
     });
     contextMenu.addAction(tr("Artists and Albums"), this, [=] () {
+        musicLibraryTreeLevel = 1;
         // Expand only to the level of artist and albums.
         for (int i = 0; i < musicLibraryTree->topLevelItemCount(); ++i) {
             auto artist = musicLibraryTree->topLevelItem(i);
-            for (int j = 0; j < artist->childCount(); ++j) {
-                artist->child(j)->setExpanded(false);
+            for (auto albumIndex = 0; albumIndex < artist->childCount(); ++albumIndex) {
+                artist->child(albumIndex)->setExpanded(false);
             }
             artist->setExpanded(true);
         }
     });
     contextMenu.addAction(tr("Artists, Albums and Tracks"), this, [=] () {
+        musicLibraryTreeLevel = 2;
         musicLibraryTree->expandAll();
     });
     contextMenu.exec(mapToGlobal(point));
