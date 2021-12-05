@@ -172,16 +172,20 @@ private:
 
     xMusicLibrary* musicLibrary;
     xPlayerMusicLibraryWidget* musicLibraryWidget;
+    QLineEdit* musicLibraryFilterWidget;
+    QGroupBox* musicLibraryFilter;
     QPushButton* musicLibraryCompareButton;
     QCheckBox* musicLibrarySortBySize;
     QPushButton* musicLibraryMarksButton;
     QListWidget* musicLibraryExistingWidget;
     std::map<std::filesystem::path, std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>> musicLibraryExisting;
     xMusicLibrary* mobileLibrary;
+    xPlayerMusicLibraryWidget* mobileLibraryWidget;
+    QGroupBox* mobileLibraryFilter;
+    QLineEdit* mobileLibraryFilterWidget;
     QPushButton* mobileLibraryDirectoryButton;
     QPushButton* mobileLibraryScanClearButton;
     QLineEdit* mobileLibraryDirectoryWidget;
-    xPlayerMusicLibraryWidget* mobileLibraryWidget;
     QProgressBar* mobileLibraryStorageBar;
     std::filesystem::space_info mobileLibrarySpaceInfo;
     QListWidget* actionAddToWidget;

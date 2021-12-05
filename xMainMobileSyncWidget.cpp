@@ -35,10 +35,22 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     // Library tree sections.
     auto layout = new xPlayerLayout(this);
     musicLibraryWidget = new xPlayerMusicLibraryWidget(musicLibrary, tr("Music Library"), this);
+    musicLibraryFilter = new QGroupBox(tr("Filter Artists"), this);
+    musicLibraryFilter->setFlat(xPlayer::UseFlatGroupBox);
+    auto musicLibraryFilterLayout = new xPlayerLayout(musicLibraryFilter);
+    musicLibraryFilterWidget = new QLineEdit(musicLibraryFilter);
+    musicLibraryFilterLayout->addWidget(musicLibraryFilterWidget);
+    musicLibraryFilter->setLayout(musicLibraryFilterLayout);
     musicLibraryExistingWidget = new QListWidget(this);
     musicLibraryExistingWidget->setEnabled(false);
     mobileLibrary = new xMusicLibrary();
     mobileLibraryWidget = new xPlayerMusicLibraryWidget(mobileLibrary, tr("Mobile Library"), this);
+    mobileLibraryFilter = new QGroupBox(tr("Filter Artists"), this);
+    mobileLibraryFilter->setFlat(xPlayer::UseFlatGroupBox);
+    auto mobileLibraryFilterLayout = new xPlayerLayout(mobileLibraryFilter);
+    mobileLibraryFilterWidget = new QLineEdit(this);
+    mobileLibraryFilterLayout->addWidget(mobileLibraryFilterWidget);
+    mobileLibraryFilter->setLayout(mobileLibraryFilterLayout);
     // Button bar for libraries.
     musicLibraryCompareButton = new QPushButton(tr("Compare"), this);
     musicLibraryCompareButton->setEnabled(false);
@@ -58,14 +70,14 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     musicLibraryMarksButton->setMenu(musicLibraryMarksMenu);
     // Action section.
     actionAddToGroupBox = new QGroupBox(tr("Add to Mobile Library"), this);
-    actionAddToGroupBox->setFlat(true);
+    actionAddToGroupBox->setFlat(xPlayer::UseFlatGroupBox);
     auto actionAddToLayout = new xPlayerLayout(actionAddToGroupBox);
     actionAddToWidget = new QListWidget(actionAddToGroupBox);
     actionAddToWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     actionAddToLayout->addWidget(actionAddToWidget);
     actionAddToGroupBox->setLayout(actionAddToLayout);
     actionRemoveFromGroupBox = new QGroupBox(tr("Remove from Mobile Library"), this);
-    actionRemoveFromGroupBox->setFlat(true);
+    actionRemoveFromGroupBox->setFlat(xPlayer::UseFlatGroupBox);
     auto actionRemoveFromLayout = new xPlayerLayout(actionRemoveFromGroupBox);
     actionRemoveFromWidget = new QListWidget(actionRemoveFromGroupBox);
     actionRemoveFromWidget->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -82,7 +94,8 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     actionBar->setVisible(false);
     // Setup layout.
     // Music library layout
-    layout->addWidget(musicLibraryWidget, 0, 0, 14, 10);
+    layout->addWidget(musicLibraryWidget, 0, 0, 13, 10);
+    layout->addWidget(musicLibraryFilter, 13, 0, 1, 10);
     layout->addRowSpacer(14, xPlayerLayout::SmallSpace);
     layout->addWidget(musicLibraryMarksButton, 15, 0, 1, 2);
     layout->addWidget(musicLibraryCompareButton, 16, 0, 1, 2);
@@ -96,7 +109,8 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     layout->addWidget(actionBar, 16, 11, 1, 6);
     layout->addColumnSpacer(19, xPlayerLayout::SmallSpace);
     // Mobile library layout
-    layout->addWidget(mobileLibraryWidget, 0, 20, 14, 10);
+    layout->addWidget(mobileLibraryWidget, 0, 20, 13, 10);
+    layout->addWidget(mobileLibraryFilter, 13, 20, 1, 10);
     layout->addWidget(mobileLibraryStorageBar, 15, 20, 1, 10);
     layout->addWidget(mobileLibraryDirectoryButton, 16, 20, 1, 2);
     layout->addWidget(mobileLibraryDirectoryWidget, 16, 22, 1, 6);
@@ -108,10 +122,12 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     connect(mobileLibraryWidget, &xPlayerMusicLibraryWidget::treeItemCtrlClicked, this, &xMainMobileSyncWidget::musicLibraryFindItem);
     connect(mobileLibraryWidget, &xPlayerMusicLibraryWidget::treeItemCtrlRightClicked, this, &xMainMobileSyncWidget::actionRemoveFrom);
     connect(mobileLibraryWidget, &xPlayerMusicLibraryWidget::treeReady, this, &xMainMobileSyncWidget::mobileLibraryReady);
+    connect(mobileLibraryFilterWidget, &QLineEdit::textChanged, mobileLibraryWidget, &xPlayerMusicLibraryWidget::filterArtistItems);
     connect(musicLibraryCompareButton, &QPushButton::pressed, this, &xMainMobileSyncWidget::musicLibraryCompare);
     connect(musicLibraryWidget, &xPlayerMusicLibraryWidget::treeItemCtrlClicked, this, &xMainMobileSyncWidget::mobileLibraryFindItem);
     connect(musicLibraryWidget, &xPlayerMusicLibraryWidget::treeItemCtrlRightClicked, this, &xMainMobileSyncWidget::actionAddTo);
     connect(musicLibraryWidget, &xPlayerMusicLibraryWidget::treeReady, this, &xMainMobileSyncWidget::musicLibraryReady);
+    connect(musicLibraryFilterWidget, &QLineEdit::textChanged, musicLibraryWidget, &xPlayerMusicLibraryWidget::filterArtistItems);
     connect(musicLibrarySortBySize, &QCheckBox::clicked, musicLibraryWidget, &xPlayerMusicLibraryWidget::setSortBySize);
     connect(actionAddToWidget, &QListWidget::customContextMenuRequested, this, &xMainMobileSyncWidget::actionAddToDelete);
     connect(actionRemoveFromWidget, &QListWidget::customContextMenuRequested, this, &xMainMobileSyncWidget::actionRemoveFromDelete);
@@ -315,10 +331,12 @@ void xMainMobileSyncWidget::actionApplyFinished() {
     musicLibraryCompareButton->setEnabled(true);
     musicLibraryExistingWidget->setEnabled(true);
     musicLibrarySortBySize->setEnabled(true);
+    musicLibraryFilter->setEnabled(true);
     mobileLibraryWidget->setEnabled(true);
     mobileLibraryScanClearButton->setEnabled(true);
     mobileLibraryDirectoryButton->setEnabled(true);
     mobileLibraryDirectoryWidget->setEnabled(true);
+    mobileLibraryFilter->setEnabled(true);
     actionAddToWidget->setEnabled(true);
     actionAddToGroupBox->setEnabled(true);
     actionRemoveFromWidget->setEnabled(true);
@@ -334,7 +352,9 @@ void xMainMobileSyncWidget::actionApply() {
         actionThread->wait();
         // Enable widgets.
         musicLibraryWidget->setEnabled(true);
+        musicLibraryFilter->setEnabled(true);
         mobileLibraryWidget->setEnabled(true);
+        mobileLibraryFilter->setEnabled(true);
         actionAddToWidget->setEnabled(true);
         actionRemoveFromWidget->setEnabled(true);
         // Cleanup.
@@ -360,10 +380,12 @@ void xMainMobileSyncWidget::actionApply() {
     musicLibraryCompareButton->setEnabled(false);
     musicLibraryExistingWidget->setEnabled(false);
     musicLibrarySortBySize->setEnabled(false);
+    musicLibraryFilter->setEnabled(false);
     mobileLibraryWidget->setEnabled(false);
     mobileLibraryScanClearButton->setEnabled(false);
     mobileLibraryDirectoryButton->setEnabled(false);
     mobileLibraryDirectoryWidget->setEnabled(false);
+    mobileLibraryFilter->setEnabled(false);
     actionAddToWidget->setEnabled(false);
     actionAddToGroupBox->setEnabled(false);
     actionRemoveFromWidget->setEnabled(false);
