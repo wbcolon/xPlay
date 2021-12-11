@@ -1,6 +1,16 @@
 # Changelog
 
 
+## 0.10.3 - 2021-12-11
+
+- Disable music library scanning while syncing mobile library.
+- Add visualization toggle when double-clicking on music player widget.
+- Add artist filter for music and mobile library.
+- Fix incorrect name visualization preset output.
+- Fix tree expansion mode, when updating music or mobile library tree.
+- Fix segfault caused by thread based update of track time.
+
+
 ## 0.10.2 - 2021-11-25
 
 - Reduce the sample rate for music visualization.

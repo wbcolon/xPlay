@@ -145,7 +145,8 @@ A music visualization based on projectM is available and can be activated via th
 *Music View* sub menu. The visualization (when activated) is displayed whenever the the music player is playing and
 the artist info view is currently not activated. The visualization (when displayed) reverts to the artist, album and
 track view whenever the music player pauses or stops. A right-click on the visualization opens a popup menu that allows
-selecting a projectM preset. A double-click will display the name of the currently selected preset.
+selecting a projectM preset. A double-click will display the name of the currently selected preset. A double-click on
+the player widget itself will toggle the music visualization.
 
 #### Selectors and Filters
 
@@ -263,7 +264,8 @@ A ctrl+right-click to an element of the music library will add the corresponding
 element to the *Remove from Mobile Library* list. The impact of the listed changes to the mobile library will be
 displayed in a progress bar. The progress bar changes color from green to red in case there is no sufficient storage
 space for the mobile library. Pressing the *Apply* button will perform the removal operations before the add operations.
-A progess bar will show display the progress of the sync operation.
+A progess bar will show display the progress of the sync operation. The re-scanning of the music library is disabled
+during the sync operation.
 
 
 ### Menu
