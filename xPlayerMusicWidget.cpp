@@ -18,6 +18,7 @@
 #include "xPlayerConfiguration.h"
 
 #include <QTabWidget>
+#include <QMouseEvent>
 #include <taglib/fileref.h>
 
 xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
@@ -127,6 +128,13 @@ void xPlayerMusicWidget::clear() {
     trackBitsPerSample->clear();
     trackBitrate->clear();
     sliderWidget->clear();
+}
+
+void xPlayerMusicWidget::mouseDoubleClickEvent(QMouseEvent* event) {
+    if ((event) && (event->button() == Qt::LeftButton)) {
+        emit mouseDoubleClicked();
+    }
+    QWidget::mouseDoubleClickEvent(event);
 }
 
 void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track,

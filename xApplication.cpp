@@ -445,10 +445,17 @@ void xApplication::createMenus() {
     connect(musicViewVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
     });
+    // Toggle the visualization view.
+    connect(mainMusicWidget, &xMainMusicWidget::visualizationToggle, [=]() {
+        auto toggleChecked = !musicViewVisualization->isChecked();
+        musicViewVisualization->setChecked(toggleChecked);
+        xPlayerConfiguration::configuration()->setMusicViewVisualization(toggleChecked);
+    });
     // Disable the visualization view in case of an error.
     connect(mainMusicWidget, &xMainMusicWidget::visualizationError, [=]() {
         musicViewVisualization->setChecked(false);
         musicViewVisualization->setEnabled(false);
+        xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
     });
 
     // Create music view submenu.

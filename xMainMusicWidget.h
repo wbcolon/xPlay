@@ -71,6 +71,10 @@ signals:
      */
     void showMenuBar(bool menu);
     /**
+     * Signal emitted if the visualization is toggled.
+     */
+    void visualizationToggle();
+    /**
      * Signal emitted if there is an issue with projectM visualization.
      */
     void visualizationError();

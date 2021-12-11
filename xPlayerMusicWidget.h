@@ -34,12 +34,19 @@ signals:
      * Signal that the playlist needs to be cleared.
      */
     void clearQueue();
+    /**
+     * Emitted whenever a double-click with the left button occurs.
+     */
+    void mouseDoubleClicked();
 
 public slots:
     /**
      * Reset the the artist/album/track/played/length labels.
      */
     void clear();
+
+protected:
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private slots:
     /**

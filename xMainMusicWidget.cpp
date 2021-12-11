@@ -127,6 +127,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicListViewLayout->addWidget(trackFilterBox, 9, 8, 1, 4);
     musicListViewLayout->addWidget(selectorTabs, 10, 0, 1, 12);
 
+    // Player widget.
+    playerWidget = new xPlayerMusicWidget(musicPlayer, this);
+
     musicInfoView = new xPlayerArtistInfo(musicStacked);
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
@@ -136,15 +139,12 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         // Connect music visualization view
         connect(musicPlayer, &xMusicPlayer::visualizationStereo,
                 musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
-        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationError, [=]() {
-            updateVisualizationView(false);
-            emit visualizationError();
-        });
+        connect(playerWidget, &xPlayerMusicWidget::mouseDoubleClicked, this, &xMainMusicWidget::visualizationToggle);
+        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationError,
+                this, &xMainMusicWidget::visualizationError);
         musicStacked->addWidget(musicVisualizationWidget);
     }
     musicStacked->setCurrentWidget(musicListView);
-    // Player widget.
-    playerWidget = new xPlayerMusicWidget(musicPlayer, this);
     // Queue list.
     queueBox = new QGroupBox(tr("Queue"), this);
     queueBox->setFlat(xPlayer::UseFlatGroupBox);
