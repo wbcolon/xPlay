@@ -343,6 +343,8 @@ void xMainMobileSyncWidget::actionApplyFinished() {
     actionRemoveFromGroupBox->setEnabled(true);
     disconnect(this, &xMainMobileSyncWidget::actionApplyProgress, this, &xMainMobileSyncWidget::actionApplyUpdate);
     actionApplyButton->setText("Apply");
+    // Allow music library scanning again.
+    emit enableMusicLibraryScanning(true);
 }
 
 void xMainMobileSyncWidget::actionApply() {
@@ -397,6 +399,8 @@ void xMainMobileSyncWidget::actionApply() {
     connect(this, &xMainMobileSyncWidget::actionApplyProgress, this, &xMainMobileSyncWidget::actionApplyUpdate);
     actionThread = QThread::create([=]() { actionApplyThread(actionAddToExpandedItems); });
     connect(actionThread, &QThread::finished, this, &xMainMobileSyncWidget::actionApplyFinished);
+    // Disable music library scanning.
+    emit enableMusicLibraryScanning(false);
     actionThread->start();
     // Update apply to cancel button.
     actionApplyButton->setText(tr("Cancel"));

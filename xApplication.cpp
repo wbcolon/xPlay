@@ -369,6 +369,9 @@ void xApplication::createMenus() {
     auto fileMenuCheckMusicDatabase = new QAction("Check Mu&sic Database", this);
     auto fileMenuCheckMovieDatabase = new QAction("Check Mo&vie Database", this);
     auto fileMenuExitAction = new QAction(tr("&Exit"), this);
+    // Connect menu entries to enable/disable them.
+    connect(mainMobileSyncWidget, &xMainMobileSyncWidget::enableMusicLibraryScanning,
+            fileMenuRescanMusicLibrary, &QAction::setEnabled);
     // Connect actions from file menu.
     connect(fileMenuConfigure, &QAction::triggered, this, &xApplication::configure);
     connect(fileMenuRescanMusicLibrary, &QAction::triggered, this, &xApplication::setMusicLibraryDirectory);

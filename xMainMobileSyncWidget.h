@@ -44,7 +44,18 @@ public slots:
     void clear();
 
 signals:
+    /**
+     * Internal signal used to update the mobile sync progress bar.
+     *
+     * @param progress the progress in precent as integer.
+     */
     void actionApplyProgress(int progress);
+    /**
+     * Signal emitted whenever we enable/disable the music library scanning.
+     *
+     * @param enabled scanning of music library allowed if true, not allowed otherwise.
+     */
+    void enableMusicLibraryScanning(bool enabled);
 
 private slots:
     /**
