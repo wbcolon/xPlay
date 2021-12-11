@@ -91,7 +91,8 @@ void xPlayerVisualizationWidget::initializeGL() {
                 auto titleMenu = visualizationPresetMenu->addMenu(preset.first);
                 for (const auto &title: preset.second) {
                     titleMenu->addAction(title.second, [=]() {
-                        visualization->selectPreset(title.first, true);
+                        visualizationPresetIndex = title.first;
+                        visualization->selectPreset(visualizationPresetIndex, true);
                         xPlayerConfiguration::configuration()->setVisualizationPreset(preset.first + " - " + title.second);
                     });
                 }
@@ -141,22 +142,32 @@ void xPlayerVisualizationWidget::paintGL() {
 }
 
 bool xPlayerVisualizationWidget::event(QEvent* e) {
-    if (e->type() == QEvent::MouseButtonRelease) {
-        auto mouseEvent = reinterpret_cast<QMouseEvent*>(e);
-        if ((mouseEvent->button() == Qt::RightButton) && (visualizationPresetMenu)) {
-            visualizationPresetMenu->exec(mapToGlobal(mouseEvent->pos()));
-        }
-    }
-    if (e->type() == QEvent::MouseButtonDblClick) {
-        auto mouseEvent = reinterpret_cast<QMouseEvent*>(e);
-        if (mouseEvent->button() == Qt::LeftButton) {
-            if (mouseEvent->modifiers() & Qt::ControlModifier) {
-                visualizationPresetIndex = (visualizationPresetIndex + 1) % visualization->getPlaylistSize();
-                visualization->selectPreset(visualizationPresetIndex);
+
+    switch (e->type()) {
+        case QEvent::Show: {
+            makeCurrent();
+        } break;
+        case QEvent::Hide: {
+            doneCurrent();
+        } break;
+        case QEvent::MouseButtonRelease: {
+            auto mouseEvent = reinterpret_cast<QMouseEvent *>(e);
+            if ((mouseEvent->button() == Qt::RightButton) && (visualizationPresetMenu)) {
+                visualizationPresetMenu->exec(mapToGlobal(mouseEvent->pos()));
             }
-            showTitle(QString());
-            showTitle(QString::fromStdString(visualization->getPresetName(visualizationPresetIndex)));
-        }
+        } break;
+        case QEvent::MouseButtonDblClick: {
+            auto mouseEvent = reinterpret_cast<QMouseEvent*>(e);
+            if (mouseEvent->button() == Qt::LeftButton) {
+                if (mouseEvent->modifiers() & Qt::ControlModifier) {
+                    visualizationPresetIndex = (visualizationPresetIndex + 1) % visualization->getPlaylistSize();
+                    visualization->selectPreset(visualizationPresetIndex);
+                }
+                showTitle(QString());
+                showTitle(QString::fromStdString(visualization->getPresetName(visualizationPresetIndex)));
+            }
+        } break;
+        default: break;
     }
     return QOpenGLWidget::event(e);
 }
