@@ -156,8 +156,8 @@ void xMoviePlayerVLC::setMovie(const QString& path, const QString& name, const Q
     libvlc_event_attach(movieMediaEventManager,libvlc_MediaStateChanged, handleVLCEvents, this);
     // Create a media player playing environment.
     libvlc_media_player_set_media(movieMediaPlayer, movieMedia);
-    // Start parsing the file.
-    libvlc_media_parse_with_options(movieMedia, libvlc_media_parse_network, 10000);
+    // Start parsing the file. Allow up to 1 second for preparsing.
+    libvlc_media_parse_with_options(movieMedia, libvlc_media_parse_network, 1000);
     libvlc_media_player_set_xwindow(movieMediaPlayer, winId());
     libvlc_media_player_play(movieMediaPlayer);
     movieMediaInitialPlay = true;
