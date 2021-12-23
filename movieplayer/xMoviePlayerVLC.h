@@ -74,11 +74,17 @@ signals:
      */
     void currentSubtitles(const QStringList& subtitles);
     /**
+     * Signal the chapter the current movie.
+     *
+     * @param chapter the chapter number as integer.
+     */
+    void currentChapter(int chapter);
+    /**
      * Signal the number chapters for the current movie.
      *
      * @param chapters number of chapters as integer.
      */
-    void currentChapters(int chapters);
+    void currentChapters(const QStringList& chapters);
     /**
      * Signal the number titles for the current movie.
      *
@@ -150,6 +156,20 @@ public slots:
      * Play or pause the current movie depending on the current state.
      */
     void playPause();
+    /**
+     * Play starting with the given chapter index (starting from 0).
+     *
+     * @param chapter the chapter number as integer.
+     */
+    void playChapter(int chapter);
+    /**
+     * Play the previous chapter.
+     */
+    void previousChapter();
+    /**
+     * Play the next chapter.
+     */
+    void nextChapter();
     /**
      * Seek to a given position within the current movie.
      *
@@ -255,9 +275,19 @@ protected:
 private:
     static void handleVLCEvents(const libvlc_event_t*  event, void* data);
     /**
-     * Scan the media file for tracks and length.
+     * Scan the media file for audio and subtitle tracks.
      */
     void scanForAudioAndSubtitles();
+    /**
+     * Scan the media file for chapters.
+     */
+    void scanForChapters();
+    /**
+     * Update the current chapter index.
+     *
+     * @param positions the current position in ms.
+     */
+    void updateChapter(qint64 positions);
     /**
      * Update the audio channel/subtitle description. Expand language strings.
      *
@@ -274,9 +304,11 @@ private:
     bool movieMediaParsed;
     bool movieMediaPlaying;
     qint64 movieMediaLength;
+    int movieMediaChapter;
 
     QList<std::pair<int,QString>> currentSubtitleDescriptions;
     QList<std::pair<int,QString>> currentAudioChannelDescriptions;
+    QList<std::pair<qint64,QString>> currentChapterDescriptions;
     QList<std::pair<QString,QString>> movieQueue;
     QString movieQueueTag;
     QString movieQueueDirectory;

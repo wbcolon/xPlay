@@ -77,11 +77,17 @@ signals:
      */
     void currentSubtitles(const QStringList& subtitles);
     /**
+     * Signal the chapter the current movie.
+     *
+     * @param chapter the chapter number as integer.
+     */
+    void currentChapter(int chapter);
+    /**
      * Signal the number chapters for the current movie.
      *
      * @param chapters number of chapters as integer.
      */
-    void currentChapters(int chapters);
+    void currentChapters(const QStringList& chapters);
     /**
      * Signal the number titles for the current movie.
      *
@@ -137,6 +143,20 @@ public slots:
      * Play or pause the current movie depending on the current state.
      */
     void playPause();
+    /**
+     * Play starting with the given chapter index (starting from 0).
+     *
+     * @param chapter the chapter number as integer.
+     */
+    void playChapter(int chapter);
+    /**
+     * Play the previous chapter.
+     */
+    void previousChapter();
+    /**
+     * Play the next chapter.
+     */
+    void nextChapter();
     /**
      * Seek to a given position within the current movie.
      *

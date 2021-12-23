@@ -65,6 +65,16 @@ void xMoviePlayerPhonon::playPause() {
     }
 }
 
+void xMoviePlayerPhonon::playChapter(int chapter) {
+    Q_UNUSED(chapter)
+}
+
+void xMoviePlayerPhonon::previousChapter() {
+}
+
+void xMoviePlayerPhonon::nextChapter() {
+}
+
 void xMoviePlayerPhonon::seek(qint64 position) {
     // Jump to position (in milliseconds) in the current track.
     moviePlayer->seek(position);
@@ -88,7 +98,6 @@ void xMoviePlayerPhonon::setMovie(const QString& path, const QString& name, cons
     resetMoviePlayer();
     moviePlayer->setCurrentSource(QUrl::fromLocalFile(path));
     moviePlayer->play();
-    qDebug() << "xMoviePlayer: play: " << path;
     emit currentMovie(path, name, tag, directory);
     emit currentState(xMoviePlayerPhonon::PlayingState);
 }
@@ -208,7 +217,6 @@ void xMoviePlayerPhonon::selectSubtitle(int index) {
     }
 }
 void xMoviePlayerPhonon::stateChanged(Phonon::State newState, Phonon::State oldState) {
-    qDebug() << "xMoviePlayer: new: " << newState << ", old: " << oldState;
     if ((newState == Phonon::StoppedState) && (oldState == Phonon::PlayingState)) {
         emit currentState(xMoviePlayerPhonon::StopState);
     }

@@ -66,6 +66,12 @@ public slots:
      */
     void currentSubtitles(const QStringList& subtitles);
     /**
+     * Retrieve the chapters for the current movie.
+     *
+     * @param chapters the list of chapter names as strings.
+     */
+    void currentChapters(const QStringList& chapters);
+    /**
      * Retrieve the state of the movie player.
      *
      * @param state the current state of the movie player.
@@ -106,6 +112,8 @@ private:
 
     QComboBox* subtitleBox;
     QComboBox* audioChannelBox;
+    QLabel* chapterLabel;
+    QComboBox* chapterBox;
     QLabel* movieLabel;
     xPlayerSliderWidgetX* sliderWidget;
     xMoviePlayerX* moviePlayer;

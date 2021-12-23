@@ -32,6 +32,7 @@ xMoviePlayerVLC::xMoviePlayerVLC(QWidget *parent):
         movieMediaParsed(false),
         movieMediaPlaying(false),
         movieMediaLength(0),
+        movieMediaChapter(0),
         movieDefaultAudioLanguageIndex(-1),
         movieDefaultSubtitleLanguageIndex(-1),
         fullWindow(false) {
@@ -48,6 +49,7 @@ xMoviePlayerVLC::xMoviePlayerVLC(QWidget *parent):
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerPositionChanged, handleVLCEvents, this);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerLengthChanged, handleVLCEvents, this);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerBuffering, handleVLCEvents, this);
+    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerChapterChanged, handleVLCEvents, this);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerEncounteredError, handleVLCEvents, this);
     // Connect signals used to call out of VLC handler.
     connect(this, &xMoviePlayerVLC::eventHandler_stop, this, &xMoviePlayerVLC::stop);
@@ -108,6 +110,28 @@ void xMoviePlayerVLC::playPause() {
     }
 }
 
+void xMoviePlayerVLC::playChapter(int chapter) {
+    if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
+        // Add 50ms to chapter start in order to compensate for
+        // the floating point conversion required by libvlc.
+        seek(currentChapterDescriptions[chapter].first+50);
+        libvlc_media_player_play(movieMediaPlayer);
+        emit currentState(State::PlayingState);
+    }
+}
+
+void xMoviePlayerVLC::previousChapter() {
+    if ((movieMediaChapter-1) >= 0) {
+        playChapter(movieMediaChapter-1);
+    }
+}
+
+void xMoviePlayerVLC::nextChapter() {
+    if ((movieMediaChapter+1) < currentChapterDescriptions.count()) {
+        playChapter(movieMediaChapter+1);
+    }
+}
+
 void xMoviePlayerVLC::seek(qint64 position) {
     // Check if VLC is still playing.
     if (libvlc_media_player_get_media(movieMediaPlayer) == nullptr) {
@@ -116,6 +140,7 @@ void xMoviePlayerVLC::seek(qint64 position) {
     // Jump to position (in milliseconds) in the current track.
     auto newPosition = static_cast<float>(static_cast<double>(position)/static_cast<double>(movieMediaLength));
     libvlc_media_player_set_position(movieMediaPlayer, newPosition);
+    updateChapter(position);
 }
 
 void xMoviePlayerVLC::jump(qint64 delta) {
@@ -129,12 +154,10 @@ void xMoviePlayerVLC::jump(qint64 delta) {
 }
 
 void xMoviePlayerVLC::stop() {
-    // Stop the media player.
-    libvlc_media_player_stop(movieMediaPlayer);
-    movieMediaInitialPlay = true;
-    // Reset parsing and playing state. We need them to recover from receiving events in the wrong order.
-    movieMediaParsed = false;
-    movieMediaPlaying = false;
+    // Stop (pause and reset to position 0) the media player.
+    libvlc_media_player_pause(movieMediaPlayer);
+    libvlc_media_player_set_position(movieMediaPlayer, 0);
+    updateChapter(0);
     emit currentState(State::StopState);
     emit currentMoviePlayed(0);
 }
@@ -210,7 +233,9 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
                 emit self->currentMovieLength(self->movieMediaLength);
                 // Scan for audio channels and subtitles.
                 self->scanForAudioAndSubtitles();
-                //// Scanning successful. No need for movieMedia pointer any more.
+                // Scan for chapters.
+                self->scanForChapters();
+                // Scanning successful. No need for movieMedia pointer any more.
                 libvlc_event_detach(self->movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, self);
                 libvlc_media_release(self->movieMedia);
                 self->movieMedia = nullptr;
@@ -235,6 +260,7 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
         case libvlc_MediaPlayerPositionChanged: {
             auto movieMediaPos = static_cast<qint64>(event->u.media_player_position_changed.new_position*self->movieMediaLength); // NOLINT
             emit self->currentMoviePlayed(movieMediaPos);
+            self->updateChapter(movieMediaPos);
         } break;
         case libvlc_MediaPlayerPlaying: {
             self->movieMediaPlaying = true;
@@ -245,6 +271,12 @@ void xMoviePlayerVLC::handleVLCEvents(const libvlc_event_t *event, void *data) {
                          << event->u.media_player_length_changed.new_length;
                 self->movieMediaLength = event->u.media_player_length_changed.new_length;
                 emit self->currentMovieLength(self->movieMediaLength);
+            }
+        } break;
+        case libvlc_MediaPlayerChapterChanged: {
+            // Scan for chapters if we did not find any so far.
+            if (!self->currentChapterDescriptions.count()) {
+                self->scanForChapters();
             }
         } break;
         case libvlc_MediaPlayerEncounteredError: {
@@ -348,6 +380,43 @@ void xMoviePlayerVLC::scanForAudioAndSubtitles() {
     emit currentSubtitles(subtitles);
 }
 
+void xMoviePlayerVLC::scanForChapters() {
+    // Reset chapter descriptions.
+    currentChapterDescriptions.clear();
+    // Check for chapters.
+    QStringList chapters;
+    libvlc_chapter_description_t** chapterDescription = nullptr;
+    int noChapters = libvlc_media_player_get_full_chapter_descriptions(movieMediaPlayer, -1, &chapterDescription);
+    if (chapterDescription != nullptr) {
+        for (auto i = 0; i < noChapters; ++i) {
+            auto chapterName = QString(chapterDescription[i]->psz_name).trimmed();
+            currentChapterDescriptions.push_back(std::make_pair(chapterDescription[i]->i_time_offset, chapterName));
+            chapters.push_back(chapterName);
+        }
+        libvlc_chapter_descriptions_release(chapterDescription, noChapters);
+    }
+    // Emit the updates.
+    emit currentChapters(chapters);
+}
+
+void xMoviePlayerVLC::updateChapter(qint64 position) {
+    if (currentChapterDescriptions.count() > 0) {
+        auto chapterIndex = 0;
+        while ((chapterIndex < currentChapterDescriptions.count()) &&
+               (currentChapterDescriptions[chapterIndex].first <= position)) {
+            ++chapterIndex;
+        }
+        // Go one back...
+        --chapterIndex;
+        if (movieMediaChapter != chapterIndex) {
+            // Update current chapter.
+            movieMediaChapter = chapterIndex;
+            // Emit new chapter index.
+            emit currentChapter(chapterIndex);
+        }
+    }
+}
+
 void xMoviePlayerVLC::updateAudioAndSubtitleDescription(QString& description) {
     description.replace("ger", "german");
     description.replace("deu", "german");
@@ -370,12 +439,20 @@ void xMoviePlayerVLC::keyPressEvent(QKeyEvent *keyEvent)
             toggleFullWindow();
         } break;
         case Qt::Key_Right: {
-            // Seek +1 min
-            jump(60000);
+            if (keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
+                nextChapter();
+            } else {
+                // Seek +1 min
+                jump(60000);
+            }
         } break;
         case Qt::Key_Left: {
-            // Seek -1 min
-            jump(-60000);
+            if (keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
+                previousChapter();
+            } else {
+                // Seek -1 min
+                jump(-60000);
+            }
         } break;
         case Qt::Key_Up: {
             // Increase Volume by 1.

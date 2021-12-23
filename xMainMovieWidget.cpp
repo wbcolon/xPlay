@@ -91,6 +91,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayerX* player, QWidget* parent):
     connect(moviePlayer, &xMoviePlayerX::currentMoviePlayed, this, &xMainMovieWidget::updateWindowTitlePlayBack);
     connect(moviePlayer, &xMoviePlayerX::currentSubtitles, moviePlayerWidget, &xPlayerMovieWidget::currentSubtitles);
     connect(moviePlayer, &xMoviePlayerX::currentAudioChannels, moviePlayerWidget, &xPlayerMovieWidget::currentAudioChannels);
+    connect(moviePlayer, &xMoviePlayerX::currentChapters, moviePlayerWidget, &xPlayerMovieWidget::currentChapters);
     connect(moviePlayer, &xMoviePlayerX::currentState, moviePlayerWidget, &xPlayerMovieWidget::currentState);
     // Update stack widget based on player state.
     connect(moviePlayer, &xMoviePlayerX::currentState, this, &xMainMovieWidget::currentState);
