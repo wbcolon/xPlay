@@ -784,7 +784,9 @@ void xMainMusicWidget::updatedMusicViewVisualization() {
                 musicStacked->setCurrentWidget(musicVisualizationWidget);
             }
         } else {
-            musicStacked->setCurrentWidget(musicListView);
+            if (musicStacked->currentWidget() != musicInfoView) {
+                musicStacked->setCurrentWidget(musicListView);
+            }
         }
     }
 }
