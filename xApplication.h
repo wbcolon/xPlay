@@ -18,7 +18,7 @@
 #include "xMusicPlayerX.h"
 #include "xMainMusicWidget.h"
 #include "xMovieLibrary.h"
-#include "xMoviePlayerX.h"
+#include "xMoviePlayer.h"
 #include "xMainMovieWidget.h"
 #include "xMainStreamingWidget.h"
 #include "xMainMobileSyncWidget.h"
@@ -106,10 +106,6 @@ private slots:
      */
     void dbus_fullWindow();
     /**
-     * Toggle the scale and crop mode in the current view (movie) after dbus call.
-     */
-    void dbus_scaleAndCrop();
-    /**
      * Toggle mute the audio of the current view (music/movie) after dbus call.
      */
     void dbus_mute();
@@ -181,7 +177,7 @@ private:
     xMainMusicWidget* mainMusicWidget;
     QAction* musicViewVisualization;
     xMovieLibrary* movieLibrary;
-    xMoviePlayerX* moviePlayer;
+    xMoviePlayer* moviePlayer;
     xMainMovieWidget* mainMovieWidget;
     xMainStreamingWidget* mainStreamingWidget;
     xMainMobileSyncWidget* mainMobileSyncWidget;

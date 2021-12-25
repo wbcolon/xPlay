@@ -17,7 +17,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declaratio
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 option(USE_PHONON "Use the Phonon based music player instead of Qt" ON)
-option(USE_VLC "Use the VLC based movie player instead of Phonon" ON)
 option(USE_QWT "Use the Qwt widgets instead of Qt widgets" ON)
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
 option(USE_TESTS "Build the tests for xPlay instead of the application" OFF)
@@ -43,6 +42,10 @@ pkg_check_modules(PROJECTM libprojectM)
 set(CMAKE_REQUIRED_INCLUDES "${PROJECTM_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_LIBRARIES "${PROJECTM_LIBRARIES}")
 
+pkg_check_modules(VLCLIB libvlc)
+set(CMAKE_REQUIRED_INCLUDES "${VLCLIB_INCLUDE_DIRS}")
+set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
+
 set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 
@@ -50,16 +53,6 @@ if (USE_PHONON)
     set(xPlay_xMusicPlayerX musicplayer/xMusicPlayerPhonon.cpp)
 else()
     set(xPlay_xMusicPlayerX musicplayer/xMusicPlayerQt.cpp)
-endif()
-
-if (USE_VLC)
-    pkg_check_modules(VLCLIB libvlc)
-    set(CMAKE_REQUIRED_INCLUDES "${VLCLIB_INCLUDE_DIRS}")
-    set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
-
-    set(xPlay_xMoviePlayerX movieplayer/xMoviePlayerVLC.cpp)
-else()
-    set(xPlay_xMoviePlayerX movieplayer/xMoviePlayerPhonon.cpp)
 endif()
 
 if (USE_QWT)
@@ -83,7 +76,7 @@ set(xPlay_sources
         xPlayerConfiguration.cpp
         xPlayerDatabase.cpp
         xMusicPlayer.cpp
-        ${xPlay_xMoviePlayerX}
+        xMoviePlayer.cpp
         ${xPlay_xMusicPlayerX}
         xPlayerArtistInfo.cpp
         xPlayerConfigurationDialog.cpp

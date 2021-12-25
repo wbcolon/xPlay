@@ -14,7 +14,7 @@
 #ifndef __XMAINMOVIEWIDGET_H__
 #define __XMAINMOVIEWIDGET_H__
 
-#include "xMoviePlayerX.h"
+#include "xMoviePlayer.h"
 #include "xPlayerMovieWidget.h"
 #include "xPlayerSliderWidgetX.h"
 #include "xPlayerVolumeWidgetX.h"
@@ -30,7 +30,7 @@ class xMainMovieWidget:public QStackedWidget {
     Q_OBJECT
 
 public:
-    explicit xMainMovieWidget(xMoviePlayerX* player, QWidget* parent=nullptr);
+    explicit xMainMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr);
     ~xMainMovieWidget() override = default;
     /**
      * Perform initial commands required when switching to this view.
@@ -120,7 +120,7 @@ private slots:
      *
      * @param state current state of the movie player.
      */
-    void currentState(xMoviePlayerX::State state);
+    void currentState(xMoviePlayer::State state);
     /**
      * Update the database, database overlay and queue based on the currently played movie.
      *
@@ -248,7 +248,7 @@ private:
     QString currentMovieTag;
     QString currentMovieDirectory;
     //xMoviePlayer* moviePlayer;
-    xMoviePlayerX* moviePlayer;
+    xMoviePlayer* moviePlayer;
     QStackedWidget* movieStack;
     xPlayerMovieWidget* moviePlayerWidget;
     QWidget* mainWidget;

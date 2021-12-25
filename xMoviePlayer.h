@@ -12,14 +12,14 @@
  * GNU General Public License for more details.
  */
 
-#ifndef __XMOVIEPLAYERVLC_H__
-#define __XMOVIEPLAYERVLC_H__
+#ifndef __XMOVIEPLAYER_H__
+#define __XMOVIEPLAYER_H__
 
 #include <QFrame>
 #include <filesystem>
 #include <vlc/vlc.h>
 
-class xMoviePlayerVLC:public QFrame {
+class xMoviePlayer:public QFrame {
     Q_OBJECT
 
 public:
@@ -33,8 +33,8 @@ public:
         StopState
     };
 
-    explicit xMoviePlayerVLC(QWidget* parent=nullptr);
-    ~xMoviePlayerVLC() noexcept override;
+    explicit xMoviePlayer(QWidget* parent=nullptr);
+    ~xMoviePlayer() noexcept override;
     /**
      * Return the volume for the movie player
      *
@@ -47,6 +47,12 @@ public:
      * @return true if music player is muted, false otherwise.
      */
     [[nodiscard]] bool isMuted() const;
+    /**
+     * Return the supported aspect ratio.
+     *
+     * @return a list of pairs (label and geometry) of aspect ratio.
+     */
+    [[nodiscard]] static std::list<std::pair<QString,QString>> supportedAspectRatio();
 
 signals:
     /**
@@ -98,12 +104,6 @@ signals:
      */
     void currentVolume(int vol);
     /**
-     * Signal the state of the scale and crop mode.
-     *
-     * @param mode true if scale and crop should be enabled, false if it is disabled.
-     */
-    void scaleAndCropMode(bool mode);
-    /**
      * Signal a toggle in between enable/disable of the full screen mode.
      */
     void toggleFullWindow();
@@ -133,7 +133,7 @@ signals:
      *
      * @param state the current state
      */
-    void currentState(xMoviePlayerVLC::State state);
+    void currentState(xMoviePlayer::State state);
     /**
      * Helper signal to call stop from event handler callback.
      */
@@ -220,15 +220,29 @@ public slots:
      */
     void clearMovieQueue();
     /**
-     * Enable or disable the scale and crop mode.
+     * Enable or disable deinterlace.
      *
-     * @param mode enable scale and crop if true, disable otherwise.
+     * @param enable enable deinterlace if true, disable otherwise.
      */
-    void setScaleAndCropMode(bool mode);
+    void setDeinterlaceMode(bool mode);
     /**
-     * Toggle enable/disable of the scale and crop mode.
+     * Return the currently state of deinterlace.
+     *
+     * @return return true if deinterlace is enabled, false otherwise.
      */
-    void toggleScaleAndCropMode();
+    [[nodiscard]] bool deinterlaceMode();
+    /**
+     * Set the aspect ratio geometry used for the video output crop.
+     *
+     * @param aspectRatio the aspect ratio geometry as string. Disable on empty string.
+     */
+    void setCropAspectRatio(const QString& aspectRatio);
+    /**
+     * Return the aspect ratio geometry.
+     *
+     * @return the aspect ratio geometry as string.
+     */
+    QString cropAspectRatio();
     /**
      * Select an audio channel for the current movie.
      *
@@ -284,10 +298,8 @@ private:
     void scanForChapters();
     /**
      * Update the current chapter index.
-     *
-     * @param positions the current position in ms.
      */
-    void updateChapter(qint64 positions);
+    void updateCurrentChapter();
     /**
      * Update the audio channel/subtitle description. Expand language strings.
      *
@@ -305,6 +317,8 @@ private:
     bool movieMediaPlaying;
     qint64 movieMediaLength;
     int movieMediaChapter;
+    bool movieMediaDeinterlaceMode;
+    QString movieMediaCropAspectRatio;
 
     QList<std::pair<int,QString>> currentSubtitleDescriptions;
     QList<std::pair<int,QString>> currentAudioChannelDescriptions;

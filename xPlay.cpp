@@ -36,8 +36,6 @@ bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser)
               QApplication::translate("xPlay", "delta") },
             { {"F", "fullwindow"},
               QApplication::translate("xPlay", "Toggle the full window mode in the movie view.") },
-            { {"S", "scaleandcrop"},
-              QApplication::translate("xPlay", "Toggle the scale and crop mode in the movie view.") },
             { {"e", "selectview"},
                     QApplication::translate("xPlay", R"(Select a view ("music", "movie" or "streaming").)"),
                     QApplication::translate("xPlay", "view") },
@@ -129,8 +127,6 @@ bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser)
                 command = "mute";
             } else if (playAppParser.isSet("fullwindow")) {
                 command = "fullWindow";
-            } else if (playAppParser.isSet("scaleandcrop")) {
-                command = "scaleAndCrop";
             } else if (playAppParser.isSet("muterotel")) {
                 command = "muteRotel";
             } else {

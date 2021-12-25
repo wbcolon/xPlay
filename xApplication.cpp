@@ -44,7 +44,7 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     mainView = new QStackedWidget(this);
     // Setup players and main widgets
     musicPlayer = new xMusicPlayerX(musicLibrary, mainView);
-    moviePlayer = new xMoviePlayerX(mainView);
+    moviePlayer = new xMoviePlayer(mainView);
     mainMusicWidget = new xMainMusicWidget(musicPlayer, musicLibrary, mainView);
     mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
     mainMobileSyncWidget = new xMainMobileSyncWidget(musicLibrary, mainView);
@@ -129,7 +129,6 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     connect(mainDbus, &xPlayerDBus::dbus_next, this, &xApplication::dbus_next);
     connect(mainDbus, &xPlayerDBus::dbus_jump, this, &xApplication::dbus_jump);
     connect(mainDbus, &xPlayerDBus::dbus_fullWindow, this, &xApplication::dbus_fullWindow);
-    connect(mainDbus, &xPlayerDBus::dbus_scaleAndCrop, this, &xApplication::dbus_scaleAndCrop);
     connect(mainDbus, &xPlayerDBus::dbus_mute, this, &xApplication::dbus_mute);
     connect(mainDbus, &xPlayerDBus::dbus_changeVolume, this, &xApplication::dbus_changeVolume);
     connect(mainDbus, &xPlayerDBus::dbus_selectView, this, &xApplication::dbus_selectView);
@@ -188,12 +187,6 @@ void xApplication::dbus_jump(qint64 delta) {
 void xApplication::dbus_fullWindow() {
     if (mainView->currentWidget() == mainMovieWidget) {
         emit moviePlayer->toggleFullWindow();
-    }
-}
-
-void xApplication::dbus_scaleAndCrop() {
-    if (mainView->currentWidget() == mainMovieWidget) {
-        moviePlayer->toggleScaleAndCropMode();
     }
 }
 

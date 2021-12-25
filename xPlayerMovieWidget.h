@@ -15,7 +15,7 @@
 #ifndef __XPLAYERMOVIEWIDGET_H__
 #define __XPLAYERMOVIEWIDGET_H__
 
-#include "xMoviePlayerX.h"
+#include "xMoviePlayer.h"
 #include "xPlayerSliderWidgetX.h"
 #include "xPlayerControlButtonWidget.h"
 #include "xPlayerRotelWidget.h"
@@ -28,7 +28,7 @@ class xPlayerMovieWidget:public QWidget {
     Q_OBJECT
 
 public:
-    explicit xPlayerMovieWidget(xMoviePlayerX* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    explicit xPlayerMovieWidget(xMoviePlayer* player, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerMovieWidget() override = default;
 
 signals:
@@ -76,7 +76,7 @@ public slots:
      *
      * @param state the current state of the movie player.
      */
-    void currentState(xMoviePlayerX::State state);
+    void currentState(xMoviePlayer::State state);
     /**
      * Retrieve the time played for the current movie.
      *
@@ -103,6 +103,10 @@ private slots:
 
 private:
     /**
+     * Create the options menu for the movie player.
+     */
+    void createOptionsMenu();
+    /*xMoviePlayerVLC*
      * Only update combo box if entries have changed.
      *
      * @param comboBox an existing combo box widget with entries.
@@ -115,9 +119,10 @@ private:
     QLabel* chapterLabel;
     QComboBox* chapterBox;
     QLabel* movieLabel;
+    QPushButton* optionsMenuButton;
     xPlayerSliderWidgetX* sliderWidget;
-    xMoviePlayerX* moviePlayer;
-    xMoviePlayerX::State moviePlayerState;
+    xMoviePlayer* moviePlayer;
+    xMoviePlayer::State moviePlayerState;
     xPlayerControlButtonWidget* controlButtonWidget;
     xPlayerRotelWidget* controlTabRotel;
 };
