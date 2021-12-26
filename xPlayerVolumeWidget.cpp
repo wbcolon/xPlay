@@ -13,10 +13,49 @@
  */
 #include "xPlayerVolumeWidget.h"
 
-xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget* parent, Qt::WindowFlags flags):
+#include "xPlayerUI.h"
+#include <QLabel>
+#include <QPushButton>
+#include <QMouseEvent>
+
+xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         currentVolume(0),
         currentMuted(false) {
+    auto volumeLayout = new xPlayerLayout(this);
+    volumeKnob = new QwtKnob(this);
+    volumeKnob->setLowerBound(0);
+    volumeKnob->setUpperBound(100);
+    volumeKnob->setScaleStepSize(20);
+    volumeKnob->setWrapping(false);
+    volumeMuteButton = new QPushButton(tr("Volume"), this);
+    volumeMuteButton->setFlat(true);
+    // Only stretch top and bottom.
+    volumeLayout->addRowStretcher(0);
+    // Qwt implementation. Layout here overlap on purpose
+    volumeLayout->addWidget(volumeKnob, 1, 0, 4, 4);
+    volumeLayout->addWidget(volumeMuteButton, 4, 0, 1, 4);
+    volumeLayout->addRowStretcher(5);
+    // Connect the volume slider to the widgets signal. Use lambda to do proper conversion.
+    connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { emit volume(static_cast<int>(vol)); } );
+    connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { currentVolume=static_cast<int>(vol); } );
+    connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
+    setFixedWidth(xPlayer::VolumeWidgetWidth);
+}
+
+void xPlayerVolumeWidget::setVolume(int vol) {
+    currentVolume = vol;
+    volumeKnob->setValue(static_cast<double>(vol));
+}
+
+void xPlayerVolumeWidget::setMuted(bool mute) {
+    currentMuted = mute;
+    volumeKnob->setDisabled(currentMuted);
+    if (currentMuted) {
+        volumeMuteButton->setText(tr("Muted"));
+    } else {
+        volumeMuteButton->setText(tr("Volume"));
+    }
 }
 
 int xPlayerVolumeWidget::getVolume() const {
@@ -31,5 +70,4 @@ void xPlayerVolumeWidget::toggleMuted() {
     setMuted(!isMuted());
     emit muted(isMuted());
 }
-
 

@@ -14,8 +14,43 @@
 #ifndef __XPLAYERSLIDERWIDGET_H__
 #define __XPLAYERSLIDERWIDGET_H__
 
+#include <qwt/qwt_date_scale_draw.h>
+#include <qwt/qwt_slider.h>
+
 #include <QWidget>
 #include <QString>
+#include <QLabel>
+#include <QLCDNumber>
+
+#include <cmath>
+
+/*
+ * Helper class in order to adjust the scale labels (only QWT)
+ */
+class xPlayerWidgetScaleDraw:public QwtScaleDraw {
+public:
+    xPlayerWidgetScaleDraw():
+            QwtScaleDraw(),
+            showHours(false) { }
+    ~xPlayerWidgetScaleDraw() override = default;
+
+    void useHourScale(bool hours) {
+        showHours = hours;
+    }
+
+    [[nodiscard]] QwtText label(double value) const override {
+        if (showHours) {
+            return QwtText(QString("%1:%2:%3").arg(static_cast<int>(round(value)/3600000)).
+                    arg(static_cast<int>(round(value)/60000)%60, 2, 10, QChar('0')).
+                    arg((static_cast<int>(round(value))/1000)%60, 2, 10, QChar('0')));
+        } else {
+            return QwtText(QString("%1:%2").arg(static_cast<int>(round(value)/60000)).
+                    arg((static_cast<int>(round(value))/1000)%60, 2, 10, QChar('0')));
+        }
+    }
+private:
+    bool showHours;
+};
 
 class xPlayerSliderWidget:public QWidget {
     Q_OBJECT
@@ -23,7 +58,6 @@ class xPlayerSliderWidget:public QWidget {
 public:
     explicit xPlayerSliderWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerSliderWidget() override = default;
-
     /**
      * Return the state of hour mode.
      *
@@ -38,10 +72,7 @@ public:
     /**
      * Clear the state of the slider widget.
      */
-    virtual void clear() = 0;
-
-signals:
-    void seek(qint64 position);
+    void clear();
 
 public slots:
     /**
@@ -49,27 +80,35 @@ public slots:
      *
      * @param hourScale decide whether to include hours in the time format.
      */
-    virtual void useHourScale(bool hourScale);
+    void useHourScale(bool hourScale);
     /**
      * Set the maximum number of scale sections (therefore labels) allowed.
      *
      * @param scaleSections number of sections.
      */
-    virtual void useScaleSections(int scaleSections);
+    void useScaleSections(int scaleSections);
     /**
      * Update the length label.
      *
      * @param length the length of the current track in milliseconds.
      */
-    virtual void trackLength(qint64 length) = 0;
+    void trackLength(qint64 length);
     /**
      * Update the played time label.
      *
      * @param played the amount played of the current track in milliseconds.
      */
-    virtual void trackPlayed(qint64 played) = 0;
+    void trackPlayed(qint64 played);
 
-protected:
+signals:
+    /**
+     * Signal emitted whenever the slider is moved.
+     *
+     * @param position the new slider position.
+     */
+    void seek(qint64 position);
+
+private:
     /**
      * Find a scale layout.
      *
@@ -80,6 +119,10 @@ protected:
 
     bool showHours;
     int maxScaleSections;
+    QwtSlider* trackSlider;
+    xPlayerWidgetScaleDraw* scaleDraw;
+    QLCDNumber* trackLengthLabel;
+    QLCDNumber* trackPlayedLabel;
 };
 
 #endif

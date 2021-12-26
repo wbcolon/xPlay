@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xPlayerRotelWidget.h"
-#include "xPlayerVolumeWidgetX.h"
+#include "xPlayerVolumeWidget.h"
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
@@ -313,7 +313,7 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     auto rotelLayout = new xPlayerLayout(this);
     rotelLayout->setSpacing(xPlayerLayout::NoSpace);
     // Create a volume knob.
-    rotelVolume = new xPlayerVolumeWidgetX(this);
+    rotelVolume = new xPlayerVolumeWidget(this);
     // Create rotel control buttons widget.
     auto rotelControlButton = new QWidget(this);
     auto rotelControlButtonLayout = new xPlayerLayout();
@@ -335,7 +335,7 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     rotelTrebleLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
     rotelBalanceLabel = new QLabel(tr("Balance"), rotelControlButton);
     rotelBalanceLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
-    rotelBalance = new xPlayerBalanceWidgetX(rotelControlButton);
+    rotelBalance = new xPlayerBalanceWidget(rotelControlButton);
     rotelBalance->setRange(15);
     rotelControlButtonLayout->addRowStretcher(0);
     rotelControlButtonLayout->addWidget(rotelSource, 1, 0, 1, 2);
@@ -366,12 +366,12 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     }
     rotelControls = xPlayerRotelControls::controls();
     // Connect the widgets to the amp commands.
-    QObject::connect(rotelVolume, &xPlayerVolumeWidgetX::volume, rotelControls, &xPlayerRotelControls::setVolume);
-    QObject::connect(rotelVolume, &xPlayerVolumeWidgetX::muted, rotelControls, &xPlayerRotelControls::setMuted);
+    QObject::connect(rotelVolume, &xPlayerVolumeWidget::volume, rotelControls, &xPlayerRotelControls::setVolume);
+    QObject::connect(rotelVolume, &xPlayerVolumeWidget::muted, rotelControls, &xPlayerRotelControls::setMuted);
     QObject::connect(rotelBass, SIGNAL(valueChanged(int)), rotelControls, SLOT(setBass(int)));
     QObject::connect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
     QObject::connect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
-    QObject::connect(rotelBalance, &xPlayerBalanceWidgetX::balance, rotelControls, &xPlayerRotelControls::setBalance);
+    QObject::connect(rotelBalance, &xPlayerBalanceWidget::balance, rotelControls, &xPlayerRotelControls::setBalance);
     // Connect Rotel controls to Rotel widget.
     QObject::connect(rotelControls, &xPlayerRotelControls::volume, this, &xPlayerRotelWidget::updateVolume);
     QObject::connect(rotelControls, &xPlayerRotelControls::bass, this, &xPlayerRotelWidget::updateBass);
@@ -387,9 +387,9 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
 
 void xPlayerRotelWidget::updateVolume(int vol) {
     qDebug() << "xPlayerRotel: updateVolume: " << vol;
-    QObject::disconnect(rotelVolume, &xPlayerVolumeWidgetX::volume, rotelControls, &xPlayerRotelControls::setVolume);
+    QObject::disconnect(rotelVolume, &xPlayerVolumeWidget::volume, rotelControls, &xPlayerRotelControls::setVolume);
     rotelVolume->setVolume(vol);
-    QObject::connect(rotelVolume, &xPlayerVolumeWidgetX::volume, rotelControls, &xPlayerRotelControls::setVolume);
+    QObject::connect(rotelVolume, &xPlayerVolumeWidget::volume, rotelControls, &xPlayerRotelControls::setVolume);
 }
 
 void xPlayerRotelWidget::updateBass(int b) {
@@ -408,9 +408,9 @@ void xPlayerRotelWidget::updateTreble(int t) {
 
 void xPlayerRotelWidget::updateBalance(int b) {
     qDebug() << "xPlayerRotel: updateBalance: " << b;
-    QObject::disconnect(rotelBalance, &xPlayerBalanceWidgetX::balance, rotelControls, &xPlayerRotelControls::setBalance);
+    QObject::disconnect(rotelBalance, &xPlayerBalanceWidget::balance, rotelControls, &xPlayerRotelControls::setBalance);
     rotelBalance->setBalance(b);
-    QObject::connect(rotelBalance, &xPlayerBalanceWidgetX::balance, rotelControls, &xPlayerRotelControls::setBalance);
+    QObject::connect(rotelBalance, &xPlayerBalanceWidget::balance, rotelControls, &xPlayerRotelControls::setBalance);
 }
 
 void xPlayerRotelWidget::updateSource(const QString& source) {

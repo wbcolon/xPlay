@@ -16,7 +16,7 @@
 #define __XPLAYERMOVIEWIDGET_H__
 
 #include "xMoviePlayer.h"
-#include "xPlayerSliderWidgetX.h"
+#include "xPlayerSliderWidget.h"
 #include "xPlayerControlButtonWidget.h"
 #include "xPlayerRotelWidget.h"
 
@@ -120,7 +120,7 @@ private:
     QComboBox* chapterBox;
     QLabel* movieLabel;
     QPushButton* optionsMenuButton;
-    xPlayerSliderWidgetX* sliderWidget;
+    xPlayerSliderWidget* sliderWidget;
     xMoviePlayer* moviePlayer;
     xMoviePlayer::State moviePlayerState;
     xPlayerControlButtonWidget* controlButtonWidget;

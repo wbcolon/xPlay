@@ -15,7 +15,7 @@
 #define __XPLAYERROTELWIDGET_H__
 
 #include "xPlayerVolumeWidget.h"
-#include "xPlayerBalanceWidgetX.h"
+#include "xPlayerBalanceWidget.h"
 
 #include <QComboBox>
 #include <QSpinBox>

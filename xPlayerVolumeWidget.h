@@ -14,7 +14,8 @@
 #ifndef __XPLAYERVOLUMEWIDGET_H__
 #define __XPLAYERVOLUMEWIDGET_H__
 
-#include <QWidget>
+#include <QPushButton>
+#include <qwt/qwt_knob.h>
 
 class xPlayerVolumeWidget:public QWidget {
     Q_OBJECT
@@ -23,10 +24,10 @@ public:
     explicit xPlayerVolumeWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerVolumeWidget() override = default;
     /**
-     * Retrieve the current volume of displayed in the UI.
-     *
-     * @return the volume as integer in between 0 and 100.
-     */
+      * Retrieve the current volume of displayed in the UI.
+      *
+      * @return the volume as integer in between 0 and 100.
+      */
     [[nodiscard]] int getVolume() const;
     /**
      * Return the mute state for the volume widget.
@@ -49,27 +50,30 @@ signals:
      */
     void muted(bool mute);
 
+
 public slots:
     /**
      * Set the volume displayed in the UI.
      *
      * @param vol the volume as integer in between 0 and 100.
      */
-    virtual void setVolume(int vol) = 0;
+    void setVolume(int vol);
     /**
      * Set the mute mode.
      *
      * @param mute enable mute if true, disable otherwise.
      */
-    virtual void setMuted(bool mute) = 0;
+    void setMuted(bool mute);
     /**
      * Toggle the mute mode.
      */
     virtual void toggleMuted();
 
-protected:
+private:
     int currentVolume;
     bool currentMuted;
+    QPushButton* volumeMuteButton;
+    QwtKnob* volumeKnob;
 };
 
 #endif

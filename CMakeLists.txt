@@ -16,7 +16,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-decl
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -DXPLAY_APP_NAME=\\\"xPlay\\\"")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
-option(USE_QWT "Use the Qwt widgets instead of Qt widgets" ON)
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
 option(USE_TESTS "Build the tests for xPlay instead of the application" OFF)
 configure_file(xPlayerConfig.h.in xPlayerConfig.h)
@@ -48,14 +47,6 @@ set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
 set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 
-if (USE_QWT)
-    set(xPlay_xPlayerWidgetX playerwidget/xPlayerSliderWidgetQwt.cpp playerwidget/xPlayerVolumeWidgetQwt.cpp playerwidget/xPlayerBalanceWidgetQwt.cpp)
-    set(xPlay_xPlayerWidgetX_library qwt-qt5)
-else()
-    set(xPlay_xPlayerWidgetX playerwidget/xPlayerSliderWidgetQt.cpp playerwidget/xPlayerVolumeWidgetQt.cpp playerwidget/xPlayerBalanceWidgetQt.cpp)
-    set(xPlay_xPlayerWidgetX_library)
-endif()
-
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${SQLITE3_INCLUDE_DIRS})
 
@@ -81,7 +72,6 @@ set(xPlay_sources
         xPlayerSliderWidget.cpp
         xPlayerBalanceWidget.cpp
         xPlayerControlButtonWidget.cpp
-        ${xPlay_xPlayerWidgetX}
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
         xPlayerMusicArtistSelectorWidget.cpp
@@ -98,7 +88,7 @@ set(xPlay_sources
 
 set(xPlay_libraries
         Qt5::WebEngineWidgets Qt5::Widgets Qt5::Multimedia Qt5::MultimediaWidgets Qt5::DBus
-        ${xPlay_xPlayerWidgetX_library}
+        qwt-qt5
         Phonon::phonon4qt5
         sqlite3
         ${TAGLIB_LIBRARIES}

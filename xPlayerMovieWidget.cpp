@@ -13,7 +13,7 @@
  */
 
 #include "xPlayerMovieWidget.h"
-#include "xPlayerVolumeWidgetX.h"
+#include "xPlayerVolumeWidget.h"
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
@@ -30,7 +30,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
         moviePlayerState(xMoviePlayer::StopState) {
 
     // Slider widget for showing movie length and played time.
-    sliderWidget = new xPlayerSliderWidgetX(this);
+    sliderWidget = new xPlayerSliderWidget(this);
     sliderWidget->useScaleSections(8);
     sliderWidget->useHourScale(true);
     // Name of the movie (filename).
@@ -82,7 +82,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     controlBoxLayout->addWidget(chapterLabel, 0, 7, 1, 2);
     controlBoxLayout->addWidget(chapterBox, 1, 7, 1, 2);
     // Volume widget.
-    auto volumeWidget = new xPlayerVolumeWidgetX(controlTabPlayer);
+    auto volumeWidget = new xPlayerVolumeWidget(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, moviePlayer, &xMoviePlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, moviePlayer, &xMoviePlayer::setMuted);
@@ -151,9 +151,9 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
         connect(chapterBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(playChapter(int)));
     });
     // Seek.
-    connect(sliderWidget, &xPlayerSliderWidgetX::seek, moviePlayer, &xMoviePlayer::seek);
+    connect(sliderWidget, &xPlayerSliderWidget::seek, moviePlayer, &xMoviePlayer::seek);
     // Movie player volume updates.
-    connect(moviePlayer, &xMoviePlayer::currentVolume, volumeWidget, &xPlayerVolumeWidgetX::setVolume);
+    connect(moviePlayer, &xMoviePlayer::currentVolume, volumeWidget, &xPlayerVolumeWidget::setVolume);
     // Setup volume
     volumeWidget->setVolume(moviePlayer->getVolume());
 }

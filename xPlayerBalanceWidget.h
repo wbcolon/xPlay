@@ -20,6 +20,8 @@
 #include <QGridLayout>
 #include <QString>
 
+#include <qwt/qwt_slider.h>
+
 class xPlayerBalanceWidget:public QWidget {
     Q_OBJECT
 
@@ -61,7 +63,7 @@ signals:
      */
     void balance(int value);
 
-protected slots:
+private slots:
     /**
      * Update the slider and the corresponding labels.
      *
@@ -69,20 +71,21 @@ protected slots:
      */
     void updatedSlider(int value);
 
-protected:
+private:
     /**
      * Update the slider and labels widget on balance changes.
      *
      * @param value the new balance as integer.
      */
-    virtual void updateSlider(int value) = 0;
+    void updateSlider(int value);
     /**
      * Update the slider and labels widget on range changes.
      *
      * @param value the new range value as integer.
      */
-    virtual void updateSliderRange(int value) = 0;
+    void updateSliderRange(int value);
 
+    QwtSlider* balanceSlider;
     QGridLayout* balanceLayout;
     QLabel* balanceLeftLabel;
     QLabel* balanceRightLabel;

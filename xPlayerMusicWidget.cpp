@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 #include "xPlayerMusicWidget.h"
-#include "xPlayerVolumeWidgetX.h"
+#include "xPlayerVolumeWidget.h"
 #include "xPlayerRotelWidget.h"
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
@@ -46,7 +46,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     trackBitrate->setAlignment(Qt::AlignRight);
     trackBitrate->setStyleSheet("font-weight: bold");
     // Add track slider and the volume knob for Qwt.
-    sliderWidget = new xPlayerSliderWidgetX(this);
+    sliderWidget = new xPlayerSliderWidget(this);
     connect(sliderWidget, &xPlayerSliderWidget::seek, musicPlayer, &xMusicPlayer::seek);
     // Add a control tab for player and rotel amp controls
     auto controlTab = new QTabWidget(this);
@@ -58,11 +58,11 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     // Create control buttons.
     controlButtonWidget = new xPlayerControlButtonWidget(xPlayerControlButtonWidget::MusicPlayerMode, controlTabPlayer);
-    auto volumeWidget = new xPlayerVolumeWidgetX(controlTabPlayer);
+    auto volumeWidget = new xPlayerVolumeWidget(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, musicPlayer, &xMusicPlayer::setMuted);
-    connect(musicPlayer, &xMusicPlayer::currentVolume, volumeWidget, &xPlayerVolumeWidgetX::setVolume);
+    connect(musicPlayer, &xMusicPlayer::currentVolume, volumeWidget, &xPlayerVolumeWidget::setVolume);
     connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, sliderWidget, &xPlayerSliderWidget::trackPlayed);
     connect(musicPlayer, &xMusicPlayer::currentTrackLength, sliderWidget, &xPlayerSliderWidget::trackLength);
     // Create the basic player widget layout.

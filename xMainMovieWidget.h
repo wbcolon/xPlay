@@ -16,8 +16,8 @@
 
 #include "xMoviePlayer.h"
 #include "xPlayerMovieWidget.h"
-#include "xPlayerSliderWidgetX.h"
-#include "xPlayerVolumeWidgetX.h"
+#include "xPlayerSliderWidget.h"
+#include "xPlayerVolumeWidget.h"
 #include "xPlayerListWidget.h"
 
 #include <QStackedWidget>
