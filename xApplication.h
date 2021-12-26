@@ -15,7 +15,7 @@
 #define __XAPPLICATION_H__
 
 #include "xMusicLibrary.h"
-#include "xMusicPlayerX.h"
+#include "xMusicPlayer.h"
 #include "xMainMusicWidget.h"
 #include "xMovieLibrary.h"
 #include "xMoviePlayer.h"
@@ -173,7 +173,7 @@ private:
     int unknownEntriesDialog(const QString& dialogTitle, const std::list<std::tuple<QString,QString,QString>>& entries);
 
     xMusicLibrary* musicLibrary;
-    xMusicPlayerX* musicPlayer;
+    xMusicPlayer* musicPlayer;
     xMainMusicWidget* mainMusicWidget;
     QAction* musicViewVisualization;
     xMovieLibrary* movieLibrary;

@@ -16,7 +16,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-decl
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -DXPLAY_APP_NAME=\\\"xPlay\\\"")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
-option(USE_PHONON "Use the Phonon based music player instead of Qt" ON)
 option(USE_QWT "Use the Qwt widgets instead of Qt widgets" ON)
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
 option(USE_TESTS "Build the tests for xPlay instead of the application" OFF)
@@ -49,12 +48,6 @@ set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
 set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 
-if (USE_PHONON)
-    set(xPlay_xMusicPlayerX musicplayer/xMusicPlayerPhonon.cpp)
-else()
-    set(xPlay_xMusicPlayerX musicplayer/xMusicPlayerQt.cpp)
-endif()
-
 if (USE_QWT)
     set(xPlay_xPlayerWidgetX playerwidget/xPlayerSliderWidgetQwt.cpp playerwidget/xPlayerVolumeWidgetQwt.cpp playerwidget/xPlayerBalanceWidgetQwt.cpp)
     set(xPlay_xPlayerWidgetX_library qwt-qt5)
@@ -77,7 +70,6 @@ set(xPlay_sources
         xPlayerDatabase.cpp
         xMusicPlayer.cpp
         xMoviePlayer.cpp
-        ${xPlay_xMusicPlayerX}
         xPlayerArtistInfo.cpp
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp

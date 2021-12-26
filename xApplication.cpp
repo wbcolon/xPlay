@@ -43,7 +43,7 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     // Stack for different views.
     mainView = new QStackedWidget(this);
     // Setup players and main widgets
-    musicPlayer = new xMusicPlayerX(musicLibrary, mainView);
+    musicPlayer = new xMusicPlayer(musicLibrary, mainView);
     moviePlayer = new xMoviePlayer(mainView);
     mainMusicWidget = new xMainMusicWidget(musicPlayer, musicLibrary, mainView);
     mainMovieWidget = new xMainMovieWidget(moviePlayer, mainView);
