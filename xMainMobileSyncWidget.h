@@ -79,6 +79,18 @@ private slots:
      */
     void mobileLibraryFindItem(xPlayerMusicLibraryWidgetItem* item);
     /**
+     * Save the existing mobile library entries for later marking.
+     */
+    void mobileLibrarySaveToExisting();
+    /**
+     * Remove selected saved mobile library.
+     */
+    void mobileLibraryRemoveSaved();
+    /**
+     * Remove all saved mobile libraries.
+     */
+    void mobileLibraryRemoveAllSaved();
+    /**
      * Update mobile library view after scan is finished.
      */
     void mobileLibraryReady();
@@ -97,17 +109,9 @@ private slots:
      */
     void musicLibraryFindItem(xPlayerMusicLibraryWidgetItem* item);
     /**
-     * Save the existing mobile library entries for later marking.
-     */
-    void musicLibrarySaveExisting();
-    /**
      * Mark all existing items in the music library.
      */
     void musicLibraryMarkExisting();
-    /**
-     * Clear all stored existing items.
-     */
-    void musicLibraryClearExisting();
     /**
      * Update music library view after scan is finished.
      */
@@ -188,6 +192,7 @@ private:
     QPushButton* musicLibraryCompareButton;
     QCheckBox* musicLibrarySortBySize;
     QPushButton* musicLibraryMarksButton;
+    QPushButton* musicLibraryExistingButton;
     QListWidget* musicLibraryExistingWidget;
     std::map<std::filesystem::path, std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>> musicLibraryExisting;
     xMusicLibrary* mobileLibrary;

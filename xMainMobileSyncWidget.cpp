@@ -62,10 +62,20 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     mobileLibraryScanClearButton = new QPushButton(tr("Clear"), this);
     musicLibraryMarksButton = new QPushButton(tr("Marks"), this);
     musicLibraryMarksButton->setEnabled(false);
+    musicLibraryExistingButton = new QPushButton(tr("Existing"), this);
+    musicLibraryExistingButton->setEnabled(false);
+
+    auto musicLibraryExistingMenu = new QMenu(this);
+    musicLibraryExistingMenu->addAction(tr("Save Mobile Library to Existing"), this,
+                                     &xMainMobileSyncWidget::mobileLibrarySaveToExisting);
+    musicLibraryExistingMenu->addAction(tr("Remove Saved Mobile Library"), this,
+                                        &xMainMobileSyncWidget::mobileLibraryRemoveSaved);
+    musicLibraryExistingMenu->addAction(tr("Remove all Saved Mobile Libraries"), this,
+                                        &xMainMobileSyncWidget::mobileLibraryRemoveAllSaved);
+    musicLibraryExistingButton->setMenu(musicLibraryExistingMenu);
+
     auto musicLibraryMarksMenu = new QMenu(this);
-    musicLibraryMarksMenu->addAction(tr("Save Mobile Library to Existing"), this, &xMainMobileSyncWidget::musicLibrarySaveExisting);
-    musicLibraryMarksMenu->addAction(tr("Mark Existing"), this, &xMainMobileSyncWidget::musicLibraryMarkExisting);
-    musicLibraryMarksMenu->addAction(tr("Clear Marks for Existing"), this, &xMainMobileSyncWidget::musicLibraryClearExisting);
+    musicLibraryMarksMenu->addAction(tr("Add Marks for Existing"), this, &xMainMobileSyncWidget::musicLibraryMarkExisting);
     musicLibraryMarksMenu->addAction(tr("Clear all Marks"), musicLibraryWidget, &xPlayerMusicLibraryWidget::clearItems);
     musicLibraryMarksButton->setMenu(musicLibraryMarksMenu);
     // Action section.
@@ -97,10 +107,11 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     layout->addWidget(musicLibraryWidget, 0, 0, 13, 10);
     layout->addWidget(musicLibraryFilter, 13, 0, 1, 10);
     layout->addRowSpacer(14, xPlayerLayout::SmallSpace);
-    layout->addWidget(musicLibraryMarksButton, 15, 0, 1, 2);
-    layout->addWidget(musicLibraryCompareButton, 16, 0, 1, 2);
+    layout->addWidget(musicLibraryExistingButton, 15, 0, 1, 2);
+    layout->addWidget(musicLibraryMarksButton, 16, 0, 1, 2);
     layout->addWidget(musicLibraryExistingWidget, 15, 2, 2, 6);
-    layout->addWidget(musicLibrarySortBySize, 16, 8, 1, 2);
+    layout->addWidget(musicLibrarySortBySize, 15, 8, 1, 2);
+    layout->addWidget(musicLibraryCompareButton, 16, 8, 1, 2);
     layout->addColumnSpacer(10, xPlayerLayout::SmallSpace);
     // Action layout.
     layout->addLayout(actionLayout, 0, 11, 14, 8);
@@ -154,6 +165,9 @@ void xMainMobileSyncWidget::clear() {
     actionRemoveFromItems.clear();
     actionAddToWidget->clear();
     actionAddToItems.clear();
+    // Clear artist item filter on Scan and Clear.
+    mobileLibraryFilterWidget->clear();
+    mobileLibraryWidget->filterArtistItems(QString());
     // Update action storage.
     updateActionStorage();
 }
@@ -328,6 +342,7 @@ void xMainMobileSyncWidget::actionApplyFinished() {
     // Enable widgets.
     musicLibraryWidget->setEnabled(true);
     musicLibraryMarksButton->setEnabled(true);
+    musicLibraryExistingButton->setEnabled(true);
     musicLibraryCompareButton->setEnabled(true);
     musicLibraryExistingWidget->setEnabled(true);
     musicLibrarySortBySize->setEnabled(true);
@@ -379,6 +394,7 @@ void xMainMobileSyncWidget::actionApply() {
     // Disable widgets.
     musicLibraryWidget->setEnabled(false);
     musicLibraryMarksButton->setEnabled(false);
+    musicLibraryExistingButton->setEnabled(false);
     musicLibraryCompareButton->setEnabled(false);
     musicLibraryExistingWidget->setEnabled(false);
     musicLibrarySortBySize->setEnabled(false);
@@ -472,6 +488,33 @@ void xMainMobileSyncWidget::mobileLibraryFindItem(xPlayerMusicLibraryWidgetItem*
     }
 }
 
+void xMainMobileSyncWidget::mobileLibrarySaveToExisting() {
+    std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>> equalTracks;
+    // Determine equal tracks. The map contains music file pointer from the music library.
+    musicLibrary->getLibraryFiles()->compare(mobileLibrary->getLibraryFiles(), equalTracks);
+    musicLibraryExisting[mobileLibrary->getBaseDirectory()] = equalTracks;
+    // Update list of existing mobile libraries.
+    updateExistingList();
+}
+
+void xMainMobileSyncWidget::mobileLibraryRemoveSaved() {
+    auto selectedExisting = musicLibraryExistingWidget->selectedItems();
+    if (!selectedExisting.isEmpty()) {
+        // Remove selected entries.
+        for (auto selected : selectedExisting) {
+            musicLibraryExisting.erase(std::filesystem::path(selected->text().toStdString()));
+        }
+        // Update list of existing mobile libraries.
+        updateExistingList();
+    }
+}
+
+void xMainMobileSyncWidget::mobileLibraryRemoveAllSaved() {
+    musicLibraryExisting.clear();
+    // Update list of existing mobile libraries.
+    updateExistingList();
+}
+
 void xMainMobileSyncWidget::mobileLibraryReady() {
     mobileLibraryScanClearButton->setEnabled(true);
     mobileLibraryDirectoryButton->setEnabled(true);
@@ -517,15 +560,6 @@ void xMainMobileSyncWidget::musicLibraryFindItem(xPlayerMusicLibraryWidgetItem* 
     }
 }
 
-void xMainMobileSyncWidget::musicLibrarySaveExisting() {
-    std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>> equalTracks;
-    // Determine equal tracks. The map contains music file pointer from the music library.
-    musicLibrary->getLibraryFiles()->compare(mobileLibrary->getLibraryFiles(), equalTracks);
-    musicLibraryExisting[mobileLibrary->getBaseDirectory()] = equalTracks;
-    // Update list of existing mobile libraries.
-    updateExistingList();
-}
-
 void xMainMobileSyncWidget::musicLibraryMarkExisting() {
     // Mark the items.
     for (auto& entry : musicLibraryExisting) {
@@ -533,15 +567,10 @@ void xMainMobileSyncWidget::musicLibraryMarkExisting() {
     }
 }
 
-void xMainMobileSyncWidget::musicLibraryClearExisting() {
-    musicLibraryExisting.clear();
-    // Update list of existing mobile libraries.
-    updateExistingList();
-}
-
 void xMainMobileSyncWidget::musicLibraryReady() {
     musicLibraryCompareButton->setEnabled(true);
     musicLibraryMarksButton->setEnabled(true);
+    musicLibraryExistingButton->setEnabled(true);
     musicLibraryExistingWidget->setEnabled(true);
     musicLibrarySortBySize->setEnabled(true);
 }

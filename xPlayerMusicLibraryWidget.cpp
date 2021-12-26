@@ -214,7 +214,8 @@ xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, con
         musicLibrary(library),
         musicLibraryReady(false),
         musicLibrarySortBySize(false),
-        musicLibraryItemBackground() {
+        musicLibraryItemBackground(),
+        musicLibraryHideMissingArtists(false) {
 
     setFlat(xPlayer::UseFlatGroupBox);
     musicLibraryTree = new QTreeWidget(this);
@@ -242,6 +243,9 @@ xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, con
 }
 
 void xPlayerMusicLibraryWidget::setBaseDirectory(const std::filesystem::path &base) {
+    // Clear everything before we initiate a scan.
+    clear();
+    // Initiate a new scan.
     musicLibraryReady = false;
     musicLibrary->setBaseDirectory(base);
 }
@@ -298,12 +302,15 @@ void xPlayerMusicLibraryWidget::markItems(const std::list<xMusicDirectory>& miss
     // Remove any markings.
     clearItems();
     // Mark the missing artists.
+    musicLibraryHiddenArtists = missingArtists;
     for (const auto& artist : missingArtists) {
         auto artistItem = mapArtists.find(artist);
         if (artistItem != mapArtists.end()) {
             artistItem->second->mark(QBrush(Qt::red, Qt::Dense4Pattern), true);
         }
     }
+    // Update missing artist visibility.
+    updateMissingArtists();
     // Mark the missing albums.
     for (const auto& artist : missingAlbums) {
         auto albumsForArtist = mapAlbums.find(artist.first);
@@ -370,6 +377,7 @@ void xPlayerMusicLibraryWidget::markExistingItems(const std::map<xMusicDirectory
 void xPlayerMusicLibraryWidget::filterArtistItems(const QString& filter) {
     // Hide all artist items that do not match the filter.
     if (filter.isEmpty()) {
+        musicLibraryFilter.clear();
         for  (int i = 0; i < musicLibraryTree->topLevelItemCount(); ++i) {
             musicLibraryTree->topLevelItem(i)->setHidden(false);
         }
@@ -387,6 +395,10 @@ void xPlayerMusicLibraryWidget::clearItems() {
     for  (int i = 0; i < musicLibraryTree->topLevelItemCount(); ++i) {
         clearItem(musicLibraryTree->topLevelItem(i), true);
     }
+    // Reenable all hidden items.
+    musicLibraryHideMissingArtists = false;
+    updateMissingArtists();
+    musicLibraryHiddenArtists.clear();
 }
 
 void xPlayerMusicLibraryWidget::clearItem(QTreeWidgetItem* item, bool clearChildren) {
@@ -414,6 +426,9 @@ void xPlayerMusicLibraryWidget::clear() {
     mapArtists.clear();
     mapAlbums.clear();
     mapTracks.clear();
+    // Clear hidden artists.
+    musicLibraryHideMissingArtists = false;
+    musicLibraryHiddenArtists.clear();
 }
 
 void xPlayerMusicLibraryWidget::scanningFinished() {
@@ -492,6 +507,16 @@ void xPlayerMusicLibraryWidget::updateMusicLibraryTree() {
     filterArtistItems(musicLibraryFilter);
 }
 
+void xPlayerMusicLibraryWidget::updateMissingArtists() {
+    // Show hidden artist entries.
+    for (auto&& artist : musicLibraryHiddenArtists) {
+        auto artistItem = mapArtists.find(artist);
+        if (artistItem != mapArtists.end()) {
+            artistItem->second->setHidden(musicLibraryHideMissingArtists);
+        }
+    }
+}
+
 void xPlayerMusicLibraryWidget::openContextMenu(const QPoint &point) {
     // Emit treeItemCtrlClicked.
     if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
@@ -524,5 +549,14 @@ void xPlayerMusicLibraryWidget::openContextMenu(const QPoint &point) {
         musicLibraryTreeLevel = 2;
         musicLibraryTree->expandAll();
     });
+    auto hideArtistAction = new QAction(tr("Hide Missing Artists"));
+    hideArtistAction->setCheckable(true);
+    hideArtistAction->setChecked(musicLibraryHideMissingArtists);
+    connect(hideArtistAction, &QAction::triggered, [=] (bool checked) {
+        musicLibraryHideMissingArtists = checked;
+        updateMissingArtists();
+    });
+    contextMenu.addSeparator();
+    contextMenu.addAction(hideArtistAction);
     contextMenu.exec(mapToGlobal(point));
 }

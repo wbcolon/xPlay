@@ -183,6 +183,8 @@ public slots:
     /**
      * Filter the toplevel artist items according to the given filter.
      *
+     * Use an empty string to disable the artist item filter.
+     *
      * @param filter the filter as string the artist name must contain.
      */
     void filterArtistItems(const QString& filter);
@@ -233,6 +235,10 @@ private slots:
      * Recreate music library tree.
      */
     void updateMusicLibraryTree();
+    /**
+     * Update the visibility of missing artists.
+     */
+    void updateMissingArtists();
 
 private:
     QTreeWidget* musicLibraryTree;
@@ -242,6 +248,8 @@ private:
     bool musicLibraryReady;
     bool musicLibrarySortBySize;
     QBrush musicLibraryItemBackground;
+    bool musicLibraryHideMissingArtists;
+    std::list<xMusicDirectory> musicLibraryHiddenArtists;
     // maps to enable fast access to items.
     std::map<xMusicDirectory,xPlayerMusicLibraryWidgetItem*> mapArtists;
     std::map<xMusicDirectory, std::map<xMusicDirectory, xPlayerMusicLibraryWidgetItem*>> mapAlbums;
