@@ -2,10 +2,10 @@
 
 ## Overview
 
-xPlay is a music/movie player designed for large libraries that may be accessed through a Samba or
-NFS share. Scanning every file is very time consuming and causes significant delays. xPlay therefore
-makes a number of assumptions about the structure of your music or movie library. The layout for the
-music library needs to be as follows.
+xPlay is a music/movie player designed for large music/movie file libraries that may be accessed through a 
+Samba or NFS share. Scanning every file is very time-consuming which may cause significant delays. 
+xPlay therefore makes a number of assumptions about the structure of your music or movie library. 
+The directory structure of the music library needs to be as follows.
 
 * artist/album/track
 
@@ -16,7 +16,7 @@ music library needs to be as follows.
 * iommi/fused/01 dopamine.flac
 
 The movie library is setup differently. It is possible to define tags to which base directories can be
-attached. The movie library scanner will not do a full recursive scan. It will scan only one sub directory
+attached. The movie library scanner will not do a full recursive scan. It will scan only one subdirectory
 further.
 
 *Examples:*
@@ -60,20 +60,15 @@ overwritten and previous movie file is not accessible.
 
 ## Player Backends
 
-### Qt
-
-The Qt backend for the music player is easy to implement using the classes QMediaPlayer and QMediaPlaylist.
-The main disadvantage is the missing gapless playback.
-
 ### Phonon
 
 The Phonon/KDE backend supports gapless playback, but it is a bit more complicated to use. On top, there seems
 to be an issue calculating the length of the currently played track. I worked around this issue by utilizing
-the a muted QMediaPlayer object. The Phonon backend can also be used for the movie player.
+the a muted QMediaPlayer object. The Phonon backend is only used for the music player.
 
 ### VLC
 
-The VLC backend is the default for the movie player. It replaces the earlier Phonon backend due to its stability.
+The VLC backend is used for the movie player. It replaced the earlier Phonon backend due to stability issues.
 xPlay uses the event based method for libVLC without using a QTimer thread to constantly updating the status.
 
 ## Usage
@@ -82,7 +77,7 @@ xPlay has a simple and easy to use UI interface that provides the set on functio
 music and movie player. The main purpose is to navigate a huge library and play the songs or movies and display
 the relevant information.
 
-xPlay has a music view, a movie view and a streaming view. 
+xPlay has a music view, a movie view, a streaming view and a mobile sync view.
 
 ### Music View
 
@@ -224,8 +219,9 @@ It is activated by default for the VLC based movie player. The video output wind
 double-click. In addition you can rewind and forward by 60 seconds using the left and right arrow keys. The up and down
 arrow keys will increase or decrease the volume by one. The *S* key will toggle the scale and crop mode. The *ESC* key
 can be used to end the full window mode. The full window mode will automatically end if the current movie is about to
-end. If the *Autoplay Next* checkbox is enabled then the next movie in the movie list will be played as soon as the
-current movie has ended. The player will stay in fill window mode until the last movie of the list is finished.
+end. If the *Autoplay Next* in the *Options* menu is enabled then the next movie in the movie list will be played as 
+soon as the current movie has ended. The player will stay in fill window mode until the last movie of the list is 
+finished.
 
 ### Streaming View
 
@@ -303,7 +299,7 @@ and the KDE 5.x breeze icons.
 
 * Qt 5.x (https://www.qt.io/)
 * Phonon (https://github.com/KDE/phonon)
-* Qwt 6.x for Qt5 (http://qwt.sf.net) (optional, deactivate with USE_QWT=OFF)
+* Qwt 6.x for Qt5 (http://qwt.sf.net)
 * SQLite3 - The Database Access Library (https://sqlite.org/)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
 * libVLC Library (https://wiki.videolan.org/LibVLC/)
@@ -321,7 +317,6 @@ With Qwt the UI has an improved volume knob and track slider.
     * The GStreamer backend crashed on Ubuntu 20.04 for some movies. Replacing the library
       */usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgsta52dec.so* from *streamer1.0-plugins-ugly* with the
       corresponding library for Ubuntu 20.10 may solve the issue.
-* Music Visualization is only supported with the Phonon music player backend. 
 
 ## Notes
 

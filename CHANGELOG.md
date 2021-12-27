@@ -1,6 +1,19 @@
 # Changelog
 
 
+## 0.11.0 - 2021-12-27
+
+- Remove Phonon based movie player.
+- Add chapter support for movie player.
+- Add deinterlace support for movie player.
+- Replace scale and crop with crop option.
+- Remove Qt based music player.
+- Make Qwt based player widgets the default. Remove corresponding Qt based player widgets.
+- Fix switching to visualization if in artist info view.
+- Update UI for mobile library sync.
+- Some mobile library sync fixes.
+
+
 ## 0.10.3 - 2021-12-11
 
 - Disable music library scanning while syncing mobile library.
