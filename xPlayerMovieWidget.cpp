@@ -215,8 +215,14 @@ void xPlayerMovieWidget::currentMovie(const QString& path, const QString& movie,
     movieLabel->setText(movie);
 }
 
-void xPlayerMovieWidget::currentAudioChannels(const QStringList& audioChannels) {
-    updateComboBoxEntries(audioChannelBox, audioChannels);
+void xPlayerMovieWidget::currentAudioChannels(const QStringList& audioChannels, const QStringList& audioCodecs) {
+    if (updateComboBoxEntries(audioChannelBox, audioChannels)) {
+        if (audioChannels.count() == audioCodecs.count()) {
+            for (auto codec = 0; codec < audioCodecs.count(); ++codec) {
+                audioChannelBox->setItemData(codec, audioCodecs[codec], Qt::ToolTipRole);
+            }
+        }
+    }
 }
 
 void xPlayerMovieWidget::currentSubtitles(const QStringList& subtitles) {
@@ -267,7 +273,7 @@ void xPlayerMovieWidget::fullWindowPressed() {
     }
 }
 
-void xPlayerMovieWidget::updateComboBoxEntries(QComboBox* comboBox, const QStringList& entries) {
+bool xPlayerMovieWidget::updateComboBoxEntries(QComboBox* comboBox, const QStringList& entries) {
     // Avoid constant updates
     qDebug() << "xPlayerMovieWidget: updateComboBoxEntries(0): " << comboBox->count() << ", " << entries.size();
     if (comboBox->count() == entries.size()) {
@@ -277,11 +283,13 @@ void xPlayerMovieWidget::updateComboBoxEntries(QComboBox* comboBox, const QStrin
             if (comboBox->itemText(i) != entries[i]) {
                 comboBox->clear();
                 comboBox->addItems(entries);
-                return;
+                return true;
             }
         }
+        return false;
     } else {
         comboBox->clear();
         comboBox->addItems(entries);
+        return true;
     }
 }

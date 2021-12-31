@@ -164,7 +164,7 @@ void xMoviePlayer::jump(qint64 delta) {
 
 void xMoviePlayer::stop() {
     // Stop (pause and reset to position 0) the media player.
-    libvlc_media_player_pause(movieMediaPlayer);
+    libvlc_media_player_set_pause(movieMediaPlayer, 1);
     libvlc_media_player_set_position(movieMediaPlayer, 0);
     updateCurrentChapter();
     emit currentState(State::StopState);
@@ -219,7 +219,7 @@ void xMoviePlayer::setDeinterlaceMode(bool mode) {
     }
 }
 
-bool xMoviePlayer::deinterlaceMode() {
+bool xMoviePlayer::deinterlaceMode() const {
     return movieMediaDeinterlaceMode;
 }
 
@@ -237,7 +237,7 @@ void xMoviePlayer::setCropAspectRatio(const QString& aspectRatio) {
     }
 }
 
-QString xMoviePlayer::cropAspectRatio() {
+QString xMoviePlayer::cropAspectRatio() const {
     return movieMediaCropAspectRatio;
 }
 
@@ -348,13 +348,15 @@ void xMoviePlayer::scanForAudioAndSubtitles() {
     currentSubtitleDescriptions.clear();
     currentSubtitleDescriptions.push_back(std::make_pair(-1, "disable"));
     QStringList audioChannels;
+    QStringList audioCodecs;
     QStringList subtitles { "disable" };
     for (unsigned i = 0; i < noTracks; ++i) {
          if (movieMediaTracks[i]->i_type == libvlc_track_audio) {
              auto audioChannelDescription = QString(movieMediaTracks[i]->psz_language).toLower();
              updateAudioAndSubtitleDescription(audioChannelDescription);
              auto description = QString(movieMediaTracks[i]->psz_description).toLower();
-             if ((!description.isEmpty()) && (description.compare("stereo") != 0)) {
+             // The descriptions stereo and surround do not add any value. Skip them.
+             if ((!description.isEmpty()) && (description.compare("stereo") != 0) && (description.compare("surround") != 0)) {
                  audioChannelDescription += QString(" (%1)").arg(description);
              }
              if (movieMediaTracks[i]->audio->i_channels > 2) {
@@ -362,6 +364,15 @@ void xMoviePlayer::scanForAudioAndSubtitles() {
              } else {
                  audioChannelDescription += QString(" [stereo]");
              }
+             auto codec = QString(libvlc_media_get_codec_description(libvlc_track_audio, movieMediaTracks[i]->i_codec)).toLower();
+             audioCodecs.push_back(codec);
+             qDebug() << "SAMPLE RATES: " << movieMediaTracks[i]->audio->i_rate;
+             qDebug() << "DESCRIPTION: " << movieMediaTracks[i]->psz_description;
+             qDebug() << "BITRATE: " << movieMediaTracks[i]->i_bitrate;
+             qDebug() << "CODEC: " << movieMediaTracks[i]->i_codec;
+             qDebug() << "CODEC DESC: " << libvlc_media_get_codec_description(libvlc_track_audio, movieMediaTracks[i]->i_codec);
+             qDebug() << "FOURCC: " << movieMediaTracks[i]->i_original_fourcc;
+
              audioChannels.push_back(audioChannelDescription);
              currentAudioChannelDescriptions.push_back(std::make_pair(i, audioChannelDescription));
          }
@@ -404,7 +415,7 @@ void xMoviePlayer::scanForAudioAndSubtitles() {
         }
     }
     // Emit the updates.
-    emit currentAudioChannels(audioChannels);
+    emit currentAudioChannels(audioChannels, audioCodecs);
     emit currentSubtitles(subtitles);
 }
 

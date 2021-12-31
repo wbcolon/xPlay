@@ -57,8 +57,9 @@ public slots:
      * Retrieve the audio channels for the current movie.
      *
      * @param audioChannels the list of strings of audio channels.
+     * @param audioCodecs the list of strings of corresponding audio codecs.
      */
-    void currentAudioChannels(const QStringList& audioChannels);
+    void currentAudioChannels(const QStringList& audioChannels, const QStringList& audioCodecs);
     /**
      * Retrieve the subtitles for the current movie.
      *
@@ -111,8 +112,10 @@ private:
      *
      * @param comboBox an existing combo box widget with entries.
      * @param entries list of new entries to update combo box.
+     *
+     * @return true if the combobox was updated, false otherwise.
      */
-    static void updateComboBoxEntries(QComboBox* comboBox, const QStringList& entries);
+    static bool updateComboBoxEntries(QComboBox* comboBox, const QStringList& entries);
 
     QComboBox* subtitleBox;
     QComboBox* audioChannelBox;

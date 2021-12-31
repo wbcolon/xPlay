@@ -65,8 +65,9 @@ signals:
      * Signal the audio channels available in the current movie.
      *
      * @param audioChannels the audio channels as list of strings.
+     * @param audioCodecs the corresponding audio codecs as list of strings.
      */
-    void currentAudioChannels(const QStringList& audioChannels);
+    void currentAudioChannels(const QStringList& audioChannels, const QStringList& audioCodecs);
     /**
      * Signal the subtitle for the current movie.
      *
@@ -230,7 +231,7 @@ public slots:
      *
      * @return return true if deinterlace is enabled, false otherwise.
      */
-    [[nodiscard]] bool deinterlaceMode();
+    [[nodiscard]] bool deinterlaceMode() const;
     /**
      * Set the aspect ratio geometry used for the video output crop.
      *
@@ -242,7 +243,7 @@ public slots:
      *
      * @return the aspect ratio geometry as string.
      */
-    QString cropAspectRatio();
+    [[nodiscard]] QString cropAspectRatio() const;
     /**
      * Select an audio channel for the current movie.
      *
