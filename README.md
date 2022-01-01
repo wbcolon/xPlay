@@ -26,6 +26,8 @@ further.
 * [shows] /extern/movies-dvd/serien
 * [dokus] /extern/movies-bd/dokumentationen
 
+See the [changelog](CHANGELOG.md) for the latest development progress.
+
 ### Remarks
 
 I was unhappy with the current media players that try to scan and analyze each and every one of my

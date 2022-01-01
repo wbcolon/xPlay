@@ -1,6 +1,13 @@
 # Changelog
 
 
+## unreleased
+
+- Fix toggle play bug in movie player when pressing stop button twice.
+- Drop "surround" description from the audio channels in movie player.
+- Add codec description as tooltip for audio channels in movie player.
+
+
 ## 0.11.0 - 2021-12-27
 
 - Remove Phonon based movie player.
