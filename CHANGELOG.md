@@ -3,9 +3,13 @@
 
 ## unreleased
 
+
+## 0.11.1 - 2022-02-22
+
 - Fix toggle play bug in movie player when pressing stop button twice.
 - Drop "surround" description from the audio channels in movie player.
 - Add codec description as tooltip for audio channels in movie player.
+- Fix phonon playback issue when queueing tracks after the last track is about to finish.
 
 
 ## 0.11.0 - 2021-12-27
