@@ -366,13 +366,6 @@ void xMoviePlayer::scanForAudioAndSubtitles() {
              }
              auto codec = QString(libvlc_media_get_codec_description(libvlc_track_audio, movieMediaTracks[i]->i_codec)).toLower();
              audioCodecs.push_back(codec);
-             qDebug() << "SAMPLE RATES: " << movieMediaTracks[i]->audio->i_rate;
-             qDebug() << "DESCRIPTION: " << movieMediaTracks[i]->psz_description;
-             qDebug() << "BITRATE: " << movieMediaTracks[i]->i_bitrate;
-             qDebug() << "CODEC: " << movieMediaTracks[i]->i_codec;
-             qDebug() << "CODEC DESC: " << libvlc_media_get_codec_description(libvlc_track_audio, movieMediaTracks[i]->i_codec);
-             qDebug() << "FOURCC: " << movieMediaTracks[i]->i_original_fourcc;
-
              audioChannels.push_back(audioChannelDescription);
              currentAudioChannelDescriptions.push_back(std::make_pair(i, audioChannelDescription));
          }
