@@ -19,8 +19,8 @@
 #include <QRandomGenerator>
 #include <cmath>
 
-const int xMusicPlayer_MusicVisualizationSamples = 1024;
-const int xMusicPlayer_MusicVisualizationSamplesFactor = xMusicPlayer_MusicVisualizationSamples * 10;
+constexpr auto xMusicPlayer_MusicVisualizationSamples = 1024;
+constexpr auto xMusicPlayer_MusicVisualizationSamplesFactor = xMusicPlayer_MusicVisualizationSamples * 10;
 
 xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         QObject(parent),
@@ -29,8 +29,9 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         musicVisualizationEnabled(false),
         musicVisualizationSampleRate(44100 / xMusicPlayer_MusicVisualizationSamplesFactor),
         musicPlayerState(State::StopState),
-        useShuffleMode(false) {
-    // Setup the media player.
+        useShuffleMode(false),
+        musicCurrentFinished(false) {
+    // Set up the media player.
     musicPlayer = new Phonon::MediaObject(this);
     musicOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
     musicVisualization = new Phonon::AudioDataOutput(this);
@@ -42,12 +43,12 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     musicPlayer->setTickInterval(500);
     musicOutput->setMuted(false);
     musicVisualization->setDataSize(xMusicPlayer_MusicVisualizationSamples);
-    // Setup the play list.
+    // Set up the play list.
     // Connect QMediaPlayer signals to out music player signals.
     connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayer::currentTrackPlayed);
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayer::currentTrackSource);
     connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayer::stateChanged);
-    connect(musicPlayer, &Phonon::MediaObject::finished, this, &xMusicPlayer::finished);
+    connect(musicPlayer, &Phonon::MediaObject::aboutToFinish, this, &xMusicPlayer::aboutToFinish);
 
     // We only need this one to determine the time due to issues with Phonon
     musicPlayerForTime = new QMediaPlayer(this);
@@ -71,7 +72,7 @@ void xMusicPlayer::queueTracks(const QString& artist, const QString& album, cons
 }
 
 void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
-    // Enable auto play if playlist is currently emtpy and we are in a stopped state..
+    // Enable autoplay if playlist is currently emtpy, and we are in a stopped state.
     autoPlay = autoPlay && ((musicPlayer->queue().empty()) && (musicPlayer->state() == Phonon::StoppedState));
     // Check if there is an invalid or empty file.
     bool noMedia = ((musicPlayer->currentSource().type() == Phonon::MediaSource::Invalid) ||
@@ -98,7 +99,7 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
                 musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
             }
         } else {
-            // No current song was playing. Queue possibly empty. No start index.
+            // No current song was playing. Queue possibly empty. No start index given.
             musicPlaylistPermutation = computePermutation(musicPlaylist.count(), -1);
             // Clear queue and enqueue all entries.
             musicPlayer->clearQueue();
@@ -111,7 +112,7 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
         // If no track currently played and queue empty then currentIndex == -1.
         // Clear queue and enqueue the remaining entries.
         musicPlayer->clearQueue();
-        for (size_t i = currentIndex+1; i < musicPlaylistEntries.size(); ++i) {
+        for (auto i = currentIndex+1; i < static_cast<int>(musicPlaylistEntries.size()); ++i) {
             musicPlayer->enqueue(musicPlaylist[i]);
         }
     }
@@ -153,7 +154,7 @@ void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
     if ((fromIndex >= currentIndex) || (toIndex >= currentIndex)) {
         // Repopulate playlist if move affected the elements to be played.
         musicPlayer->clearQueue();
-        for (size_t i = currentIndex+1; i < musicPlaylistEntries.size(); ++i) {
+        for (auto i = currentIndex+1; i < static_cast<int>(musicPlaylistEntries.size()); ++i) {
             musicPlayer->enqueue(musicPlaylist[i]);
         }
     }
@@ -453,7 +454,7 @@ int xMusicPlayer::getVolume() const {
     return static_cast<int>(std::round(musicOutput->volume()*100.0));
 }
 
-bool xMusicPlayer::supportsVisualization() const {
+bool xMusicPlayer::supportsVisualization() {
     return true;
 }
 
@@ -483,6 +484,7 @@ void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {
         // and the durationChanged signal was triggered.
         musicPlayerForTime->setMedia(QUrl::fromLocalFile(current.fileName()));
         musicPlayerForTime->play();
+        musicCurrentFinished = false;
     }
 }
 
@@ -490,7 +492,7 @@ void xMusicPlayer::stateChanged(Phonon::State newState, Phonon::State oldState) 
     if (newState == Phonon::ErrorState) {
         qCritical() << "xMusicPlayer: error: " << musicPlayer->errorString() << ", track: " << musicPlayer->currentSource();
         if (oldState == Phonon::PlayingState) {
-            qInfo() << "xMusicPlayer: trying to recover...";
+            qInfo() << "xMusicPlayer: trying to recover from error state.";
             play(musicPlaylist.indexOf(musicPlayer->currentSource()));
         }
     } else {
@@ -501,12 +503,19 @@ void xMusicPlayer::stateChanged(Phonon::State newState, Phonon::State oldState) 
                 musicPlayer->stop();
             } else {
                 if (musicPlayerState == State::PlayingState) {
-                    qCritical() << "xMusicPlayer: trying to recover from state error, current track: " << musicPlayer->currentSource();
-                    if (useShuffleMode) {
-                        musicPlayer->stop();
+                    if (musicCurrentFinished) {
+                        // Queued tracks after the aboutToFinish mark are causing issues.
+                        // Phonon stops even though the queue is not empty. Therefor play next track.
                         next();
                     } else {
-                        play(musicPlaylist.indexOf(musicPlayer->currentSource()));
+                        // Actual playback error. We are trying to recover somehow.
+                        qInfo() << "xMusicPlayer: trying to recover from state error, current track: " << musicPlayer->currentSource();
+                        if (useShuffleMode) {
+                            musicPlayer->stop();
+                            next();
+                        } else {
+                            play(musicPlaylist.indexOf(musicPlayer->currentSource()));
+                        }
                     }
                 }
             }
@@ -514,9 +523,12 @@ void xMusicPlayer::stateChanged(Phonon::State newState, Phonon::State oldState) 
     }
 }
 
-void xMusicPlayer::finished() {
+void xMusicPlayer::aboutToFinish() {
+    qCritical() << "xMusicPlayer: finished";
     if (musicPlayer->state() == Phonon::ErrorState) {
         qCritical() << "xMusicPlayer: finished: error: " << musicPlayer->errorString();
+    } else {
+        musicCurrentFinished = true;
     }
 }
 
@@ -545,7 +557,7 @@ void xMusicPlayer::visualizationUpdate(const QMap<Phonon::AudioDataOutput::Chann
 QVector<int> xMusicPlayer::computePermutation(int elements, int startIndex) {
     QList<int> input;
     QVector<int> permutation;
-    // Setup the input with all indices.
+    // Set up the input with all indices.
     for (auto i = 0; i < elements; ++i) {
         input.push_back(i);
     }
@@ -572,7 +584,7 @@ QVector<int> xMusicPlayer::extendPermutation(const QVector<int>& permutation, in
     }
     QList<int> input;
     QVector<int> ePermutation;
-    // Setup the input with all indices.
+    // Set up the input with all indices.
     for (auto i = 0; i < elements; ++i) {
         input.push_back(i);
     }

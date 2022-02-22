@@ -46,7 +46,7 @@ public:
      *
      * @return true if the music player supports visualization, false otherwise.
      */
-    [[nodiscard]] bool supportsVisualization() const;
+    [[nodiscard]] static bool supportsVisualization();
     /**
      * Return the visualization state for the music player
      *
@@ -273,7 +273,7 @@ private slots:
     /**
      * Track finished signal from the phonon media player. Track errors.
      */
-    void finished();
+    void aboutToFinish();
     /**
      * Transform the data from the AudioDataOutput to be used by visualization.
      *
@@ -311,6 +311,8 @@ private:
     int musicVisualizationSampleRate;
     xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;
+    // We need to track if the current track played to work around some phonon issues.
+    bool musicCurrentFinished;
     // Only required due to track length issues with phonon.
     QMediaPlayer* musicPlayerForTime;
 };
