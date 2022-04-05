@@ -12,13 +12,14 @@
  * GNU General Public License for more details.
  */
 
-#include "test_xMusicFile.h"
-#include "test_xMusicDirectory.h"
+#include "test_xMusicLibraryTrackName.h"
+#include "test_xMusicLibraryEntry.h"
 #include "test_xMusicLibrary.h"
 #include "test_xMovieLibrary.h"
 
-#include "xMusicFile.h"
-#include "xMusicDirectory.h"
+#include "xMusicLibraryArtistEntry.h"
+#include "xMusicLibraryAlbumEntry.h"
+#include "xMusicLibraryTrackEntry.h"
 
 #include <tuple>
 
@@ -26,23 +27,24 @@ int main(int argc, char** argv) {
     QApplication app(argc, argv);
 
     // Register Type
-    qRegisterMetaType<xMusicFile>();
-    qRegisterMetaType<xMusicFile*>();
-    qRegisterMetaType<std::list<xMusicFile*>>();
-    qRegisterMetaType<std::vector<xMusicFile*>>();
-    qRegisterMetaType<QList<std::pair<QString, std::vector<xMusicFile*>>>>();
-    qRegisterMetaType<QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicFile*>>>>>>();
-    qRegisterMetaType<xMusicDirectory>();
-    qRegisterMetaType<std::list<xMusicDirectory>>();
+    qRegisterMetaType<xMusicLibraryTrackEntry>();
+    qRegisterMetaType<xMusicLibraryTrackEntry*>();
+    qRegisterMetaType<std::vector<xMusicLibraryTrackEntry*>>();
+    qRegisterMetaType<QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>>();
+    qRegisterMetaType<QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicLibraryTrackEntry*>>>>>>();
+    qRegisterMetaType<xMusicLibraryArtistEntry>();
+    qRegisterMetaType<std::vector<xMusicLibraryArtistEntry*>>();
+    qRegisterMetaType<xMusicLibraryAlbumEntry>();
+    qRegisterMetaType<std::vector<xMusicLibraryAlbumEntry*>>();
     qRegisterMetaType<std::vector<std::pair<QString,QString>>>();
 
-    test_xMusicFile musicFile;
-    test_xMusicDirectory musicDirectory;
+    test_xMusicLibraryTrackEntry musicLibraryTrackEntry;
+    test_xMusicLibraryEntry musicLibraryEntry;
     test_xMusicLibrary musicLibrary;
     test_xMovieLibrary movieLibrary;
 
-    return QTest::qExec(&musicFile, argc, argv) |
-           QTest::qExec(&musicDirectory, argc, argv) |
+    return QTest::qExec(&musicLibraryTrackEntry, argc, argv) |
+           QTest::qExec(&musicLibraryEntry, argc, argv) |
            QTest::qExec(&musicLibrary, argc, argv) |
            QTest::qExec(&movieLibrary, argc, argv);
 }

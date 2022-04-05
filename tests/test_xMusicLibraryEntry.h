@@ -15,16 +15,10 @@
 #include <QtTest>
 #include <QtTestWidgets>
 
-#include "xMusicFile.h"
-
-class test_xMusicFile:public QObject {
+class test_xMusicLibraryEntry: public QObject {
     Q_OBJECT
 
 private slots:
+    void testSimpleAccessFunctions();
     void testAccessFunctions();
-    void testScanInvalidFile();
-    void testScanFlacFile();
-    void testScanHDFlacFile();
-    void testScanWavpackFile();
-    void testScanMP3File();
 };

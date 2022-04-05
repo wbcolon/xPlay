@@ -14,7 +14,9 @@
 
 #include "test_xMusicLibrary.h"
 #include "xPlayerConfiguration.h"
-#include "xMusicFile.h"
+#include "xMusicLibraryArtistEntry.h"
+#include "xMusicLibraryAlbumEntry.h"
+#include "xMusicLibraryTrackEntry.h"
 
 #include <QtTest/QSignalSpy>
 #include <QMetaType>
@@ -48,10 +50,10 @@ void test_xMusicLibrary::testScannedArtists() {
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
-    auto artists = qvariant_cast<std::list<xMusicDirectory>>(spy.at(0).at(0));
+    auto artists = qvariant_cast<std::vector<xMusicLibraryArtistEntry*>>(spy.at(0).at(0));
     QStringList artistNames;
-    for (const auto& artist : artists) {
-        artistNames.push_back(artist.name());
+    for (auto artist : artists) {
+        artistNames.push_back(artist->getArtistName());
     }
     QVERIFY(artistNames == expectedArtistNames);
     spyFinished.wait();
@@ -92,10 +94,10 @@ void test_xMusicLibrary::testScannedArtistsFiltered() {
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
-    auto artists = qvariant_cast<std::list<xMusicDirectory>>(spy.at(0).at(0));
+    auto artists = qvariant_cast<std::vector<xMusicLibraryArtistEntry*>>(spy.at(0).at(0));
     QStringList artistNames;
-    for (const auto& artist : artists) {
-        artistNames.push_back(artist.name());
+    for (auto artist : artists) {
+        artistNames.push_back(artist->getArtistName());
     }
     QVERIFY(artistNames == expectedArtistNames);
 }
@@ -145,14 +147,14 @@ void test_xMusicLibrary::testScannedAlbums() {
     QFETCH(QStringList, expectedAlbumNames);
 
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scannedAlbums);
-    musicLibrary->scanForArtist(xMusicDirectory(artist));
+    musicLibrary->scanForArtist(artist);
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
-    auto albums = qvariant_cast<std::list<xMusicDirectory>>(spy.at(0).at(0));
+    auto albums = qvariant_cast<std::vector<xMusicLibraryAlbumEntry*>>(spy.at(0).at(0));
     QStringList albumNames;
-    for (const auto& album : albums) {
-        albumNames.push_back(album.name());
+    for (auto album : albums) {
+        albumNames.push_back(album->getAlbumName());
     }
     albumNames.sort();
     QVERIFY(albumNames == expectedAlbumNames);
@@ -198,14 +200,14 @@ void test_xMusicLibrary::testScannedAlbumsFilter() {
     filter.setAlbumMatch(albumMatch, albumNotMatch);
     filter.setSearchMatch(std::make_tuple("", searchAlbum, searchTrack));
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scannedAlbums);
-    musicLibrary->scanForArtist(xMusicDirectory(artist), filter);
+    musicLibrary->scanForArtist(artist, filter);
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
-    auto albums = qvariant_cast<std::list<xMusicDirectory>>(spy.at(0).at(0));
+    auto albums = qvariant_cast<std::vector<xMusicLibraryAlbumEntry*>>(spy.at(0).at(0));
     QStringList albumNames;
-    for (const auto& album : albums) {
-        albumNames.push_back(album.name());
+    for (auto album : albums) {
+        albumNames.push_back(album->getAlbumName());
     }
     albumNames.sort();
     QVERIFY(albumNames == expectedAlbumNames);
@@ -307,12 +309,12 @@ void test_xMusicLibrary::testScannedAllAlbumTracks() {
     QFETCH(QStringList, expectedTrackNames);
 
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scannedAllAlbumTracks);
-    musicLibrary->scanAllAlbumsForArtist(xMusicDirectory(artist));
+    musicLibrary->scanAllAlbumsForArtist(artist);
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
     auto artistName = qvariant_cast<QString>(spy.at(0).at(0));
-    auto albumTracks = qvariant_cast<QList<std::pair<QString,std::vector<xMusicFile*>>>>(spy.at(0).at(1));
+    auto albumTracks = qvariant_cast<QList<std::pair<QString,std::vector<xMusicLibraryTrackEntry*>>>>(spy.at(0).at(1));
     QStringList albumNames;
     QStringList trackNames;
     for (const auto& album : albumTracks) {
@@ -363,12 +365,12 @@ void test_xMusicLibrary::testScannedAllAlbumTracksFiltered() {
     filter.setAlbumMatch(albumMatch, albumNotMatch);
     filter.setSearchMatch(std::make_tuple("", searchAlbum, searchTrack));
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scannedAllAlbumTracks);
-    musicLibrary->scanAllAlbumsForArtist(xMusicDirectory(artist), filter);
+    musicLibrary->scanAllAlbumsForArtist(artist, filter);
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
     auto artistName = qvariant_cast<QString>(spy.at(0).at(0));
-    auto albumTracks = qvariant_cast<QList<std::pair<QString,std::vector<xMusicFile*>>>>(spy.at(0).at(1));
+    auto albumTracks = qvariant_cast<QList<std::pair<QString,std::vector<xMusicLibraryTrackEntry*>>>>(spy.at(0).at(1));
     QStringList albumNames;
     for (const auto& album : albumTracks) {
         albumNames.push_back(album.first);
@@ -599,15 +601,11 @@ void test_xMusicLibrary::testScannedListArtistsAllAlbumTracks() {
 
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scannedListArtistsAllAlbumTracks);
     // Convert list of artist names into list of xMusicDirectory
-    std::list<xMusicDirectory> artists;
-    for (const auto& artist : listArtists) {
-        artists.emplace_back(xMusicDirectory(artist));
-    }
-    musicLibrary->scanAllAlbumsForListArtists(artists);
+    musicLibrary->scanAllAlbumsForListArtists(listArtists);
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
-    auto artistAlbumTracks = qvariant_cast<QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicFile*>>>>>>(spy.at(0).at(0));
+    auto artistAlbumTracks = qvariant_cast<QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicLibraryTrackEntry*>>>>>>(spy.at(0).at(0));
     QStringList artistNames;
     QStringList albumNames;
     QStringList trackNames;
@@ -668,15 +666,11 @@ void test_xMusicLibrary::testScannedListArtistsAllAlbumTracksFilter() {
     filter.setSearchMatch(std::make_tuple("", searchAlbum, searchTrack));
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scannedListArtistsAllAlbumTracks);
     // Convert list of artist names into list of xMusicDirectory
-    std::list<xMusicDirectory> artists;
-    for (const auto& artist : listArtists) {
-        artists.emplace_back(xMusicDirectory(artist));
-    }
-    musicLibrary->scanAllAlbumsForListArtists(artists, filter);
+    musicLibrary->scanAllAlbumsForListArtists(listArtists, filter);
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
-    auto artistAlbumTracks = qvariant_cast<QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicFile*>>>>>>(spy.at(0).at(0));
+    auto artistAlbumTracks = qvariant_cast<QList<std::pair<QString,QList<std::pair<QString,std::vector<xMusicLibraryTrackEntry*>>>>>>(spy.at(0).at(0));
     QStringList albumNames;
     for (const auto& artist: artistAlbumTracks) {
         for (const auto& album : artist.second) {
@@ -748,11 +742,11 @@ void test_xMusicLibrary::testScannedTracks() {
     QFETCH(QStringList, expectedTrackNames);
 
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scannedTracks);
-    musicLibrary->scanForArtistAndAlbum(xMusicDirectory(artist), xMusicDirectory(album));
+    musicLibrary->scanForArtistAndAlbum(artist, album);
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
-    auto tracks = qvariant_cast<std::list<xMusicFile*>>(spy.at(0).at(0));
+    auto tracks = qvariant_cast<std::vector<xMusicLibraryTrackEntry*>>(spy.at(0).at(0));
     QStringList trackNames;
     for (auto track : tracks) {
         trackNames.push_back(track->getTrackName());
