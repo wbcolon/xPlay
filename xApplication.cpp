@@ -19,24 +19,31 @@
 #include <QMetaType>
 
 #include "xApplication.h"
-#include "xMusicFile.h"
+#include "xMusicLibraryArtistEntry.h"
+#include "xMusicLibraryAlbumEntry.h"
+#include "xMusicLibraryTrackEntry.h"
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerConfigurationDialog.h"
 #include "xPlayerDatabase.h"
 #include "xPlayerConfig.h"
-#include "xMusicDirectory.h"
 
 xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags),
         musicViewVisualization(nullptr) {
     // Register Type
-    qRegisterMetaType<xMusicFile>();
-    qRegisterMetaType<xMusicFile*>();
-    qRegisterMetaType<std::list<xMusicFile*>>();
-    qRegisterMetaType<std::vector<xMusicFile*>>();
-    qRegisterMetaType<xMusicDirectory>();
-    qRegisterMetaType<std::list<xMusicDirectory>>();
+    qRegisterMetaType<xMusicLibraryTrackEntry>();
+    qRegisterMetaType<xMusicLibraryTrackEntry*>();
+    qRegisterMetaType<std::list<xMusicLibraryTrackEntry*>>();
+    qRegisterMetaType<std::vector<xMusicLibraryTrackEntry*>>();
+    qRegisterMetaType<xMusicLibraryAlbumEntry>();
+    qRegisterMetaType<xMusicLibraryAlbumEntry*>();
+    qRegisterMetaType<std::list<xMusicLibraryAlbumEntry*>>();
+    qRegisterMetaType<std::vector<xMusicLibraryAlbumEntry*>>();
+    qRegisterMetaType<xMusicLibraryArtistEntry>();
+    qRegisterMetaType<xMusicLibraryArtistEntry*>();
+    qRegisterMetaType<std::list<xMusicLibraryArtistEntry*>>();
+    qRegisterMetaType<std::vector<xMusicLibraryArtistEntry*>>();
     // Setup music and movie library.
     musicLibrary = new xMusicLibrary(this);
     movieLibrary = new xMovieLibrary(this);
@@ -70,13 +77,13 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     // Connect music library with main music widget.
     // Commands for the music library.
     connect(mainMusicWidget, SIGNAL(scan(xMusicLibraryFilter)), musicLibrary, SLOT(scan(xMusicLibraryFilter)));
-    connect(mainMusicWidget, SIGNAL(scanForArtist(xMusicDirectory,xMusicLibraryFilter)),
-            musicLibrary, SLOT(scanForArtist(xMusicDirectory,xMusicLibraryFilter)));
+    connect(mainMusicWidget, SIGNAL(scanForArtist(QString,xMusicLibraryFilter)),
+            musicLibrary, SLOT(scanForArtist(QString,xMusicLibraryFilter)));
     connect(mainMusicWidget, &xMainMusicWidget::scanForArtistAndAlbum, musicLibrary, &xMusicLibrary::scanForArtistAndAlbum);
-    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForArtist(xMusicDirectory,xMusicLibraryFilter)),
-            musicLibrary, SLOT(scanAllAlbumsForArtist(xMusicDirectory,xMusicLibraryFilter)));
-    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForListArtists(std::list<xMusicDirectory>,xMusicLibraryFilter)),
-            musicLibrary, SLOT(scanAllAlbumsForListArtists(std::list<xMusicDirectory>,xMusicLibraryFilter)));
+    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForArtist(QString,xMusicLibraryFilter)),
+            musicLibrary, SLOT(scanAllAlbumsForArtist(QString,xMusicLibraryFilter)));
+    connect(mainMusicWidget, SIGNAL(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter)),
+            musicLibrary, SLOT(scanAllAlbumsForListArtists(QStringList,xMusicLibraryFilter)));
     // Results back to the main music widget.
     connect(musicLibrary, &xMusicLibrary::scanningError, this, &xApplication::scanningErrorMusicLibrary);
     connect(musicLibrary, &xMusicLibrary::scannedArtists, mainMusicWidget, &xMainMusicWidget::scannedArtists);
@@ -316,7 +323,7 @@ int xApplication::unknownEntriesDialog(const QString& dialogTitle, const std::li
 void xApplication::setMusicLibraryDirectory() {
     auto musicLibraryDirectory=xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
     mainMusicWidget->clear();
-    musicLibrary->setBaseDirectory(std::filesystem::path(musicLibraryDirectory.toStdString()));
+    musicLibrary->setPath(std::filesystem::path(musicLibraryDirectory.toStdString()));
     qInfo() << "Update music library path to " << musicLibraryDirectory;
 }
 

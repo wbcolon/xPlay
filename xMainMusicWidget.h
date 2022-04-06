@@ -23,7 +23,6 @@
 #include "xPlayerListWidget.h"
 #include "xPlayerArtistInfo.h"
 #include "xPlayerVisualizationWidget.h"
-#include "xMusicDirectory.h"
 
 #include <QGroupBox>
 #include <QString>
@@ -90,28 +89,28 @@ signals:
      * @param artist the artist to scan for.
      * @param filter the filter to be applied.
      */
-    void scanForArtist(const xMusicDirectory& artist, const xMusicLibraryFilter& filter);
+    void scanForArtist(const QString& artist, const xMusicLibraryFilter& filter);
     /**
      * Signal to scan tracks for an artist/album
      *
      * @param artist the artist for the scan.
      * @param album the album for the scan.
      */
-    void scanForArtistAndAlbum(const xMusicDirectory& artist, const xMusicDirectory& album);
+    void scanForArtistAndAlbum(const QString& artist, const QString& album);
     /**
      * Signal to scan and filter all albums and tracks for the given artist.
      *
      * @param artist the artist name for which we can all albums and tracks.
      * @param filter the filter to be applied.
      */
-    void scanAllAlbumsForArtist(const xMusicDirectory& artist, const xMusicLibraryFilter& filter);
+    void scanAllAlbumsForArtist(const QString& artist, const xMusicLibraryFilter& filter);
     /**
      * Signal to scan and filter all albums and tracks for a given list of artists.
      *
      * @param listArtist the list of artists name for which we scan all albums and tracks.
      * @param filter the filter to be applied.
      */
-    void scanAllAlbumsForListArtists(const std::list<xMusicDirectory>& listArtist, const xMusicLibraryFilter& filter);
+    void scanAllAlbumsForListArtists(const QStringList& listArtist, const xMusicLibraryFilter& filter);
     /**
      * Signal a set of tracks to be queued in the playlist.
      *
@@ -119,7 +118,7 @@ signals:
      * @param album the album name for the tracks.
      * @param tracks ordered vector of track objects.
      */
-    void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks);
+    void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicLibraryTrackEntry*>& tracks);
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      */
@@ -144,8 +143,8 @@ signals:
      * @param currentListTracks current number of tracks inserted.
      * @param maxListTracks maximal number of tracks inserted overall.
      */
-    void scanAllAlbumsForListArtistsIterate(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks,
-                                            const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>::const_iterator& listTracksIterator,
+    void scanAllAlbumsForListArtistsIterate(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>>>& listTracks,
+                                            const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>>>::const_iterator& listTracksIterator,
                                             int currentListTracks, int maxListTracks);
 
 public slots:
@@ -158,7 +157,7 @@ public slots:
      *
      * @param artists unordered list of artist names.
      */
-    void scannedArtists(const std::list<xMusicDirectory>& artists);
+    void scannedArtists(const std::vector<xMusicLibraryArtistEntry*>& artists);
     /**
      * Receive the result of the album scan for a given artist.
      *
@@ -167,7 +166,7 @@ public slots:
      *
      * @param albums unordered list of album names.
      */
-    void scannedAlbums(const std::list<xMusicDirectory>& albums);
+    void scannedAlbums(const std::vector<xMusicLibraryAlbumEntry*>& albums);
     /**
      * Receive the result of the track scan for a given artist/album
      *
@@ -176,19 +175,19 @@ public slots:
      *
      * @param tracks unordered list of track objects.
      */
-    void scannedTracks(const std::list<xMusicFile*>& tracks);
+    void scannedTracks(const std::vector<xMusicLibraryTrackEntry*>& tracks);
     /**
      * Receive the result of the all album and track scan for a given artist
      *
      * @param albumTracks sorted list of pairs of album/list of track objects to be queued.
      */
-    void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<xMusicFile*>>>& albumTracks);
+    void scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,std::vector<xMusicLibraryTrackEntry*>>>& albumTracks);
     /**
      * Receive the result of all albums and track scan for a given list of artists.
      *
      * @param listTracks list of pair of album and list of track objects (sorted) for a list of artists.
      */
-    void scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks);
+    void scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>>>& listTracks);
 
 private slots:
     /**
@@ -220,7 +219,7 @@ private slots:
      *
      * @param point position for the context menu.
      */
-    void currentArtistContextMenu(const QPoint& point);
+    void currentArtistRightClicked(const QPoint& point);
     /**
      * Scan for tracks of the selected artist/album.
      *
@@ -240,6 +239,16 @@ private slots:
      * @param albumItem pointer to the currently selected listIndex.
      */
     void queueAlbum(xPlayerListWidgetItem* albumItem);
+    /**
+     * Create context menu for albums.
+     *
+     * Function is triggered by a right-click on an album in the list of
+     * artists. The menu contains the artist info and the top transitions
+     * to and from the current artist.
+     *
+     * @param point position for the context menu.
+     */
+    void currentAlbumRightClicked(const QPoint& point);
     /**
      * Append tracks to the playlist (queue).
      *
@@ -385,6 +394,10 @@ private slots:
      */
     void showTagsDialog();
     /**
+     * Show rename dialog.
+     */
+    QString showRenameDialog(const QString& renameType, const QString& text);
+    /**
      * Show or hide the selector tabs.
      */
     void updatedMusicViewSelectors();
@@ -434,8 +447,8 @@ private slots:
      * @param currentListTracks current number of tracks inserted.
      * @param maxListTracks maximal number of tracks inserted overall.
      */
-    void scannedAllAlbumsForListArtistsWorker(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks,
-                                              const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>::const_iterator& listTracksIterator,
+    void scannedAllAlbumsForListArtistsWorker(const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>>>& listTracks,
+                                              const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>>>::const_iterator& listTracksIterator,
                                               int currentListTracks, int maxListTracks);
 
 private:
@@ -470,23 +483,44 @@ private:
      *
      * @param artists the list of all unfiltered artists.
      */
-    void updateScannedArtists(const std::list<xMusicDirectory>& artists);
+    void updateScannedArtists(const std::vector<xMusicLibraryArtistEntry*>& artists);
     /**
      * Filter the list of artists based on the selected selector.
      *
      * @param artists unfiltered list of artists.
      * @return filtered list of artists that start with the selector string.
      */
-    [[nodiscard]] std::list<xMusicDirectory> filterArtists(const std::list<xMusicDirectory>& artists);
+    [[nodiscard]] std::vector<xMusicLibraryArtistEntry*> filterArtists(const std::vector<xMusicLibraryArtistEntry*>& artists);
     /**
-     * Sort the list of music directory entries.
+     * Sort the vector of artist entries.
      *
      * The sorting is performed by last time written if the corresponding flag is
-     * set, otherwise the list is sorted by name.
+     * set, otherwise the vector is sorted by name.
      *
-     * @param list the list of directory entries to be sorted.
+     * @param artists the vector of artist entries to be sorted.
      */
-    void sortListMusicDirectory(std::list<xMusicDirectory>& list) const;
+    void sortEntries(std::vector<xMusicLibraryArtistEntry*>& artists) const;
+    /**
+     * Sort the vector of album entries.
+     *
+     * The sorting is performed by last time written if the corresponding flag is
+     * set, otherwise the vector is sorted by name.
+     *
+     * @param artists the vector of album entries to be sorted.
+     */
+    void sortEntries(std::vector<xMusicLibraryAlbumEntry*>& albums) const;
+    /**
+     * Sort function for two list widget items.
+     *
+     * The function takes into account if we sort artist, album or track
+     * list items and if we sort according to last written (only for artist
+     * and album).
+     *
+     * @param a pointer to a list widget item
+     * @param b pointer to a list widget item
+     * @return true if a < b, false otherwise.
+     */
+    bool sortListItems(xPlayerListWidgetItem* a, xPlayerListWidgetItem* b) const;
     /**
      * Show tag selection popup menu.
      *
@@ -544,8 +578,8 @@ private:
     /**
      * Store the current list of unfiltered artists and albums for later filtering.
      */
-    std::list<xMusicDirectory> unfilteredArtists;
-    std::list<xMusicDirectory> filteredArtists;
+    std::vector<xMusicLibraryArtistEntry*> unfilteredArtists;
+    std::vector<xMusicLibraryArtistEntry*> filteredArtists;
     /**
      * Currently played artist and album. May differ from currently selected artist and album.
      */

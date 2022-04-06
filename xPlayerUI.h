@@ -32,6 +32,8 @@ const int AlbumListMinimumWidth = 550;
 const int TracksListMinimumWidth = 400;
 const int QueueListMinimumWidth = 400;
 
+const int DialogMinimumWidth = 400;
+
 const int QueueCriticalNumberEntries = 50000;
 
 const int IconSize = 24;

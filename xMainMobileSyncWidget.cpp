@@ -14,7 +14,7 @@
 
 #include "xMainMobileSyncWidget.h"
 #include "xPlayerUI.h"
-#include "xMusicFile.h"
+#include "xMusicLibraryTrackEntry.h"
 
 #include <QApplication>
 #include <QMenu>
@@ -272,10 +272,10 @@ void xMainMobileSyncWidget::actionApplyThread(const std::list<xPlayerMusicLibrar
             return;
         }
         try {
-            if (removeFromItem->musicFile()) {
-                std::filesystem::remove(removeFromItem->musicFile()->getFilePath());
+            if (removeFromItem->trackEntry()) {
+                std::filesystem::remove(removeFromItem->trackEntry()->getPath());
             } else {
-                std::filesystem::remove_all(removeFromItem->musicDirectory().path());
+                std::filesystem::remove_all(removeFromItem->entryPath());
             }
         } catch (const std::filesystem::filesystem_error& error) {
             qCritical() << "Unable to remove item: " << removeFromItem->description() << ", error: " << error.what();
@@ -294,21 +294,21 @@ void xMainMobileSyncWidget::actionApplyThread(const std::list<xPlayerMusicLibrar
             std::filesystem::path destinationPath;
             std::error_code errorCode;
             // Determine source and destination path.
-            destinationPath = mobileLibrary->getBaseDirectory();
-            if (addToItem->musicFile()) {
-                sourcePath = addToItem->musicFile()->getFilePath();
+            destinationPath = mobileLibrary->getPath();
+            if (addToItem->trackEntry()) {
+                sourcePath = addToItem->trackEntry()->getPath();
                 destinationPath = destinationPath /
-                                  addToItem->artist()->musicDirectory().name().toStdString() /
-                                  addToItem->album()->musicDirectory().name().toStdString();
+                                  addToItem->artist()->entryName().toStdString() /
+                                  addToItem->album()->entryName().toStdString();
             } else {
-                sourcePath = addToItem->musicDirectory().path();
+                sourcePath = addToItem->entryPath();
                 if (addToItem->artist()) {
                     destinationPath = destinationPath /
-                                      addToItem->artist()->musicDirectory().name().toStdString() /
-                                      addToItem->musicDirectory().name().toStdString();
+                                      addToItem->artist()->entryName().toStdString() /
+                                      addToItem->entryName().toStdString();
                 } else {
                     destinationPath = destinationPath /
-                                      addToItem->musicDirectory().name().toStdString();
+                                      addToItem->entryName().toStdString();
                 }
             }
             // We do ignore any error while creating directories.
@@ -327,7 +327,7 @@ void xMainMobileSyncWidget::actionApplyThread(const std::list<xPlayerMusicLibrar
 void xMainMobileSyncWidget::actionApplyUpdate(int progress) {
     actionBar->setValue(progress);
     // Determine available space and capacity.
-    auto currentSpaceInfo = std::filesystem::space(mobileLibrary->getBaseDirectory());
+    auto currentSpaceInfo = std::filesystem::space(mobileLibrary->getPath());
     actionStorageBar->setRange(0, static_cast<int>(currentSpaceInfo.capacity / 1048576));
     actionStorageBar->setValue(static_cast<int>((currentSpaceInfo.capacity-currentSpaceInfo.available) / 1048576));
     // Set the progress bar text.
@@ -444,7 +444,7 @@ void xMainMobileSyncWidget::mobileLibraryScanClear() {
         mobileLibraryDirectoryWidget->setEnabled(false);
 
         auto mobileLibraryPath = std::filesystem::path(mobileLibraryDirectory.toStdString());
-        mobileLibraryWidget->setBaseDirectory(mobileLibraryPath);
+        mobileLibraryWidget->setPath(mobileLibraryPath);
         try {
             // Determine available space and capacity.
             mobileLibrarySpaceInfo = std::filesystem::space(mobileLibraryPath);
@@ -476,23 +476,22 @@ void xMainMobileSyncWidget::mobileLibraryScanClear() {
 }
 
 void xMainMobileSyncWidget::mobileLibraryFindItem(xPlayerMusicLibraryWidgetItem* item) {
-    if (item->musicFile()) {
-        mobileLibraryWidget->selectItem(xMusicDirectory(item->musicFile()->getArtist()),
-                                        xMusicDirectory(item->musicFile()->getAlbum()));
+    if (item->trackEntry()) {
+        mobileLibraryWidget->selectItem(item->trackEntry()->getArtistName(), item->trackEntry()->getAlbumName());
     } else {
         if (item->artist()) {
-            mobileLibraryWidget->selectItem(item->artist()->musicDirectory(), item->musicDirectory());
+            mobileLibraryWidget->selectItem(item->artist()->entryName(), item->entryName());
         } else {
-            mobileLibraryWidget->selectItem(item->musicDirectory());
+            mobileLibraryWidget->selectItem(item->entryName());
         }
     }
 }
 
 void xMainMobileSyncWidget::mobileLibrarySaveToExisting() {
-    std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>> equalTracks;
+    std::map<QString, std::map<QString, std::list<xMusicLibraryTrackEntry*>>> equalTracks;
     // Determine equal tracks. The map contains music file pointer from the music library.
-    musicLibrary->getLibraryFiles()->compare(mobileLibrary->getLibraryFiles(), equalTracks);
-    musicLibraryExisting[mobileLibrary->getBaseDirectory()] = equalTracks;
+    musicLibrary->compare(mobileLibrary, equalTracks);
+    musicLibraryExisting[mobileLibrary->getPath()] = equalTracks;
     // Update list of existing mobile libraries.
     updateExistingList();
 }
@@ -533,29 +532,27 @@ void xMainMobileSyncWidget::musicLibraryCompare() {
     actionAddToItems.clear();
     updateActionStorage();
     // Perform compare.
-    std::list<xMusicDirectory> missingArtists, additionalArtists;
-    std::map<xMusicDirectory, std::list<xMusicDirectory>> missingAlbums, additionalAlbums;
-    std::list<xMusicFile*> missingTracks, additionalTracks;
-    std::pair<std::list<xMusicFile*>, std::list<xMusicFile*>> differentTracks;
+    QStringList missingArtists, additionalArtists;
+    std::map<QString, QStringList> missingAlbums, additionalAlbums;
+    std::list<xMusicLibraryTrackEntry*> missingTracks, additionalTracks;
+    std::pair<std::list<xMusicLibraryTrackEntry*>, std::list<xMusicLibraryTrackEntry*>> differentTracks;
 
-    musicLibrary->getLibraryFiles()->compare(mobileLibrary->getLibraryFiles(),
-                                             missingArtists, additionalArtists,
-                                             missingAlbums, additionalAlbums,
-                                             missingTracks, additionalTracks, differentTracks);
+    musicLibrary->compare(mobileLibrary, missingArtists, additionalArtists,
+                          missingAlbums, additionalAlbums,
+                          missingTracks, additionalTracks, differentTracks);
     // Mark music and mobile library.
     musicLibraryWidget->markItems(missingArtists, missingAlbums, missingTracks, differentTracks.first);
     mobileLibraryWidget->markItems(additionalArtists, additionalAlbums, additionalTracks, differentTracks.second);
 }
 
 void xMainMobileSyncWidget::musicLibraryFindItem(xPlayerMusicLibraryWidgetItem* item) {
-    if (item->musicFile()) {
-        musicLibraryWidget->selectItem(xMusicDirectory(item->musicFile()->getArtist()),
-                                       xMusicDirectory(item->musicFile()->getAlbum()));
+    if (item->trackEntry()) {
+        musicLibraryWidget->selectItem(item->trackEntry()->getArtistName(), item->trackEntry()->getAlbumName());
     } else {
         if (item->artist()) {
-            musicLibraryWidget->selectItem(item->artist()->musicDirectory(), item->musicDirectory());
+            musicLibraryWidget->selectItem(item->artist()->entryName(), item->entryName());
         } else {
-            musicLibraryWidget->selectItem(item->musicDirectory());
+            musicLibraryWidget->selectItem(item->entryName());
         }
     }
 }
@@ -574,7 +571,6 @@ void xMainMobileSyncWidget::musicLibraryReady() {
     musicLibraryExistingWidget->setEnabled(true);
     musicLibrarySortBySize->setEnabled(true);
 }
-
 
 void xMainMobileSyncWidget::updateActionStorage() {
     // Determine total size of add operations.

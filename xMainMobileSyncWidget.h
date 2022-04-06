@@ -194,7 +194,7 @@ private:
     QPushButton* musicLibraryMarksButton;
     QPushButton* musicLibraryExistingButton;
     QListWidget* musicLibraryExistingWidget;
-    std::map<std::filesystem::path, std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>> musicLibraryExisting;
+    std::map<std::filesystem::path, std::map<QString, std::map<QString, std::list<xMusicLibraryTrackEntry*>>>> musicLibraryExisting;
     xMusicLibrary* mobileLibrary;
     xPlayerMusicLibraryWidget* mobileLibraryWidget;
     QGroupBox* mobileLibraryFilter;

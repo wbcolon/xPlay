@@ -23,8 +23,9 @@
 class xPlayerMusicLibraryWidgetItem:public QTreeWidgetItem {
 
 public:
-    explicit xPlayerMusicLibraryWidgetItem(const xMusicDirectory& entry, xPlayerMusicLibraryWidgetItem* parent=nullptr);
-    explicit xPlayerMusicLibraryWidgetItem(xMusicFile* file, xPlayerMusicLibraryWidgetItem* parent);
+    explicit xPlayerMusicLibraryWidgetItem(const QString& entryName, const std::filesystem::path& entryPath,
+                                           xPlayerMusicLibraryWidgetItem* parent=nullptr);
+    explicit xPlayerMusicLibraryWidgetItem(xMusicLibraryTrackEntry* file, xPlayerMusicLibraryWidgetItem* parent);
     ~xPlayerMusicLibraryWidgetItem() override = default;
     /**
      * Return the total size cached in the item.
@@ -89,17 +90,23 @@ public:
      */
     [[nodiscard]] xPlayerMusicLibraryWidgetItem* album() const;
     /**
-     * Return the music file object for this item in the tree.
+     * Return the name for this item in the tree.
      *
-     * @return a pointer to the music file.
+     * @return the entry name as string.
      */
-    [[nodiscard]] xMusicFile* musicFile() const;
+    [[nodiscard]] const QString& entryName() const;
     /**
-     * Return the music directory for this item in the tree.
+     * Return the path for this item in the tree.
      *
-     * @return a music director structure.
+     * @return the path for the entry.
      */
-    [[nodiscard]] const xMusicDirectory& musicDirectory() const;
+    [[nodiscard]] const std::filesystem::path& entryPath() const;
+    /**
+     * Return the track entry object for this item in the tree.
+     *
+     * @return a pointer to the track entry.
+     */
+    [[nodiscard]] xMusicLibraryTrackEntry* trackEntry() const;
     /**
      * Return a description of the entry.
      *
@@ -108,8 +115,9 @@ public:
     [[nodiscard]] QString description() const;
 
 private:
-    xMusicDirectory itemMusicDirectory;
-    xMusicFile* itemMusicFile;
+    QString itemEntryName;
+    std::filesystem::path itemEntryPath;
+    xMusicLibraryTrackEntry* itemTrackEntry;
     std::uintmax_t itemTotalSize;
     xPlayerMusicLibraryWidgetItem* itemParent;
     QBrush itemSaveBackground;
@@ -127,7 +135,7 @@ public:
      *
      * @param base the new base directory as path.
      */
-    void setBaseDirectory(const std::filesystem::path& base);
+    void setPath(const std::filesystem::path& base);
     /**
      * Enable or disable the sorting by size mode.
      *
@@ -145,14 +153,14 @@ public:
      *
      * @param artist the given artist to be selected.
      */
-    void selectItem(const xMusicDirectory& artist);
+    void selectItem(const QString& artist);
     /**
      * Select a specific album item for an artist.
      *
      * @param artist the given artist.
      * @param album the given album to be selected.
      */
-    void selectItem(const xMusicDirectory& artist, const xMusicDirectory& album);
+    void selectItem(const QString& artist, const QString& album);
     /**
      * Return the item located at the given position.
      *
@@ -168,16 +176,16 @@ public:
      * @param missingTracks the list of missing tracks for existing artists and albums.
      * @param differentTracks the list of tracks that have the same relative path, but are different.
      */
-    void markItems(const std::list<xMusicDirectory>& missingArtists,
-                   const std::map<xMusicDirectory, std::list<xMusicDirectory>>& missingAlbums,
-                   const std::list<xMusicFile*> &missingTracks,
-                   const std::list<xMusicFile*> &differentTracks);
+    void markItems(const QStringList& missingArtists,
+                   const std::map<QString, QStringList>& missingAlbums,
+                   const std::list<xMusicLibraryTrackEntry*> &missingTracks,
+                   const std::list<xMusicLibraryTrackEntry*> &differentTracks);
     /**
      * Mark the existing items in the music library tree.
      *
      * @param existingTracks the map of tracks that already exist.
      */
-    void markExistingItems(const std::map<xMusicDirectory, std::map<xMusicDirectory, std::list<xMusicFile*>>>& existingTracks);
+    void markExistingItems(const std::map<QString, std::map<QString, std::list<xMusicLibraryTrackEntry*>>>& existingTracks);
 
 public slots:
     /**
@@ -249,11 +257,11 @@ private:
     bool musicLibrarySortBySize;
     QBrush musicLibraryItemBackground;
     bool musicLibraryHideMissingArtists;
-    std::list<xMusicDirectory> musicLibraryHiddenArtists;
+    QStringList musicLibraryHiddenArtists;
     // maps to enable fast access to items.
-    std::map<xMusicDirectory,xPlayerMusicLibraryWidgetItem*> mapArtists;
-    std::map<xMusicDirectory, std::map<xMusicDirectory, xPlayerMusicLibraryWidgetItem*>> mapAlbums;
-    std::map<xMusicFile*, xPlayerMusicLibraryWidgetItem*> mapTracks;
+    std::map<QString,xPlayerMusicLibraryWidgetItem*> mapArtists;
+    std::map<QString, std::map<QString, xPlayerMusicLibraryWidgetItem*>> mapAlbums;
+    std::map<xMusicLibraryTrackEntry*, xPlayerMusicLibraryWidgetItem*> mapTracks;
 };
 
 #endif

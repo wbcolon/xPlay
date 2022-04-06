@@ -16,6 +16,7 @@
 #define __XPLAYERLISTWIDGET_H__
 
 #include "xPlayerUI.h"
+#include "xMusicLibraryEntry.h"
 
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -25,12 +26,14 @@
 
 #include <map>
 
-class xMusicFile;
 
+// Qt does not support templates with signals and slots mechanism.
 class xPlayerListWidgetItem:public QTreeWidgetItem {
 public:
     explicit xPlayerListWidgetItem(const QString& text, QTreeWidget* parent);
-    explicit xPlayerListWidgetItem(xMusicFile* file, QTreeWidget* parent);
+    explicit xPlayerListWidgetItem(xMusicLibraryArtistEntry* artist, QTreeWidget* parent);
+    explicit xPlayerListWidgetItem(xMusicLibraryAlbumEntry* album, QTreeWidget* parent);
+    explicit xPlayerListWidgetItem(xMusicLibraryTrackEntry* track, QTreeWidget* parent);
     ~xPlayerListWidgetItem() override = default;
     /**
      * Set an icon for the list item.
@@ -78,11 +81,19 @@ public:
      */
     [[nodiscard]] int textWidth() const;
     /**
-     * Return the music file for the list item.
+     * Update the text of the list item.
      *
-     * @return a pointer to the music file, nullptr if no attached.
+     * The text is updated from a connected artist, album and track entry object.
      */
-    [[nodiscard]] xMusicFile* musicFile() const;
+    void updateText();
+    /**
+     * Return the entry object associated with the list item.
+     *
+     * @return a pointer to the artist, album or track object, nullptr if no attached.
+     */
+    [[nodiscard]] xMusicLibraryArtistEntry* artistEntry() const;
+    [[nodiscard]] xMusicLibraryAlbumEntry* albumEntry() const;
+    [[nodiscard]] xMusicLibraryTrackEntry* trackEntry() const;
     /**
      * Determine the time for the list item. No UI update.
      */
@@ -98,8 +109,11 @@ private:
     QString itemText;
     int itemTextWidth;
     QString itemTooltip;
-    xMusicFile* itemFile;
+    xMusicLibraryArtistEntry* itemArtistEntry;
+    xMusicLibraryAlbumEntry* itemAlbumEntry;
+    xMusicLibraryTrackEntry* itemTrackEntry;
 };
+
 
 class xPlayerListWidget:public QTreeWidget {
     Q_OBJECT
@@ -134,29 +148,33 @@ public:
     /**
      * Add item to the list.
      *
-     * @param file pointer to the associated music file object.
+     * @param entry pointer to the associated music library entry object.
      */
-    void addListItem(xMusicFile* file);
+    void addListItem(xMusicLibraryArtistEntry* entry);
+    void addListItem(xMusicLibraryAlbumEntry* entry);
+    void addListItem(xMusicLibraryTrackEntry* entry);
     /**
      * Add item with tooltip to the list.
      *
-     * @param file pointer to the associated music file object.
+     * @param entry pointer to the associated music library entry object.
      * @param tooltip the text of the tooltip as string.
      */
-    void addListItem(xMusicFile* file, const QString& tooltip);
+    void addListItem(xMusicLibraryArtistEntry* entry, const QString& tooltip);
+    void addListItem(xMusicLibraryAlbumEntry* entry, const QString& tooltip);
+    void addListItem(xMusicLibraryTrackEntry* entry, const QString& tooltip);
     /**
      * Add vector of items with tooltip to the list.
      *
      * @param files vector of pointer to the associated music file objects.
      * @param tooltip  the text of the tooltip as string.
      */
-    void addListItems(const std::vector<xMusicFile*>& files, const QString& tooltip);
+    void addListItems(const std::vector<xMusicLibraryTrackEntry*>& entries, const QString& tooltip);
     /**
      * Add list of pairs of tooltip and item vector.
      *
      * @param files list of pairs of tooltip and vector of pointer to associated music file objects.
      */
-    void addListItems(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files);
+    void addListItems(const QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>& entries);
     /**
      * Find the list item that match the given text.
      *
@@ -223,6 +241,15 @@ public:
      */
     int count();
     /**
+     * Refresh item entries.
+     *
+     * Sort item entries according to the lessThan function if given. All entries are removed from
+     * the list and then reinserted.
+     *
+     * @param lesserThan function that defines the order of two list widget items.
+     */
+    void refreshItems(std::function<bool (xPlayerListWidgetItem*, xPlayerListWidgetItem*)> lesserThan = nullptr);
+    /**
      * Update all list items.
      *
      * Run time consuming updates in a separate thread.
@@ -285,13 +312,13 @@ signals:
     /**
      * Signal used to update larger list in stages.
      *
-     * @param files list of pairs of tooltip and vector of pointer to associated music file objects.
-     * @param fileIterator iterator to the list element to be added.
+     * @param entries list of pairs of tooltip and vector of pointer to associated music library entries.
+     * @param entryIterator iterator to the list element to be added.
      * @param currentFiles current number of files inserted.
      * @param maxFiles maximal number of files inserted overall.
      */
-    void itemWidgetsIterate(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files,
-                            QList<std::pair<QString, std::vector<xMusicFile*>>>::const_iterator fileIterator,
+    void itemWidgetsIterate(const QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>& entries,
+                            QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>::const_iterator entryIterator,
                             int currentFiles, int maxFiles);
     /**
      * Signal emitted when inserted in stages.
@@ -352,8 +379,8 @@ private:
      * @param currentFiles current number of files inserted.
      * @param maxFiles maximal number of files inserted overall.
      */
-    void addItemWidgetsWorker(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files,
-                              QList<std::pair<QString, std::vector<xMusicFile*>>>::const_iterator filesIterator,
+    void addItemWidgetsWorker(const QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>& entries,
+                              QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>::const_iterator entriesIterator,
                               int currentFiles, int maxFiles);
 
     bool sortItems;

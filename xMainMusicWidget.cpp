@@ -12,7 +12,9 @@
  * GNU General Public License for more details.
  */
 #include "xMainMusicWidget.h"
-#include "xMusicFile.h"
+#include "xMusicLibraryArtistEntry.h"
+#include "xMusicLibraryAlbumEntry.h"
+#include "xMusicLibraryTrackEntry.h"
 #include "xPlayerMusicSearchWidget.h"
 #include "xPlayerMusicWidget.h"
 #include "xPlayerDatabase.h"
@@ -20,7 +22,6 @@
 #include "xPlayerConfiguration.h"
 #include "xPlayerPlaylistDialog.h"
 #include "xPlayerTagsDialog.h"
-#include "xMusicDirectory.h"
 
 #include <QGroupBox>
 #include <QListWidget>
@@ -32,6 +33,7 @@
 #include <QCheckBox>
 #include <QMenu>
 #include <QMessageBox>
+#include <QInputDialog>
 #include <QTimer>
 #include <random>
 #include <iterator>
@@ -44,6 +46,7 @@ auto xMainMusicWidget::addListWidgetGroupBox(const QString& boxLabel, bool displ
     auto groupBox = new QGroupBox(boxLabel, parent);
     groupBox->setFlat(xPlayer::UseFlatGroupBox);
     auto list = new xPlayerListWidget(groupBox, displayTime);
+    list->setContextMenuPolicy(Qt::CustomContextMenu);
     auto boxLayout = new QVBoxLayout();
     boxLayout->addWidget(list);
     groupBox->setLayout(boxLayout);
@@ -84,14 +87,12 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Sort entries in artist/album/track
     artistList = artistList_;
     artistList->enableSorting(false);
-    artistList->setContextMenuPolicy(Qt::CustomContextMenu);
     artistList->setMinimumWidth(xPlayer::ArtistListMinimumWidth);
     albumList = albumList_;
     albumList->enableSorting(false);
     albumList->setMinimumWidth(xPlayer::AlbumListMinimumWidth);
     trackList = trackList_;
     trackList->enableSorting(true);
-    trackList->setContextMenuPolicy(Qt::CustomContextMenu);
     trackList->setMinimumWidth(xPlayer::TracksListMinimumWidth);
     trackBox = trackBox_;
     // Local filters.
@@ -134,7 +135,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
     // Does the music player support visualization.
-    if (musicPlayer->supportsVisualization()) {
+    if (xMusicPlayer::supportsVisualization()) {
         musicVisualizationWidget = new xPlayerVisualizationWidget(musicStacked);
         // Connect music visualization view
         connect(musicPlayer, &xMusicPlayer::visualizationStereo,
@@ -224,7 +225,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Connect queue playlist dialog.
     connect(queuePlaylistButton, &QPushButton::pressed, this, &xMainMusicWidget::showPlaylistDialog);
     // Right click.
-    connect(artistList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentArtistContextMenu);
+    connect(artistList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentArtistRightClicked);
+    connect(albumList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentAlbumRightClicked);
     connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentTrackRightClicked);
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRightClicked);
     // Connect music player to main widget for queue update.
@@ -269,14 +271,14 @@ void xMainMusicWidget::clear() {
     useSortingLatest = false;
 }
 
-void xMainMusicWidget::scannedArtists(const std::list<xMusicDirectory>& artists) {
+void xMainMusicWidget::scannedArtists(const std::vector<xMusicLibraryArtistEntry*>& artists) {
     std::set<QString> selectors;
     // Save unfiltered list.
     unfilteredArtists = artists;
     // Use unfiltered list for selectors update
-    for (const auto& artist : artists) {
+    for (auto artist : artists) {
         // Convert selectors to lower-case.
-        selectors.insert(artist.name().left(1).toLower());
+        selectors.insert(artist->getArtistName().left(1).toLower());
     }
     // Update the selector based upon the added artists.
     artistSelectorList->updateSelectors(selectors);
@@ -284,15 +286,15 @@ void xMainMusicWidget::scannedArtists(const std::list<xMusicDirectory>& artists)
     updateScannedArtists(artists);
 }
 
-void xMainMusicWidget::updateScannedArtists(const std::list<xMusicDirectory>& artists) {
+void xMainMusicWidget::updateScannedArtists(const std::vector<xMusicLibraryArtistEntry*>& artists) {
     // Clear artist, album and track lists
     artistList->clearItems();
     albumList->clearItems();
     clearTrackList();
     // Not very efficient to use a filtered and the unfiltered list, but easier to read.
     filteredArtists = filterArtists(artists);
-    for (const auto& artist : filteredArtists) {
-        artistList->addListItem(artist.name());
+    for (auto artist : filteredArtists) {
+        artistList->addListItem(artist);
     }
     // Update database overlay for artists.
     updatePlayedArtists();
@@ -302,23 +304,23 @@ void xMainMusicWidget::updateScannedArtists(const std::list<xMusicDirectory>& ar
     }
 }
 
-void xMainMusicWidget::scannedAlbums(const std::list<xMusicDirectory>& albums) {
+void xMainMusicWidget::scannedAlbums(const std::vector<xMusicLibraryAlbumEntry*>& albums) {
     auto sortedAlbums = albums;
-    sortListMusicDirectory(sortedAlbums);
+    sortEntries(sortedAlbums);
     // Clear album and track lists
     albumList->clearItems();
     clearTrackList();
-    for (const auto& album : sortedAlbums) {
-        albumList->addListItem(album.name());
+    for (auto album : sortedAlbums) {
+        albumList->addListItem(album);
     }
     // Update database overlay for albums.
     updatePlayedAlbums();
 }
 
-void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
+void xMainMusicWidget::scannedTracks(const std::vector<xMusicLibraryTrackEntry*>& tracks) {
     // Clear only track list and stop potential running update thread.
     clearTrackList();
-    for (const auto& track : tracks) {
+    for (auto track : tracks) {
         trackList->addListItem(track);
     }
     // Update database overlay for tracks. Run in separate thread.
@@ -328,7 +330,7 @@ void xMainMusicWidget::scannedTracks(const std::list<xMusicFile*>& tracks) {
 }
 
 void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<std::pair<QString,
-                                             std::vector<xMusicFile*>>>& albumTracks) {
+                                             std::vector<xMusicLibraryTrackEntry*>>>& albumTracks) {
     for (const auto& albumTrack : albumTracks) {
         queueList->addListItems(albumTrack.second, QString("%1 - %2").arg(artist, albumTrack.first));
         emit queueTracks(artist, albumTrack.first, albumTrack.second);
@@ -341,7 +343,7 @@ void xMainMusicWidget::scannedAllAlbumTracks(const QString& artist, const QList<
 }
 
 void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QString, QList<std::pair<QString,
-                                                        std::vector<xMusicFile*>>>>>& listTracks) {
+                                                        std::vector<xMusicLibraryTrackEntry*>>>>>& listTracks) {
     // Compute the number of files to be inserted.
     int maxListTracks = 0;
     for (const auto& listElem : listTracks) {
@@ -403,8 +405,8 @@ void xMainMusicWidget::scannedListArtistsAllAlbumTracks(const QList<std::pair<QS
 }
 
 void xMainMusicWidget::scannedAllAlbumsForListArtistsWorker(
-        const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>& listTracks,
-        const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicFile*>>>>>::const_iterator& listTracksIterator,
+        const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>>>& listTracks,
+        const QList<std::pair<QString, QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>>>::const_iterator& listTracksIterator,
         int currentFiles, int maxFiles) {
 
     if (listTracksIterator != listTracks.end()) {
@@ -443,49 +445,78 @@ void xMainMusicWidget::scannedAllAlbumsForListArtistsWorker(
     }
 }
 
-std::list<xMusicDirectory> xMainMusicWidget::filterArtists(const std::list<xMusicDirectory>& artists) {
+std::vector<xMusicLibraryArtistEntry*> xMainMusicWidget::filterArtists(const std::vector<xMusicLibraryArtistEntry*>& artists) {
     // Check if a selector is selected. We sort the list if necessary.
-    std::list<xMusicDirectory> filtered;
+    std::vector<xMusicLibraryArtistEntry*> filtered;
     if (!currentArtistSelector.isEmpty()) {
         // Do not filter if we have selector "none" currentArtistSelector.
         if (currentArtistSelector.compare(tr("none"), Qt::CaseInsensitive) == 0) {
             filtered = artists;
-            sortListMusicDirectory(filtered);
+            sortEntries(filtered);
             return filtered;
         }
         // Do not filter if we have selector "random" currentArtistSelector. Just randomize list.
         if (currentArtistSelector.compare(tr("random"), Qt::CaseInsensitive) == 0) {
             filtered = artists;
             // Not a very efficient way to shuffle the entries...
-            std::vector<xMusicDirectory> shuffleFiltered(artists.begin(), artists.end());
+            std::vector<xMusicLibraryArtistEntry*> shuffleFiltered(artists.begin(), artists.end());
             std::shuffle(shuffleFiltered.begin(), shuffleFiltered.end(), std::mt19937(std::random_device()()));
             std::copy(shuffleFiltered.begin(), shuffleFiltered.end(), filtered.begin());
             return filtered;
         }
         // Go through list of artists and only add the ones to the filtered
         // list that start with the selector character.
-        for (const auto& artist : artists) {
+        for (auto artist : artists) {
             // Convert to lower-case before checking against artist selector.
-            if (artist.name().toLower().startsWith(currentArtistSelector)) {
+            if (artist->getArtistName().toLower().startsWith(currentArtistSelector)) {
                 filtered.push_back(artist);
             }
         }
-        sortListMusicDirectory(filtered);
+        sortEntries(filtered);
         return filtered;
     }
     // No artist selector enabled. Return sorted list of artists.
     filtered = artists;
-    sortListMusicDirectory(filtered);
+    sortEntries(filtered);
     return filtered;
 }
 
-void xMainMusicWidget::sortListMusicDirectory(std::list<xMusicDirectory>& list) const {
+void xMainMusicWidget::sortEntries(std::vector<xMusicLibraryAlbumEntry*>& albums) const {
     if (useSortingLatest) {
-        list.sort([](const xMusicDirectory& a, const xMusicDirectory& b) {
-            return a.lastWritten() > b.lastWritten();
+        std::sort(albums.begin(), albums.end(), [](xMusicLibraryAlbumEntry* a, xMusicLibraryAlbumEntry* b) {
+            return a->getLastWritten() > b->getLastWritten();
         });
     } else {
-        list.sort();
+        std::sort(albums.begin(), albums.end(), [](xMusicLibraryAlbumEntry* a, xMusicLibraryAlbumEntry* b) {
+            return a->getAlbumName().toLower() < b->getAlbumName().toLower();
+        });
+    }
+}
+
+void xMainMusicWidget::sortEntries(std::vector<xMusicLibraryArtistEntry*>& artists) const {
+    if (useSortingLatest) {
+        std::sort(artists.begin(), artists.end(), [](xMusicLibraryArtistEntry* a, xMusicLibraryArtistEntry* b) {
+            return a->getLastWritten() > b->getLastWritten();
+        });
+    } else {
+        std::sort(artists.begin(), artists.end(), [](xMusicLibraryArtistEntry* a, xMusicLibraryArtistEntry* b) {
+            return a->getArtistName().toLower() < b->getArtistName().toLower();
+        });
+    }
+}
+
+bool xMainMusicWidget::sortListItems(xPlayerListWidgetItem* a, xPlayerListWidgetItem* b) const {
+    if (useSortingLatest) {
+        if (a->artistEntry() && b->artistEntry()) {
+            return a->artistEntry()->getLastWritten() > b->artistEntry()->getLastWritten();
+        }
+        if (a->albumEntry() && b->albumEntry()) {
+            return a->albumEntry()->getLastWritten() > b->albumEntry()->getLastWritten();
+        }
+        // tracks entries are always sorted according to their name even if useSortingLatest is set.
+        return a->text().toLower() < b->text().toLower();
+    } else {
+        return a->text().toLower() < b->text().toLower();
     }
 }
 
@@ -493,8 +524,7 @@ void xMainMusicWidget::selectArtist(int index) {
     // Check if artist listIndex is valid.
     if ((index >= 0) && (index < artistList->count())) {
         // Retrieve selected artist name and trigger scanForArtist
-        xMusicDirectory artist(artistList->listItem(index)->text());
-        emit scanForArtist(artist, musicLibraryFilter);
+        emit scanForArtist(artistList->listItem(index)->text(), musicLibraryFilter);
     }
 }
 
@@ -504,31 +534,41 @@ void xMainMusicWidget::queueArtist(xPlayerListWidgetItem* artistItem) {
     if ((index >= 0) && (index < artistList->count())) {
         // Retrieve selected listIndex name and trigger scanAllAlbumsForArtist
         QApplication::setOverrideCursor(Qt::WaitCursor);
-        emit scanAllAlbumsForArtist(xMusicDirectory(artistList->listItem(index)->text()), musicLibraryFilter);
+        emit scanAllAlbumsForArtist(artistList->listItem(index)->text(), musicLibraryFilter);
     }
 }
 
-void xMainMusicWidget::currentArtistContextMenu(const QPoint& point) {
+void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
     auto artistItem = artistList->itemAt(point);
     if (artistItem) {
-        QMenu artistMenu;
-        // Add section for artist info website.
-        artistMenu.addSection(tr("Artist Info"));
-        artistMenu.addAction(tr("Link To Website"), this, [=] () {
-            musicStacked->setCurrentWidget(musicInfoView);
-            musicInfoView->show(artistItem->text());
-        });
-        // Add section for artist transitions.
-        auto artistTransitions = xPlayerDatabase::database()->getArtistTransitions(artistItem->text());
-        if (!artistTransitions.empty()) {
-            artistMenu.addSection(tr("Other Artists"));
-            for (size_t i = 0; (i < artistTransitions.size()) && (i < 10); ++i) {
-                artistMenu.addAction(artistTransitions[i].first, [=]() {
-                    artistList->setCurrentItem(artistTransitions[i].first);
-                });
+        if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            auto newArtistName = showRenameDialog("Artist", artistItem->artistEntry()->getArtistName());
+            if (artistItem->artistEntry()->rename(newArtistName)) {
+                // Refresh artist list and selector list.
+                scannedArtists(unfilteredArtists);
+            } else {
+                qCritical() << "Unable to rename artist entry: " << newArtistName;
             }
+        } else {
+            QMenu artistMenu;
+            // Add section for artist info website.
+            artistMenu.addSection(tr("Artist Info"));
+            artistMenu.addAction(tr("Link To Website"), this, [=] () {
+                musicStacked->setCurrentWidget(musicInfoView);
+                musicInfoView->show(artistItem->text());
+            });
+            // Add section for artist transitions.
+            auto artistTransitions = xPlayerDatabase::database()->getArtistTransitions(artistItem->text());
+            if (!artistTransitions.empty()) {
+                artistMenu.addSection(tr("Other Artists"));
+                for (size_t i = 0; (i < artistTransitions.size()) && (i < 10); ++i) {
+                    artistMenu.addAction(artistTransitions[i].first, [=]() {
+                        artistList->setCurrentItem(artistTransitions[i].first);
+                    });
+                }
+            }
+            artistMenu.exec(artistList->mapToGlobal(point));
         }
-        artistMenu.exec(artistList->mapToGlobal(point));
     }
 }
 
@@ -537,8 +577,8 @@ void xMainMusicWidget::selectAlbum(int index) {
     if ((index >= 0) && (index < albumList->count())) {
         // Retrieve selected artist and listIndex name and
         // trigger scanForArtistAndAlbum
-        xMusicDirectory artist(artistList->currentItem()->text());
-        xMusicDirectory album(albumList->listItem(index)->text());
+        auto artist = artistList->currentItem()->text();
+        auto album = albumList->listItem(index)->text();
         emit scanForArtistAndAlbum(artist, album);
     }
 }
@@ -552,6 +592,21 @@ void xMainMusicWidget::queueAlbum(xPlayerListWidgetItem* albumItem) {
     }
 }
 
+void xMainMusicWidget::currentAlbumRightClicked(const QPoint& point) {
+    auto albumItem = albumList->itemAt(point);
+    if (albumItem) {
+        if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            auto newAlbumName = showRenameDialog("Album", albumItem->albumEntry()->getAlbumName());
+            if (albumItem->albumEntry()->rename(newAlbumName)) {
+                albumItem->updateText();
+                albumList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
+            } else {
+                qCritical() << "Unable to rename album entry: " << newAlbumName;
+            }
+        }
+    }
+}
+
 void xMainMusicWidget::selectTrack(xPlayerListWidgetItem* trackItem) {
     // Retrieve listIndex for the selected listItem and check if it's valid.
     auto track = trackList->listIndex(trackItem);
@@ -561,11 +616,11 @@ void xMainMusicWidget::selectTrack(xPlayerListWidgetItem* trackItem) {
         auto albumName = albumList->currentItem()->text();
         // Retrieve all track names from the selected listIndex to
         // the end of the album.
-        std::vector<xMusicFile*> trackObjects;
+        std::vector<xMusicLibraryTrackEntry*> trackObjects;
         QString trackName;
         for (auto i = track; i < trackList->count(); ++i) {
             trackName = trackList->listItem(i)->text();
-            auto trackObject = musicLibrary->getLibraryFiles()->getMusicFile(artistName, albumName, trackName);
+            auto trackObject = musicLibrary->getTrackEntry(artistName, albumName, trackName);
             if (trackObject != nullptr) {
                 trackObjects.push_back(trackObject);
             }
@@ -603,7 +658,11 @@ void xMainMusicWidget::queueArtistSelector(const QString& selector) {
         updateScannedArtists(unfilteredArtists);
         // Trigger scanAllAlbumsForListArtist with given list of artists.
         QApplication::setOverrideCursor(Qt::WaitCursor);
-        emit scanAllAlbumsForListArtists(filteredArtists, musicLibraryFilter);
+        QStringList filteredArtistNames;
+        for (auto filteredArtist : filteredArtists) {
+            filteredArtistNames.push_back(filteredArtist->getArtistName());
+        }
+        emit scanAllAlbumsForListArtists(filteredArtistNames, musicLibraryFilter);
     }
 }
 
@@ -712,11 +771,11 @@ void xMainMusicWidget::currentQueueTrackCtrlClicked(xPlayerListWidgetItem* track
         auto track = queueList->listIndex(trackItem);
         if ((track >= 0) && (track< queueList->count())) {
             // Access the information stored in the track.
-            auto musicFile = queueList->listItem(track)->musicFile();
+            auto trackEntry = queueList->listItem(track)->trackEntry();
             // Try to select the artist.
-            if (artistList->setCurrentItem(musicFile->getArtist())) {
+            if (artistList->setCurrentItem(trackEntry->getArtistName())) {
                 // Try to select the album.
-                albumList->setCurrentItem(musicFile->getAlbum());
+                albumList->setCurrentItem(trackEntry->getAlbumName());
             }
         }
     }
@@ -775,7 +834,7 @@ void xMainMusicWidget::updatedMusicViewSelectors() {
 }
 
 void xMainMusicWidget::updatedMusicViewVisualization() {
-    if (musicPlayer->supportsVisualization()) {
+    if (xMusicPlayer::supportsVisualization()) {
         musicVisualizationEnabled = xPlayerConfiguration::configuration()->getMusicViewVisualization();
         musicPlayer->setVisualization(musicVisualizationEnabled);
         if (musicVisualizationEnabled) {
@@ -826,17 +885,16 @@ void xMainMusicWidget::updatedMusicLibraryAlbumSelectors() {
 }
 
 void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
-    if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
-        // Retrieve currently selected element
-        auto track = trackList->currentListIndex();
-        if ((track >= 0) && (track < trackList->count())) {
+    auto trackItem = trackList->itemAt(point);
+    if (trackItem) {
+        if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
             // Retrieve selected artist and album name.
-            auto artistName = artistList->currentItem()->text();
-            auto albumName = albumList->currentItem()->text();
+            auto artistName = trackItem->trackEntry()->getArtistName();
+            auto albumName = trackItem->trackEntry()->getAlbumName();
             // Retrieve only selected track
-            std::vector<xMusicFile *> trackObjects;
-            QString trackName = trackList->listItem(track)->text();
-            auto trackObject = musicLibrary->getLibraryFiles()->getMusicFile(artistName, albumName, trackName);
+            std::vector<xMusicLibraryTrackEntry*> trackObjects;
+            QString trackName = trackItem->trackEntry()->getTrackName();
+            auto trackObject = musicLibrary->getTrackEntry(artistName, albumName, trackName);
             if (trackObject == nullptr) {
                 qCritical() << "xMainMusicWidget: unable to find music file object in library for "
                             << artistName + "/" + albumName + "/" + trackName;
@@ -851,9 +909,17 @@ void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
             emit finishedQueueTracks(true);
             // Update items.
             queueList->updateItems();
+        } else if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            auto newTrackName = showRenameDialog("Track Name", trackItem->trackEntry()->getTrackName());
+            if (trackItem->trackEntry()->rename(newTrackName)) {
+                trackItem->updateText();
+                trackList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
+            } else {
+                qCritical() << "Unable to rename artist entry: " << newTrackName;
+            }
+        } else {
+            tagPopupMenu(trackList, point);
         }
-    } else {
-        tagPopupMenu(trackList, point);
     }
 }
 
@@ -1043,8 +1109,7 @@ void xMainMusicWidget::playlist(const std::vector<std::tuple<QString,QString,QSt
     queueList->clearItems();
     for (const auto& entry : entries) {
         // Add to the playlist (queue)
-        auto trackObject = musicLibrary->getLibraryFiles()->
-                getMusicFile(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
+        auto trackObject = musicLibrary->getTrackEntry(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
         if (trackObject) {
             queueList->addListItem(trackObject, QString("%1 - %2").arg(std::get<0>(entry), std::get<1>(entry)));
         }
@@ -1073,6 +1138,39 @@ void xMainMusicWidget::showTagsDialog() {
     }
 }
 
+QString xMainMusicWidget::showRenameDialog(const QString& renameType, const QString& text) {
+    // Setup rename dialog.
+    auto renameDialog = new QDialog(this);
+    auto currentTextInput = new QLineEdit(renameDialog);
+    currentTextInput->setText(text);
+    currentTextInput->setReadOnly(true);
+    auto renameTextInput = new QLineEdit(renameDialog);
+    renameTextInput->setText(text);
+    auto renameDialogButtons = new QDialogButtonBox(QDialogButtonBox::Reset | QDialogButtonBox::Apply | QDialogButtonBox::Discard, renameDialog);
+    auto renameLayout = new xPlayerLayout();
+    renameLayout->addWidget(new QLabel(QString("Current %1").arg(renameType), renameDialog), 0, 0);
+    renameLayout->addWidget(currentTextInput, 1, 0);
+    renameLayout->addRowSpacer(2, xPlayerLayout::MediumSpace);
+    renameLayout->addWidget(new QLabel(QString("New %1").arg(renameType), renameDialog), 3, 0);
+    renameLayout->addWidget(renameTextInput, 4, 0);
+    renameLayout->addRowSpacer(5, xPlayerLayout::LargeSpace);
+    renameLayout->addWidget(renameDialogButtons, 6, 0);
+    renameDialog->setLayout(renameLayout);
+    renameDialog->setWindowTitle(QString("Rename %1").arg(renameType));
+    renameDialog->setMinimumWidth(xPlayer::DialogMinimumWidth);
+    // Connect buttons.
+    connect(renameDialogButtons->button(QDialogButtonBox::Discard), &QPushButton::pressed, renameDialog, &QDialog::reject);
+    connect(renameDialogButtons->button(QDialogButtonBox::Apply), &QPushButton::pressed, renameDialog, &QDialog::accept);
+    connect(renameDialogButtons->button(QDialogButtonBox::Reset), &QPushButton::pressed, [renameTextInput,text]() {
+        renameTextInput->setText(text);
+    });
+    if (renameDialog->exec() == QDialog::Accepted) {
+        return renameTextInput->text();
+    } else {
+        return text;
+    }
+}
+
 void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point) {
     auto item = list->itemAt(point);
     if (!item) {
@@ -1085,9 +1183,9 @@ void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point
         return;
     }
     // Track info.
-    auto artist = item->musicFile()->getArtist();
-    auto album = item->musicFile()->getAlbum();
-    auto trackname = item->musicFile()->getTrackName();
+    auto artist = item->trackEntry()->getArtistName();
+    auto album = item->trackEntry()->getAlbumName();
+    auto trackname = item->trackEntry()->getTrackName();
     // Read current tags for track.
     auto tags = xPlayerDatabase::database()->getTags(artist, album, trackname);
     // Get all available tags.

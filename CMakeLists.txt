@@ -51,9 +51,12 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${SQLITE3_INCLUDE_DIRS})
 
 set(xPlay_sources
-        xMusicFile.cpp
-        xMusicDirectory.cpp
+        xMusicLibraryEntry.cpp
+        xMusicLibraryArtistEntry.cpp
+        xMusicLibraryAlbumEntry.cpp
+        xMusicLibraryTrackEntry.cpp
         xMusicLibrary.cpp
+        xMusicLibraryFilter.cpp
         xMovieLibrary.cpp
         xPlayerConfig.h.in
         xPlayerUI.cpp
@@ -99,8 +102,8 @@ set(xPlay_libraries
 if (USE_TESTS)
     add_executable(test_xPlay
             ${xPlay_sources}
-            tests/test_xMusicFile.cpp
-            tests/test_xMusicDirectory.cpp
+            tests/test_xMusicLibraryTrackName.cpp
+            tests/test_xMusicLibraryEntry.cpp
             tests/test_xMusicLibrary.cpp
             tests/test_xMovieLibrary.cpp
             tests/test_xPlay.cpp)

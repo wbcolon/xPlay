@@ -14,27 +14,31 @@
 
 #include "xPlayerMusicLibraryWidget.h"
 #include "xPlayerUI.h"
-#include "xMusicFile.h"
+#include "xMusicLibraryArtistEntry.h"
+#include "xMusicLibraryAlbumEntry.h"
+#include "xMusicLibraryTrackEntry.h"
 
 #include <QApplication>
 #include <QHeaderView>
 #include <QMenu>
 #include <QDebug>
 
-xPlayerMusicLibraryWidgetItem::xPlayerMusicLibraryWidgetItem(const xMusicDirectory& entry, xPlayerMusicLibraryWidgetItem* parent):
-        QTreeWidgetItem(QStringList(entry.name())),
-        itemMusicDirectory(entry),
-        itemMusicFile(nullptr),
+xPlayerMusicLibraryWidgetItem::xPlayerMusicLibraryWidgetItem(const QString& entry, const std::filesystem::path& path,
+                                                             xPlayerMusicLibraryWidgetItem* parent):
+        QTreeWidgetItem(QStringList(entry)),
+        itemEntryName(entry),
+        itemEntryPath(path),
+        itemTrackEntry(nullptr),
         itemTotalSize(0),
         itemParent(parent) {
     setTextAlignment(1, Qt::AlignRight);
     itemSaveBackground = background(0);
 }
 
-xPlayerMusicLibraryWidgetItem::xPlayerMusicLibraryWidgetItem(xMusicFile* file, xPlayerMusicLibraryWidgetItem* parent):
-        QTreeWidgetItem(QStringList(file->getTrackName())),
-        itemMusicDirectory(),
-        itemMusicFile(file),
+xPlayerMusicLibraryWidgetItem::xPlayerMusicLibraryWidgetItem(xMusicLibraryTrackEntry* track, xPlayerMusicLibraryWidgetItem* parent):
+        QTreeWidgetItem(QStringList(track->getTrackName())),
+        itemEntryName(),
+        itemTrackEntry(track),
         itemTotalSize(0),
         itemParent(parent) {
     setTextAlignment(1, Qt::AlignRight);
@@ -163,7 +167,7 @@ bool xPlayerMusicLibraryWidgetItem::isChildOf(xPlayerMusicLibraryWidgetItem* ite
 }
 
 xPlayerMusicLibraryWidgetItem* xPlayerMusicLibraryWidgetItem::artist() const {
-    if (itemMusicFile) {
+    if (itemTrackEntry) {
         if (itemParent) {
             return itemParent->itemParent;
         }
@@ -174,29 +178,33 @@ xPlayerMusicLibraryWidgetItem* xPlayerMusicLibraryWidgetItem::artist() const {
 }
 
 xPlayerMusicLibraryWidgetItem* xPlayerMusicLibraryWidgetItem::album() const {
-    if (itemMusicFile) {
+    if (itemTrackEntry) {
         return itemParent;
     }
     return nullptr;
 }
 
-xMusicFile* xPlayerMusicLibraryWidgetItem::musicFile() const {
-    return itemMusicFile;
+const QString& xPlayerMusicLibraryWidgetItem::entryName() const {
+    return itemEntryName;
 }
 
-const xMusicDirectory& xPlayerMusicLibraryWidgetItem::musicDirectory() const {
-    return itemMusicDirectory;
+const std::filesystem::path& xPlayerMusicLibraryWidgetItem::entryPath() const {
+    return itemEntryPath;
+}
+
+xMusicLibraryTrackEntry* xPlayerMusicLibraryWidgetItem::trackEntry() const {
+    return itemTrackEntry;
 }
 
 QString xPlayerMusicLibraryWidgetItem::description() const {
     QString desc;
-    if (itemMusicFile) {
-        desc = QString("%1/%2/%3").arg(itemMusicFile->getArtist(), itemMusicFile->getAlbum(), itemMusicFile->getTrackName());
+    if (itemTrackEntry) {
+        desc = QString("%1/%2/%3").arg(itemTrackEntry->getArtistName(), itemTrackEntry->getAlbumName(), itemTrackEntry->getTrackName());
     } else {
         if (itemParent) {
-            desc = QString("%1/%2").arg(itemParent->musicDirectory().name(), itemMusicDirectory.name());
+            desc = QString("%1/%2").arg(itemParent->entryName(), itemEntryName);
         } else {
-            desc = itemMusicDirectory.name();
+            desc = itemEntryName;
         }
     }
     if (!text(1).isEmpty()) {
@@ -205,7 +213,6 @@ QString xPlayerMusicLibraryWidgetItem::description() const {
         return desc;
     }
 }
-
 
 xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, const QString& name, QWidget* parent):
         QGroupBox(name, parent),
@@ -242,12 +249,12 @@ xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, con
     });
 }
 
-void xPlayerMusicLibraryWidget::setBaseDirectory(const std::filesystem::path &base) {
+void xPlayerMusicLibraryWidget::setPath(const std::filesystem::path &base) {
     // Clear everything before we initiate a scan.
     clear();
     // Initiate a new scan.
     musicLibraryReady = false;
-    musicLibrary->setBaseDirectory(base);
+    musicLibrary->setPath(base);
 }
 
 void xPlayerMusicLibraryWidget::setSortBySize(bool enabled) {
@@ -259,10 +266,10 @@ bool xPlayerMusicLibraryWidget::isReady() const {
     return musicLibraryReady;
 }
 
-void xPlayerMusicLibraryWidget::selectItem(const xMusicDirectory& artist) {
+void xPlayerMusicLibraryWidget::selectItem(const QString& artist) {
     for (int i = 0; i < musicLibraryTree->topLevelItemCount(); ++i) {
         auto artistItem = reinterpret_cast<xPlayerMusicLibraryWidgetItem*>(musicLibraryTree->topLevelItem(i));
-        if (artistItem->musicDirectory().name() == artist.name()) {
+        if (artistItem->entryName() == artist) {
             musicLibraryTree->setCurrentItem(artistItem);
             musicLibraryTree->scrollToItem(artistItem);
             return;
@@ -270,13 +277,13 @@ void xPlayerMusicLibraryWidget::selectItem(const xMusicDirectory& artist) {
     }
 }
 
-void xPlayerMusicLibraryWidget::selectItem(const xMusicDirectory& artist, const xMusicDirectory& album) {
+void xPlayerMusicLibraryWidget::selectItem(const QString& artist, const QString& album) {
     for (int i = 0; i < musicLibraryTree->topLevelItemCount(); ++i) {
         auto artistItem = reinterpret_cast<xPlayerMusicLibraryWidgetItem*>(musicLibraryTree->topLevelItem(i));
-        if (artistItem->musicDirectory().name() == artist.name()) {
+        if (artistItem->entryName() == artist) {
             for (int j = 0; j < artistItem->childCount(); ++j) {
                 auto albumItem = reinterpret_cast<xPlayerMusicLibraryWidgetItem*>(artistItem->child(j));
-                if (albumItem->musicDirectory().name() == album.name()) {
+                if (albumItem->entryName() == album) {
                     musicLibraryTree->setCurrentItem(albumItem);
                     return;
                 }
@@ -295,10 +302,10 @@ xPlayerMusicLibraryWidgetItem* xPlayerMusicLibraryWidget::itemAt(const QPoint& p
     }
 }
 
-void xPlayerMusicLibraryWidget::markItems(const std::list<xMusicDirectory>& missingArtists,
-                                          const std::map<xMusicDirectory, std::list<xMusicDirectory>>& missingAlbums,
-                                          const std::list<xMusicFile*>& missingTracks,
-                                          const std::list<xMusicFile*>& differentTracks) {
+void xPlayerMusicLibraryWidget::markItems(const QStringList& missingArtists,
+                                          const std::map<QString, QStringList>& missingAlbums,
+                                          const std::list<xMusicLibraryTrackEntry*>& missingTracks,
+                                          const std::list<xMusicLibraryTrackEntry*>& differentTracks) {
     // Remove any markings.
     clearItems();
     // Mark the missing artists.
@@ -350,8 +357,8 @@ void xPlayerMusicLibraryWidget::markItems(const std::list<xMusicDirectory>& miss
     }
 }
 
-void xPlayerMusicLibraryWidget::markExistingItems(const std::map<xMusicDirectory, std::map<xMusicDirectory,
-                                                  std::list<xMusicFile*>>>& existingTracks) {
+void xPlayerMusicLibraryWidget::markExistingItems(const std::map<QString, std::map<QString,
+                                                  std::list<xMusicLibraryTrackEntry*>>>& existingTracks) {
     // Go through the map and mark all items.
     for (const auto& artist : existingTracks) {
         auto albumsForArtist = mapAlbums.find(artist.first);
@@ -435,19 +442,19 @@ void xPlayerMusicLibraryWidget::scanningFinished() {
     // Cleanup everything.
     clear();
     // Create new music library tree.
-    auto artists = musicLibrary->getLibraryFiles()->getArtists();
-    for (const auto& artist : artists) {
-        auto artistItem = new xPlayerMusicLibraryWidgetItem(artist);
-        artistItem->updateTotalSize(musicLibrary->getLibraryFiles()->getTotalSize(artist));
-        mapArtists[artist] = artistItem;
-        std::map<xMusicDirectory, xPlayerMusicLibraryWidgetItem*> mapAlbumsForArtist;
-        auto albums = musicLibrary->getLibraryFiles()->getAlbums(artist);
-        for (const auto& album : albums) {
-            auto albumItem = new xPlayerMusicLibraryWidgetItem(album, artistItem);
-            albumItem->updateTotalSize(musicLibrary->getLibraryFiles()->getTotalSize(artist, album));
+    auto artists = musicLibrary->getArtists();
+    for (auto artist : artists) {
+        auto artistItem = new xPlayerMusicLibraryWidgetItem(artist->getArtistName(), artist->getPath());
+        artistItem->updateTotalSize(artist->getTotalSize());
+        mapArtists[artist->getArtistName()] = artistItem;
+        std::map<QString, xPlayerMusicLibraryWidgetItem*> mapAlbumsForArtist;
+        auto albums = artist->getAlbums();
+        for (auto album : albums) {
+            auto albumItem = new xPlayerMusicLibraryWidgetItem(album->getAlbumName(), album->getPath(), artistItem);
+            albumItem->updateTotalSize(album->getTotalSize());
             artistItem->addChild(albumItem);
-            mapAlbumsForArtist[album] = albumItem;
-            auto tracks = musicLibrary->getLibraryFiles()->getMusicFiles(artist, album);
+            mapAlbumsForArtist[album->getAlbumName()] = albumItem;
+            auto tracks = album->getTracks();
             for (auto track : tracks) {
                 auto trackItem = new xPlayerMusicLibraryWidgetItem(track, albumItem);
                 mapTracks[track] = trackItem;
@@ -456,7 +463,7 @@ void xPlayerMusicLibraryWidget::scanningFinished() {
             albumItem->setExpanded(musicLibraryTreeLevel >= 2);
         }
         artistItem->setExpanded(musicLibraryTreeLevel >= 1);
-        mapAlbums[artist] = mapAlbumsForArtist;
+        mapAlbums[artist->getArtistName()] = mapAlbumsForArtist;
     }
     // Widget now ready for business...
     musicLibraryReady = true;

@@ -144,7 +144,7 @@ public slots:
      * @param album the album name for all queued tracks.
      * @param tracks vector of music file objects.
      */
-    void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks);
+    void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicLibraryTrackEntry*>& tracks);
     /**
      * Indicate end of queueing tracks and hand over to the actual player.
      *
@@ -301,7 +301,7 @@ private:
     static QVector<int> extendPermutation(const QVector<int>& permutation, int elements, int extendIndex);
 
     xMusicLibrary* musicLibrary;
-    std::vector<std::tuple<QString,QString,xMusicFile*>> musicPlaylistEntries;
+    std::vector<std::tuple<QString,QString,xMusicLibraryTrackEntry*>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;
     QVector<int> musicPlaylistPermutation;
     Phonon::MediaObject* musicPlayer;

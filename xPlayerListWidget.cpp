@@ -13,7 +13,9 @@
  */
 
 #include "xPlayerListWidget.h"
-#include "xMusicFile.h"
+#include "xMusicLibraryArtistEntry.h"
+#include "xMusicLibraryAlbumEntry.h"
+#include "xMusicLibraryTrackEntry.h"
 #include "xPlayerUI.h"
 
 #include <QResizeEvent>
@@ -22,6 +24,7 @@
 #include <QDebug>
 #include <QTreeWidget>
 #include <QCoreApplication>
+#include <utility>
 
 xPlayerListWidgetItem::xPlayerListWidgetItem(const QString& text, QTreeWidget* parent):
         QTreeWidgetItem(parent),
@@ -29,35 +32,67 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(const QString& text, QTreeWidget* p
         itemTime(0),
         itemText(text),
         itemTooltip(),
-        itemFile(nullptr) {
+        itemArtistEntry(nullptr),
+        itemAlbumEntry(nullptr),
+        itemTrackEntry(nullptr) {
     Q_ASSERT(parent != nullptr);
     setText(0, text);
     itemTextWidth = parent->fontMetrics().width(itemText+"...");
 }
 
-xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicFile* file, QTreeWidget* parent):
+xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryArtistEntry* artist, QTreeWidget* parent):
+        QTreeWidgetItem(parent),
+        itemTimeUpdated(true),
+        itemTime(0),
+        itemTooltip(),
+        itemArtistEntry(artist),
+        itemAlbumEntry(nullptr),
+        itemTrackEntry(nullptr) {
+    Q_ASSERT(parent != nullptr);
+    Q_ASSERT(artist != nullptr);
+    itemText = itemArtistEntry->getArtistName();
+    setText(0, itemText);
+    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+}
+
+xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryAlbumEntry* album, QTreeWidget* parent):
+        QTreeWidgetItem(parent),
+        itemTimeUpdated(true),
+        itemTime(0),
+        itemTooltip(),
+        itemArtistEntry(nullptr),
+        itemAlbumEntry(album),
+        itemTrackEntry(nullptr) {
+    Q_ASSERT(parent != nullptr);
+    Q_ASSERT(album != nullptr);
+    itemText = itemAlbumEntry->getAlbumName();
+    setText(0, itemText);
+    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+}
+
+xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryTrackEntry* track, QTreeWidget* parent):
         QTreeWidgetItem(parent),
         itemTimeUpdated(false),
         itemTime(0),
         itemText(),
         itemTextWidth(0),
         itemTooltip(),
-        itemFile(file) {
+        itemArtistEntry(nullptr),
+        itemAlbumEntry(nullptr),
+        itemTrackEntry(track) {
     Q_ASSERT(parent != nullptr);
+    Q_ASSERT(track != nullptr);
     setTextAlignment(1, Qt::AlignRight);
-    if (itemFile) {
-        itemText = itemFile->getTrackName();
-        // Only update the time in the constructor if it was already scanned. The update will force a scan if necessary.
-        if (itemFile->isScanned()) {
-            updateTime();
-            updateTimeDisplay();
-        }
-    } else {
-        itemText = "<Missing xMusicFile>";
+    itemText = itemTrackEntry->getTrackName();
+    // Only update the time in the constructor if it was already scanned. The update will force a scan if necessary.
+    if (itemTrackEntry->isScanned()) {
+        updateTime();
+        updateTimeDisplay();
     }
     setText(0, itemText);
     itemTextWidth = parent->fontMetrics().width(itemText+"...");
 }
+
 
 void xPlayerListWidgetItem::setIcon(const QString& fileName) {
     if (fileName.isEmpty()) {
@@ -101,24 +136,44 @@ int xPlayerListWidgetItem::textWidth() const {
     return itemTextWidth;
 }
 
-xMusicFile* xPlayerListWidgetItem::musicFile() const {
-    return itemFile;
+void xPlayerListWidgetItem::updateText() {
+    if (itemTrackEntry) {
+        itemText = itemTrackEntry->getTrackName();
+    } else if (itemAlbumEntry) {
+        itemText = itemAlbumEntry->getAlbumName();
+    } else if (itemArtistEntry) {
+        itemText = itemArtistEntry->getArtistName();
+    }
+    setText(0, itemText);
+    // TODO: update itemWidth.
+    updateToolTip();
+}
+
+xMusicLibraryArtistEntry* xPlayerListWidgetItem::artistEntry() const {
+    return itemArtistEntry;
+}
+
+xMusicLibraryAlbumEntry* xPlayerListWidgetItem::albumEntry() const {
+    return itemAlbumEntry;
+}
+
+xMusicLibraryTrackEntry* xPlayerListWidgetItem::trackEntry() const {
+    return itemTrackEntry;
 }
 
 qint64 xPlayerListWidgetItem::updateTime() {
-    if ((!itemTimeUpdated) && (itemFile)) {
-        itemTime = itemFile->getLength();
+    if ((itemTrackEntry) && (!itemTimeUpdated)) {
+        itemTime = itemTrackEntry->getLength();
         itemTimeUpdated = true;
     }
     return itemTime;
 }
 
 void xPlayerListWidgetItem::updateTimeDisplay() {
-    if (itemTimeUpdated) {
+    if ((itemTrackEntry) && (itemTimeUpdated)) {
         setText(1, QString("%1:%2").arg(itemTime/60000).arg((itemTime/1000)%60, 2, 10, QChar('0')));
     }
 }
-
 
 xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
         QTreeWidget(parent),
@@ -144,10 +199,10 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
         }
     });
     connect(this, &QTreeWidget::itemDoubleClicked, [=](QTreeWidgetItem* item, int) {
-        emit listItemDoubleClicked(reinterpret_cast<xPlayerListWidgetItem *>(item));
+        emit listItemDoubleClicked(reinterpret_cast<xPlayerListWidgetItem*>(item));
     });
     connect(this, &QTreeWidget::itemClicked, [=](QTreeWidgetItem* item, int) {
-        emit listItemClicked(reinterpret_cast<xPlayerListWidgetItem *>(item));
+        emit listItemClicked(reinterpret_cast<xPlayerListWidgetItem*>(item));
     });
     connect(this, &xPlayerListWidget::updateTime, [=](xPlayerListWidgetItem* item) {
         item->updateTimeDisplay();
@@ -170,8 +225,16 @@ void xPlayerListWidget::addListItem(const QString& text, const QString& tooltip)
     }
 }
 
-void xPlayerListWidget::addListItem(xMusicFile* file) {
-    addListItem(file, QString());
+void xPlayerListWidget::addListItem(xMusicLibraryArtistEntry* entry) {
+    addListItem(entry, QString());
+}
+
+void xPlayerListWidget::addListItem(xMusicLibraryAlbumEntry* entry) {
+    addListItem(entry, QString());
+}
+
+void xPlayerListWidget::addListItem(xMusicLibraryTrackEntry* entry) {
+    addListItem(entry, QString());
 }
 
 void xPlayerListWidget::addListItems(const QStringList& list) {
@@ -180,45 +243,66 @@ void xPlayerListWidget::addListItems(const QStringList& list) {
     }
 }
 
-void xPlayerListWidget::addListItem(xMusicFile* file, const QString& tooltip) {
-    auto item = new xPlayerListWidgetItem(file, this);
+void xPlayerListWidget::addListItem(xMusicLibraryArtistEntry* entry, const QString& tooltip) {
+    auto item = new xPlayerListWidgetItem(entry, this);
     // Add tooltip.
     item->addToolTip(tooltip);
-    addListWidgetItem(item, file->getTrackName());
+    addListWidgetItem(item, entry->getArtistName());
     if (!currentMatch.isEmpty()) {
         updateFilter(currentMatch);
     }
 }
 
-void xPlayerListWidget::addListItems(const std::vector<xMusicFile*>& files, const QString& tooltip) {
-    for (const auto& file : files) {
-        auto item = new xPlayerListWidgetItem(file, this);
+void xPlayerListWidget::addListItem(xMusicLibraryAlbumEntry* entry, const QString& tooltip) {
+    auto item = new xPlayerListWidgetItem(entry, this);
+    // Add tooltip.
+    item->addToolTip(tooltip);
+    addListWidgetItem(item, entry->getAlbumName());
+    if (!currentMatch.isEmpty()) {
+        updateFilter(currentMatch);
+    }
+}
+
+void xPlayerListWidget::addListItem(xMusicLibraryTrackEntry* entry, const QString& tooltip) {
+    auto item = new xPlayerListWidgetItem(entry, this);
+    // Add tooltip.
+    item->addToolTip(tooltip);
+    addListWidgetItem(item, entry->getTrackName());
+    if (!currentMatch.isEmpty()) {
+        updateFilter(currentMatch);
+    }
+}
+
+void xPlayerListWidget::addListItems(const std::vector<xMusicLibraryTrackEntry*>& entries, const QString& tooltip) {
+    for (const auto& entry : entries) {
+        auto item = new xPlayerListWidgetItem(entry, this);
         // Add tooltip.
         item->addToolTip(tooltip);
-        addListWidgetItem(item, file->getTrackName());
+        addListWidgetItem(item, entry->getName());
         // Update filter.
         if (!currentMatch.isEmpty()) {
             item->setHidden(!item->text().contains(currentMatch, Qt::CaseInsensitive));
         }
     }
 }
-void xPlayerListWidget::addListItems(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files) {
+
+void xPlayerListWidget::addListItems(const QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>& entries) {
     int maxFiles = 0;
-    for (const auto& file : files) {
-        maxFiles += static_cast<int>(file.second.size());
+    for (const auto& entry : entries) {
+        maxFiles += static_cast<int>(entry.second.size());
     }
-    addItemWidgetsWorker(files, files.begin(), 0, maxFiles);
+    addItemWidgetsWorker(entries, entries.begin(), 0, maxFiles);
 }
 
-void xPlayerListWidget::addItemWidgetsWorker(const QList<std::pair<QString, std::vector<xMusicFile*>>>& files,
-                                             QList<std::pair<QString, std::vector<xMusicFile*>>>::const_iterator filesIterator,
+void xPlayerListWidget::addItemWidgetsWorker(const QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>& entries,
+                                             QList<std::pair<QString, std::vector<xMusicLibraryTrackEntry*>>>::const_iterator entriesIterator,
                                              int currentFiles, int maxFiles) {
-    addListItems(filesIterator->second, filesIterator->first);
-    currentFiles += static_cast<int>(filesIterator->second.size());
+    addListItems(entriesIterator->second, entriesIterator->first);
+    currentFiles += static_cast<int>(entriesIterator->second.size());
     emit itemWidgetsProgress(currentFiles, maxFiles);
-    if (filesIterator != files.end()) {
-        auto nextFilesIterator = ++filesIterator;
-        QTimer::singleShot(50, [=]() { emit itemWidgetsIterate(files, nextFilesIterator, currentFiles, maxFiles); });
+    if (entriesIterator != entries.end()) {
+        auto nextEntriesIterator = ++entriesIterator;
+        QTimer::singleShot(50, [=]() { emit itemWidgetsIterate(entries, nextEntriesIterator, currentFiles, maxFiles); });
     }
 }
 
@@ -301,6 +385,27 @@ int xPlayerListWidget::listIndex(xPlayerListWidgetItem* item) {
 
 int xPlayerListWidget::count() {
     return topLevelItemCount();
+}
+
+void xPlayerListWidget::refreshItems(std::function<bool (xPlayerListWidgetItem*, xPlayerListWidgetItem*)> lesserThan) {
+    std::vector<xPlayerListWidgetItem*> items(count());
+    auto cItem = currentItem();
+    for (auto index = count()-1; index >= 0; --index) {
+        items[index] = reinterpret_cast<xPlayerListWidgetItem*>(QTreeWidget::takeTopLevelItem(index));
+    }
+    // Only sort item if a function is provided.
+    if (lesserThan != nullptr) {
+        std::sort(items.begin(), items.end(), std::move(lesserThan));
+    }
+    for (auto item : items) {
+        addListWidgetItem(item, item->text());
+    }
+    // Set current item after rebuilding the list.
+    if (cItem) {
+        QTreeWidget::setCurrentItem(cItem);
+    }
+    // Update hidden items according to the current filter.
+    updateFilter(currentMatch);
 }
 
 void xPlayerListWidget::updateItems() {

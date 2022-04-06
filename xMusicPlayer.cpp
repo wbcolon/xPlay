@@ -13,7 +13,7 @@
  */
 #include "xMusicPlayer.h"
 #include "xMusicLibrary.h"
-#include "xMusicFile.h"
+#include "xMusicLibraryTrackEntry.h"
 #include "xPlayerDatabase.h"
 
 #include <QRandomGenerator>
@@ -59,11 +59,11 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     connect(musicPlayerForTime, &QMediaPlayer::durationChanged, this, &xMusicPlayer::currentTrackDuration);
 }
 
-void xMusicPlayer::queueTracks(const QString& artist, const QString& album, const std::vector<xMusicFile*>& tracks) {
+void xMusicPlayer::queueTracks(const QString& artist, const QString& album, const std::vector<xMusicLibraryTrackEntry*>& tracks) {
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
     for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
-        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(track->getFilePath().generic_string())));
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(track->getPath().generic_string())));
         if (queueSource.type() != Phonon::MediaSource::Invalid) {
             musicPlaylistEntries.push_back(queueEntry);
             musicPlaylist.push_back(queueSource);
@@ -160,7 +160,7 @@ void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
     }
     // Update queue list.
     auto entryObject = std::get<2>(musicPlaylistEntries[currentIndex]);
-    emit currentTrack(currentIndex, entryObject->getArtist(), entryObject->getAlbum(), entryObject->getTrackName(),
+    emit currentTrack(currentIndex, entryObject->getArtistName(), entryObject->getAlbumName(), entryObject->getTrackName(),
                       entryObject->getBitrate(), entryObject->getSampleRate(), entryObject->getBitsPerSample());
 }
 
@@ -220,13 +220,13 @@ void xMusicPlayer::loadQueueFromPlaylist(const QString& name) {
     for (auto entry = playlistEntries.begin(); entry != playlistEntries.end(); ++entry) {
         // Split up tuple
         const auto& [entryArtist, entryAlbum, entryTrackName] = *entry;
-        auto entryObject = musicLibrary->getLibraryFiles()->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        auto entryObject = musicLibrary->getTrackEntry(entryArtist, entryAlbum, entryTrackName);
         if (entryObject == nullptr) {
             // Remove invalid entries from the list.
             playlistEntries.erase(entry);
             continue;
         }
-        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(entryObject->getFilePath().generic_string())));
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(entryObject->getPath().generic_string())));
         if (queueSource.type() != Phonon::MediaSource::Invalid) {
             musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
             musicPlaylist.push_back(queueSource);
@@ -251,19 +251,19 @@ void xMusicPlayer::loadQueueFromTag(const QString& tag, bool extend) {
     for (auto entry = taggedEntries.begin(); entry != taggedEntries.end(); ++entry) {
         // Split up tuple
         const auto& [entryArtist, entryAlbum, entryTrackName] = *entry;
-        auto entryObject = musicLibrary->getLibraryFiles()->getMusicFile(entryArtist, entryAlbum, entryTrackName);
+        auto entryObject = musicLibrary->getTrackEntry(entryArtist, entryAlbum, entryTrackName);
         if (entryObject == nullptr) {
             // Remove invalid entries from the list.
             taggedEntries.erase(entry);
             continue;
         }
         if ((extend) && (std::find_if(musicPlaylistEntries.begin(), musicPlaylistEntries.end(),
-                                      [entryObject](const std::tuple<QString,QString,xMusicFile*>& entry) {
+                                      [entryObject](const std::tuple<QString,QString,xMusicLibraryTrackEntry*>& entry) {
                                           return (std::get<2>(entry) == entryObject);
                                       }) != musicPlaylistEntries.end())) {
             continue;
         }
-        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(entryObject->getFilePath().generic_string())));
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(entryObject->getPath().generic_string())));
         if (queueSource.type() != Phonon::MediaSource::Invalid) {
             musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
             musicPlaylist.push_back(queueSource);
@@ -279,8 +279,8 @@ void xMusicPlayer::loadQueueFromTag(const QString& tag, bool extend) {
         taggedEntries.clear();
         for (const auto& entry : musicPlaylistEntries) {
             auto entryObject = std::get<2>(entry);
-            taggedEntries.emplace_back(std::make_tuple(entryObject->getArtist(),
-                                                       entryObject->getAlbum(),
+            taggedEntries.emplace_back(std::make_tuple(entryObject->getArtistName(),
+                                                       entryObject->getAlbumName(),
                                                        entryObject->getTrackName()));
         }
     }
