@@ -93,6 +93,7 @@ xPlay has a music view, a movie view, a streaming view and a mobile sync view.
 ![Screenshot Music View (artistinfo popup)](screenshots/xplay_screenshot_music_view_07.png)
 ![Screenshot Music View (artistinfo)](screenshots/xplay_screenshot_music_view_08.png)
 ![Screenshot Music View (visualization)](screenshots/xplay_screenshot_music_view_09.png)
+![Screenshot Music View (rename)](screenshots/xplay_screenshot_music_view_10.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select)
@@ -131,6 +132,11 @@ Tags can be added and removed by the tag popup menu which can be accessed throug
 entry in the track list or the queue. The tags are stored in the database. The tag dialog can be accessed by pressing 
 the *Tags* button at the bottom of the queue list. The tag dialog allows to load or extend the queue with tracks that
 have a specific tag.
+
+The artist, album and track name can be modified. If the queue is empty and no music file is playing then a
+shifh-right click on an artist, album or track entry will open a popup menu that allows us to rename the
+entry. The corresponding directory (for artist and album) or the file name (for track) will be renamed. The tags of
+all affected music files will be updated as well as any matching database entries.
 
 The Rotel widget allows to control a Rotel A12 or A14 amp via a network connection. The volume can be adjusted
 (maximum of 60) and the input can be selected. The values for bass and treble can be adjusted (from -10 to +10)
@@ -224,6 +230,13 @@ can be used to end the full window mode. The full window mode will automatically
 end. If the *Autoplay Next* in the *Options* menu is enabled then the next movie in the movie list will be played as 
 soon as the current movie has ended. The player will stay in fill window mode until the last movie of the list is 
 finished.
+
+##### Filters
+
+The movie filter is similar to the filters for the artist, album or track filter in the music view.
+The filter is applied on the movie list widget itself. A list widget item is shown if it matches the given 
+filter string. All entries will appear if the movie filter is disabled in the movie view sub menu entry.
+
 
 ### Streaming View
 
@@ -319,6 +332,9 @@ With Qwt the UI has an improved volume knob and track slider.
     * The GStreamer backend crashed on Ubuntu 20.04 for some movies. Replacing the library
       */usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgsta52dec.so* from *streamer1.0-plugins-ugly* with the
       corresponding library for Ubuntu 20.10 may solve the issue.
+* VLC audio issues
+    * Using VLC on Ubuntu 22.04 can lead to audio stutter after seeking within the movie itself.
+    * A workaround switching audio channels back and forth has been implemented.
 
 ## Notes
 

@@ -1,7 +1,13 @@
 # Changelog
 
 
-## unreleased
+## 0.12.0 - 2022-05-15
+
+- New music library implementation.
+- Support renaming of music files, the corresponding database entries and update of tags.
+- Fix minor UI issue if last single track is dequeued.
+- Add movie filter and other movie view UI changes.
+- Implement workaround for VLC audio issue after seeking within a movie.
 
 
 ## 0.11.1 - 2022-02-22
