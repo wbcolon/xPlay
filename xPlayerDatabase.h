@@ -112,6 +112,43 @@ public:
      */
     std::pair<int,qint64> updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample);
     /**
+     * Rename the music file entry in the music table of the database.
+     *
+     * The extra data for the given music file is extracted out of the database. A new
+     * entry is inserted with updated track name and correponding hash. The old entry
+     * is removed using the old hash.
+     *
+     * @param artist the artist of the music file renamed.
+     * @param album the album of the music file renamed.
+     * @param track the old track name for the music file renamed.
+     * @param newTrack the new track name for the music file renamed.
+     */
+    void renameMusicFile(const QString& artist, const QString& album, const QString& track, const QString& newTrack);
+    /**
+     * Rename the music file entries int the music table of the database.
+     *
+     * The data for all music files in the database that match the artist and album are extracted
+     * out of the database. New entries with the updated album and correponding hash are inserted.
+     * The old entries are removed using the old hashes.
+     *
+     * @param artist the artist of the music files renamed.
+     * @param album the old album of the music files renamed.
+     * @param newAlbum the new album of the music files renamed.
+     */
+    void renameMusicFiles(const QString& artist, const QString& album, const QString& newAlbum);
+    /**
+     * Rename the music file entries int the music table of the database.
+     *
+     * The data for all music files in the database that match the artist are extracted
+     * out of the database. New entries with the updated artist and correponding hash are inserted.
+     * The old entries are removed using the old hashes.
+     *
+     *
+     * @param artist the old artist of the music files renamed.
+     * @param newArtist the new artist of the music files renamed.
+     */
+    void renameMusicFiles(const QString& artist, const QString& newArtist);
+    /**
      * Record the playing movie file in the movie table of the database.
      *
      * A hash is generated from the combination of tag/directory/movie. This

@@ -22,7 +22,8 @@
 xPlayerDatabase* xPlayerDatabase::playerDatabase = nullptr;
 
 xPlayerDatabase::xPlayerDatabase(QObject* parent):
-        QObject(parent) {
+        QObject(parent),
+        sqlDatabase(nullptr) {
     loadDatabase();
     // Connect configuration to database file.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseDirectory,
@@ -394,6 +395,190 @@ std::pair<int,qint64> xPlayerDatabase::updateMusicFile(const QString& artist, co
     return std::make_pair(0, 0);
 }
 
+void xPlayerDatabase::renameMusicFile(const QString& artist, const QString& album, const QString& track, const QString& newTrack) {
+    auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
+    auto newHash = QCryptographicHash::hash((artist+"/"+album+"/"+newTrack).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
+    sqlite3_stmt *sqlStatement;
+
+    try {
+        dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT playCount,timeStamp,sampleRate,bitsPerSample FROM music WHERE hash = ?",
+                                   -1, &sqlStatement, nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 1, hash.c_str(), static_cast<int>(hash.size()), nullptr));
+        if (sqlite3_step(sqlStatement) != SQLITE_DONE) {
+            // Bind results.
+            auto playCount = sqlite3_column_int(sqlStatement, 0);
+            auto timeStamp = sqlite3_column_int64(sqlStatement, 1);
+            auto sampleRate = sqlite3_column_int(sqlStatement, 2);
+            auto bitsPerSample = sqlite3_column_int(sqlStatement, 3);
+            dbCheck(sqlite3_finalize(sqlStatement));
+            // Insert new track.
+            auto artistStd = artist.toStdString();
+            auto albumStd = album.toStdString();
+            auto newTrackStd = newTrack.toStdString();
+            dbCheck(sqlite3_prepare_v2(sqlDatabase, "INSERT INTO music VALUES (?,?,?,?,?,?,?,?)",
+                                       -1, &sqlStatement, nullptr));
+            dbCheck(sqlite3_bind_text(sqlStatement, 1, newHash.c_str(), static_cast<int>(newHash.size()), nullptr));
+            dbCheck(sqlite3_bind_int(sqlStatement, 2, playCount));
+            dbCheck(sqlite3_bind_int64(sqlStatement, 3, timeStamp));
+            dbCheck(sqlite3_bind_text(sqlStatement, 4, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
+            dbCheck(sqlite3_bind_text(sqlStatement, 5, albumStd.c_str(), static_cast<int>(albumStd.size()), nullptr));
+            dbCheck(sqlite3_bind_text(sqlStatement, 6, newTrackStd.c_str(), static_cast<int>(newTrackStd.size()), nullptr));
+            dbCheck(sqlite3_bind_int(sqlStatement, 7, sampleRate));
+            dbCheck(sqlite3_bind_int(sqlStatement, 8, bitsPerSample));
+            dbCheck(sqlite3_step(sqlStatement), SQLITE_DONE);
+            dbCheck(sqlite3_finalize(sqlStatement));
+            // Remove old track.
+            dbCheck(sqlite3_prepare_v2(sqlDatabase, "DELETE FROM music WHERE hash = ?", -1, &sqlStatement, nullptr));
+            dbCheck(sqlite3_bind_text(sqlStatement, 1, hash.c_str(), static_cast<int>(hash.size()), nullptr));
+            dbCheck(sqlite3_step(sqlStatement), SQLITE_DONE);
+            dbCheck(sqlite3_finalize(sqlStatement));
+        } else {
+            qCritical() << "xPlayerDatabase::renameMusicFile: entry does not exist: "
+                        << artist << "," << album << "," << track;
+            emit databaseUpdateError();
+        }
+    } catch (const std::runtime_error& e) {
+        qCritical() << "xPlayerDatabase::renameMusicFile: error: " << e.what();
+        emit databaseUpdateError();
+        sqlite3_finalize(sqlStatement);
+    }
+
+}
+
+void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& album, const QString& newAlbum) {
+    sqlite3_stmt *sqlStatement;
+
+    try {
+        std::vector<std::tuple<std::string, int, int64_t, std::string, int, int>> renameEntries;
+        auto artistStd = artist.toStdString();
+        auto albumStd = album.toStdString();
+        auto newAlbumStd = newAlbum.toStdString();
+        dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT hash,playCount,timeStamp,track,sampleRate,bitsPerSample FROM music WHERE artist = ? and album = ?",
+                                   -1, &sqlStatement, nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 2, albumStd.c_str(), static_cast<int>(albumStd.size()), nullptr));
+        while (sqlite3_step(sqlStatement) != SQLITE_DONE) {
+            // Bind results.
+            auto hash = std::string(reinterpret_cast<const char*>(sqlite3_column_text(sqlStatement, 0)));
+            auto playCount = sqlite3_column_int(sqlStatement, 1);
+            auto timeStamp = sqlite3_column_int64(sqlStatement, 2);
+            auto track = std::string(reinterpret_cast<const char*>(sqlite3_column_text(sqlStatement, 3)));
+            auto sampleRate = sqlite3_column_int(sqlStatement, 4);
+            auto bitsPerSample = sqlite3_column_int(sqlStatement, 5);
+            // Store entries to be renamed.
+            renameEntries.emplace_back(std::make_tuple(hash, playCount, timeStamp, track, sampleRate, bitsPerSample));
+        }
+        dbCheck(sqlite3_finalize(sqlStatement));
+        // Create insert strings and delete strings.
+        std::string addRenameEntries, removeOldEntries;
+        for (const auto& renameEntry : renameEntries) {
+            auto playCount = std::get<1>(renameEntry);
+            qint64 timeStamp = std::get<2>(renameEntry);
+            auto track = std::get<3>(renameEntry);
+            auto sampleRate = std::get<4>(renameEntry);
+            auto bitsPerSample = std::get<5>(renameEntry);
+            auto hash = QCryptographicHash::hash(
+                    (artist + "/" + newAlbum + "/" + QString::fromStdString(track)).toUtf8(),
+                    QCryptographicHash::Sha256).toBase64().toStdString();
+            if (!addRenameEntries.empty()) {
+                addRenameEntries += ", ";
+            }
+            if (!removeOldEntries.empty()) {
+                removeOldEntries += " OR ";
+            }
+            // Multi-argument arg seems to do strange things here.
+            addRenameEntries += QString(R"(("%1", %2, %3, "%4", "%5", "%6", %7, %8))").  // clazy:exclude=qstring-arg
+                    arg(QString::fromStdString(hash)).arg(playCount).arg(timeStamp).arg(artist).arg(newAlbum).  // clazy:exclude=qstring-arg
+                    arg(QString::fromStdString(track)).arg(sampleRate).arg(bitsPerSample).toStdString();
+            removeOldEntries += "hash = \"" + std::get<0>(renameEntry) +"\"";
+        }
+        // Insert new entries.
+        if (!addRenameEntries.empty()) {
+            auto sqlAddRenameEntries = "INSERT INTO music VALUES " + addRenameEntries;
+            qDebug() << "xPlayerDatabase::renameMusicFiles: add entries: " << QString::fromStdString(sqlAddRenameEntries);
+            dbCheck(sqlite3_exec(sqlDatabase, sqlAddRenameEntries.c_str(), nullptr, nullptr, nullptr));
+        }
+        // Delete old entries.
+        if (!removeOldEntries.empty()) {
+            auto sqlRemoveOldEntries = "DELETE FROM music WHERE " + removeOldEntries;
+            qDebug() << "xPlayerDatabase::renameMusicFiles: remove entries: " << QString::fromStdString(sqlRemoveOldEntries);
+            dbCheck(sqlite3_exec(sqlDatabase, sqlRemoveOldEntries.c_str(), nullptr, nullptr, nullptr));
+        }
+    } catch (const std::runtime_error& e) {
+        qCritical() << "xPlayerDatabase::renameMusicFiles: error: " << e.what();
+        emit databaseUpdateError();
+        sqlite3_finalize(sqlStatement);
+    }
+}
+
+void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& newArtist) {
+    sqlite3_stmt *sqlStatement;
+
+    try {
+        std::vector<std::tuple<std::string, int, int64_t, std::string, std::string, int, int>> renameEntries;
+        auto artistStd = artist.toStdString();
+        auto newArtistStd = newArtist.toStdString();
+        dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT hash,playCount,timeStamp,album,track,sampleRate,bitsPerSample FROM music WHERE artist = ?",
+                                   -1, &sqlStatement, nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
+        while (sqlite3_step(sqlStatement) != SQLITE_DONE) {
+            // Bind results.
+            auto hash = std::string(reinterpret_cast<const char*>(sqlite3_column_text(sqlStatement, 0)));
+            auto playCount = sqlite3_column_int(sqlStatement, 1);
+            auto timeStamp = sqlite3_column_int64(sqlStatement, 2);
+            auto album = std::string(reinterpret_cast<const char*>(sqlite3_column_text(sqlStatement, 3)));
+            auto track = std::string(reinterpret_cast<const char*>(sqlite3_column_text(sqlStatement, 4)));
+            auto sampleRate = sqlite3_column_int(sqlStatement, 5);
+            auto bitsPerSample = sqlite3_column_int(sqlStatement, 6);
+            // Store entries to be renamed.
+            renameEntries.emplace_back(std::make_tuple(hash, playCount, timeStamp, album, track, sampleRate, bitsPerSample));
+        }
+        dbCheck(sqlite3_finalize(sqlStatement));
+        // Create insert strings and delete strings.
+        std::string addRenameEntries, removeOldEntries;
+        for (const auto& renameEntry : renameEntries) {
+            auto playCount = std::get<1>(renameEntry);
+            qint64 timeStamp = std::get<2>(renameEntry);
+            auto album = std::get<3>(renameEntry);
+            auto track = std::get<4>(renameEntry);
+            auto sampleRate = std::get<5>(renameEntry);
+            auto bitsPerSample = std::get<6>(renameEntry);
+            auto hash = QCryptographicHash::hash(
+                    (newArtist + "/" + QString::fromStdString(album) + "/" + QString::fromStdString(track)).toUtf8(),
+                    QCryptographicHash::Sha256).toBase64().toStdString();
+            if (!addRenameEntries.empty()) {
+                addRenameEntries += ", ";
+            }
+            if (!removeOldEntries.empty()) {
+                removeOldEntries += " OR ";
+            }
+            // Multi-argument arg seems to do strange things here.
+            addRenameEntries += QString(R"(("%1", %2, %3, "%4", "%5", "%6", %7, %8))").  // clazy:exclude=qstring-arg
+                    arg(QString::fromStdString(hash)).arg(playCount).arg(timeStamp).arg(newArtist).  // clazy:exclude=qstring-arg
+                    arg(QString::fromStdString(album)).arg(QString::fromStdString(track)).  // clazy:exclude=qstring-arg
+                    arg(sampleRate).arg(bitsPerSample).toStdString();
+            removeOldEntries += "hash = \"" + std::get<0>(renameEntry) +"\"";
+        }
+        // Insert new entries.
+        if (!addRenameEntries.empty()) {
+            auto sqlAddRenameEntries = "INSERT INTO music VALUES " + addRenameEntries;
+            qDebug() << "xPlayerDatabase::renameMusicFiles: add entries: " << QString::fromStdString(sqlAddRenameEntries);
+            dbCheck(sqlite3_exec(sqlDatabase, sqlAddRenameEntries.c_str(), nullptr, nullptr, nullptr));
+        }
+        qCritical() << "REMOVE";
+        // Delete old entries.
+        if (!removeOldEntries.empty()) {
+            auto sqlRemoveOldEntries = "DELETE FROM music WHERE " + removeOldEntries;
+            qDebug() << "xPlayerDatabase::renameMusicFiles: remove entries: " << QString::fromStdString(sqlRemoveOldEntries);
+            dbCheck(sqlite3_exec(sqlDatabase, sqlRemoveOldEntries.c_str(), nullptr, nullptr, nullptr));
+        }
+    } catch (const std::runtime_error& e) {
+        qCritical() << "xPlayerDatabase::renameMusicFiles: error: " << e.what();
+        emit databaseUpdateError();
+        sqlite3_finalize(sqlStatement);
+    }
+}
+
 std::pair<int,qint64> xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, const QString& directory) {
     auto hash = QCryptographicHash::hash((tag+"/"+directory+"/"+movie).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
@@ -746,7 +931,7 @@ QString xPlayerDatabase::getArtistURL(const QString& artist) {
             return QString::fromUtf8(url);
         }
     }
-    return QString();
+    return {};
 }
 
 void xPlayerDatabase::updateArtistURL(const QString& artist, const QString& url) {
