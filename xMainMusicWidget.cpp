@@ -544,13 +544,18 @@ void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
         if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
             auto artistName = artistItem->artistEntry()->getArtistName();
             auto newArtistName = showRenameDialog("Artist", artistName);
-            if (artistItem->artistEntry()->rename(newArtistName)) {
-                // Refresh artist list and selector list.
-                scannedArtists(unfilteredArtists);
-                // Update database.
-                xPlayerDatabase::database()->renameMusicFiles(artistName, newArtistName);
-            } else {
-                qCritical() << "Unable to rename artist entry: " << newArtistName;
+            // Do we need to rename the artist?
+            if (artistName != newArtistName) {
+                QApplication::setOverrideCursor(Qt::WaitCursor);
+                if (artistItem->artistEntry()->rename(newArtistName)) {
+                    // Refresh artist list and selector list.
+                    scannedArtists(unfilteredArtists);
+                    // Update database.
+                    xPlayerDatabase::database()->renameMusicFiles(artistName, newArtistName);
+                } else {
+                    qCritical() << "Unable to rename artist entry: " << newArtistName;
+                }
+                QApplication::restoreOverrideCursor();
             }
         } else {
             QMenu artistMenu;
@@ -601,14 +606,19 @@ void xMainMusicWidget::currentAlbumRightClicked(const QPoint& point) {
         if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
             auto albumName = albumItem->albumEntry()->getAlbumName();
             auto newAlbumName = showRenameDialog("Album", albumName);
-            if (albumItem->albumEntry()->rename(newAlbumName)) {
-                albumItem->updateText();
-                albumList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
-                // Update database entry.
-                xPlayerDatabase::database()->renameMusicFiles(albumItem->albumEntry()->getArtistName(),
-                                                              albumName, newAlbumName);
-            } else {
-                qCritical() << "Unable to rename album entry: " << newAlbumName;
+            // Do we need to rename the album?
+            if (albumName != newAlbumName) {
+                QApplication::setOverrideCursor(Qt::WaitCursor);
+                if (albumItem->albumEntry()->rename(newAlbumName)) {
+                    albumItem->updateText();
+                    albumList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
+                    // Update database entry.
+                    xPlayerDatabase::database()->renameMusicFiles(albumItem->albumEntry()->getArtistName(),
+                                                                  albumName, newAlbumName);
+                } else {
+                    qCritical() << "Unable to rename album entry: " << newAlbumName;
+                }
+                QApplication::restoreOverrideCursor();
             }
         }
     }
@@ -919,15 +929,18 @@ void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
         } else if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
             auto trackName = trackItem->trackEntry()->getTrackName();
             auto newTrackName = showRenameDialog("Track Name", trackName);
-            if (trackItem->trackEntry()->rename(newTrackName)) {
-                trackItem->updateText();
-                trackList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
-                // Update database entry.
-                xPlayerDatabase::database()->renameMusicFile(trackItem->trackEntry()->getArtistName(),
-                                                             trackItem->trackEntry()->getAlbumName(),
-                                                             trackName, newTrackName);
-            } else {
-                qCritical() << "Unable to rename artist entry: " << newTrackName;
+            // Do we need to rename the track name?
+            if (trackName != newTrackName) {
+                if (trackItem->trackEntry()->rename(newTrackName)) {
+                    trackItem->updateText();
+                    trackList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
+                    // Update database entry.
+                    xPlayerDatabase::database()->renameMusicFile(trackItem->trackEntry()->getArtistName(),
+                                                                 trackItem->trackEntry()->getAlbumName(),
+                                                                 trackName, newTrackName);
+                } else {
+                    qCritical() << "Unable to rename artist entry: " << newTrackName;
+                }
             }
         } else {
             tagPopupMenu(trackList, point);

@@ -404,6 +404,7 @@ void xPlayerDatabase::renameMusicFile(const QString& artist, const QString& albu
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT playCount,timeStamp,sampleRate,bitsPerSample FROM music WHERE hash = ?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, hash.c_str(), static_cast<int>(hash.size()), nullptr));
+        // Only update database if entry actually exists.
         if (sqlite3_step(sqlStatement) != SQLITE_DONE) {
             // Bind results.
             auto playCount = sqlite3_column_int(sqlStatement, 0);
@@ -432,10 +433,6 @@ void xPlayerDatabase::renameMusicFile(const QString& artist, const QString& albu
             dbCheck(sqlite3_bind_text(sqlStatement, 1, hash.c_str(), static_cast<int>(hash.size()), nullptr));
             dbCheck(sqlite3_step(sqlStatement), SQLITE_DONE);
             dbCheck(sqlite3_finalize(sqlStatement));
-        } else {
-            qCritical() << "xPlayerDatabase::renameMusicFile: entry does not exist: "
-                        << artist << "," << album << "," << track;
-            emit databaseUpdateError();
         }
     } catch (const std::runtime_error& e) {
         qCritical() << "xPlayerDatabase::renameMusicFile: error: " << e.what();
