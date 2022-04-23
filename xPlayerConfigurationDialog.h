@@ -46,6 +46,10 @@ private slots:
      */
     void saveSettings();
     /**
+     * Open a dialog in order to select the lltag binary.
+     */
+    void openMusicLibraryLLTag();
+    /**
      * Open a dialog in order to select a music library directory.
      */
     void openMusicLibraryDirectory();
@@ -130,6 +134,7 @@ private:
     QLineEdit* musicLibraryDirectoryWidget;
     QLineEdit* musicLibraryExtensionsWidget;
     QLineEdit* musicLibraryAlbumSelectorsWidget;
+    QLineEdit* musicLibraryLLTagWidget;
     QLineEdit* musicLibraryTagsWidget;
     QLineEdit* musicVisualizationConfigWidget;
     QLineEdit* movieLibraryTagWidget;

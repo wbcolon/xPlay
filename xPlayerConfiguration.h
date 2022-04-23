@@ -51,6 +51,12 @@ public:
      */
     void setMusicLibraryAlbumSelectors(const QString& selectors);
     /**
+     * Set the path to the lltag binary.
+     *
+     * @param lltag the path to the binary as string.
+     */
+    void setMusicLibraryLLTag(const QString& lltag);
+    /**
      * Set the list of tags for music files.
      *
      * @param tags list of tags as strings.
@@ -210,6 +216,12 @@ public:
      * @return the list of selectors.
      */
     [[nodiscard]] QStringList getMusicLibraryAlbumSelectorList();
+    /**
+     * Get the path to the lltag binary.
+     *
+     * @return the path to the lltag binary as string.
+     */
+    [[nodiscard]] QString getMusicLibraryLLTag();
     /**
      * Get the list of tags for the tracks.
      *
@@ -380,6 +392,10 @@ signals:
      * Signal an update of the album selectors.
      */
     void updatedMusicLibraryAlbumSelectors();
+    /**
+     * Signal an update of the lltag binary.
+     */
+    void updatedMusicLibraryLLTag();
     /**
      * Signal an update of the tag list.
      */

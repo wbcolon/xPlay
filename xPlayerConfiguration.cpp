@@ -25,6 +25,7 @@
 const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors { "xPlay/MusicLibraryAlbumSelectors" }; // NOLINT
+const QString xPlayerConfiguration_MusicLibraryLLTag { "xPlay/MusicLibraryLLTag" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryTags { "xPlay/MusicLibraryTags" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewSelectors { "xPlay/MusicViewSelectors" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewFilters { "xPlay/MusicViewFilters" }; // NOLINT
@@ -49,6 +50,7 @@ const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor"
 // Configuration defaults.
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors_Default { "(live) [hd] [mp3]" }; // NOLINT
+const QString xPlayerConfiguration_MusicLibraryLLTag_Default { "/usr/bin/lltag" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryTags_Default { "[ballads] [epics] [favorites]" }; // NOLINT
 const bool xPlayerConfiguration_MusicViewSelectors_Default = true; // NOLINT
 const bool xPlayerConfiguration_MusicViewFilters_Default = false; // NOLINT
@@ -103,6 +105,14 @@ void xPlayerConfiguration::setMusicLibraryAlbumSelectors(const QString& selector
         settings->setValue(xPlayerConfiguration_MusicLibraryAlbumSelectors, selectors);
         settings->sync();
         emit updatedMusicLibraryAlbumSelectors();
+    }
+}
+
+void xPlayerConfiguration::setMusicLibraryLLTag(const QString& lltag) {
+    if (lltag != getMusicLibraryLLTag()) {
+        settings->setValue(xPlayerConfiguration_MusicLibraryLLTag, lltag);
+        settings->sync();
+        emit updatedMusicLibraryLLTag();
     }
 }
 
@@ -318,6 +328,11 @@ QStringList xPlayerConfiguration::getMusicLibraryAlbumSelectorList() {
     }
 }
 
+QString xPlayerConfiguration::getMusicLibraryLLTag() {
+    return settings->value(xPlayerConfiguration_MusicLibraryLLTag,
+                           xPlayerConfiguration_MusicLibraryLLTag_Default).toString();
+}
+
 QStringList xPlayerConfiguration::getMusicLibraryTags() {
     auto tags = settings->value(xPlayerConfiguration_MusicLibraryTags,
                                 xPlayerConfiguration_MusicLibraryTags_Default).toString();
@@ -490,6 +505,7 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMusicLibraryDirectory();
     emit updatedMusicLibraryExtensions();
     emit updatedMusicLibraryAlbumSelectors();
+    emit updatedMusicLibraryLLTag();
     emit updatedMusicLibraryTags();
     emit updatedMusicViewSelectors();
     emit updatedMusicViewFilters();

@@ -103,6 +103,9 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryAlbumSelectorsWidget = new QLineEdit(musicLibraryTab);
     auto musicLibraryTagsLabel = new QLabel(tr("Tags"), musicLibraryTab);
     musicLibraryTagsWidget = new QLineEdit(musicLibraryTab);
+    auto musicLibraryLLTagLabel = new QLabel(tr("lltag binary"), musicLibraryTab);
+    musicLibraryLLTagWidget = new QLineEdit(musicLibraryTab);
+    auto musicLibraryLLTagOpenButton = new QPushButton(tr("..."), musicLibraryTab);
     auto musicVisualizationConfigLabel = new QLabel(tr("Visualization Configuration (projectM)"), musicLibraryTab);
     musicVisualizationConfigWidget = new QLineEdit(musicLibraryTab);
     auto musicVisualizationConfigOpenButton = new QPushButton(tr("..."), musicLibraryTab);
@@ -117,10 +120,14 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryLayout->addWidget(musicLibraryTagsLabel, 7, 0, 1, 5);
     musicLibraryLayout->addWidget(musicLibraryTagsWidget, 8, 0, 1, 5);
     musicLibraryLayout->addRowSpacer(9, xPlayerLayout::LargeSpace);
-    musicLibraryLayout->addWidget(musicVisualizationConfigLabel, 10, 0, 1, 5);
-    musicLibraryLayout->addWidget(musicVisualizationConfigWidget, 11, 0, 1, 4);
-    musicLibraryLayout->addWidget(musicVisualizationConfigOpenButton, 11, 4);
-    musicLibraryLayout->addRowStretcher(12);
+    musicLibraryLayout->addWidget(musicLibraryLLTagLabel, 10, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryLLTagWidget, 11, 0, 1, 4);
+    musicLibraryLayout->addWidget(musicLibraryLLTagOpenButton, 11, 4);
+    musicLibraryLayout->addRowSpacer(12, xPlayerLayout::LargeSpace);
+    musicLibraryLayout->addWidget(musicVisualizationConfigLabel, 13, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicVisualizationConfigWidget, 14, 0, 1, 4);
+    musicLibraryLayout->addWidget(musicVisualizationConfigOpenButton, 14, 4);
+    musicLibraryLayout->addRowStretcher(15);
     musicLibraryTab->setLayout(musicLibraryLayout);
     // Setup streaming sites with URL and short name.
     auto streamingSitesLayout = new xPlayerLayout();
@@ -205,6 +212,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     connect(rotelEnableWidget, &QPushButton::pressed, this, &xPlayerConfigurationDialog::toggleRotelWidget);
     // Connect dialog buttons.
     connect(musicLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMusicLibraryDirectory);
+    connect(musicLibraryLLTagOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMusicLibraryLLTag);
     connect(musicVisualizationConfigOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMusicVisualizationConfig);
     connect(movieLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMovieLibraryDirectory);
     // Connect movie library.
@@ -233,6 +241,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto musicLibraryDirectory = xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
     auto musicLibraryExtensions = xPlayerConfiguration::configuration()->getMusicLibraryExtensions();
     auto musicLibraryAlbumSelectors = xPlayerConfiguration::configuration()->getMusicLibraryAlbumSelectors();
+    auto musicLibraryLLTag = xPlayerConfiguration::configuration()->getMusicLibraryLLTag();
     auto musicLibraryTags = xPlayerConfiguration::configuration()->getMusicLibraryTags();
     auto musicVisualizationConfig = xPlayerConfiguration::configuration()->getVisualizationConfigPath();
     auto rotelWidget = xPlayerConfiguration::configuration()->rotelWidget();
@@ -250,6 +259,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
     musicLibraryExtensionsWidget->setText(musicLibraryExtensions);
     musicLibraryAlbumSelectorsWidget->setText(musicLibraryAlbumSelectors);
+    musicLibraryLLTagWidget->setText(musicLibraryLLTag);
     musicLibraryTagsWidget->setText(musicLibraryTags.join(" "));
     musicVisualizationConfigWidget->setText(musicVisualizationConfig);
     rotelNetworkAddressWidget->setText(rotelNetworkAddress);
@@ -303,6 +313,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     auto musicLibraryDirectory = musicLibraryDirectoryWidget->text();
     auto musicLibraryExtensions = musicLibraryExtensionsWidget->text();
     auto musicLibraryAlbumSelectors = musicLibraryAlbumSelectorsWidget->text();
+    auto musicLibraryLLTag = musicLibraryTagsWidget->text();
     auto musicLibraryTags = musicLibraryTagsWidget->text().split(" ");
     auto musicVisualizationConfig = musicVisualizationConfigWidget->text();
     auto rotelNetworkAddress = rotelNetworkAddressWidget->text();
@@ -337,6 +348,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryDirectory: " << musicLibraryDirectory;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryExtensions: " << musicLibraryExtensions;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryAlbumSelectors: " << musicLibraryAlbumSelectors;
+    qDebug() << "xPlayerConfigurationDialog: save: musicLibraryLLTag: " << musicLibraryLLTag;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryTags: " << musicLibraryTags;
     qDebug() << "xPlayerConfigurationDialog: save: musicVisualizationConfig: " << musicVisualizationConfig;
     qDebug() << "xPlayerConfigurationDialog: save: rotelEnableWidget: " << rotelEnableWidget->isEnabled();
@@ -358,6 +370,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
     xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
     xPlayerConfiguration::configuration()->setMusicLibraryAlbumSelectors(musicLibraryAlbumSelectors);
+    xPlayerConfiguration::configuration()->setMusicLibraryLLTag(musicLibraryLLTag);
     xPlayerConfiguration::configuration()->setMusicLibraryTags(musicLibraryTags);
     xPlayerConfiguration::configuration()->setVisualizationConfigPath(musicVisualizationConfig);
     xPlayerConfiguration::configuration()->setRotelWidget(rotelNetworkAddressWidget->isEnabled());
@@ -407,6 +420,14 @@ void xPlayerConfigurationDialog::openMusicLibraryDirectory() {
                                               QFileDialog::ShowDirsOnly|QFileDialog::DontResolveSymlinks);
     if (!musicLibraryDirectory.isEmpty()) {
         musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
+    }
+}
+
+void xPlayerConfigurationDialog::openMusicLibraryLLTag() {
+    QString lltagPath =
+            QFileDialog::getOpenFileName(this, tr("Open LLTag Binary"), musicLibraryLLTagWidget->text());
+    if (!lltagPath.isEmpty()) {
+        musicLibraryLLTagWidget->setText(lltagPath);
     }
 }
 
