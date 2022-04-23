@@ -15,15 +15,16 @@
 #include "xMusicLibraryTrackEntry.h"
 #include "xMusicLibraryAlbumEntry.h"
 #include "xMusicLibraryArtistEntry.h"
+#include "xPlayerConfiguration.h"
 
 #include <QRegularExpression>
+#include <QProcess>
 #include <QDebug>
 
 #include <taglib/fileref.h>
 #include <taglib/audioproperties.h>
 #include <taglib/flacproperties.h>
 #include <taglib/wavpackproperties.h>
-#include <taglib/tpropertymap.h>
 
 
 xMusicLibraryTrackEntry::xMusicLibraryTrackEntry():
@@ -110,21 +111,30 @@ void xMusicLibraryTrackEntry::updateTags() {
     QRegularExpression trackNameRegExp(R"((?<nr>\d\d) (?<name>.*)\.(?<ext>.*))");
     auto trackNameMatch = trackNameRegExp.match(entryName);
     if (trackNameMatch.hasMatch()) {
-        auto trackNr = trackNameMatch.captured("nr").toStdString();
-        auto trackName = trackNameMatch.captured("name").toStdString();
+        auto trackNr = trackNameMatch.captured("nr");
+        auto trackName = trackNameMatch.captured("name");
         // Convert into to std::string
-        auto artistName = getArtistName().toStdString();
-        auto albumName = getAlbumName().toStdString();
-        // Use taglib to update artist, album, track nr and name.
-        TagLib::FileRef currentTrack(entryPath.c_str(), true, TagLib::AudioProperties::Fast);
-        TagLib::Tag* currentTags = currentTrack.tag();
-        TagLib::PropertyMap currentProperties;
-        currentProperties.insert("ARTIST", TagLib::StringList{ artistName });
-        currentProperties.insert("ALBUM", TagLib::StringList{ albumName });
-        currentProperties.insert("TITLE", TagLib::StringList{ trackName });
-        currentProperties.insert("TRACKNUMBER", TagLib::StringList{ trackNr });
-        currentTags->setProperties(currentProperties);
-        currentTrack.save();
+        auto artistName = getArtistName();
+        auto albumName = getAlbumName();
+        // Try to update the tags using lltag
+        auto lltagProcess = new QProcess();
+        // Merge channels as we ignore any output.
+        lltagProcess->setProcessChannelMode(QProcess::MergedChannels);
+        lltagProcess->start(xPlayerConfiguration::configuration()->getMusicLibraryLLTag(),
+                            { {"--yes"}, {"--ARTIST"}, artistName, {"--ALBUM"}, albumName, {"--TITLE"},
+                              trackName, {"--NUMBER"}, trackNr, QString::fromStdString(entryPath.string()) });
+        lltagProcess->waitForFinished(-1);
+        if (lltagProcess->exitCode() != QProcess::NormalExit) {
+            qWarning() << "updateTags(): unable to update tags using lltag. Using taglib fallback...";
+            // Use taglib to update artist, album, track nr and name.
+            TagLib::FileRef currentTrack(entryPath.c_str(), true, TagLib::AudioProperties::Fast);
+            auto currentTag = currentTrack.tag();
+            currentTag->setArtist(artistName.toStdString());
+            currentTag->setAlbum(albumName.toStdString());
+            currentTag->setTitle(trackName.toStdString());
+            currentTag->setTrack(trackNr.toInt());
+            currentTrack.save();
+        }
     } else {
         qCritical() << "updateTags(): track name does not match pattern: " << entryName;
     }
