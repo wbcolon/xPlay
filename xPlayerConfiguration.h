@@ -51,17 +51,27 @@ public:
      */
     void setMusicLibraryAlbumSelectors(const QString& selectors);
     /**
-     * Set the path to the lltag binary.
-     *
-     * @param lltag the path to the binary as string.
-     */
-    void setMusicLibraryLLTag(const QString& lltag);
-    /**
      * Set the list of tags for music files.
      *
      * @param tags list of tags as strings.
      */
     void setMusicLibraryTags(const QStringList& tags);
+    /**
+     * Enable or disable the use of lltag for music library tagging.
+     *
+     * Main difference between lltag and taglib is the handling of track
+     * numbers. lltag allows the use of strings for track numbers instead
+     * of integers.
+     *
+     * @param enabled use lltag if true, taglib otherwise.
+     */
+    void useLLTag(bool enabled);
+    /**
+     * Set the path to the lltag binary.
+     *
+     * @param lltag the path to the binary as string.
+     */
+    void setLLTag(const QString& lltag);
     /**
      * Set the visibility status of the selectors widget.
      *
@@ -217,17 +227,23 @@ public:
      */
     [[nodiscard]] QStringList getMusicLibraryAlbumSelectorList();
     /**
-     * Get the path to the lltag binary.
-     *
-     * @return the path to the lltag binary as string.
-     */
-    [[nodiscard]] QString getMusicLibraryLLTag();
-    /**
      * Get the list of tags for the tracks.
      *
      * @return the list of tags as strings.
      */
     [[nodiscard]] QStringList getMusicLibraryTags();
+    /**
+     * Get tagging mode for music library.
+     *
+     * @return true if lltag is enabled, false otherwise.
+     */
+    [[nodiscard]] bool useLLTag();
+    /**
+     * Get the path to the lltag binary.
+     *
+     * @return the path to the lltag binary as string.
+     */
+    [[nodiscard]] QString getLLTag();
     /**
      * Get the visibility of the selectors.
      *
@@ -393,9 +409,13 @@ signals:
      */
     void updatedMusicLibraryAlbumSelectors();
     /**
+     * Signal an update of the music library tagging mode.
+     */
+    void updatedUseLLTag();
+    /**
      * Signal an update of the lltag binary.
      */
-    void updatedMusicLibraryLLTag();
+    void updatedLLTag();
     /**
      * Signal an update of the tag list.
      */

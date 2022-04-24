@@ -116,16 +116,18 @@ void xMusicLibraryTrackEntry::updateTags() {
         // Convert into to std::string
         auto artistName = getArtistName();
         auto albumName = getAlbumName();
-        // Try to update the tags using lltag
-        auto lltagProcess = new QProcess();
-        // Merge channels as we ignore any output.
-        lltagProcess->setProcessChannelMode(QProcess::MergedChannels);
-        lltagProcess->start(xPlayerConfiguration::configuration()->getMusicLibraryLLTag(),
-                            { {"--yes"}, {"--ARTIST"}, artistName, {"--ALBUM"}, albumName, {"--TITLE"},
-                              trackName, {"--NUMBER"}, trackNr, QString::fromStdString(entryPath.string()) });
-        lltagProcess->waitForFinished(-1);
-        if (lltagProcess->exitCode() != QProcess::NormalExit) {
-            qWarning() << "updateTags(): unable to update tags using lltag. Using taglib fallback...";
+        if (xPlayerConfiguration::configuration()->useLLTag()) {
+            auto lltagProcess = new QProcess();
+            // Merge channels as we ignore any output.
+            lltagProcess->setProcessChannelMode(QProcess::MergedChannels);
+            lltagProcess->start(xPlayerConfiguration::configuration()->getLLTag(),
+                                { {"--yes"}, {"--ARTIST"}, artistName, {"--ALBUM"}, albumName, {"--TITLE"},
+                                  trackName, {"--NUMBER"}, trackNr, QString::fromStdString(entryPath.string()) });
+            lltagProcess->waitForFinished(-1);
+            if (lltagProcess->exitCode() != QProcess::NormalExit) {
+                qWarning() << "updateTags(): unable to update tags using lltag. Using taglib fallback...";
+            }
+        } else {
             // Use taglib to update artist, album, track nr and name.
             TagLib::FileRef currentTrack(entryPath.c_str(), true, TagLib::AudioProperties::Fast);
             auto currentTag = currentTrack.tag();

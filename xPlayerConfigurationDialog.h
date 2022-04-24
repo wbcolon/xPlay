@@ -48,7 +48,7 @@ private slots:
     /**
      * Open a dialog in order to select the lltag binary.
      */
-    void openMusicLibraryLLTag();
+    void openTaggingLLTag();
     /**
      * Open a dialog in order to select a music library directory.
      */
@@ -94,6 +94,12 @@ private slots:
      */
     void streamingSiteDefault();
     /**
+     * Select the music library tagging mode.
+     *
+     * @param mode the index of the activated tagging mode
+     */
+    void taggingMode(int mode);
+    /**
      * Toggle enable/disable for the Rotel configuration.
      */
     void toggleRotelWidget();
@@ -134,8 +140,10 @@ private:
     QLineEdit* musicLibraryDirectoryWidget;
     QLineEdit* musicLibraryExtensionsWidget;
     QLineEdit* musicLibraryAlbumSelectorsWidget;
-    QLineEdit* musicLibraryLLTagWidget;
     QLineEdit* musicLibraryTagsWidget;
+    QLineEdit* musicLibraryTaggingLLTagWidget;
+    QPushButton* musicLibraryTaggingLLTagOpenButton;
+    QComboBox* musicLibraryTaggingModeWidget;
     QLineEdit* musicVisualizationConfigWidget;
     QLineEdit* movieLibraryTagWidget;
     QLineEdit* movieLibraryDirectoryWidget;

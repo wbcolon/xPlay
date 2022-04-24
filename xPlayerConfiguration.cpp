@@ -25,8 +25,9 @@
 const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors { "xPlay/MusicLibraryAlbumSelectors" }; // NOLINT
-const QString xPlayerConfiguration_MusicLibraryLLTag { "xPlay/MusicLibraryLLTag" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryTags { "xPlay/MusicLibraryTags" }; // NOLINT
+const QString xPlayerConfiguration_UseLLTag {"xPlay/UseLLTag" }; // NOLINT
+const QString xPlayerConfiguration_LLTag {"xPlay/LLTag" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewSelectors { "xPlay/MusicViewSelectors" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewFilters { "xPlay/MusicViewFilters" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewVisualization { "xPlay/MusicViewVisualization" }; // NOLINT
@@ -50,8 +51,8 @@ const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor"
 // Configuration defaults.
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors_Default { "(live) [hd] [mp3]" }; // NOLINT
-const QString xPlayerConfiguration_MusicLibraryLLTag_Default { "/usr/bin/lltag" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryTags_Default { "[ballads] [epics] [favorites]" }; // NOLINT
+const QString xPlayerConfiguration_LLTag_Default {"/usr/bin/lltag" }; // NOLINT
 const bool xPlayerConfiguration_MusicViewSelectors_Default = true; // NOLINT
 const bool xPlayerConfiguration_MusicViewFilters_Default = false; // NOLINT
 const bool xPlayerConfiguration_MusicViewVisualization_Default = false; // NOLINT
@@ -108,19 +109,27 @@ void xPlayerConfiguration::setMusicLibraryAlbumSelectors(const QString& selector
     }
 }
 
-void xPlayerConfiguration::setMusicLibraryLLTag(const QString& lltag) {
-    if (lltag != getMusicLibraryLLTag()) {
-        settings->setValue(xPlayerConfiguration_MusicLibraryLLTag, lltag);
-        settings->sync();
-        emit updatedMusicLibraryLLTag();
-    }
-}
-
 void xPlayerConfiguration::setMusicLibraryTags(const QStringList& tags) {
     if (tags != getMusicLibraryTags()) {
         settings->setValue(xPlayerConfiguration_MusicLibraryTags, tags.join(" "));
         settings->sync();
         emit updatedMusicLibraryTags();
+    }
+}
+
+void xPlayerConfiguration::useLLTag(bool enabled) {
+    if (enabled != useLLTag()) {
+        settings->setValue(xPlayerConfiguration_UseLLTag, enabled);
+        settings->sync();
+        emit updatedUseLLTag();
+    }
+}
+
+void xPlayerConfiguration::setLLTag(const QString& lltag) {
+    if (lltag != getLLTag()) {
+        settings->setValue(xPlayerConfiguration_LLTag, lltag);
+        settings->sync();
+        emit updatedLLTag();
     }
 }
 
@@ -328,11 +337,6 @@ QStringList xPlayerConfiguration::getMusicLibraryAlbumSelectorList() {
     }
 }
 
-QString xPlayerConfiguration::getMusicLibraryLLTag() {
-    return settings->value(xPlayerConfiguration_MusicLibraryLLTag,
-                           xPlayerConfiguration_MusicLibraryLLTag_Default).toString();
-}
-
 QStringList xPlayerConfiguration::getMusicLibraryTags() {
     auto tags = settings->value(xPlayerConfiguration_MusicLibraryTags,
                                 xPlayerConfiguration_MusicLibraryTags_Default).toString();
@@ -341,6 +345,15 @@ QStringList xPlayerConfiguration::getMusicLibraryTags() {
     } else {
         return tags.split(" ");
     }
+}
+
+bool xPlayerConfiguration::useLLTag() {
+    return settings->value(xPlayerConfiguration_UseLLTag, true).toBool();
+}
+
+QString xPlayerConfiguration::getLLTag() {
+    return settings->value(xPlayerConfiguration_LLTag,
+                           xPlayerConfiguration_LLTag_Default).toString();
 }
 
 bool xPlayerConfiguration::getMusicViewSelectors() {
@@ -505,7 +518,8 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMusicLibraryDirectory();
     emit updatedMusicLibraryExtensions();
     emit updatedMusicLibraryAlbumSelectors();
-    emit updatedMusicLibraryLLTag();
+    emit updatedUseLLTag();
+    emit updatedLLTag();
     emit updatedMusicLibraryTags();
     emit updatedMusicViewSelectors();
     emit updatedMusicViewFilters();
