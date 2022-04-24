@@ -529,6 +529,12 @@ private:
      */
     void tagPopupMenu(xPlayerListWidget* list, const QPoint& point);
     /**
+     * Determine if renaming of artist, album or track is allowed.
+     *
+     * @return true if the player is stopped and the queue is empty, false otherwise.
+     */
+    [[nodiscard]] bool isRenamingAllowed();
+    /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
      * @param boxLabel contains the label for the surrounding groupbox.

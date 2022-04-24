@@ -542,6 +542,10 @@ void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
     auto artistItem = artistList->itemAt(point);
     if (artistItem) {
         if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            // Are we allowed to rename?
+            if (!isRenamingAllowed()) {
+                return;
+            }
             auto artistName = artistItem->artistEntry()->getArtistName();
             auto newArtistName = showRenameDialog("Artist", artistName);
             // Do we need to rename the artist?
@@ -604,6 +608,10 @@ void xMainMusicWidget::currentAlbumRightClicked(const QPoint& point) {
     auto albumItem = albumList->itemAt(point);
     if (albumItem) {
         if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            // Are we allowed to rename?
+            if (!isRenamingAllowed()) {
+                return;
+            }
             auto albumName = albumItem->albumEntry()->getAlbumName();
             auto newAlbumName = showRenameDialog("Album", albumName);
             // Do we need to rename the album?
@@ -812,7 +820,13 @@ void xMainMusicWidget::currentQueueTrackRightClicked(const QPoint& point) {
         auto track = queueList->currentListIndex();
         if ((track >= 0) && (track< queueList->count())) {
             queueList->takeListItem(track);
-            emit dequeueTrack(track);
+            // Did we remove the last queued track?
+            if (queueList->count() > 0) {
+                emit dequeueTrack(track);
+            } else {
+                musicPlayer->clearQueue();
+                playerWidget->clear();
+            }
         }
     } else {
         tagPopupMenu(queueList, point);
@@ -927,6 +941,10 @@ void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
             // Update items.
             queueList->updateItems();
         } else if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            // Are we allowed to rename?
+            if (!isRenamingAllowed()) {
+                return;
+            }
             auto trackName = trackItem->trackEntry()->getTrackName();
             auto newTrackName = showRenameDialog("Track Name", trackName);
             // Do we need to rename the track name?
@@ -1237,4 +1255,8 @@ void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point
         xPlayerDatabase::database()->removeAllTags(artist, album, trackname);
     });
     menu.exec(list->mapToGlobal(point));
+}
+
+bool xMainMusicWidget::isRenamingAllowed() {
+    return ((!musicPlayer->isPlaying()) && (queueList->count() == 0));
 }
