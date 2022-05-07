@@ -75,7 +75,8 @@ bool xMusicLibraryArtistEntry::isDirectoryEntryValid(const std::filesystem::dire
     try {
         if (dirEntry.is_directory()) {
             auto dirName = dirEntry.path().filename().string();
-            if (dirName[0] != '.') {
+            // Special directories "." and ".." are not valid. Other directories starting with "." are valid.
+            if ((dirName != ".") && (dirName != "..")) {
                 return true;
             }
         }
