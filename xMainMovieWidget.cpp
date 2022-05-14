@@ -59,6 +59,13 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     directoryList = directoryList_;
     directoryList->enableSorting(true);
     movieList = movieList_;
+    // Add filter for movies
+    movieFilterBox = new QGroupBox(tr("Filter Movies"), mainWidget);
+    movieFilterBox->setFlat(xPlayer::UseFlatGroupBox);
+    movieFilter = new QLineEdit(movieFilterBox);
+    auto movieFilterBoxLayout = new QVBoxLayout();
+    movieFilterBoxLayout->addWidget(movieFilter);
+    movieFilterBox->setLayout(movieFilterBoxLayout);
     // Stacked widget setup for movie player.
     movieStack = new QStackedWidget(mainWidget);
     movieStack->addWidget(new QWidget(mainWidget));
@@ -69,16 +76,19 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     auto movieLayout = new xPlayerLayout(mainWidget);
     movieLayout->addWidget(moviePlayerWidget, 0, 0, 2, 5);
     movieLayout->addWidget(movieStack, 2, 0, 8, 5);
-    movieLayout->addWidget(tagBox, 0, 5, 2, 2);
-    movieLayout->addWidget(directoryBox, 2, 5, 2, 2);
-    movieLayout->addWidget(movieBox, 4, 5, 6, 2);
+    movieLayout->addWidget(tagBox, 0, 5, 4, 1);
+    movieLayout->addWidget(directoryBox, 0, 6, 4, 1);
+    movieLayout->addWidget(movieBox, 4, 5, 5, 2);
+    movieLayout->addWidget(movieFilterBox, 9, 5, 1, 2);
     movieLayout->setColumnStretch(0, 6);
-    movieLayout->setColumnStretch(6, 2);
+    movieLayout->setColumnStretch(5, 1);
+    movieLayout->setColumnStretch(6, 1);
     movieLayout->setRowStretch(8, 2);
     // Connect signals.
     connect(tagList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMovieWidget::selectTag);
     connect(directoryList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMovieWidget::selectDirectory);
     connect(movieList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMovieWidget::selectMovie);
+    connect(movieFilter, &QLineEdit::textChanged, movieList, &xPlayerListWidget::updateFilter);
     // Connect to movie player.
     connect(this, &xMainMovieWidget::setMovie, moviePlayer, &xMoviePlayer::setMovie);
     connect(this, &xMainMovieWidget::setMovieQueue, moviePlayer, &xMoviePlayer::setMovieQueue);
@@ -104,6 +114,14 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMovieOverlay,
             this, &xMainMovieWidget::updatedDatabaseMovieOverlay);
+    // Connect filters.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieViewFilters, [this]() {
+        auto visible = xPlayerConfiguration::configuration()->getMovieViewFilters();
+        movieFilterBox->setVisible(visible);
+        if (!visible) {
+            movieFilter->clear();
+        }
+    });
     // Prepare Stack
     addWidget(mainWidget);
     setCurrentWidget(mainWidget);
@@ -263,7 +281,7 @@ void xMainMovieWidget::updateMovieQueue(int index) {
         if (autoPlayNextMovie) {
             QList<std::pair<QString,QString>> queue;
             for (auto i = index+1; i < currentMovies.size(); ++i) {
-                qDebug() << "QUEUE: " << movieList->listItem(i)->text();
+                qDebug() << "updateMovieQueue: " << movieList->listItem(i)->text();
                 queue.push_back(std::make_pair(currentMovies[i], movieList->listItem(i)->text()));
             }
             QString tag = tagList->currentItem()->text();

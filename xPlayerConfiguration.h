@@ -128,6 +128,12 @@ public:
      */
     void setMovieDefaultSubtitleLanguage(const QString& language);
     /**
+     * Set the visibility status of the movie filters widget.
+     *
+     * @param visible show movie filters if true, hide otherwise.
+     */
+    void setMovieViewFilters(bool visible);
+    /**
      * Set the list of sites available in the streaming view.
      *
      * @param sites list of pairs of short name and URL.
@@ -317,6 +323,12 @@ public:
      */
     [[nodiscard]] static const QStringList& getMovieDefaultLanguages();
     /**
+     * Get the visibility of the movie filters.
+     *
+     * @return true if the movie filters are visible, false otherwise.
+     */
+    [[nodiscard]] bool getMovieViewFilters();
+    /**
      * Get the list of streaming sites.
      *
      * @return list of pair of short name and URL.
@@ -448,6 +460,10 @@ signals:
      * Signal and update of the default movie subtitle language.
      */
     void updatedMovieDefaultSubtitleLanguage();
+    /**
+     * Signal an update of the movie filters visibility.
+     */
+    void updatedMovieViewFilters();
     /**
      * Signal an update of the visibility of the Rotel amp widget.
      */

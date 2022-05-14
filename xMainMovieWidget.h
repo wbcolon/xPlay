@@ -22,6 +22,8 @@
 
 #include <QStackedWidget>
 #include <QListWidget>
+#include <QGroupBox>
+#include <QLineEdit>
 #include <QCheckBox>
 #include <QWidget>
 #include <vector>
@@ -243,6 +245,8 @@ private:
     xPlayerListWidget* tagList;
     xPlayerListWidget* directoryList;
     xPlayerListWidget* movieList;
+    QGroupBox* movieFilterBox;
+    QLineEdit* movieFilter;
     QStringList currentMovies;
     QString currentMovieName;
     QString currentMovieTag;

@@ -38,6 +38,7 @@ const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDi
 const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" }; // NOLINT
 const QString xPlayerConfiguration_MovieDefaultAudioLanguage { "xPlay/MovieDefaultAudioLanguage" }; // NOLINT
 const QString xPlayerConfiguration_MovieDefaultSubtitleLanguage { "xPlay/MovieSubtitleAudioLanguage" }; // NOLINT
+const QString xPlayerConfiguration_MovieViewFilters { "xPlay/MovieViewFilters" }; // NOLINT
 const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" }; // NOLINT
 const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory" }; // NOLINT
@@ -57,6 +58,7 @@ const bool xPlayerConfiguration_MusicViewSelectors_Default = true; // NOLINT
 const bool xPlayerConfiguration_MusicViewFilters_Default = false; // NOLINT
 const bool xPlayerConfiguration_MusicViewVisualization_Default = false; // NOLINT
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
+const bool xPlayerConfiguration_MovieViewFilters_Default = true; // NOLINT
 const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = { // NOLINT
         { "qobuz", QUrl("https://play.qobuz.com/login") },
         { "youtube", QUrl("https://www.youtube.com") },
@@ -208,6 +210,14 @@ void xPlayerConfiguration::setMovieDefaultSubtitleLanguage(const QString& langua
         settings->setValue(xPlayerConfiguration_MovieDefaultSubtitleLanguage, language);
         settings->sync();
         emit updatedMovieDefaultSubtitleLanguage();
+    }
+}
+
+void xPlayerConfiguration::setMovieViewFilters(bool visible) {
+    if (visible != getMovieViewFilters()) {
+        settings->setValue(xPlayerConfiguration_MovieViewFilters, visible);
+        settings->sync();
+        emit updatedMovieViewFilters();
     }
 }
 
@@ -387,6 +397,10 @@ QStringList xPlayerConfiguration::getMovieLibraryTagAndDirectory() {
     }
 }
 
+bool xPlayerConfiguration::getMovieViewFilters() {
+    return settings->value(xPlayerConfiguration_MovieViewFilters, xPlayerConfiguration_MovieViewFilters_Default).toBool();
+}
+
 QList<std::pair<QString,QUrl>> xPlayerConfiguration::getStreamingSites() {
     auto streamingSites = settings->value(xPlayerConfiguration_StreamingSites, "").toString();
     QList<std::pair<QString,QUrl>> streamingList;
@@ -529,6 +543,7 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMovieLibraryExtensions();
     emit updatedMovieDefaultAudioLanguage();
     emit updatedMovieDefaultSubtitleLanguage();
+    emit updatedMovieViewFilters();
     emit updatedStreamingSites();
     emit updatedStreamingSitesDefault();
     emit updatedDatabaseMusicOverlay();

@@ -466,6 +466,18 @@ void xApplication::createMenus() {
     musicViewMenu->addAction(musicViewFilters);
     musicViewMenu->addAction(musicViewVisualization);
 
+    auto movieViewMenu = viewMenu->addMenu("Movie View");
+    auto movieViewFilters = new QAction("Filters", this);
+    movieViewFilters->setCheckable(true);
+    movieViewFilters->setShortcut(QKeySequence("Ctrl+Alt+M"));
+    movieViewFilters->setChecked(xPlayerConfiguration::configuration()->getMovieViewFilters());
+    connect(movieViewFilters, &QAction::triggered, mainMovieWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setMovieViewFilters(checked);
+    });
+
+    // Create movie view submenu.
+    movieViewMenu->addAction(movieViewFilters);
+
     // Create actions for help menu
     auto helpMenuAboutQt = new QAction("About Qt", this);
     auto helpMenuAboutQwt = new QAction("About Qwt", this);
