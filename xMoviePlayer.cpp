@@ -52,7 +52,7 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     // Setup the media player.
     // Create a new libvlc instance. User "--verbose=2" for additional libvlc output.
     // const char* const movieVLCArgs[] = { "--vout=gl",  "--verbose=2" };
-    const char* const movieVLCArgs[] = { "--vout=xcb_xv",  "--quiet" };
+    const char* const movieVLCArgs[] = { "--vout=xcb_xv", "--quiet" };
     movieInstance = libvlc_new(sizeof(movieVLCArgs)/sizeof(movieVLCArgs[0]), movieVLCArgs);
     movieMediaPlayer = libvlc_media_player_new(movieInstance);
     movieMediaPlayerEventManager = libvlc_media_player_event_manager(movieMediaPlayer);
@@ -126,6 +126,7 @@ void xMoviePlayer::playPause() {
 void xMoviePlayer::playChapter(int chapter) {
     if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
         libvlc_media_player_set_chapter(movieMediaPlayer, chapter);
+        seekFixAudio();
         updateCurrentChapter();
         emit currentState(State::PlayingState);
     }
@@ -133,11 +134,13 @@ void xMoviePlayer::playChapter(int chapter) {
 
 void xMoviePlayer::previousChapter() {
     libvlc_media_player_previous_chapter(movieMediaPlayer);
+    seekFixAudio();
     updateCurrentChapter();
 }
 
 void xMoviePlayer::nextChapter() {
     libvlc_media_player_next_chapter(movieMediaPlayer);
+    seekFixAudio();
     updateCurrentChapter();
 }
 
@@ -149,6 +152,7 @@ void xMoviePlayer::seek(qint64 position) {
     // Jump to position (in milliseconds) in the current track.
     auto newPosition = static_cast<float>(static_cast<double>(position)/static_cast<double>(movieMediaLength));
     libvlc_media_player_set_position(movieMediaPlayer, newPosition);
+    seekFixAudio();
     updateCurrentChapter();
 }
 
@@ -166,6 +170,7 @@ void xMoviePlayer::stop() {
     // Stop (pause and reset to position 0) the media player.
     libvlc_media_player_set_pause(movieMediaPlayer, 1);
     libvlc_media_player_set_position(movieMediaPlayer, 0);
+    seekFixAudio();
     updateCurrentChapter();
     emit currentState(State::StopState);
     emit currentMoviePlayed(0);
@@ -441,6 +446,17 @@ void xMoviePlayer::updateCurrentChapter() {
             emit currentChapter(chapter);
         }
     }
+}
+
+void xMoviePlayer::seekFixAudio() {
+    // Workaround for audio issues after seeking, otherwise we see some kind of audio stutter.
+    auto oldAudioChannel = libvlc_audio_get_channel(movieMediaPlayer);
+    if (oldAudioChannel != libvlc_AudioChannel_RStereo) {
+        libvlc_audio_set_channel(movieMediaPlayer, libvlc_AudioChannel_RStereo);
+    } else {
+        libvlc_audio_set_channel(movieMediaPlayer, libvlc_AudioChannel_Stereo);
+    }
+    libvlc_audio_set_channel(movieMediaPlayer, oldAudioChannel);
 }
 
 void xMoviePlayer::updateAudioAndSubtitleDescription(QString& description) {

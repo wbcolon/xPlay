@@ -302,6 +302,10 @@ private:
      */
     void updateCurrentChapter();
     /**
+     * Fix audio issues with VLC after seek.
+     */
+    void seekFixAudio();
+    /**
      * Update the audio channel/subtitle description. Expand language strings.
      *
      * @param decription the current description as string.
