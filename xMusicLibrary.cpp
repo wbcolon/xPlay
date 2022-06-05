@@ -394,7 +394,8 @@ void xMusicLibrary::compare(const xMusicLibrary* library, QStringList& missingAr
             }
             for (auto libraryAlbum : libraryArtist->getAlbums()) {
                 auto libraryAlbumName = libraryAlbum->getAlbumName();
-                if (artist->getAlbum(libraryAlbumName)) {
+                // It's additional if we cannot find it in our library.
+                if (!artist->getAlbum(libraryAlbumName)) {
                     additional.push_back(libraryAlbumName);
                 }
             }
@@ -525,7 +526,8 @@ bool xMusicLibrary::isDirectoryEntryValid(const std::filesystem::directory_entry
     try {
         if (dirEntry.is_directory()) {
             auto dirName = dirEntry.path().filename().string();
-            if (dirName[0] != '.') {
+            // Special directories "." and ".." are not valid. Other directories starting with "." are valid.
+            if ((dirName != ".") && (dirName != "..")) {
                 return true;
             }
         }

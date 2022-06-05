@@ -1,6 +1,12 @@
 # Changelog
 
 
+## 0.12.1 - 
+- Fix bug in compare of music libraries affecting mobile sync view.
+- Only ignore . and .. directories for music library.
+
+
+
 ## 0.12.0 - 2022-05-15
 
 - New music library implementation.
