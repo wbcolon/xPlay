@@ -26,6 +26,12 @@
 #include <QCheckBox>
 #include <QDebug>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+
 xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         musicLibrary(library),
@@ -322,6 +328,8 @@ void xMainMobileSyncWidget::actionApplyThread(const std::list<xPlayerMusicLibrar
             qCritical() << "Unable to copy item: " << addToItem->description() << ", error: " << error.what();
         }
     }
+    // Sleep a few ms before finishing thread. Give emitted signals time.
+    QThread::msleep(250);
 }
 
 void xMainMobileSyncWidget::actionApplyUpdate(int progress) {
@@ -335,6 +343,18 @@ void xMainMobileSyncWidget::actionApplyUpdate(int progress) {
 }
 
 void xMainMobileSyncWidget::actionApplyFinished() {
+    // Sync moblile library content.
+    int mobileFd = open(mobileLibrary->getPath().string().c_str(), O_DIRECTORY | O_RDONLY);
+    if (mobileFd != -1) {
+        auto actionBarFormat = actionBar->format();
+        actionBar->setFormat("sync mobile library");
+        actionBar->setValue(0);
+        syncfs(mobileFd);
+        actionBar->setFormat(actionBarFormat);
+    } else {
+        // Error. We were unable to get fd for mobile library. May not have written music files.
+        qCritical() << "Unable to sync mobile library. File system corruption likely.";
+    }
     // Rescan the library.
     mobileLibraryScanClear();
     // Hide action bar.
