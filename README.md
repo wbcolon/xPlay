@@ -275,8 +275,8 @@ A ctrl+right-click to an element of the music library will add the corresponding
 element to the *Remove from Mobile Library* list. The impact of the listed changes to the mobile library will be
 displayed in a progress bar. The progress bar changes color from green to red in case there is no sufficient storage
 space for the mobile library. Pressing the *Apply* button will perform the removal operations before the add operations.
-A progess bar will show display the progress of the sync operation. The re-scanning of the music library is disabled
-during the sync operation.
+A progess bar will show display the progress of the sync operation. A blocking filesystem sync will be performed after
+the removal/copy operations. The re-scanning of the music library is disabled during the sync operation.
 
 
 ### Menu

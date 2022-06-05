@@ -1,10 +1,11 @@
 # Changelog
 
 
-## 0.12.1 - 
+## 0.12.1 - 2022-06-05
+
+- Add filesystem sync after the copy/remove operations in mobile sync view.
 - Fix bug in compare of music libraries affecting mobile sync view.
 - Only ignore . and .. directories for music library.
-
 
 
 ## 0.12.0 - 2022-05-15
