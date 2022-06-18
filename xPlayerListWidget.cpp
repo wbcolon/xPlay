@@ -34,7 +34,8 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(const QString& text, QTreeWidget* p
         itemTooltip(),
         itemArtistEntry(nullptr),
         itemAlbumEntry(nullptr),
-        itemTrackEntry(nullptr) {
+        itemTrackEntry(nullptr),
+        itemMovieEntry(nullptr) {
     Q_ASSERT(parent != nullptr);
     setText(0, text);
     itemTextWidth = parent->fontMetrics().width(itemText+"...");
@@ -47,7 +48,8 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryArtistEntry* artist, Q
         itemTooltip(),
         itemArtistEntry(artist),
         itemAlbumEntry(nullptr),
-        itemTrackEntry(nullptr) {
+        itemTrackEntry(nullptr),
+        itemMovieEntry(nullptr) {
     Q_ASSERT(parent != nullptr);
     Q_ASSERT(artist != nullptr);
     itemText = itemArtistEntry->getArtistName();
@@ -62,7 +64,8 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryAlbumEntry* album, QTr
         itemTooltip(),
         itemArtistEntry(nullptr),
         itemAlbumEntry(album),
-        itemTrackEntry(nullptr) {
+        itemTrackEntry(nullptr),
+        itemMovieEntry(nullptr) {
     Q_ASSERT(parent != nullptr);
     Q_ASSERT(album != nullptr);
     itemText = itemAlbumEntry->getAlbumName();
@@ -79,10 +82,11 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryTrackEntry* track, QTr
         itemTooltip(),
         itemArtistEntry(nullptr),
         itemAlbumEntry(nullptr),
-        itemTrackEntry(track) {
+        itemTrackEntry(track),
+        itemMovieEntry(nullptr) {
     Q_ASSERT(parent != nullptr);
     Q_ASSERT(track != nullptr);
-    setTextAlignment(1, Qt::AlignRight);
+    setTextAlignment(1, Qt::AlignRight|Qt::AlignVCenter);
     itemText = itemTrackEntry->getTrackName();
     // Only update the time in the constructor if it was already scanned. The update will force a scan if necessary.
     if (itemTrackEntry->isScanned()) {
@@ -93,6 +97,29 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryTrackEntry* track, QTr
     itemTextWidth = parent->fontMetrics().width(itemText+"...");
 }
 
+xPlayerListWidgetItem::xPlayerListWidgetItem(xMovieLibraryEntry* movie, QTreeWidget* parent):
+        QTreeWidgetItem(parent),
+        itemTimeUpdated(false),
+        itemTime(0),
+        itemText(),
+        itemTextWidth(0),
+        itemTooltip(),
+        itemArtistEntry(nullptr),
+        itemAlbumEntry(nullptr),
+        itemTrackEntry(nullptr),
+        itemMovieEntry(movie) {
+    Q_ASSERT(parent != nullptr);
+    Q_ASSERT(movie != nullptr);
+    setTextAlignment(1, Qt::AlignRight|Qt::AlignVCenter);
+    itemText = itemMovieEntry->getMovieName();
+    // Only update the time in the constructor if it was already scanned. The update will force a scan if necessary.
+    if (itemMovieEntry->isScanned()) {
+        updateTime();
+        updateTimeDisplay();
+    }
+    setText(0, itemText);
+    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+}
 
 void xPlayerListWidgetItem::setIcon(const QString& fileName) {
     if (fileName.isEmpty()) {
@@ -161,9 +188,16 @@ xMusicLibraryTrackEntry* xPlayerListWidgetItem::trackEntry() const {
     return itemTrackEntry;
 }
 
+xMovieLibraryEntry* xPlayerListWidgetItem::movieEntry() const {
+    return itemMovieEntry;
+}
+
 qint64 xPlayerListWidgetItem::updateTime() {
     if ((itemTrackEntry) && (!itemTimeUpdated)) {
         itemTime = itemTrackEntry->getLength();
+        itemTimeUpdated = true;
+    } else if ((itemMovieEntry) && (!itemTimeUpdated)) {
+        itemTime = itemMovieEntry->getLength();
         itemTimeUpdated = true;
     }
     return itemTime;
@@ -172,6 +206,9 @@ qint64 xPlayerListWidgetItem::updateTime() {
 void xPlayerListWidgetItem::updateTimeDisplay() {
     if ((itemTrackEntry) && (itemTimeUpdated)) {
         setText(1, QString("%1:%2").arg(itemTime/60000).arg((itemTime/1000)%60, 2, 10, QChar('0')));
+    }
+    if ((itemMovieEntry) && (itemTimeUpdated)) {
+        setText(1, QString("%1:%2:%3").arg(itemTime/3600000).arg((itemTime/60000)%60, 2, 10, QChar('0')).arg((itemTime/1000)%60, 2, 10, QChar('0')));
     }
 }
 
@@ -186,7 +223,7 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
     header()->setSectionResizeMode(0, QHeaderView::Stretch);
     if (displayTime) {
         setColumnCount(2);
-        setColumnWidth(1, fontMetrics().width("99:99"));
+        setColumnWidth(1, fontMetrics().width("99:99:99"));
     } else {
         setColumnCount(1);
     }
@@ -237,6 +274,10 @@ void xPlayerListWidget::addListItem(xMusicLibraryTrackEntry* entry) {
     addListItem(entry, QString());
 }
 
+void xPlayerListWidget::addListItem(xMovieLibraryEntry* entry) {
+    addListItem(entry, QString());
+}
+
 void xPlayerListWidget::addListItems(const QStringList& list) {
     for (const auto& element : list) {
         addListItem(element);
@@ -268,6 +309,16 @@ void xPlayerListWidget::addListItem(xMusicLibraryTrackEntry* entry, const QStrin
     // Add tooltip.
     item->addToolTip(tooltip);
     addListWidgetItem(item, entry->getTrackName());
+    if (!currentMatch.isEmpty()) {
+        updateFilter(currentMatch);
+    }
+}
+
+void xPlayerListWidget::addListItem(xMovieLibraryEntry* entry, const QString& tooltip) {
+    auto item = new xPlayerListWidgetItem(entry, this);
+    // Add tooltip.
+    item->addToolTip(tooltip);
+    addListWidgetItem(item, entry->getMovieName());
     if (!currentMatch.isEmpty()) {
         updateFilter(currentMatch);
     }

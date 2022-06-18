@@ -28,6 +28,8 @@
 #include <QWidget>
 #include <vector>
 
+class xMovieLibraryEntry;
+
 class xMainMovieWidget:public QStackedWidget {
     Q_OBJECT
 
@@ -82,7 +84,7 @@ signals:
      * @param tag the tag for the movie played.
      * @param directory the directory for the movie played.
      */
-    void setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    void setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Signal emitted in order to set the movie queue.
      *
@@ -90,7 +92,7 @@ signals:
      * @param tag the tag for the movies in the queue.
      * @param directory the directory for the movies in the queue.
      */
-    void setMovieQueue(const QList<std::pair<QString,QString>>& queue, const QString& tag, const QString& directory);
+    void setMovieQueue(const QList<std::pair<std::filesystem::path, QString>>& queue, const QString& tag, const QString& directory);
     /**
      * Signal emitted in order to clear the movie queue;
      */
@@ -114,7 +116,7 @@ public slots:
      *
      * @param movies the vector of pairs of file name and full paths.
      */
-    void scannedMovies(const std::vector<std::pair<QString, QString>>& movies);
+    void scannedMovies(const std::vector<xMovieLibraryEntry*>& movies);
 
 private slots:
     /**
@@ -131,7 +133,7 @@ private slots:
      * @param tag the tag for the currently played movie.
      * @param directory the directory for the currently played movie.
      */
-    void currentMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    void currentMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Enable/disable the full window mode.
      *
@@ -172,7 +174,7 @@ private slots:
      * @param tag the tag for the movie played.
      * @param directory the directory for the movie played.
      */
-    void updateSelectedMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    void updateSelectedMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Set the autoplay next mode and update/clear the movie queue.
      *
@@ -227,7 +229,7 @@ private:
      * @param tag the tag for the currently movie played.
      * @param directory the directory for the currently movie played.
      */
-    void updateWindowTitle(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    void updateWindowTitle(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Create the window title based on the current movie played and the full window mode.
      *
@@ -238,16 +240,17 @@ private:
      * Helper function creating a QGroupBox with an QListWidget.
      *
      * @param boxLabel contains the label for the surrounding groupbox.
+     * @param displayTime configure whether or not to display time column.
      * @return pair of pointer to the created QGroupBox and QListWidget.
      */
-    static auto addGroupBox(const QString& boxLabel, QWidget* parent);
+    static auto addGroupBox(const QString& boxLabel, bool displayTime, QWidget* parent);
 
     xPlayerListWidget* tagList;
     xPlayerListWidget* directoryList;
     xPlayerListWidget* movieList;
     QGroupBox* movieFilterBox;
     QLineEdit* movieFilter;
-    QStringList currentMovies;
+    QList<xMovieLibraryEntry*> currentMovies;
     QString currentMovieName;
     QString currentMovieTag;
     QString currentMovieDirectory;

@@ -15,6 +15,8 @@
 #ifndef __XMOVIELIBRARY_H__
 #define __XMOVIELIBRARY_H__
 
+#include "xMovieLibraryEntry.h"
+
 #include <QObject>
 #include <QStringList>
 #include <QThread>
@@ -22,11 +24,13 @@
 #include <filesystem>
 #include <map>
 #include <vector>
+#include "xMovieLibraryEntry.h"
+
 
 /**
  * Typedef for movie library files structure. Improve the readability of the code.
  */
-typedef std::map<QString, std::map<QString, std::vector<std::pair<QString,QString>>>> xMovieFiles_t;
+typedef std::map<QString, std::map<QString, std::vector<xMovieLibraryEntry*>>> xMovieFiles_t;
 
 class xMovieLibraryScanning:public QThread {
     Q_OBJECT
@@ -111,7 +115,7 @@ signals:
      *
      * @param movies a vector of pairs of file name and full path.
      */
-    void scannedMovies(const std::vector<std::pair<QString,QString>>& movies);
+    void scannedMovies(const std::vector<xMovieLibraryEntry*>& movies);
     /**
      * Signal the list of entries not found in the movie library
      *
@@ -146,5 +150,8 @@ private:
     xMovieFiles_t* movieFiles;
     xMovieLibraryScanning* movieLibraryScanning;
 };
+
+Q_DECLARE_METATYPE(xMovieLibraryEntry)
+Q_DECLARE_METATYPE(xMovieLibraryEntry*)
 
 #endif

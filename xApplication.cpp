@@ -44,6 +44,8 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
     qRegisterMetaType<xMusicLibraryArtistEntry*>();
     qRegisterMetaType<std::list<xMusicLibraryArtistEntry*>>();
     qRegisterMetaType<std::vector<xMusicLibraryArtistEntry*>>();
+    qRegisterMetaType<xMovieLibraryEntry>();
+    qRegisterMetaType<xMovieLibraryEntry*>();
     // Setup music and movie library.
     musicLibrary = new xMusicLibrary(this);
     movieLibrary = new xMovieLibrary(this);

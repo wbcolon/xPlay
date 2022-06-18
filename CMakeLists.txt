@@ -57,6 +57,7 @@ set(xPlay_sources
         xMusicLibraryTrackEntry.cpp
         xMusicLibrary.cpp
         xMusicLibraryFilter.cpp
+        xMovieLibraryEntry.cpp
         xMovieLibrary.cpp
         xPlayerConfig.h.in
         xPlayerUI.cpp

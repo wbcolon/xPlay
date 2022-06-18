@@ -176,7 +176,7 @@ void xMoviePlayer::stop() {
     emit currentMoviePlayed(0);
 }
 
-void xMoviePlayer::setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory) {
+void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory) {
     // Stop parsing if current movie file is still being parsed.
     if (movieMedia) {
         libvlc_event_detach(movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, this);
@@ -186,7 +186,7 @@ void xMoviePlayer::setMovie(const QString& path, const QString& name, const QStr
         libvlc_media_release(movieMedia);
         movieMedia = nullptr;
     }
-    movieMedia = libvlc_media_new_path(movieInstance, path.toStdString().c_str());
+    movieMedia = libvlc_media_new_path(movieInstance, path.generic_string().c_str());
     movieMediaEventManager = libvlc_media_event_manager(movieMedia);
     libvlc_event_attach(movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, this);
     libvlc_event_attach(movieMediaEventManager,libvlc_MediaDurationChanged, handleVLCEvents, this);
@@ -205,7 +205,7 @@ void xMoviePlayer::setMovie(const QString& path, const QString& name, const QStr
     emit currentState(xMoviePlayer::PlayingState);
 }
 
-void xMoviePlayer::setMovieQueue(const QList<std::pair<QString,QString>>& queue, const QString& tag, const QString& directory) {
+void xMoviePlayer::setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue, const QString& tag, const QString& directory) {
     movieQueue = queue;
     movieQueueTag = tag;
     movieQueueDirectory = directory;

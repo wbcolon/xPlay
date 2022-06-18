@@ -17,6 +17,7 @@
 
 #include "xPlayerUI.h"
 #include "xMusicLibraryEntry.h"
+#include "xMovieLibraryEntry.h"
 
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -26,7 +27,6 @@
 
 #include <map>
 
-
 // Qt does not support templates with signals and slots mechanism.
 class xPlayerListWidgetItem:public QTreeWidgetItem {
 public:
@@ -34,6 +34,7 @@ public:
     explicit xPlayerListWidgetItem(xMusicLibraryArtistEntry* artist, QTreeWidget* parent);
     explicit xPlayerListWidgetItem(xMusicLibraryAlbumEntry* album, QTreeWidget* parent);
     explicit xPlayerListWidgetItem(xMusicLibraryTrackEntry* track, QTreeWidget* parent);
+    explicit xPlayerListWidgetItem(xMovieLibraryEntry* movie, QTreeWidget* parent);
     ~xPlayerListWidgetItem() override = default;
     /**
      * Set an icon for the list item.
@@ -94,6 +95,7 @@ public:
     [[nodiscard]] xMusicLibraryArtistEntry* artistEntry() const;
     [[nodiscard]] xMusicLibraryAlbumEntry* albumEntry() const;
     [[nodiscard]] xMusicLibraryTrackEntry* trackEntry() const;
+    [[nodiscard]] xMovieLibraryEntry* movieEntry() const;
     /**
      * Determine the time for the list item. No UI update.
      */
@@ -112,6 +114,7 @@ private:
     xMusicLibraryArtistEntry* itemArtistEntry;
     xMusicLibraryAlbumEntry* itemAlbumEntry;
     xMusicLibraryTrackEntry* itemTrackEntry;
+    xMovieLibraryEntry* itemMovieEntry;
 };
 
 
@@ -148,20 +151,22 @@ public:
     /**
      * Add item to the list.
      *
-     * @param entry pointer to the associated music library entry object.
+     * @param entry pointer to the associated music or movie library entry object.
      */
     void addListItem(xMusicLibraryArtistEntry* entry);
     void addListItem(xMusicLibraryAlbumEntry* entry);
     void addListItem(xMusicLibraryTrackEntry* entry);
+    void addListItem(xMovieLibraryEntry* entry);
     /**
      * Add item with tooltip to the list.
      *
-     * @param entry pointer to the associated music library entry object.
+     * @param entry pointer to the associated music or movie library entry object.
      * @param tooltip the text of the tooltip as string.
      */
     void addListItem(xMusicLibraryArtistEntry* entry, const QString& tooltip);
     void addListItem(xMusicLibraryAlbumEntry* entry, const QString& tooltip);
     void addListItem(xMusicLibraryTrackEntry* entry, const QString& tooltip);
+    void addListItem(xMovieLibraryEntry* entry, const QString& tooltip);
     /**
      * Add vector of items with tooltip to the list.
      *

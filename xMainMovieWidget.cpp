@@ -16,18 +16,19 @@
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerDatabase.h"
+#include "xMovieLibrary.h"
 
 #include <QGroupBox>
 #include <QApplication>
 #include <QDateTime>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
-auto xMainMovieWidget::addGroupBox(const QString& boxLabel, QWidget* parent) {
+auto xMainMovieWidget::addGroupBox(const QString& boxLabel, bool displayTime, QWidget* parent) {
     // Create a QGroupBox with the given label and embed
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, parent);
     groupBox->setFlat(xPlayer::UseFlatGroupBox);
-    auto list = new xPlayerListWidget(groupBox);
+    auto list = new xPlayerListWidget(groupBox, displayTime);
     auto boxLayout = new QHBoxLayout();
     boxLayout->addWidget(list);
     groupBox->setLayout(boxLayout);
@@ -48,9 +49,9 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     // main widget with controls.
     mainWidget = new QWidget(parent);
     // Create group boxes for tags, directories and movies.
-    auto [ tagBox, tagList_ ] = addGroupBox(tr("Tags"), mainWidget);
-    auto [ directoryBox, directoryList_ ] = addGroupBox(tr("Directories"), mainWidget);
-    auto [ movieBox, movieList_ ] = addGroupBox(tr("Movies"), mainWidget);
+    auto [ tagBox, tagList_ ] = addGroupBox(tr("Tags"), false, mainWidget);
+    auto [ directoryBox, directoryList_ ] = addGroupBox(tr("Directories"), false, mainWidget);
+    auto [ movieBox, movieList_ ] = addGroupBox(tr("Movies"), true, mainWidget);
     // Create group box for the player widget.
     moviePlayerWidget = new xPlayerMovieWidget(moviePlayer, mainWidget);
     // Setup tag, directory and movie lists.
@@ -128,7 +129,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
 }
 
 void xMainMovieWidget::initializeView() {
-    updateWindowTitle(QString(), currentMovieName, currentMovieTag, currentMovieDirectory);
+    updateWindowTitle(std::filesystem::path(), currentMovieName, currentMovieTag, currentMovieDirectory);
     emit showMenuBar(!fullWindow);
 }
 
@@ -140,7 +141,7 @@ void xMainMovieWidget::clear() {
     // Clear tags, directories and movies lists.
     scannedTags(QStringList());
     scannedDirectories(QStringList());
-    scannedMovies(std::vector<std::pair<QString,QString>>());
+    scannedMovies(std::vector<xMovieLibraryEntry*>());
 }
 
 void xMainMovieWidget::toggleFullWindow() {
@@ -193,14 +194,15 @@ void xMainMovieWidget::scannedDirectories(const QStringList& directories) {
     updatePlayedDirectories();
 }
 
-void xMainMovieWidget::scannedMovies(const std::vector<std::pair<QString,QString>>& movies) {
+void xMainMovieWidget::scannedMovies(const std::vector<xMovieLibraryEntry*>& movies) {
     movieList->clearItems();
     currentMovies.clear();
     for (const auto& movie : movies) {
-        movieList->addListItem(movie.first);
-        currentMovies.push_back(movie.second);
+        movieList->addListItem(movie);
+        currentMovies.push_back(movie);
     }
     updatePlayedMovies();
+    movieList->updateItems();
     qDebug() << "xMainMovieWidget: no of scanned movies: " << movies.size();
 }
 
@@ -224,22 +226,24 @@ void xMainMovieWidget::selectDirectory(int index) {
 void xMainMovieWidget::selectMovie(xPlayerListWidgetItem* movieItem) {
     auto movieIndex = movieList->listIndex(movieItem);
     if ((movieIndex >= 0) && (movieIndex < currentMovies.size())) {
-        QString tag = tagList->currentItem()->text();
-        QString directory { "." };
-        if (directoryList->count() > 0) {
-            directory = directoryList->currentItem()->text();
-        }
+        auto currentMovie = currentMovies[movieIndex];
         updateMovieQueue(movieIndex);
-        emit setMovie(currentMovies[movieIndex], movieList->listItem(movieIndex)->text(), tag, directory);
+        emit setMovie(currentMovie->getPath(), currentMovie->getMovieName(), currentMovie->getTagName(), currentMovie->getDirectoryName());
     }
 }
 
-void xMainMovieWidget::updateSelectedMovie(const QString& path, const QString& name, const QString& tag, const QString& directory) {
+void xMainMovieWidget::updateSelectedMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory) {
     Q_UNUSED(name)
     Q_UNUSED(tag)
     Q_UNUSED(directory)
     auto movieIndex = movieList->currentListIndex();
-    auto pathIndex = currentMovies.indexOf(path);
+    int pathIndex = -1;
+    for (int i = 0; i < currentMovies.size(); ++i) {
+        if (currentMovies[i]->getPath() == path) {
+            pathIndex = i;
+            break;
+        }
+    }
     // Update selection only if pathIndex is valid and not the currently selected listIndex.
     if ((pathIndex != movieIndex) && (pathIndex >= 0) && (pathIndex < movieList->count())) {
         movieList->setCurrentListIndex(pathIndex);
@@ -279,10 +283,10 @@ void xMainMovieWidget::updatedDatabaseMovieOverlay() {
 void xMainMovieWidget::updateMovieQueue(int index) {
     if ((index >= 0) && (index < currentMovies.size())) {
         if (autoPlayNextMovie) {
-            QList<std::pair<QString,QString>> queue;
+            QList<std::pair<std::filesystem::path,QString>> queue;
             for (auto i = index+1; i < currentMovies.size(); ++i) {
                 qDebug() << "updateMovieQueue: " << movieList->listItem(i)->text();
-                queue.push_back(std::make_pair(currentMovies[i], movieList->listItem(i)->text()));
+                queue.push_back(std::make_pair(currentMovies[i]->getPath(), currentMovies[i]->getMovieName()));
             }
             QString tag = tagList->currentItem()->text();
             QString directory { "." };
@@ -436,7 +440,7 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
     }
 }
 
-void xMainMovieWidget::updateWindowTitle(const QString& path, const QString& name, const QString& tag, const QString& directory) {
+void xMainMovieWidget::updateWindowTitle(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory) {
     Q_UNUSED(path)
     currentMovieName = name;
     currentMovieTag = tag;
@@ -486,7 +490,7 @@ void xMainMovieWidget::currentState(xMoviePlayer::State state) {
     }
 }
 
-void xMainMovieWidget::currentMovie(const QString& path, const QString& name,
+void xMainMovieWidget::currentMovie(const std::filesystem::path& path, const QString& name,
                                     const QString& tag, const QString& directory) {
     Q_UNUSED(path)
     // Update database.

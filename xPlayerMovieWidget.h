@@ -52,7 +52,7 @@ public slots:
      * @param tag the tag for the movie played.
      * @param directory the directory for the movie played.
      */
-    void currentMovie(const QString& path, const QString& movie, const QString& tag, const QString& directory);
+    void currentMovie(const std::filesystem::path& path, const QString& movie, const QString& tag, const QString& directory);
     /**
      * Retrieve the audio channels for the current movie.
      *

@@ -116,7 +116,7 @@ signals:
      * @param tag the tag for the currently played movie.
      * @param directory the directory for the currently played movie.
      */
-    void currentMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    void currentMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Signal the amount played for the current movie.
      *
@@ -142,7 +142,7 @@ signals:
     /**
      * Helper signal to call setMovie from event handler callback.
      */
-    void eventHandler_setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    void eventHandler_setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /*
      * Helper signal to call selectAudioChannel from the event handler callback.
      */
@@ -207,7 +207,7 @@ public slots:
      * @param tag the tag for the movie played.
      * @param directory the directory for the movie played.
      */
-    void setMovie(const QString& path, const QString& name, const QString& tag, const QString& directory);
+    void setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Setup the queue of movies to be played after the current one.
      *
@@ -215,7 +215,7 @@ public slots:
      * @param tag the tag for the movies in the queue.
      * @param directory the directory for the movies in the queue.
      */
-    void setMovieQueue(const QList<std::pair<QString,QString>>& queue, const QString& tag, const QString& directory);
+    void setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue, const QString& tag, const QString& directory);
     /**
      * Clear the queue of movies.
      */
@@ -328,7 +328,7 @@ private:
     QList<std::pair<int,QString>> currentSubtitleDescriptions;
     QList<std::pair<int,QString>> currentAudioChannelDescriptions;
     QList<std::pair<qint64,QString>> currentChapterDescriptions;
-    QList<std::pair<QString,QString>> movieQueue;
+    QList<std::pair<std::filesystem::path,QString>> movieQueue;
     QString movieQueueTag;
     QString movieQueueDirectory;
     QString movieDefaultAudioLanguage;
