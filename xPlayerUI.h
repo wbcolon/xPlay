@@ -25,6 +25,7 @@ namespace xPlayer {
 const bool UseFlatGroupBox = true;
 const double SelectorHeightFontFactor = 1.6;
 const int VolumeWidgetWidth = 168;
+const int VolumeWidgetHeight = 132;
 const int ControlButtonWidgetWidth = 200;
 
 const int ArtistListMinimumWidth = 350;

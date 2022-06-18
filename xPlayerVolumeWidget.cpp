@@ -17,6 +17,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QMouseEvent>
+#include <QDebug>
 
 xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
@@ -28,18 +29,38 @@ xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags)
     volumeKnob->setUpperBound(100);
     volumeKnob->setScaleStepSize(20);
     volumeKnob->setWrapping(false);
+    volumeKnob->setContentsMargins(0, 0, 0, 0);
+    auto volumePlusButton = new QPushButton(tr("+"), this);
+    volumePlusButton->setFlat(true);
+    volumePlusButton->setFixedWidth(xPlayerLayout::HugeSpace);
+    auto volumeMinusButton = new QPushButton(tr("-"), this);
+    volumeMinusButton->setFlat(true);
+    volumeMinusButton->setFixedWidth(xPlayerLayout::HugeSpace);
     volumeMuteButton = new QPushButton(tr("Volume"), this);
     volumeMuteButton->setFlat(true);
     // Only stretch top and bottom.
     volumeLayout->addRowStretcher(0);
     // Qwt implementation. Layout here overlap on purpose
     volumeLayout->addWidget(volumeKnob, 1, 0, 4, 4);
-    volumeLayout->addWidget(volumeMuteButton, 4, 0, 1, 4);
+    volumeLayout->addWidget(volumeMinusButton, 4, 0);
+    volumeLayout->addWidget(volumeMuteButton, 4, 1, 1, 2);
+    volumeLayout->addWidget(volumePlusButton, 4, 3);
+    volumeLayout->addItem(new QSpacerItem(1, xPlayer::VolumeWidgetHeight), 3, 0, 1, 4);
     volumeLayout->addRowStretcher(5);
     // Connect the volume slider to the widgets signal. Use lambda to do proper conversion.
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { emit volume(static_cast<int>(vol)); } );
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { currentVolume=static_cast<int>(vol); } );
     connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
+    connect(volumeMinusButton, &QPushButton::pressed, [=]() {
+        if (currentVolume > 0) {
+            setVolume(currentVolume-1);
+        }
+    } );
+    connect(volumePlusButton, &QPushButton::pressed, [=]() {
+        if (currentVolume < 100) {
+            setVolume(currentVolume+1);
+        }
+    } );
     setFixedWidth(xPlayer::VolumeWidgetWidth);
 }
 
