@@ -119,6 +119,7 @@ void xMoviePlayer::playPause() {
     }
     if ((state == libvlc_Paused) || (state == libvlc_Stopped)) {
         libvlc_media_player_play(movieMediaPlayer);
+        vlcFixAudio();
         emit currentState(State::PlayingState);
     }
 }
@@ -126,7 +127,7 @@ void xMoviePlayer::playPause() {
 void xMoviePlayer::playChapter(int chapter) {
     if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
         libvlc_media_player_set_chapter(movieMediaPlayer, chapter);
-        seekFixAudio();
+        vlcFixAudio();
         updateCurrentChapter();
         emit currentState(State::PlayingState);
     }
@@ -134,13 +135,13 @@ void xMoviePlayer::playChapter(int chapter) {
 
 void xMoviePlayer::previousChapter() {
     libvlc_media_player_previous_chapter(movieMediaPlayer);
-    seekFixAudio();
+    vlcFixAudio();
     updateCurrentChapter();
 }
 
 void xMoviePlayer::nextChapter() {
     libvlc_media_player_next_chapter(movieMediaPlayer);
-    seekFixAudio();
+    vlcFixAudio();
     updateCurrentChapter();
 }
 
@@ -152,7 +153,7 @@ void xMoviePlayer::seek(qint64 position) {
     // Jump to position (in milliseconds) in the current track.
     auto newPosition = static_cast<float>(static_cast<double>(position)/static_cast<double>(movieMediaLength));
     libvlc_media_player_set_position(movieMediaPlayer, newPosition);
-    seekFixAudio();
+    vlcFixAudio();
     updateCurrentChapter();
 }
 
@@ -170,7 +171,7 @@ void xMoviePlayer::stop() {
     // Stop (pause and reset to position 0) the media player.
     libvlc_media_player_set_pause(movieMediaPlayer, 1);
     libvlc_media_player_set_position(movieMediaPlayer, 0);
-    seekFixAudio();
+    vlcFixAudio();
     updateCurrentChapter();
     emit currentState(State::StopState);
     emit currentMoviePlayed(0);
@@ -448,7 +449,7 @@ void xMoviePlayer::updateCurrentChapter() {
     }
 }
 
-void xMoviePlayer::seekFixAudio() {
+void xMoviePlayer::vlcFixAudio() {
     // Workaround for audio issues after seeking, otherwise we see some kind of audio stutter.
     auto oldAudioChannel = libvlc_audio_get_channel(movieMediaPlayer);
     if (oldAudioChannel != libvlc_AudioChannel_RStereo) {
@@ -514,6 +515,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
             }
             if ((state == libvlc_Paused) || (state == libvlc_Stopped)) {
                 libvlc_media_player_play(movieMediaPlayer);
+                vlcFixAudio();
                 emit currentState(State::PlayingState);
             }
         } break;

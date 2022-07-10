@@ -302,9 +302,9 @@ private:
      */
     void updateCurrentChapter();
     /**
-     * Fix audio issues with VLC after seek.
+     * Fix audio issues with VLC after seek and play/pause.
      */
-    void seekFixAudio();
+    void vlcFixAudio();
     /**
      * Update the audio channel/subtitle description. Expand language strings.
      *

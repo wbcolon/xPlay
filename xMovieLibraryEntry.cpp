@@ -91,10 +91,7 @@ void xMovieLibraryEntry::scan() const {
     // Determine movie length. Use VLC without video output.
     // Only instantiate VLC once for movie file entries.
     static const char* const vlcArgs[] = { "--vout=none", "--quiet" };
-    static libvlc_instance_t* vlcInstance = nullptr;
-    if (!vlcInstance) {
-        vlcInstance = libvlc_new(sizeof(vlcArgs)/sizeof(vlcArgs[0]), vlcArgs);
-    }
+    static auto vlcInstance = libvlc_new(sizeof(vlcArgs)/sizeof(vlcArgs[0]), vlcArgs);
     auto vlcMedia = libvlc_media_new_path(vlcInstance, entryPath.generic_string().c_str());
     libvlc_media_parse_with_options(vlcMedia, libvlc_media_parse_network, 5000);
     auto vlcStatus = libvlc_media_get_parsed_status(vlcMedia);
