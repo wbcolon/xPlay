@@ -64,6 +64,12 @@ signals:
      */
     void scanningError();
     /**
+     * Signal emitted on scanning progess.
+     *
+     * @param percent the scanning progress in percent.
+     */
+    void scanningProgress(int percent);
+    /**
      * Signal that the complete scanning process is finished.
      */
     void scanningFinished();

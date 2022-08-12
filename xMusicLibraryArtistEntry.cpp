@@ -35,6 +35,10 @@ xMusicLibraryArtistEntry::xMusicLibraryArtistEntry(const QString& artist, const 
     return artistAlbums;
 }
 
+[[nodiscard]] size_t xMusicLibraryArtistEntry::getNoOfAlbums() const {
+    return artistAlbums.size();
+}
+
 [[nodiscard]] xMusicLibraryAlbumEntry* xMusicLibraryArtistEntry::getAlbum(const QString& albumName) const {
     auto albumPos = artistAlbumsMap.find(albumName);
     if (albumPos != artistAlbumsMap.end()) {

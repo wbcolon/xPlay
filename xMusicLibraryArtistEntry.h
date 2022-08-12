@@ -51,6 +51,12 @@ public:
      */
     [[nodiscard]] std::vector<xMusicLibraryAlbumEntry*> getAlbums() const;
     /**
+     * Get number of albums for this artist.
+     *
+     * @return the number of album entries.
+     */
+    [[nodiscard]] std::size_t getNoOfAlbums() const;
+    /**
      * Get a specific album for the artist.
      *
      * @param albumName the name of album as string.

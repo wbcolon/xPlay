@@ -307,6 +307,7 @@ bool xMusicLibrary::isScanned() const {
 
 void xMusicLibrary::scanThread() {
     auto artistEntries = scanDirectory();
+    size_t totalNoAlbums = 0;
     std::sort(artistEntries.begin(), artistEntries.end());
     // Protect access to the music library
     musicLibraryLock.lock();
@@ -327,13 +328,16 @@ void xMusicLibrary::scanThread() {
         musicLibraryArtistsMap[artistName] = artist;
         // Scan albums for the current artist.
         artist->scan();
+        totalNoAlbums += artist->getNoOfAlbums();
         musicLibraryLock.unlock();
     }
+    qDebug() << "Total number of albums: " << totalNoAlbums;
     // Unlock only after the base structure is scanned.
     musicLibraryLock.unlock();
     if (!musicLibraryArtists.empty()) {
         // Emit scanned structure
         emit scannedArtists(musicLibraryArtists);
+        size_t currentNoAlbum = 0;
         // Scan the remaining structure.
         for (auto artist : musicLibraryArtists) {
             auto albums = artist->getAlbums();
@@ -345,7 +349,9 @@ void xMusicLibrary::scanThread() {
                 // Lock around the scanning of the album tracks.
                 musicLibraryLock.lock();
                 album->scan();
+                ++currentNoAlbum;
                 musicLibraryLock.unlock();
+                emit scanningProgress(static_cast<int>(currentNoAlbum*100 / totalNoAlbums));
             }
         }
     } else {

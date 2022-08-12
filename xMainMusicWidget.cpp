@@ -81,13 +81,14 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicStacked = new QStackedWidget(this);
     // Create and group boxes with embedded list widgets.
     musicListView = new QWidget(musicStacked);
-    auto [artistBox, artistList_] = addListWidgetGroupBox(tr("Artists"), false, musicListView);
+    auto [artistBox_, artistList_] = addListWidgetGroupBox(tr("Artists"), false, musicListView);
     auto [albumBox, albumList_] = addListWidgetGroupBox(tr("Albums"), false, musicListView);
     auto [trackBox_, trackList_] = addListWidgetGroupBox(tr("Tracks"), true, musicListView);
     // Sort entries in artist/album/track
     artistList = artistList_;
     artistList->enableSorting(false);
     artistList->setMinimumWidth(xPlayer::ArtistListMinimumWidth);
+    artistBox = artistBox_;
     albumList = albumList_;
     albumList->enableSorting(false);
     albumList->setMinimumWidth(xPlayer::AlbumListMinimumWidth);
@@ -269,6 +270,14 @@ void xMainMusicWidget::clear() {
     selectorTabs->setCurrentIndex(0);
     // Clear Sorting Latest.
     useSortingLatest = false;
+}
+
+void xMainMusicWidget::scanningProgress(int percent) {
+    if (percent < 100) {
+        artistBox->setTitle(tr("Artists")+QString(" - scanning %1%").arg(percent));
+    } else {
+        artistBox->setTitle(tr("Artists"));
+    }
 }
 
 void xMainMusicWidget::scannedArtists(const std::vector<xMusicLibraryArtistEntry*>& artists) {

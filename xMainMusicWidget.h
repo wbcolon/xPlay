@@ -149,6 +149,12 @@ signals:
 
 public slots:
     /**
+     * Receive an update on the scanning progress.
+     *
+     * @param percent the current progress in percent.
+     */
+    void scanningProgress(int percent);
+    /**
      * Receive the result of music library scan for artists.
      *
      * Update the QListWidget for list of artists. The widget itself sorts
@@ -561,6 +567,7 @@ private:
     xMusicLibrary* musicLibrary;
     xMusicLibraryFilter musicLibraryFilter;
     xPlayerMusicWidget* playerWidget;
+    QGroupBox* artistBox;
     xPlayerListWidget* artistList;
     QGroupBox* artistFilterBox;
     QLineEdit* artistFilterLineEdit;
