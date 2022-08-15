@@ -16,6 +16,7 @@
 #include "xPlayerUI.h"
 
 #include <QPushButton>
+#include <QSizePolicy>
 
 xPlayerControlButtonWidget::xPlayerControlButtonWidget(xPlayerControlButtonMode mode, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
@@ -24,43 +25,63 @@ xPlayerControlButtonWidget::xPlayerControlButtonWidget(xPlayerControlButtonMode 
 
     auto controlButtonLayout = new xPlayerLayout();
     controlButtonLayout->setSpacing(xPlayerLayout::NoSpace);
-    playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), tr("Play"), this);
-    auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), tr("Stop"), this);
-    controlButtonLayout->addRowStretcher(0);
-    controlButtonLayout->addWidget(playPauseButton, 1, 0, 1, 2);
-    controlButtonLayout->addWidget(stopButton, 2, 0, 1, 2);
+    // Create buttons for play control.
+    playPauseButton = new QPushButton(QIcon(":/images/xplay-play.svg"), "", this);
+    auto stopButton = new QPushButton(QIcon(":/images/xplay-stop.svg"), "", this);
+    auto rewindButton = new QPushButton(QIcon(":/images/xplay-rewind.svg"), "", this);
+    auto forwardButton = new QPushButton(QIcon(":/images/xplay-forward.svg"), "", this);
+    auto previousButton = new QPushButton(QIcon(":/images/xplay-previous.svg"), "", this);
+    auto nextButton = new QPushButton(QIcon(":/images/xplay-next.svg"), "", this);
+    // Set commond tool tips.
+    rewindButton->setToolTip(tr("Rewind"));
+    forwardButton->setToolTip(tr("Forward"));
+    stopButton->setToolTip(tr("Stop"));
+    controlButtonLayout->addRowSpacer(0, xPlayerLayout::MediumSpace);
+    controlButtonLayout->addWidget(playPauseButton, 1, 0, 1, 3);
+    controlButtonLayout->addWidget(stopButton, 2, 1, 2, 1);
+    controlButtonLayout->addWidget(rewindButton, 2, 0);
+    controlButtonLayout->addWidget(forwardButton, 2, 2);
+    controlButtonLayout->addWidget(previousButton, 3, 0);
+    controlButtonLayout->addWidget(nextButton, 3, 2);
+    controlButtonLayout->addRowSpacer(4, xPlayerLayout::SmallSpace);
+    // Connect common buttons.
     connect(playPauseButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::playPause);
     connect(stopButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::stop);
+    connect(previousButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::previousPressed);
+    connect(nextButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::nextPressed);
+    connect(rewindButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::rewindPressed);
+    connect(forwardButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::forwardPressed);
     if (controlMode == xPlayerControlButtonMode::MusicPlayerMode) {
-        // Create buttons for playlist control, previous, next and clear queue.
-        auto previousButton = new QPushButton(QIcon(":/images/xplay-previous.svg"), tr("Prev"), this);
-        auto nextButton = new QPushButton(QIcon(":/images/xplay-next.svg"), tr("Next"), this);
-        nextButton->setLayoutDirection(Qt::RightToLeft);
-        auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), tr("Clear"), this);
-        controlButtonLayout->addWidget(previousButton, 3, 0);
-        controlButtonLayout->addWidget(nextButton, 3, 1);
-        controlButtonLayout->addRowSpacer(4, xPlayerLayout::SmallSpace);
-        controlButtonLayout->addWidget(clearButton, 5, 0, 1, 2);
-        connect(previousButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::previousPressed);
-        connect(nextButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::nextPressed);
+        // Add tool tips for music player.
+        previousButton->setToolTip(tr("Previous Track"));
+        nextButton->setToolTip(tr("Next Track"));
+        // Add clear queue button
+        auto clearButton = new QPushButton(QIcon(":/images/xplay-eject.svg"), "", this);
+        clearButton->setToolTip(tr("Clear Queue"));
+        clearButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        controlButtonLayout->addWidget(clearButton, 5, 0, 1, 3);
         connect(clearButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::clearPressed);
         connect(clearButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::stop);
     } else {
-        // Create buttons for movie control, rewind, forward and full window.
-        auto rewindButton = new QPushButton(QIcon(":/images/xplay-rewind.svg"), tr("Rwd"), this);
-        auto forwardButton = new QPushButton(QIcon(":/images/xplay-forward.svg"), tr("Fwd"), this);
-        forwardButton->setLayoutDirection(Qt::RightToLeft);
-        auto fullWindowButton = new QPushButton(tr("Full Window"), this);
-        controlButtonLayout->addWidget(rewindButton, 3, 0);
-        controlButtonLayout->addWidget(forwardButton, 3, 1);
-        controlButtonLayout->addRowSpacer(4, xPlayerLayout::SmallSpace);
-        controlButtonLayout->addWidget(fullWindowButton, 5, 0, 1, 2);
-        connect(rewindButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::rewindPressed);
-        connect(forwardButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::forwardPressed);
+        // Add tool tips for movie player.
+        previousButton->setToolTip(tr("Previous Chapter"));
+        nextButton->setToolTip(tr("Next Chapter"));
+        // Add full window button
+        auto fullWindowButton = new QPushButton(QIcon(":/images/xplay-fullwindow.svg"), "", this);
+        fullWindowButton->setToolTip(tr("Full Window"));
+        fullWindowButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        controlButtonLayout->addWidget(fullWindowButton, 5, 0, 1, 3);
         connect(fullWindowButton, &QPushButton::pressed, this, &xPlayerControlButtonWidget::fullWindowPressed);
     }
-    controlButtonLayout->addRowStretcher(6);
+    controlButtonLayout->addRowSpacer(6, xPlayerLayout::MediumSpace);
     controlButtonLayout->setContentsMargins(0, 0, 0, 0);
+    // Set size policies.
+    playPauseButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    stopButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    forwardButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    rewindButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    previousButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    nextButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     setLayout(controlButtonLayout);
     setContentsMargins(0, 0, 0, 0);
     setFixedWidth(xPlayer::ControlButtonWidgetWidth);
@@ -69,10 +90,10 @@ xPlayerControlButtonWidget::xPlayerControlButtonWidget(xPlayerControlButtonMode 
 void xPlayerControlButtonWidget::setPlayPauseState(bool mode) {
     playPauseState = mode;
     if (playPauseState) {
-        playPauseButton->setText(tr("Play"));
+        playPauseButton->setToolTip(tr("Play"));
         playPauseButton->setIcon(QIcon(":/images/xplay-play.svg"));
     } else {
-        playPauseButton->setText(tr("Pause"));
+        playPauseButton->setToolTip(tr("Pause"));
         playPauseButton->setIcon(QIcon(":/images/xplay-pause.svg"));
     }
 }
@@ -88,7 +109,7 @@ void xPlayerControlButtonWidget::playPause() {
 
 void xPlayerControlButtonWidget::stop() {
     playPauseState = true;
-    playPauseButton->setText(tr("Play"));
+    playPauseButton->setToolTip(tr("Play"));
     playPauseButton->setIcon(QIcon(":/images/xplay-play.svg"));
     emit stopPressed();
 }

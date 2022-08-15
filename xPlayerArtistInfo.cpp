@@ -41,12 +41,19 @@ xPlayerArtistInfo::xPlayerArtistInfo(QWidget* parent, Qt::WindowFlags flags):
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     // Navigation buttons and zoom factor box.
-    homeButton = new QPushButton(tr("Artist"), this);
-    homeButton->setFlat(true);
-    auto backButton = new QPushButton(tr("Back"), this);
-    auto fwdButton = new QPushButton(tr("Fwd"), this);
-    auto closeButton = new QToolButton(this);
-    closeButton->setIcon(QIcon(":images/xplay-close-window.svg"));
+    homeButton = new QPushButton(QIcon(":images/xplay-home.svg"), "", this);
+    homeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    homeButton->setToolTip(tr("Home"));
+    auto backButton = new QPushButton(QIcon(":images/xplay-left-arrow.svg"), "", this);
+    backButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    backButton->setToolTip(tr("Back"));
+    auto fwdButton = new QPushButton(QIcon(":images/xplay-right-arrow.svg"), "", this);
+    fwdButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    fwdButton->setToolTip(tr("Forward"));
+    auto reloadButton = new QPushButton(QIcon(":/images/xplay-refresh.svg"), "", this);
+    reloadButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    reloadButton->setToolTip(tr("Reload"));
+    auto closeButton = new QPushButton(QIcon(":images/xplay-close-window.svg"), "", this);
     closeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     zoomBox = new QComboBox(this);
     for (const auto percent : xPlayerConfiguration::getWebsiteZoomFactors()) {
@@ -57,13 +64,14 @@ xPlayerArtistInfo::xPlayerArtistInfo(QWidget* parent, Qt::WindowFlags flags):
     zoomBox->setCurrentIndex(zoomFactorIndex);
     zoomFactor = xPlayerConfiguration::getWebsiteZoomFactors()[zoomFactorIndex] / 100.0;
     // Layout widget.
-    layout->addWidget(homeButton, 0, 0);
-    layout->addWidget(urlEdit, 0, 1, 1, 7);
-    layout->addColumnSpacer(8, xPlayerLayout::SmallSpace);
-    layout->addWidget(zoomBox, 0, 9);
-    layout->addColumnSpacer(10, xPlayerLayout::SmallSpace);
-    layout->addWidget(backButton, 0, 11);
-    layout->addWidget(fwdButton, 0, 12);
+    layout->addWidget(backButton, 0, 0);
+    layout->addWidget(homeButton, 0, 1);
+    layout->addWidget(reloadButton, 0, 2);
+    layout->addWidget(fwdButton, 0, 3);
+    layout->addWidget(urlEdit, 0, 4, 1, 6);
+    layout->setColumnStretch(4, 2);
+    layout->addColumnSpacer(11, xPlayerLayout::SmallSpace);
+    layout->addWidget(zoomBox, 0, 12);
     layout->addColumnSpacer(13, xPlayerLayout::SmallSpace);
     layout->addWidget(closeButton, 0, 14);
     layout->addRowSpacer(1, xPlayerLayout::SmallSpace);
@@ -73,6 +81,7 @@ xPlayerArtistInfo::xPlayerArtistInfo(QWidget* parent, Qt::WindowFlags flags):
     connect(homeButton, &QPushButton::pressed, [=]() { show(artistName); } );
     connect(backButton, &QPushButton::pressed, urlView, &QWebEngineView::back);
     connect(fwdButton, &QPushButton::pressed, urlView, &QWebEngineView::forward);
+    connect(reloadButton, &QPushButton::pressed, urlView, &QWebEngineView::reload);
     connect(closeButton, &QPushButton::pressed, this, &xPlayerArtistInfo::close);
     connect(zoomBox, SIGNAL(currentIndexChanged(int)), this, SLOT(zoomFactorChanged(int)));
     // Connect url view.
@@ -100,7 +109,6 @@ void xPlayerArtistInfo::show(const QString& artist) {
     urlView->history()->clear();
     // Update artist name.
     artistName = artist;
-    homeButton->setText(artistName);
     // Query database for artist info. Configure URL.
     auto artistUrl = xPlayerDatabase::database()->getArtistURL(artist);
     // Update the action (and icon) in the url line edit.

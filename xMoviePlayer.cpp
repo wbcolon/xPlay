@@ -486,7 +486,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
                 nextChapter();
             } else {
                 // Seek +1 min
-                jump(60000);
+                jump(xMoviePlayer::ForwardRewindDelta);
             }
         } break;
         case Qt::Key_Left: {
@@ -494,7 +494,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
                 previousChapter();
             } else {
                 // Seek -1 min
-                jump(-60000);
+                jump(-xMoviePlayer::ForwardRewindDelta);
             }
         } break;
         case Qt::Key_Up: {

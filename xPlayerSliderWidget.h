@@ -115,7 +115,7 @@ private:
      * @param length current length of the for the track slider.
      * @return the divider used for the track slider.
      */
-    [[nodiscard]] int determineScaleDivider(int length) const;
+    [[nodiscard]] int determineScaleDivider(qint64 length) const;
 
     bool showHours;
     int maxScaleSections;

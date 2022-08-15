@@ -85,7 +85,7 @@ void xPlayerSliderWidget::trackLength(qint64 length) {
     // Set maximum of slider to the length of the track. Reset the slider position-
     trackSlider->setScaleStepSize(determineScaleDivider(length));
     trackSlider->setLowerBound(0);
-    trackSlider->setUpperBound(length);
+    trackSlider->setUpperBound(static_cast<double>(length));
     trackSlider->setValue(0);
 }
 
@@ -93,7 +93,7 @@ void xPlayerSliderWidget::trackPlayed(qint64 played) {
     // Update the time played for the current track.
     trackPlayedLabel->display(xPlayer::millisecondsToTimeFormat(played, showHours));
     // Update the slider position.
-    trackSlider->setValue(played);
+    trackSlider->setValue(static_cast<double>(played));
 }
 
 bool xPlayerSliderWidget::hourScale() const {
@@ -108,7 +108,7 @@ void xPlayerSliderWidget::useScaleSections(int scaleSections) {
     maxScaleSections = scaleSections;
 }
 
-int xPlayerSliderWidget::determineScaleDivider(int length) const {
+int xPlayerSliderWidget::determineScaleDivider(qint64 length) const {
     for (auto scaleDivider : { 10000, 30000, 60000, 120000, 300000, 600000, 1200000, 3000000, 6000000 }) {
         if ((length / scaleDivider) <= maxScaleSections) {
             return scaleDivider;

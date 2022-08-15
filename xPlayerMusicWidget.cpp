@@ -103,6 +103,12 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     connect(controlButtonWidget, &xPlayerControlButtonWidget::stopPressed, musicPlayer, &xMusicPlayer::stop);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::previousPressed, musicPlayer, &xMusicPlayer::prev);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::nextPressed, musicPlayer, &xMusicPlayer::next);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::rewindPressed, [=]() {
+        musicPlayer->jump(-xMusicPlayer::ForwardRewindDelta);
+    });
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::forwardPressed, [=]() {
+        musicPlayer->jump(xMusicPlayer::ForwardRewindDelta);
+    });
     connect(controlButtonWidget, &xPlayerControlButtonWidget::clearPressed, musicPlayer, &xMusicPlayer::clearQueue);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::clearPressed, this, &xPlayerMusicWidget::clearQueue);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::clearPressed, this, &xPlayerMusicWidget::clear);

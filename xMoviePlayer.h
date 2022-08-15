@@ -23,6 +23,8 @@ class xMoviePlayer:public QFrame {
     Q_OBJECT
 
 public:
+    // Default delta for forward and rewind.
+    static const qint64 ForwardRewindDelta = 60000;
     /**
      * State of the movie player.
      */

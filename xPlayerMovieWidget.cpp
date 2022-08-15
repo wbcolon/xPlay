@@ -113,19 +113,13 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     // Connect the buttons to player widget and/or to the music player.
     connect(controlButtonWidget, &xPlayerControlButtonWidget::playPausePressed, moviePlayer, &xMoviePlayer::playPause);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::stopPressed, moviePlayer, &xMoviePlayer::stop);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::previousPressed, moviePlayer, &xMoviePlayer::previousChapter);
+    connect(controlButtonWidget, &xPlayerControlButtonWidget::nextPressed, moviePlayer, &xMoviePlayer::nextChapter);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::rewindPressed, [=]() {
-        if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
-            moviePlayer->previousChapter();
-        } else {
-            moviePlayer->jump(-60000);
-        }
+        moviePlayer->jump(-xMoviePlayer::ForwardRewindDelta);
     });
     connect(controlButtonWidget, &xPlayerControlButtonWidget::forwardPressed, [=]() {
-        if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
-            moviePlayer->nextChapter();
-        } else {
-            moviePlayer->jump(60000);
-        }
+        moviePlayer->jump(xMoviePlayer::ForwardRewindDelta);
     });
     connect(controlButtonWidget, &xPlayerControlButtonWidget::fullWindowPressed, this, &xPlayerMovieWidget::fullWindowPressed);
     // Connect combo boxes.

@@ -29,7 +29,8 @@
 #include <QApplication>
 
 xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flags):
-    QWidget(parent, flags) {
+        QWidget(parent, flags),
+        zoomFactor(1.0) {
     auto streamingLayout = new xPlayerLayout(this);
     streamingWebView = new QWebEngineView(this);
     QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
@@ -47,10 +48,18 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     // Control box.
     auto controlBox = new QGroupBox("Navigation", this);
     controlBox->setFlat(xPlayer::UseFlatGroupBox);
-    auto homeButton = new QPushButton(tr("Home"), controlBox);
-    auto backButton = new QPushButton(tr("Back"), controlBox);
-    auto fwdButton = new QPushButton(tr("Fwd"), controlBox);
-    auto reloadButton = new QPushButton(tr("Reload"), controlBox);
+    auto homeButton = new QPushButton(QIcon(":/images/xplay-home.svg"), "", controlBox);
+    homeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    homeButton->setToolTip(tr("Home"));
+    auto backButton = new QPushButton(QIcon(":/images/xplay-left-arrow.svg"), "", controlBox);
+    backButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    backButton->setToolTip(tr("Back"));
+    auto fwdButton = new QPushButton(QIcon(":/images/xplay-right-arrow.svg"), "", controlBox);
+    fwdButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    fwdButton->setToolTip(tr("Forward"));
+    auto reloadButton = new QPushButton(QIcon(":/images/xplay-refresh.svg"), "", controlBox);
+    reloadButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    reloadButton->setToolTip(tr("Reload"));
     auto zoomBox = new QComboBox(controlBox);
     for (const auto& factor : xPlayerConfiguration::getWebsiteZoomFactors()) {
         zoomBox->addItem(QString("%1%").arg(factor));
@@ -59,10 +68,10 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     // Layout.
     auto controlLayout = new xPlayerLayout();
     controlLayout->setSpacing(xPlayerLayout::NoSpace);
-    controlLayout->addWidget(homeButton, 0, 0, 1, 1);
+    controlLayout->addWidget(backButton, 0, 0, 1, 1);
     controlLayout->addWidget(reloadButton, 0, 1, 1, 1);
-    controlLayout->addWidget(backButton, 1, 0, 1, 1);
-    controlLayout->addWidget(fwdButton, 1, 1, 1, 1);
+    controlLayout->addWidget(fwdButton, 0, 2, 1, 1);
+    controlLayout->addWidget(homeButton, 1, 0, 1, 3);
     controlLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
     controlLayout->addWidget(zoomBox, 3, 0, 1, 2);
     controlLayout->addRowSpacer(4, xPlayerLayout::SmallSpace);
@@ -78,7 +87,9 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     cookiesCheckBox->setChecked(true);
     auto cacheCheckBox = new QCheckBox(tr("Cache"), sitesBox);
     cacheCheckBox->setChecked(true);
-    auto clearButton = new QPushButton(tr("Clear"), sitesBox);
+    auto clearButton = new QPushButton(QIcon(":/images/xplay-clear-data.svg"), "", controlBox);
+    clearButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    clearButton->setToolTip(tr("Clear"));
     // Layout.
     auto siteLayout = new xPlayerLayout();
     siteLayout->setSpacing(xPlayerLayout::NoSpace);
