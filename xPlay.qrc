@@ -8,6 +8,12 @@
     <file>images/xplay-eject.svg</file>
     <file>images/xplay-forward.svg</file>
     <file>images/xplay-rewind.svg</file>
+    <file>images/xplay-home.svg</file>
+    <file>images/xplay-refresh.svg</file>
+    <file>images/xplay-clear-data.svg</file>
+    <file>images/xplay-left-arrow.svg</file>
+    <file>images/xplay-right-arrow.svg</file>
+    <file>images/xplay-fullwindow.svg</file>
     <file>images/xplay-star.svg</file>
     <file>images/xplay-empty-star.svg</file>
     <file>images/xplay-close-window.svg</file>
