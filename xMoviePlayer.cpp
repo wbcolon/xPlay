@@ -14,6 +14,7 @@
 
 #include "xMoviePlayer.h"
 #include "xPlayerConfiguration.h"
+#include "xPlayerPulseAudioControls.h"
 
 #include <QEvent>
 #include <QMouseEvent>
@@ -94,20 +95,22 @@ xMoviePlayer::~xMoviePlayer() noexcept {
 }
 
 void xMoviePlayer::setMuted(bool mute) {
+    // Mute the stream and the pulse audio sink
     libvlc_audio_set_mute(movieMediaPlayer, mute);
+    xPlayerPulseAudioControls::controls()->setMuted(mute);
 }
 
 bool xMoviePlayer::isMuted() const {
     return static_cast<bool>(libvlc_audio_get_mute(movieMediaPlayer));
 }
 
-void xMoviePlayer::setVolume(int vol) {
+void xMoviePlayer::setVolume(int vol) { // NOLINT
     vol = std::clamp(vol, 0, 100);
-    libvlc_audio_set_volume(movieMediaPlayer, vol);
+    xPlayerPulseAudioControls::controls()->setVolume(vol);
 }
 
-int xMoviePlayer::getVolume() const {
-    return libvlc_audio_get_volume(movieMediaPlayer);
+int xMoviePlayer::getVolume() const { // NOLINT
+    return xPlayerPulseAudioControls::controls()->getVolume();
 }
 
 void xMoviePlayer::playPause() {

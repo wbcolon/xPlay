@@ -11,9 +11,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
-#set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -fsanitize=address -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
-set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -DXPLAY_APP_NAME=\\\"xPlay\\\"")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -D_REENTRANT -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
+#set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -fsanitize=address -D_REENTRANT -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
+set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -D_REENTRANT -DXPLAY_APP_NAME=\\\"xPlay\\\"")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
@@ -43,6 +43,10 @@ set(CMAKE_REQUIRED_LIBRARIES "${PROJECTM_LIBRARIES}")
 pkg_check_modules(VLCLIB libvlc)
 set(CMAKE_REQUIRED_INCLUDES "${VLCLIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
+
+pkg_check_modules(PALIB libpulse)
+set(CMAKE_REQUIRED_INCLUDES "${PALIB_INCLUDE_DIRS}")
+set(CMAKE_REQUIRED_LIBRARIES "${PALIB_LIBRARIES}")
 
 set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
@@ -76,6 +80,7 @@ set(xPlay_sources
         xPlayerSliderWidget.cpp
         xPlayerBalanceWidget.cpp
         xPlayerControlButtonWidget.cpp
+        xPlayerPulseAudioControls.cpp
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
         xPlayerMusicArtistSelectorWidget.cpp
@@ -98,6 +103,7 @@ set(xPlay_libraries
         ${TAGLIB_LIBRARIES}
         ${PROJECTM_LIBRARIES}
         OpenGL::GL
+        ${PALIB_LIBRARIES}
         ${VLCLIB_LIBRARIES})
 
 if (USE_TESTS)

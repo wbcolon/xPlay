@@ -14,6 +14,7 @@
 #include "xPlayerMusicWidget.h"
 #include "xPlayerVolumeWidget.h"
 #include "xPlayerRotelWidget.h"
+#include "xPlayerPulseAudioControls.h"
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
@@ -58,7 +59,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     // Create control buttons.
     controlButtonWidget = new xPlayerControlButtonWidget(xPlayerControlButtonWidget::MusicPlayerMode, controlTabPlayer);
-    auto volumeWidget = new xPlayerVolumeWidget(controlTabPlayer);
+    auto volumeWidget = new xPlayerVolumeWidget(true, controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, musicPlayer, &xMusicPlayer::setMuted);
@@ -118,7 +119,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     // Connect Rotel amp widget configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
         controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
-    } );
+    });
     // Do not resize the player widget vertically
     //setFixedHeight(sizeHint().height());
     // Setup volume

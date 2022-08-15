@@ -117,7 +117,6 @@ private slots:
 private:
     QWebEngineView* streamingWebView;
     QComboBox* sitesCombo;
-    QCheckBox* muteAudio;
     QList<std::pair<QString,QUrl>> streamingSites;
     std::pair<QString,QUrl> streamingSitesDefault;
     std::pair<QString,QUrl> currentSite;

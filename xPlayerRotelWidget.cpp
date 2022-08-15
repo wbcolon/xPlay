@@ -313,7 +313,7 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     auto rotelLayout = new xPlayerLayout(this);
     rotelLayout->setSpacing(xPlayerLayout::NoSpace);
     // Create a volume knob.
-    rotelVolume = new xPlayerVolumeWidget(this);
+    rotelVolume = new xPlayerVolumeWidget(false, this);
     // Create rotel control buttons widget.
     auto rotelControlButton = new QWidget(this);
     auto rotelControlButtonLayout = new xPlayerLayout();
@@ -358,11 +358,11 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
         rotelLayout->addColumnSpacer(1, xPlayerLayout::MediumSpace);
         rotelLayout->addWidget(rotelControlButton, 0, 2);
     } else {
-        rotelLayout->addWidget(rotelControlButton, 0, 0);
+        rotelLayout->addWidget(rotelVolume, 0, 0);
         rotelLayout->addRowSpacer(1, xPlayerLayout::MediumSpace);
         // Adjust width for vertical layout.
         rotelVolume->setFixedWidth(xPlayer::ControlButtonWidgetWidth);
-        rotelLayout->addWidget(rotelVolume, 2, 0);
+        rotelLayout->addWidget(rotelControlButton, 1, 0);
     }
     rotelControls = xPlayerRotelControls::controls();
     // Connect the widgets to the amp commands.

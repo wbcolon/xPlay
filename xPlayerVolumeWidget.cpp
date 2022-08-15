@@ -12,14 +12,17 @@
  * GNU General Public License for more details.
  */
 #include "xPlayerVolumeWidget.h"
+#include "xPlayerPulseAudioControls.h"
 
 #include "xPlayerUI.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QDebug>
+#include <cmath>
 
-xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags):
+
+xPlayerVolumeWidget::xPlayerVolumeWidget(bool pulseAudioMode, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         currentVolume(0),
         currentMuted(false) {
@@ -49,7 +52,7 @@ xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags)
     volumeLayout->addRowStretcher(5);
     // Connect the volume slider to the widgets signal. Use lambda to do proper conversion.
     connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { emit volume(static_cast<int>(vol)); } );
-    connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { currentVolume=static_cast<int>(vol); } );
+    connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { currentVolume = static_cast<int>(vol); } );
     connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
     connect(volumeMinusButton, &QPushButton::pressed, [=]() {
         if (currentVolume > 0) {
@@ -61,6 +64,16 @@ xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags)
             setVolume(currentVolume+1);
         }
     } );
+    if (pulseAudioMode) {
+        // Connect to pulse audio controls.
+        connect(xPlayerPulseAudioControls::controls(), &xPlayerPulseAudioControls::volume, [=](int vol) {
+            setVolume(vol);
+        });
+        connect(xPlayerPulseAudioControls::controls(), &xPlayerPulseAudioControls::muted, [=](bool muted) {
+            setMuted(muted);
+        });
+    }
+    // Set size.
     setFixedWidth(xPlayer::VolumeWidgetWidth);
 }
 

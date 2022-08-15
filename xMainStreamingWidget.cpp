@@ -14,6 +14,7 @@
 
 #include "xMainStreamingWidget.h"
 #include "xPlayerRotelWidget.h"
+#include "xPlayerPulseAudioControls.h"
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
@@ -37,14 +38,27 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
-    // Rotel Controls.
-    auto rotelBox = new QGroupBox(tr("Rotel"), this);
-    rotelBox->setFlat(xPlayer::UseFlatGroupBox);
-    auto rotelWidget = new xPlayerRotelWidget(rotelBox, Qt::Vertical);
-    auto rotelLayout = new QVBoxLayout();
-    rotelLayout->addWidget(rotelWidget);
-    rotelBox->setLayout(rotelLayout);
-    rotelBox->setEnabled(xPlayerConfiguration::configuration()->rotelWidget());
+    // Add a control tab for player and rotel amp controls
+    auto controlTab = new QTabWidget(this);
+    controlTab->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    auto controlVolumeTab = new QWidget(controlTab);
+    auto volumeControl = new xPlayerVolumeWidget(true, controlVolumeTab);
+    volumeControl->setFixedWidth(xPlayer::ControlButtonWidgetWidth);
+    auto controlVolumeLayout = new xPlayerLayout();
+    controlVolumeLayout->addRowSpacer(0, 2);
+    controlVolumeLayout->addWidget(volumeControl, 1, 0, 1, 1);
+    controlVolumeLayout->addRowStretcher(2);
+    controlVolumeTab->setLayout(controlVolumeLayout);
+    auto controlRotelTab = new xPlayerRotelWidget(controlTab, Qt::Vertical);
+    controlTab->setTabPosition(QTabWidget::North);
+    controlTab->addTab(controlVolumeTab, "xPlay");
+    controlTab->addTab(controlRotelTab, "Rotel");
+    // Connect volume and rotel amp controls
+    volumeControl->setVolume(xPlayerPulseAudioControls::controls()->getVolume());
+    connect(volumeControl, &xPlayerVolumeWidget::volume, [](int vol) {
+        xPlayerPulseAudioControls::controls()->setVolume(vol);
+    });
+    connect(volumeControl, &xPlayerVolumeWidget::muted, this, &xMainStreamingWidget::setMuted);
     // Control box.
     auto controlBox = new QGroupBox("Navigation", this);
     controlBox->setFlat(xPlayer::UseFlatGroupBox);
@@ -64,18 +78,15 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     for (const auto& factor : xPlayerConfiguration::getWebsiteZoomFactors()) {
         zoomBox->addItem(QString("%1%").arg(factor));
     }
-    muteAudio = new QCheckBox(tr("Mute Site"), controlBox);
     // Layout.
     auto controlLayout = new xPlayerLayout();
     controlLayout->setSpacing(xPlayerLayout::NoSpace);
     controlLayout->addWidget(backButton, 0, 0, 1, 1);
-    controlLayout->addWidget(reloadButton, 0, 1, 1, 1);
-    controlLayout->addWidget(fwdButton, 0, 2, 1, 1);
-    controlLayout->addWidget(homeButton, 1, 0, 1, 3);
-    controlLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
-    controlLayout->addWidget(zoomBox, 3, 0, 1, 2);
-    controlLayout->addRowSpacer(4, xPlayerLayout::SmallSpace);
-    controlLayout->addWidget(muteAudio, 5, 0, 1, 2);
+    controlLayout->addWidget(homeButton, 0, 1, 1, 1);
+    controlLayout->addWidget(reloadButton, 0, 2, 1, 1);
+    controlLayout->addWidget(fwdButton, 0, 3, 1, 1);
+    controlLayout->addRowSpacer(1, xPlayerLayout::SmallSpace);
+    controlLayout->addWidget(zoomBox, 2, 0, 1, 4);
     controlBox->setLayout(controlLayout);
     // Sites box.
     auto sitesBox = new QGroupBox(tr("Sites"), this);
@@ -104,21 +115,19 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     streamingLayout->addWidget(streamingWebView, 0, 0, 25, 20);
     streamingLayout->addWidget(sitesBox, 0, 21, 2, 1);
     streamingLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
-    streamingLayout->addWidget(controlBox, 3, 21, 4, 1);
-    streamingLayout->addRowSpacer(7, xPlayerLayout::SmallSpace);
-    streamingLayout->addWidget(rotelBox, 8, 21, 7, 1);
-    streamingLayout->addRowSpacer(10, xPlayerLayout::SmallSpace);
-    streamingLayout->addRowStretcher(16);
+    streamingLayout->addWidget(controlBox, 3, 21, 2, 1);
+    streamingLayout->addRowSpacer(5, xPlayerLayout::SmallSpace);
+    streamingLayout->addWidget(controlTab, 6, 21, 7, 1);
+    streamingLayout->addRowStretcher(14);
     // Connect Rotel amp widget configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
-        rotelBox->setEnabled(xPlayerConfiguration::configuration()->rotelWidget());
+        controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     } );
     // Connect the navigation controls to the QWebEngineView.
     connect(homeButton, &QPushButton::pressed, [=] () { streamingWebView->load(currentSite.second); } );
     connect(backButton, &QPushButton::pressed, streamingWebView, &QWebEngineView::back);
     connect(fwdButton, &QPushButton::pressed, streamingWebView, &QWebEngineView::forward);
     connect(reloadButton, &QPushButton::pressed, streamingWebView, &QWebEngineView::reload);
-    connect(muteAudio, &QCheckBox::toggled, streamingWebView->page(), &QWebEnginePage::setAudioMuted);
     connect(clearButton, &QPushButton::pressed, [=] () {
         clearData(historyCheckBox->isChecked(), cookiesCheckBox->isChecked(), cacheCheckBox->isChecked());
     } );
@@ -167,8 +176,8 @@ const std::pair<QString,QUrl>& xMainStreamingWidget::getSitesDefault() const {
 }
 
 void xMainStreamingWidget::setMuted(bool mute) {
-    // Setting the state for the widget will trigger the signal that sets the audio state.
-    muteAudio->setChecked(mute);
+    streamingWebView->page()->setAudioMuted(mute);
+    xPlayerPulseAudioControls::controls()->setMuted(mute);
 }
 
 bool xMainStreamingWidget::isMuted() const {

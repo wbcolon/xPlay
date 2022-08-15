@@ -53,6 +53,7 @@ QString millisecondsToTimeFormat(qint64 ms, bool showHours);
 class xPlayerLayout:public QGridLayout {
 public:
     static const int NoSpace = 0;
+    static const int TinySpace = 4;
     static const int SmallSpace = 8;
     static const int MediumSpace = 16;
     static const int LargeSpace = 24;
