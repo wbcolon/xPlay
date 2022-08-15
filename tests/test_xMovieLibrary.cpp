@@ -159,10 +159,10 @@ void test_xMovieLibrary::testScannedMovies() {
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
-    auto moviesPaths = qvariant_cast<std::vector<std::pair<QString,QString>>>(spy.at(0).at(0));
+    auto moviesPaths = qvariant_cast<std::vector<xMovieLibraryEntry*>>(spy.at(0).at(0));
     QStringList movies;
     for (const auto& moviePath : moviesPaths) {
-        movies.push_back(moviePath.first);
+        movies.push_back(moviePath->getMovieName());
     }
     movies.sort();
     QVERIFY(movies == expectedMovies);

@@ -37,6 +37,9 @@ int main(int argc, char** argv) {
     qRegisterMetaType<xMusicLibraryAlbumEntry>();
     qRegisterMetaType<std::vector<xMusicLibraryAlbumEntry*>>();
     qRegisterMetaType<std::vector<std::pair<QString,QString>>>();
+    qRegisterMetaType<xMovieLibraryEntry>();
+    qRegisterMetaType<std::vector<xMovieLibraryEntry*>>();
+    qRegisterMetaType<std::vector<xMusicLibraryAlbumEntry*>>();
 
     test_xMusicLibraryTrackEntry musicLibraryTrackEntry;
     test_xMusicLibraryEntry musicLibraryEntry;
