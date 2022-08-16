@@ -160,11 +160,16 @@ void xPlayerMovieWidget::createOptionsMenu() {
     optionsAutoplayNext->setCheckable(true);
     optionsAutoplayNext->setChecked(false);
     connect(optionsAutoplayNext, &QAction::triggered, this, &xPlayerMovieWidget::autoPlayNextMovie);
+    // Compress Audio.
+    auto optionsAudioCompression = new QAction(tr("Audio Compression"), optionsMenu);
+    optionsAudioCompression->setCheckable(true);
+    optionsAudioCompression->setChecked(false);
+    connect(optionsAudioCompression, &QAction::triggered, moviePlayer, &xMoviePlayer::setAudioCompressionMode);
     // Deinterlace.
     auto optionsDeinterlace = new QAction(tr("Deinterlace"), optionsMenu);
     optionsDeinterlace->setCheckable(true);
     optionsDeinterlace->setChecked(false);
-    connect(optionsAutoplayNext, &QAction::triggered, moviePlayer, &xMoviePlayer::setDeinterlaceMode);
+    connect(optionsDeinterlace, &QAction::triggered, moviePlayer, &xMoviePlayer::setDeinterlaceMode);
     // Crop submenu.
     auto cropSubmenu = new QMenu(tr("Crop"), optionsMenu);
     auto cropActions = new QActionGroup(cropSubmenu);
@@ -188,6 +193,7 @@ void xPlayerMovieWidget::createOptionsMenu() {
     // Compose menu.
     optionsMenu->addAction(optionsAutoplayNext);
     optionsMenu->addSeparator();
+    optionsMenu->addAction(optionsAudioCompression);
     optionsMenu->addAction(optionsDeinterlace);
     optionsMenu->addMenu(cropSubmenu);
     optionsMenuButton->setMenu(optionsMenu);

@@ -487,6 +487,13 @@ void xMainMovieWidget::currentState(xMoviePlayer::State state) {
             setFullWindow(false);
             movieStack->setCurrentIndex(0);
         } break;
+        case xMoviePlayer::ResetState: {
+            // The libvlc media player has been restarted.
+            setFullWindow(false);
+            movieStack->setCurrentIndex(0);
+            // Clear movie player widget.
+            moviePlayerWidget->clear();
+        }
     }
 }
 

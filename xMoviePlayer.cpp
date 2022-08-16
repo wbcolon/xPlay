@@ -35,26 +35,31 @@ std::list<std::pair<QString,QString>> xMoviePlayer::supportedAspectRatio() {
     };
 }
 
-xMoviePlayer::xMoviePlayer(QWidget *parent):
-        QFrame(parent),
-        movieMediaPlayer(nullptr),
-        movieMediaEventManager(nullptr),
-        movieMedia(nullptr),
-        movieMediaInitialPlay(false),
-        movieMediaParsed(false),
-        movieMediaPlaying(false),
-        movieMediaLength(0),
-        movieMediaChapter(0),
-        movieMediaDeinterlaceMode(false),
-        movieMediaCropAspectRatio(),
-        movieDefaultAudioLanguageIndex(-1),
-        movieDefaultSubtitleLanguageIndex(-1),
-        fullWindow(false) {
-    // Setup the media player.
+void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
     // Create a new libvlc instance. User "--verbose=2" for additional libvlc output.
-    // const char* const movieVLCArgs[] = { "--vout=gl",  "--verbose=2" };
-    const char* const movieVLCArgs[] = { "--vout=xcb_xv", "--quiet" };
-    movieInstance = libvlc_new(sizeof(movieVLCArgs)/sizeof(movieVLCArgs[0]), movieVLCArgs);
+    // const char* const movieVLCArgs[] = { "--vout=xcb_xv", "--quiet" };
+    // const char* const movieVLCArgsCompressor[] = { "--vout=xcb_xv", "--audio-filter=compressor", "--quiet" };
+    const char* const movieVLCArgs[] = {
+            "--vout=xcb_xv",
+            "--verbose=2"
+    };
+    const char* const movieVLCArgsCompressor[] = {
+            "--vout=xcb_xv",
+            "--audio-filter=compressor",
+            "--compressor-rms-peak=0.2",
+            "--compressor-attack=25",
+            "--compressor-release=100",
+            "--compressor-threshold=-11",
+            "--compressor-ratio=4",
+            "--compressor-knee=5",
+            "--compressor-makeup-gain=7",
+            "--verbose=2"
+    };
+    if (compressAudio) {
+        movieInstance = libvlc_new(sizeof(movieVLCArgsCompressor)/sizeof(movieVLCArgsCompressor[0]), movieVLCArgsCompressor);
+    } else {
+        movieInstance = libvlc_new(sizeof(movieVLCArgs)/sizeof(movieVLCArgs[0]), movieVLCArgs);
+    }
     movieMediaPlayer = libvlc_media_player_new(movieInstance);
     movieMediaPlayerEventManager = libvlc_media_player_event_manager(movieMediaPlayer);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerPlaying, handleVLCEvents, this);
@@ -65,19 +70,9 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerBuffering, handleVLCEvents, this);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerChapterChanged, handleVLCEvents, this);
     libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerEncounteredError, handleVLCEvents, this);
-    // Connect signals used to call out of VLC handler.
-    connect(this, &xMoviePlayer::eventHandler_stop, this, &xMoviePlayer::stop);
-    connect(this, &xMoviePlayer::eventHandler_setMovie, this, &xMoviePlayer::setMovie);
-    connect(this, &xMoviePlayer::eventHandler_selectAudioChannel, this, &xMoviePlayer::selectAudioChannel);
-    connect(this, &xMoviePlayer::eventHandler_selectSubtitle, this, &xMoviePlayer::selectSubtitle);
-    // Connect to configuration.
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultAudioLanguage,
-            this, &xMoviePlayer::updatedDefaultAudioLanguage);
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultSubtitleLanguage,
-            this, &xMoviePlayer::updatedDefaultSubtitleLanguage);
 }
 
-xMoviePlayer::~xMoviePlayer() noexcept {
+void xMoviePlayer::vlcStopMediaPlayer() {
     // Detach events
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerPlaying, handleVLCEvents, this);
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerEndReached, handleVLCEvents, this);
@@ -92,6 +87,42 @@ xMoviePlayer::~xMoviePlayer() noexcept {
     libvlc_media_player_release(movieMediaPlayer);
     // Release instance
     libvlc_release(movieInstance);
+}
+
+xMoviePlayer::xMoviePlayer(QWidget *parent):
+        QFrame(parent),
+        movieInstance(nullptr),
+        movieMediaPlayer(nullptr),
+        movieMediaPlayerEventManager(nullptr),
+        movieMediaEventManager(nullptr),
+        movieMedia(nullptr),
+        movieMediaInitialPlay(false),
+        movieMediaParsed(false),
+        movieMediaPlaying(false),
+        movieMediaLength(0),
+        movieMediaChapter(0),
+        movieMediaDeinterlaceMode(false),
+        movieMediaAudioCompressionMode(false),
+        movieMediaCropAspectRatio(),
+        movieDefaultAudioLanguageIndex(-1),
+        movieDefaultSubtitleLanguageIndex(-1),
+        fullWindow(false) {
+    // Set up the media player.
+    vlcStartMediaPlayer(movieMediaAudioCompressionMode);
+    // Connect signals used to call out of VLC handler.
+    connect(this, &xMoviePlayer::eventHandler_stop, this, &xMoviePlayer::stop);
+    connect(this, &xMoviePlayer::eventHandler_setMovie, this, &xMoviePlayer::setMovie);
+    connect(this, &xMoviePlayer::eventHandler_selectAudioChannel, this, &xMoviePlayer::selectAudioChannel);
+    connect(this, &xMoviePlayer::eventHandler_selectSubtitle, this, &xMoviePlayer::selectSubtitle);
+    // Connect to configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultAudioLanguage,
+            this, &xMoviePlayer::updatedDefaultAudioLanguage);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultSubtitleLanguage,
+            this, &xMoviePlayer::updatedDefaultSubtitleLanguage);
+}
+
+xMoviePlayer::~xMoviePlayer() noexcept {
+    vlcStopMediaPlayer();
 }
 
 void xMoviePlayer::setMuted(bool mute) {
@@ -217,6 +248,19 @@ void xMoviePlayer::setMovieQueue(const QList<std::pair<std::filesystem::path,QSt
 
 void xMoviePlayer::clearMovieQueue() {
     movieQueue.clear();
+}
+
+void xMoviePlayer::setAudioCompressionMode(bool mode) {
+    if (mode != movieMediaAudioCompressionMode) {
+        movieMediaAudioCompressionMode = mode;
+        vlcStopMediaPlayer();
+        vlcStartMediaPlayer(movieMediaAudioCompressionMode);
+        emit currentState(State::ResetState);
+    }
+}
+
+bool xMoviePlayer::audioCompressionMode() const {
+    return movieMediaAudioCompressionMode;
 }
 
 void xMoviePlayer::setDeinterlaceMode(bool mode) {

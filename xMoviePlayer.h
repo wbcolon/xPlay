@@ -32,7 +32,8 @@ public:
         PlayingState,
         PauseState,
         StoppingState,
-        StopState
+        StopState,
+        ResetState,
     };
 
     explicit xMoviePlayer(QWidget* parent=nullptr);
@@ -223,6 +224,18 @@ public slots:
      */
     void clearMovieQueue();
     /**
+     * Enable or disable dynamic audio compression.
+     *
+     * @param enable enable deinterlace if true, disable otherwise.
+     */
+    void setAudioCompressionMode(bool mode);
+    /**
+     * Return the currently state of dynamic audio compression.
+     *
+     * @return return true if dynamic compression is enabled, false otherwise.
+     */
+    [[nodiscard]] bool audioCompressionMode() const;
+    /**
      * Enable or disable deinterlace.
      *
      * @param enable enable deinterlace if true, disable otherwise.
@@ -304,6 +317,16 @@ private:
      */
     void updateCurrentChapter();
     /**
+     * Start the libvlc media player.
+     *
+     * @param compressAudio use dynamic compression effect for audio if true, do not if otherwise.
+     */
+    void vlcStartMediaPlayer(bool compressAudio);
+    /**
+     * Stop the libvlc media player.
+     */
+    void vlcStopMediaPlayer();
+    /**
      * Fix audio issues with VLC after seek and play/pause.
      */
     void vlcFixAudio();
@@ -325,6 +348,7 @@ private:
     qint64 movieMediaLength;
     int movieMediaChapter;
     bool movieMediaDeinterlaceMode;
+    bool movieMediaAudioCompressionMode;
     QString movieMediaCropAspectRatio;
 
     QList<std::pair<int,QString>> currentSubtitleDescriptions;
