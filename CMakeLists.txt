@@ -11,9 +11,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -D_REENTRANT -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
-#set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -fsanitize=address -D_REENTRANT -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
-set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -D_REENTRANT -DXPLAY_APP_NAME=\\\"xPlay\\\"")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
+#set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -fsanitize=address -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
+set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -DXPLAY_APP_NAME=\\\"xPlay\\\"")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
@@ -34,18 +34,22 @@ find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(TAGLIB taglib)
 set(CMAKE_REQUIRED_INCLUDES "${TAGLIB_INCLUDE_DIRS}")
+set(CMAKE_REQUIRED_CFLAGS "${TAGLIB_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${TAGLIB_LIBRARIES}")
 
 pkg_check_modules(PROJECTM libprojectM)
 set(CMAKE_REQUIRED_INCLUDES "${PROJECTM_INCLUDE_DIRS}")
+set(CMAKE_REQUIRED_CFLAGS "${PROJECTM_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${PROJECTM_LIBRARIES}")
 
 pkg_check_modules(VLCLIB libvlc)
 set(CMAKE_REQUIRED_INCLUDES "${VLCLIB_INCLUDE_DIRS}")
+set(CMAKE_REQUIRED_CFLAGS "${VLCLIB_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
 
 pkg_check_modules(PALIB libpulse)
 set(CMAKE_REQUIRED_INCLUDES "${PALIB_INCLUDE_DIRS}")
+set(CMAKE_REQUIRED_CFLAGS "${PALIB_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${PALIB_LIBRARIES}")
 
 set(QT_USE_QTMULTIMEDIA TRUE)
@@ -53,6 +57,11 @@ set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${SQLITE3_INCLUDE_DIRS})
+
+add_definitions(${TAGLIB_CFLAGS})
+add_definitions(${PROJECTM_CFLAGS})
+add_definitions(${VLCLIB_CFLAGS})
+add_definitions(${PALIB_CFLAGS})
 
 set(xPlay_sources
         xMusicLibraryEntry.cpp

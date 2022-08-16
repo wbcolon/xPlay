@@ -26,7 +26,7 @@ public:
      *
      * @return pointer to a singleton of the volume controls.
      */
-    static xPlayerPulseAudioControls* controls();
+    [[nodiscard]] static xPlayerPulseAudioControls* controls();
 
 public slots:
     /**
@@ -50,6 +50,12 @@ public slots:
 
 signals:
     /**
+     * Signal emitted if a pulseaudio error occurs.
+     *
+     * @param errorMsg the error message as string.
+     */
+    void error(const QString& errorMsg);
+    /**
      * Signal emitted if volume is updated by a setVolume command.
      *
      * @param vol the new volume as integer.
@@ -64,6 +70,7 @@ signals:
 
 private:
     typedef enum {
+        PA_DISCONNECTED,
         PA_CONNECTING,
         PA_CONNECTED,
         PA_ERROR
@@ -75,14 +82,45 @@ private:
     /**
      * Destructor. Default.
      */
-    ~xPlayerPulseAudioControls() override = default;
+    ~xPlayerPulseAudioControls() override;
 
-
-    // Pulseaudio functions.
-    void paDefaultSinkInfo();
+    /**
+     * Pulseaudio helper functions.
+     * Code inspired by
+     * - https://github.com/pulseaudio/pavucontrol
+     * - https://github.com/cdemoulins/pamixer
+     */
+    /**
+     * Connect to pulseaudio.
+     *
+     * @return true if connection is successful, false otherwise.
+     */
+    bool paConnect();
+    /**
+     * Disconnect from pulseaudio
+     */
+    void paDisconnect();
+    /**
+     * Iterate pulseaudio operation event queue until given operation finished.
+     *
+     * @param op the operation we are observing.
+     */
     void paIterate(pa_operation* op);
-    // Callback for pulseaudio.
+    /**
+     * Callback for the pulseaudio connection state.
+     *
+     * @param context pointer to the pulseaudio context.
+     * @param data pointer to addition data.
+     */
     static void paCallbackState(pa_context* context, void* data);
+    /**
+     * Callback for the pulseaudio sink info list parsing.
+     *
+     * @param context pointer to the pulseaudio context.
+     * @param info pointer to the pulseaudio sink info.
+     * @param eol indicator for error parsing sink info.
+     * @param data pointer to addition data.
+     */
     static void paCallbackSinkList(pa_context* context, const pa_sink_info* info, int eol, void* data);
 
     QString defaultSinkName;
@@ -95,7 +133,6 @@ private:
     pa_context* paContext;
     pa_state_t paState;
     int paRetValue;
-
     static xPlayerPulseAudioControls* paControls;
 };
 

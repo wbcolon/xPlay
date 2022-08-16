@@ -138,6 +138,12 @@ private slots:
      */
     void dbus_selectRotelSource(const QString& source);
     /**
+     * Show dialog if an error occurs trying to connect to pulseaudio.
+     *
+     * @param errorMsg the error message as string.
+     */
+    void pulseAudioError(const QString& errorMsg);
+    /**
      * Show dialog for unknown entries in the music table of the database.
      *
      * @param entries a list of tuples of artist, album and track unknown.

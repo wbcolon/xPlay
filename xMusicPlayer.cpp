@@ -14,7 +14,6 @@
 #include "xMusicPlayer.h"
 #include "xMusicLibrary.h"
 #include "xMusicLibraryTrackEntry.h"
-#include "xPlayerPulseAudioControls.h"
 #include "xPlayerDatabase.h"
 
 #include <QRandomGenerator>
@@ -32,6 +31,7 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         musicPlayerState(State::StopState),
         useShuffleMode(false),
         musicCurrentFinished(false) {
+    pulseAudioControls = xPlayerPulseAudioControls::controls();
     // Set up the media player.
     musicPlayer = new Phonon::MediaObject(this);
     musicOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
@@ -406,13 +406,13 @@ void xMusicPlayer::next() {
 }
 
 void xMusicPlayer::setMuted(bool mute) {
-    // Mute/Unmute the stream and the pulse audio sink.
+    // Mute/Unmute the stream and the pulseaudio sink.
     musicOutput->setMuted(mute);
-    xPlayerPulseAudioControls::controls()->setMuted(mute);
+    pulseAudioControls->setMuted(mute);
 }
 
 bool xMusicPlayer::isMuted() const {
-    // The stream and the pulse audio sink is muted.
+    // The stream and the pulseaudio sink is muted. Use stream state to check.
     return musicOutput->isMuted();
 }
 
@@ -445,7 +445,7 @@ bool xMusicPlayer::getShuffleMode() const {
 void xMusicPlayer::setVolume(int vol) {
     if (!musicOutput->isMuted()) {
         vol = std::clamp(vol, 0, 100);
-        xPlayerPulseAudioControls::controls()->setVolume(vol);
+        pulseAudioControls->setVolume(vol);
     }
 }
 
@@ -458,8 +458,8 @@ void xMusicPlayer::setVisualization(bool enabled) {
     }
 }
 
-int xMusicPlayer::getVolume() const { // NOLINT
-    return xPlayerPulseAudioControls::controls()->getVolume();
+int xMusicPlayer::getVolume() const {
+    return pulseAudioControls->getVolume();
 }
 
 bool xMusicPlayer::supportsVisualization() {

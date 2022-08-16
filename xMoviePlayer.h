@@ -15,6 +15,8 @@
 #ifndef __XMOVIEPLAYER_H__
 #define __XMOVIEPLAYER_H__
 
+#include "xPlayerPulseAudioControls.h"
+
 #include <QFrame>
 #include <filesystem>
 #include <vlc/vlc.h>
@@ -337,6 +339,7 @@ private:
      */
     static void updateAudioAndSubtitleDescription(QString& description);
 
+    xPlayerPulseAudioControls* pulseAudioControls;
     libvlc_instance_t* movieInstance;
     libvlc_media_player_t* movieMediaPlayer;
     libvlc_event_manager_t* movieMediaPlayerEventManager;
@@ -361,7 +364,6 @@ private:
     QString movieDefaultSubtitleLanguage;
     int movieDefaultAudioLanguageIndex;
     int movieDefaultSubtitleLanguageIndex;
-    bool fullWindow;
 };
 
 #endif

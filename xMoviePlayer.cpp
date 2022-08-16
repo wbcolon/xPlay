@@ -14,7 +14,6 @@
 
 #include "xMoviePlayer.h"
 #include "xPlayerConfiguration.h"
-#include "xPlayerPulseAudioControls.h"
 
 #include <QEvent>
 #include <QMouseEvent>
@@ -36,12 +35,11 @@ std::list<std::pair<QString,QString>> xMoviePlayer::supportedAspectRatio() {
 }
 
 void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
-    // Create a new libvlc instance. User "--verbose=2" for additional libvlc output.
-    // const char* const movieVLCArgs[] = { "--vout=xcb_xv", "--quiet" };
-    // const char* const movieVLCArgsCompressor[] = { "--vout=xcb_xv", "--audio-filter=compressor", "--quiet" };
+    // Create a new libvlc instance. Use "--verbose=2" for additional libvlc output.
     const char* const movieVLCArgs[] = {
             "--vout=xcb_xv",
-            "--verbose=2"
+            "--quiet",
+            // "--verbose=2"
     };
     const char* const movieVLCArgsCompressor[] = {
             "--vout=xcb_xv",
@@ -53,7 +51,8 @@ void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
             "--compressor-ratio=4",
             "--compressor-knee=5",
             "--compressor-makeup-gain=7",
-            "--verbose=2"
+            "--quiet",
+            // "--verbose=2"
     };
     if (compressAudio) {
         movieInstance = libvlc_new(sizeof(movieVLCArgsCompressor)/sizeof(movieVLCArgsCompressor[0]), movieVLCArgsCompressor);
@@ -105,10 +104,10 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         movieMediaAudioCompressionMode(false),
         movieMediaCropAspectRatio(),
         movieDefaultAudioLanguageIndex(-1),
-        movieDefaultSubtitleLanguageIndex(-1),
-        fullWindow(false) {
+        movieDefaultSubtitleLanguageIndex(-1) {
     // Set up the media player.
     vlcStartMediaPlayer(movieMediaAudioCompressionMode);
+    pulseAudioControls = xPlayerPulseAudioControls::controls();
     // Connect signals used to call out of VLC handler.
     connect(this, &xMoviePlayer::eventHandler_stop, this, &xMoviePlayer::stop);
     connect(this, &xMoviePlayer::eventHandler_setMovie, this, &xMoviePlayer::setMovie);
@@ -126,22 +125,22 @@ xMoviePlayer::~xMoviePlayer() noexcept {
 }
 
 void xMoviePlayer::setMuted(bool mute) {
-    // Mute the stream and the pulse audio sink
+    // Mute/unmute the stream and the pulseaudio sink
     libvlc_audio_set_mute(movieMediaPlayer, mute);
-    xPlayerPulseAudioControls::controls()->setMuted(mute);
+    pulseAudioControls->setMuted(mute);
 }
 
 bool xMoviePlayer::isMuted() const {
     return static_cast<bool>(libvlc_audio_get_mute(movieMediaPlayer));
 }
 
-void xMoviePlayer::setVolume(int vol) { // NOLINT
+void xMoviePlayer::setVolume(int vol) {
     vol = std::clamp(vol, 0, 100);
-    xPlayerPulseAudioControls::controls()->setVolume(vol);
+    pulseAudioControls->setVolume(vol);
 }
 
-int xMoviePlayer::getVolume() const { // NOLINT
-    return xPlayerPulseAudioControls::controls()->getVolume();
+int xMoviePlayer::getVolume() const {
+    return pulseAudioControls->getVolume();
 }
 
 void xMoviePlayer::playPause() {
@@ -522,8 +521,7 @@ void xMoviePlayer::updatedDefaultSubtitleLanguage() {
     movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
 }
 
-void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
-{
+void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
     switch (keyEvent->key()) {
         case Qt::Key_Escape: {
             toggleFullWindow();
@@ -575,13 +573,11 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent)
     keyEvent->accept();
 }
 
-void xMoviePlayer::mouseDoubleClickEvent(QMouseEvent* mouseEvent)
-{
+void xMoviePlayer::mouseDoubleClickEvent(QMouseEvent* mouseEvent) {
     emit toggleFullWindow();
     mouseEvent->accept();
 }
 
-void xMoviePlayer::mousePressEvent(QMouseEvent* mouseEvent)
-{
+void xMoviePlayer::mousePressEvent(QMouseEvent* mouseEvent) {
     QFrame::mousePressEvent(mouseEvent);
 }

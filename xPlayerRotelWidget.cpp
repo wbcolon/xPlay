@@ -282,7 +282,7 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
     // We do ignore commands if the corresponding widget is disabled.
     if (!xPlayerConfiguration::configuration()->rotelWidget()) {
         qInfo() << "xPlayerRotelControls::sendcommand: ignore command, widget disabled.";
-        return QString();
+        return {};
     }
     char readBuffer[65] = { 0 };
     qint64 readBytes = 0;
@@ -292,19 +292,19 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
         if (!rotelSocket->waitForBytesWritten(500)) {
             qCritical() << "xPlayerRotelControls::sendCommand: unable to send command. Disconnecting.";
             controlsDisconnected();
-            return QString();
+            return {};
         }
         if (!rotelSocket->waitForReadyRead(2000)) {
             qCritical() << "xPlayerRotelControls::sendCommand: unable to read reply. Disconnecting.";
             controlsDisconnected();
-            return QString();
+            return {};
         }
         readBytes = rotelSocket->read(readBuffer, 64);
     } else {
         qCritical() << "xPlayerRotelControls::sendCommand: state is not connected. Disconnecting.";
         controlsDisconnected();
     }
-    return (readBytes > 0) ? cleanupReplyMessage(QString(readBuffer)) : QString();
+    return (readBytes > 0) ? cleanupReplyMessage(QString(readBuffer)) : QString{};
 }
 
 

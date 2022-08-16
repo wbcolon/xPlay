@@ -15,6 +15,7 @@
 #define __XMUSICPLAYER_H__
 
 #include "xMusicLibrary.h"
+#include "xPlayerPulseAudioControls.h"
 
 #include <phonon/MediaObject>
 #include <phonon/MediaSource>
@@ -303,6 +304,7 @@ private:
      */
     static QVector<int> extendPermutation(const QVector<int>& permutation, int elements, int extendIndex);
 
+    xPlayerPulseAudioControls* pulseAudioControls;
     xMusicLibrary* musicLibrary;
     std::vector<std::tuple<QString,QString,xMusicLibraryTrackEntry*>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;

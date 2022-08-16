@@ -33,7 +33,7 @@ public:
      *
      * @return pointer to a singleton of the rotel amp controls.
      */
-    static xPlayerRotelControls* controls();
+    [[nodiscard]] static xPlayerRotelControls* controls();
     /**
      * Connect controls via network to the Rotel amp.
      *
@@ -47,37 +47,37 @@ public:
      *
      * @return the current volume of the Rotel amp.
      */
-    int getVolume();
+    [[nodiscard]] int getVolume();
     /**
      * Send get bass command to the Rotel amp and return retrieved bass.
      *
      * @return the current bass of the Rotel amp.
      */
-    int getBass();
+    [[nodiscard]] int getBass();
     /**
      * Send get treble command to the Rotel amp and return retrieved treble.
      *
      * @return the current treble of the Rotel amp.
      */
-    int getTreble();
+    [[nodiscard]] int getTreble();
     /**
      * Send get balance command to the Rotel amp and return retrieved treble.
      *
      * @return the current balance of the Rotel amp (< 0 to the left, > 0 to the right).
      */
-    int getBalance();
+    [[nodiscard]] int getBalance();
     /**
      * Send get source command to the Rotel amp and return retrieved source.
      *
      * @return the current source of the Rotel amp as string.
      */
-    QString getSource();
+    [[nodiscard]] QString getSource();
     /**
      * Send get mute command to the Rotel amp and return retrieved mute state.
      *
      * @return true if the Rotel amp is in mute state, false otherwise.
      */
-    bool isMuted();
+    [[nodiscard]] bool isMuted();
 
 public slots:
     /**
@@ -195,7 +195,7 @@ private slots:
      * @param message the raw reply message as string.
      * @return the cleaned reply message as string.
      */
-    QString cleanupReplyMessage(const QString& message);
+    static QString cleanupReplyMessage(const QString& message);
 
 private:
     /**
