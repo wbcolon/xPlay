@@ -24,9 +24,7 @@
 #include <QtWebEngineWidgets/QWebEngineHistory>
 #include <QWebEngineCookieStore>
 #include <QGroupBox>
-#include <QComboBox>
 #include <QPushButton>
-#include <QCheckBox>
 #include <QApplication>
 
 xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flags):
@@ -38,7 +36,30 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
-    // Add a control tab for player and rotel amp controls
+    // Sites box.
+    auto sitesBox = new QGroupBox(tr("Sites"), this);
+    sitesBox->setFlat(xPlayer::UseFlatGroupBox);
+    sitesCombo = new QComboBox(sitesBox);
+    auto historyCheckBox = new QCheckBox(tr("History"), sitesBox);
+    historyCheckBox->setChecked(true);
+    auto cookiesCheckBox = new QCheckBox(tr("Cookies"), sitesBox);
+    cookiesCheckBox->setChecked(true);
+    auto cacheCheckBox = new QCheckBox(tr("Cache"), sitesBox);
+    cacheCheckBox->setChecked(true);
+    auto clearButton = new QPushButton(QIcon(":/images/xplay-clear-data.svg"), "", sitesBox);
+    clearButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
+    clearButton->setToolTip(tr("Clear"));
+    // Layout.
+    auto siteLayout = new xPlayerLayout();
+    siteLayout->setSpacing(xPlayerLayout::NoSpace);
+    siteLayout->addWidget(sitesCombo, 0, 0, 1, 2);
+    siteLayout->addRowSpacer(1, xPlayerLayout::SmallSpace);
+    siteLayout->addWidget(historyCheckBox, 2, 0, 1, 1);
+    siteLayout->addWidget(cookiesCheckBox, 2, 1, 1, 1);
+    siteLayout->addWidget(cacheCheckBox, 3, 0, 1, 2);
+    siteLayout->addWidget(clearButton, 4, 0, 1, 2);
+    sitesBox->setLayout(siteLayout);
+    // Add a control tab for player and Rotel amp controls
     auto controlTab = new QTabWidget(this);
     controlTab->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     auto controlVolumeTab = new QWidget(controlTab);
@@ -59,66 +80,38 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
         xPlayerPulseAudioControls::controls()->setVolume(vol);
     });
     connect(volumeControl, &xPlayerVolumeWidget::muted, this, &xMainStreamingWidget::setMuted);
-    // Control box.
-    auto controlBox = new QGroupBox("Navigation", this);
-    controlBox->setFlat(xPlayer::UseFlatGroupBox);
-    auto homeButton = new QPushButton(QIcon(":/images/xplay-home.svg"), "", controlBox);
+
+    // Navigation elements
+    auto homeButton = new QPushButton(QIcon(":/images/xplay-home.svg"), "", this);
     homeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     homeButton->setToolTip(tr("Home"));
-    auto backButton = new QPushButton(QIcon(":/images/xplay-left-arrow.svg"), "", controlBox);
+    auto backButton = new QPushButton(QIcon(":/images/xplay-left-arrow.svg"), "", this);
     backButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     backButton->setToolTip(tr("Back"));
-    auto fwdButton = new QPushButton(QIcon(":/images/xplay-right-arrow.svg"), "", controlBox);
+    auto fwdButton = new QPushButton(QIcon(":/images/xplay-right-arrow.svg"), "", this);
     fwdButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     fwdButton->setToolTip(tr("Forward"));
-    auto reloadButton = new QPushButton(QIcon(":/images/xplay-refresh.svg"), "", controlBox);
+    auto reloadButton = new QPushButton(QIcon(":/images/xplay-refresh.svg"), "", this);
     reloadButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     reloadButton->setToolTip(tr("Reload"));
-    auto zoomBox = new QComboBox(controlBox);
+    streamingUrl = new QLineEdit(this);
+    auto zoomBox = new QComboBox(this);
     for (const auto& factor : xPlayerConfiguration::getWebsiteZoomFactors()) {
         zoomBox->addItem(QString("%1%").arg(factor));
     }
-    // Layout.
-    auto controlLayout = new xPlayerLayout();
-    controlLayout->setSpacing(xPlayerLayout::NoSpace);
-    controlLayout->addWidget(backButton, 0, 0, 1, 1);
-    controlLayout->addWidget(homeButton, 0, 1, 1, 1);
-    controlLayout->addWidget(reloadButton, 0, 2, 1, 1);
-    controlLayout->addWidget(fwdButton, 0, 3, 1, 1);
-    controlLayout->addRowSpacer(1, xPlayerLayout::SmallSpace);
-    controlLayout->addWidget(zoomBox, 2, 0, 1, 4);
-    controlBox->setLayout(controlLayout);
-    // Sites box.
-    auto sitesBox = new QGroupBox(tr("Sites"), this);
-    sitesBox->setFlat(xPlayer::UseFlatGroupBox);
-    sitesCombo = new QComboBox(sitesBox);
-    auto historyCheckBox = new QCheckBox(tr("History"), sitesBox);
-    historyCheckBox->setChecked(true);
-    auto cookiesCheckBox = new QCheckBox(tr("Cookies"), sitesBox);
-    cookiesCheckBox->setChecked(true);
-    auto cacheCheckBox = new QCheckBox(tr("Cache"), sitesBox);
-    cacheCheckBox->setChecked(true);
-    auto clearButton = new QPushButton(QIcon(":/images/xplay-clear-data.svg"), "", controlBox);
-    clearButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
-    clearButton->setToolTip(tr("Clear"));
-    // Layout.
-    auto siteLayout = new xPlayerLayout();
-    siteLayout->setSpacing(xPlayerLayout::NoSpace);
-    siteLayout->addWidget(sitesCombo, 0, 0, 1, 2);
-    siteLayout->addRowSpacer(1, xPlayerLayout::SmallSpace);
-    siteLayout->addWidget(historyCheckBox, 2, 0, 1, 1);
-    siteLayout->addWidget(cookiesCheckBox, 2, 1, 1, 1);
-    siteLayout->addWidget(cacheCheckBox, 3, 0, 1, 2);
-    siteLayout->addWidget(clearButton, 4, 0, 1, 2);
-    sitesBox->setLayout(siteLayout);
     // Main streaming layout.
-    streamingLayout->addWidget(streamingWebView, 0, 0, 25, 20);
-    streamingLayout->addWidget(sitesBox, 0, 21, 2, 1);
-    streamingLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
-    streamingLayout->addWidget(controlBox, 3, 21, 2, 1);
-    streamingLayout->addRowSpacer(5, xPlayerLayout::SmallSpace);
-    streamingLayout->addWidget(controlTab, 6, 21, 7, 1);
-    streamingLayout->addRowStretcher(14);
+    streamingLayout->addWidget(backButton, 0, 0);
+    streamingLayout->addWidget(homeButton, 0, 1);
+    streamingLayout->addWidget(reloadButton, 0, 2);
+    streamingLayout->addWidget(fwdButton, 0, 3);
+    streamingLayout->addWidget(streamingUrl, 0, 4, 1, 44);
+    streamingLayout->addWidget(zoomBox, 0, 48, 1, 2);
+    streamingLayout->addWidget(streamingWebView, 1, 4, 25, 46);
+    streamingLayout->addRowSpacer(1, xPlayerLayout::MediumSpace);
+    streamingLayout->addWidget(sitesBox, 2, 0, 2, 4);
+    streamingLayout->addRowSpacer(4, xPlayerLayout::SmallSpace);
+    streamingLayout->addWidget(controlTab, 5, 0, 7, 4);
+    streamingLayout->addRowStretcher(13);
     // Connect Rotel amp widget configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
         controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
@@ -132,7 +125,9 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
         clearData(historyCheckBox->isChecked(), cookiesCheckBox->isChecked(), cacheCheckBox->isChecked());
     } );
     connect(zoomBox, SIGNAL(currentIndexChanged(int)), this, SLOT(updateZoomFactor(int)));
-    connect(streamingWebView, &QWebEngineView::loadFinished, this, &xMainStreamingWidget::currentSiteLoadFinished);
+    connect(streamingUrl, &QLineEdit::returnPressed, this, &xMainStreamingWidget::urlUpdated);
+    connect(streamingWebView, &QWebEngineView::loadFinished, this, &xMainStreamingWidget::urlLoadFinished);
+    connect(streamingWebView, &QWebEngineView::urlChanged, this, &xMainStreamingWidget::urlChanged);
     // Connect Combo Box.
     connect(sitesCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(updateCurrentSites(int)));
     // Set user agent to firefox.
@@ -196,7 +191,16 @@ void xMainStreamingWidget::updateCurrentSites(int index) {
     }
 }
 
-void xMainStreamingWidget::currentSiteLoadFinished(bool ok) {
+void xMainStreamingWidget::urlChanged(const QUrl& url) {
+    streamingUrl->setText(url.toString());
+}
+
+void xMainStreamingWidget::urlUpdated() {
+    // Load the site.
+    streamingWebView->load(QUrl(streamingUrl->text()));
+}
+
+void xMainStreamingWidget::urlLoadFinished(bool ok) {
     Q_UNUSED(ok)
     streamingWebView->page()->setZoomFactor(zoomFactor);
 }

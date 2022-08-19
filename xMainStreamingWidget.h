@@ -21,6 +21,7 @@
 #include <QWebEngineView>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QLineEdit>
 
 class xMainStreamingWidget:public QWidget {
     Q_OBJECT
@@ -94,11 +95,19 @@ private slots:
      */
     void updateCurrentSites(int index);
     /**
-     * Called if the current site has been loaded.
+     * Called in the URL is being updated.
      *
-     * @param ok true if loaded properly, false otherwise.
+     * @param url the new URL.
      */
-    void currentSiteLoadFinished(bool ok);
+    void urlChanged(const QUrl& url);
+    /**
+     * Called if return is pressed in the URL line edit.
+     */
+    void urlUpdated();
+    /**
+     * Called if the website was loaded.
+     */
+    void urlLoadFinished(bool ok);
     /**
      * Update the zoom factor based on the selected entry in the Combo Box.
      *
@@ -116,6 +125,7 @@ private slots:
 
 private:
     QWebEngineView* streamingWebView;
+    QLineEdit* streamingUrl;
     QComboBox* sitesCombo;
     QList<std::pair<QString,QUrl>> streamingSites;
     std::pair<QString,QUrl> streamingSitesDefault;
