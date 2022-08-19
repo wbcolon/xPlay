@@ -93,7 +93,7 @@ xPlayerArtistInfo::xPlayerArtistInfo(QWidget* parent, Qt::WindowFlags flags):
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedWebsiteZoomFactor,
             this, &xPlayerArtistInfo::updatedZoomFactor);
     // Set user agent to firefox.
-    urlView->page()->profile()->setHttpUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0");
+    urlView->page()->profile()->setHttpUserAgent(xPlayerConfiguration::configuration()->getWebsiteUserAgent());
     urlView->page()->setAudioMuted(false);
     urlView->page()->setZoomFactor(zoomFactor);
 }

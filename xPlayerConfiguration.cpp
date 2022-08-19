@@ -48,6 +48,7 @@ const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOv
 const QString xPlayerConfiguration_VisualizationConfigPath { "xPlay/VisualizationConfigPath" }; // NOLINT
 const QString xPlayerConfiguration_VisualizationPreset { "xPlay/VisualizationPreset" }; // NOLINT
 const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor" }; // NOLINT
+const QString xPlayerConfiguration_WebsiteUserAgent { "xPlay/WebsiteUserAgent" }; // NOLINT
 
 // Configuration defaults.
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" }; // NOLINT
@@ -66,6 +67,7 @@ const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites 
 const QStringList xPlayerConfiguration_MovieDefaultLanguages { "english", "german" }; // NOLINT
 const QString xPlayerConfiguration_VisualizationConfigPathDefault { "/usr/share/projectM/config.inp" }; // NOLINT
 const QList<int> xPlayerConfiguration_WebsiteZoomFactors { 50, 75, 100, 125, 150, 175, 200 }; // NOLINT
+const QString xPlayerConfiguration_WebsiteUserAgent_Default { "Mozilla/5.0 (X11; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0" }; // NOLINT
 
 
 // singleton object.
@@ -311,6 +313,14 @@ void xPlayerConfiguration::setWebsiteZoomFactorIndex(int index) {
     }
 }
 
+void xPlayerConfiguration::setWebsiteUserAgent(const QString &userAgent) {
+    if (userAgent != getWebsiteUserAgent()) {
+        settings->setValue(xPlayerConfiguration_WebsiteUserAgent, userAgent);
+        settings->sync();
+        emit updatedWebsiteUserAgent();
+    }
+}
+
 QString xPlayerConfiguration::getMusicLibraryDirectory() {
     return settings->value(xPlayerConfiguration_MusicLibraryDirectory, "").toString();
 }
@@ -503,6 +513,10 @@ int xPlayerConfiguration::getWebsiteZoomFactorIndex() {
     return settings->value(xPlayerConfiguration_WebsiteZoomFactor, 2).toInt();
 }
 
+QString xPlayerConfiguration::getWebsiteUserAgent() {
+    return settings->value(xPlayerConfiguration_WebsiteUserAgent, xPlayerConfiguration_WebsiteUserAgent_Default).toString();
+}
+
 const QList<int>& xPlayerConfiguration::getWebsiteZoomFactors() {
     return xPlayerConfiguration_WebsiteZoomFactors;
 }
@@ -550,4 +564,5 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedDatabaseMovieOverlay();
     emit updatedVisualizationConfigPath();
     emit updatedWebsiteZoomFactor();
+    emit updatedWebsiteUserAgent();
 }

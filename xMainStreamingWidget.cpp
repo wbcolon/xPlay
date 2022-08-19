@@ -95,7 +95,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     reloadButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     reloadButton->setToolTip(tr("Reload"));
     streamingUrl = new QLineEdit(this);
-    auto zoomBox = new QComboBox(this);
+    zoomBox = new QComboBox(this);
     for (const auto& factor : xPlayerConfiguration::getWebsiteZoomFactors()) {
         zoomBox->addItem(QString("%1%").arg(factor));
     }
@@ -130,10 +130,20 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     connect(streamingWebView, &QWebEngineView::urlChanged, this, &xMainStreamingWidget::urlChanged);
     // Connect Combo Box.
     connect(sitesCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(updateCurrentSites(int)));
+    // Set zoom factor.
+    updatedZoomFactor();
     // Set user agent to firefox.
-    streamingWebView->page()->profile()->setHttpUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0");
+    updatedUserAgent();
     streamingWebView->page()->setAudioMuted(false);
-    zoomBox->setCurrentIndex(xPlayerConfiguration::configuration()->getWebsiteZoomFactorIndex());
+    // Connect configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedWebsiteZoomFactor,
+            this, &xMainStreamingWidget::updatedZoomFactor);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedWebsiteZoomFactor,
+            this, &xMainStreamingWidget::updatedUserAgent);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSites,
+            this, &xMainStreamingWidget::updatedStreamingSites);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSitesDefault,
+            this, &xMainStreamingWidget::updatedStreamingSitesDefault);
 }
 
 void xMainStreamingWidget::initializeView() {
@@ -191,6 +201,14 @@ void xMainStreamingWidget::updateCurrentSites(int index) {
     }
 }
 
+void xMainStreamingWidget::updatedStreamingSites() {
+    setSites(xPlayerConfiguration::configuration()->getStreamingSites());
+}
+
+void xMainStreamingWidget::updatedStreamingSitesDefault() {
+    setSitesDefault(xPlayerConfiguration::configuration()->getStreamingSitesDefault());
+}
+
 void xMainStreamingWidget::urlChanged(const QUrl& url) {
     streamingUrl->setText(url.toString());
 }
@@ -214,6 +232,15 @@ void xMainStreamingWidget::updateZoomFactor(int index) {
         zoomFactor = 1.0;
     }
     streamingWebView->page()->setZoomFactor(zoomFactor);
+}
+
+void xMainStreamingWidget::updatedZoomFactor() {
+    auto zoomFactorIndex = xPlayerConfiguration::configuration()->getWebsiteZoomFactorIndex();
+    zoomBox->setCurrentIndex(zoomFactorIndex);
+}
+
+void xMainStreamingWidget::updatedUserAgent() {
+    streamingWebView->page()->profile()->setHttpUserAgent(xPlayerConfiguration::configuration()->getWebsiteUserAgent());
 }
 
 void xMainStreamingWidget::clearData(bool history, bool cookies, bool cache) {

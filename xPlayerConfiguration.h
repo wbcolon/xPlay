@@ -197,6 +197,12 @@ public:
      */
     void setWebsiteZoomFactorIndex(int index);
     /**
+     * Set the user agent used for websites (browser identification)
+     *
+     * @param userAgent the user agent as string.
+     */
+    void setWebsiteUserAgent(const QString& userAgent);
+    /**
      * Get the base directory of the music library.
      *
      * @return the music library directory as string.
@@ -401,6 +407,12 @@ public:
      */
     [[nodiscard]] static const QList<int>& getWebsiteZoomFactors();
     /**
+     * Get the user agent used for websites.
+     *
+     * @return the user agent as string.
+     */
+    [[nodiscard]] QString getWebsiteUserAgent();
+    /**
      * Trigger all update configuration signals.
      *
      * Useful on application start, when the entire configuration is initially read.
@@ -500,6 +512,10 @@ signals:
      * Signal an update of the zoom factor.
      */
     void updatedWebsiteZoomFactor();
+    /**
+     * Signal an update of the website user agent.
+     */
+    void updatedWebsiteUserAgent();
 
 private:
     xPlayerConfiguration();

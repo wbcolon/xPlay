@@ -64,14 +64,6 @@ private slots:
      */
     void setMovieLibraryTagsAndDirectories();
     /**
-     * Set the streaming sites if they have been updated.
-     */
-    void setStreamingSites();
-    /**
-     * Set the streaming sites default if they have been updated.
-     */
-    void setStreamingSitesDefault();
-    /**
      * Check the music database entries against the music library for unknown entries.
      */
     void checkMusicDatabase();

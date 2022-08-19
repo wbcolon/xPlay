@@ -121,12 +121,6 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
             this, &xApplication::setMovieLibraryTagsAndDirectories);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelNetworkAddress,
             this, &xApplication::setRotelNetworkAddress);
-#ifdef USE_STREAMING
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSites,
-            this, &xApplication::setStreamingSites);
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSitesDefault,
-            this, &xApplication::setStreamingSitesDefault);
-#endif
     // Connect database.
     connect(xPlayerDatabase::database(), &xPlayerDatabase::databaseUpdateError,
             this, &xApplication::databaseUpdateError);
@@ -353,14 +347,6 @@ void xApplication::setRotelNetworkAddress() {
 void xApplication::setMovieLibraryTagsAndDirectories() {
     mainMovieWidget->clear();
     movieLibrary->setBaseDirectories(xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectoryPath());
-}
-
-void xApplication::setStreamingSites() {
-    mainStreamingWidget->setSites(xPlayerConfiguration::configuration()->getStreamingSites());
-}
-
-void xApplication::setStreamingSitesDefault() {
-    mainStreamingWidget->setSitesDefault(xPlayerConfiguration::configuration()->getStreamingSitesDefault());
 }
 
 void xApplication::checkMusicDatabase() {

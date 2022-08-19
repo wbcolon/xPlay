@@ -195,8 +195,12 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     for (const auto& factor : xPlayerConfiguration::getWebsiteZoomFactors()) {
         websiteZoomFactors->addItem(QString("%1%").arg(factor));
     }
-    websiteLayout->addWidget(websiteZoomFactorLabel, 0, 0, 1, 5);
+    auto websiteUserAgentLabel = new QLabel(tr("User Agent"), websiteBox);
+    websiteUserAgent = new QLineEdit(websiteBox);
+    websiteLayout->addWidget(websiteZoomFactorLabel, 0, 0, 1, 1);
     websiteLayout->addWidget(websiteZoomFactors, 1, 0);
+    websiteLayout->addWidget(websiteUserAgentLabel, 0, 1, 1, 4);
+    websiteLayout->addWidget(websiteUserAgent, 1, 1, 1, 4);
     websiteBox->setLayout(websiteLayout);
     // Additional tab layout.
     additionalLayout->addWidget(databaseBox, 0, 0, 2, 4);
@@ -261,6 +265,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto streamingSites = xPlayerConfiguration::configuration()->getStreamingSites();
     streamingSitesDefault = xPlayerConfiguration::configuration()->getStreamingSitesDefault();
     auto zoomFactorIndex = xPlayerConfiguration::configuration()->getWebsiteZoomFactorIndex();
+    auto userAgent = xPlayerConfiguration::configuration()->getWebsiteUserAgent();
     // Update the configuration dialog UI.
     musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
     musicLibraryExtensionsWidget->setText(musicLibraryExtensions);
@@ -317,6 +322,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     }
     updateStreamingSitesDefault();
     websiteZoomFactors->setCurrentIndex(zoomFactorIndex);
+    websiteUserAgent->setText(userAgent);
 }
 
 void xPlayerConfigurationDialog::saveSettings() {
@@ -355,6 +361,7 @@ void xPlayerConfigurationDialog::saveSettings() {
             }
         }
     }
+    auto userAgent = websiteUserAgent->text();
     // Debug output
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryDirectory: " << musicLibraryDirectory;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryExtensions: " << musicLibraryExtensions;
@@ -378,6 +385,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: databaseMovieOverlay: " << databaseMovieOverlayCheck->isChecked();
     qDebug() << "xPlayerConfigurationDialog: save: databaseIgnoreUpdateErrors: " << databaseIgnoreUpdateErrorsCheck->isChecked();
     qDebug() << "xPlayerConfigurationDialog: save: websiteZoomFactor: " << websiteZoomFactors->currentIndex();
+    qDebug() << "xPlayerConfigurationDialog: save: websiteUserAgent: " << userAgent;
     // Save settings.
     xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
     xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
@@ -400,6 +408,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setDatabaseMovieOverlay(databaseMovieOverlayCheck->isChecked());
     xPlayerConfiguration::configuration()->setDatabaseIgnoreUpdateErrors(databaseIgnoreUpdateErrorsCheck->isChecked());
     xPlayerConfiguration::configuration()->setWebsiteZoomFactorIndex(websiteZoomFactors->currentIndex());
+    xPlayerConfiguration::configuration()->setWebsiteUserAgent(userAgent);
     // End dialog.
     accept();
 }

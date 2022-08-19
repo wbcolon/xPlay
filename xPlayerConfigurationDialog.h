@@ -164,6 +164,7 @@ private:
     QDateEdit* databaseCutOffDate;
     QCheckBox* databaseIgnoreUpdateErrorsCheck;
     QComboBox* websiteZoomFactors;
+    QLineEdit* websiteUserAgent;
     std::pair<QString,QUrl> streamingSitesDefault;
 };
 

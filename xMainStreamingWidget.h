@@ -95,6 +95,14 @@ private slots:
      */
     void updateCurrentSites(int index);
     /**
+     * Set the streaming sites if they have been updated.
+     */
+    void updatedStreamingSites();
+    /**
+     * Set the streaming sites default if they have been updated.
+     */
+    void updatedStreamingSitesDefault();
+    /**
      * Called in the URL is being updated.
      *
      * @param url the new URL.
@@ -115,6 +123,14 @@ private slots:
      */
     void updateZoomFactor(int index);
     /**
+     * Called if the zoom factor was changed in the configuration.
+     */
+    void updatedZoomFactor();
+    /**
+     * Called if the user agent was changed in the configuration.
+     */
+    void updatedUserAgent();
+    /**
      * Clear the data for the currently selected site.
      *
      * @param history clear history if true.
@@ -130,6 +146,7 @@ private:
     QList<std::pair<QString,QUrl>> streamingSites;
     std::pair<QString,QUrl> streamingSitesDefault;
     std::pair<QString,QUrl> currentSite;
+    QComboBox* zoomBox;
     double zoomFactor;
 };
 
