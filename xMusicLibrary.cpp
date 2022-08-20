@@ -589,7 +589,8 @@ std::vector<xMusicLibraryAlbumEntry*> xMusicLibrary::filterAlbums(xMusicLibraryA
     std::vector<xMusicLibraryAlbumEntry*> filteredAlbums;
     if (filter.hasAlbumFilter()) {
         for (auto album : artist->getAlbums()) {
-            if (filter.isMatchingAlbum(album->getAlbumName())) {
+            if ((filter.isMatchingAlbum(album->getAlbumName())) &&
+                (filter.isMatchingDatabaseArtistAndAlbum(artist->getArtistName(), album->getAlbumName()))) {
                 filteredAlbums.emplace_back(album);
             }
         }

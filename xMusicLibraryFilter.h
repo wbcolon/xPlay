@@ -47,7 +47,7 @@ public:
     /**
      * Check if the given artist passes the artist filter.
      *
-     * @param artist the given artist to be verified    bool rename(const QString& newEntryName);.
+     * @param artist the given artist to be verified
      * @return true if the artist passes the artist filter, false otherwise.
      */
     [[nodiscard]] bool isMatchingArtist(const QString& artist) const;
