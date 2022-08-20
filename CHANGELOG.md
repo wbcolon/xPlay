@@ -1,6 +1,17 @@
 # Changelog
 
 
+## 0.13.0 - 2022-08-22
+
+- Many UI updates.
+- Add music library scanning progress.
+- Add audio compression option for movie player.
+- Use default pulseaudio sink instead of application stream for volume control.
+- Add configuration option for website user agent.
+- More libvlc audio fixes.
+- Some code cleanup.
+
+
 ## 0.12.1 - 2022-06-05
 
 - Add filesystem sync after the copy/remove operations in mobile sync view.

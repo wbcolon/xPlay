@@ -15,7 +15,7 @@ The directory structure of the music library needs to be as follows.
 * abstrakt algebra/ii/09 enigma.flac
 * iommi/fused/01 dopamine.flac
 
-The movie library is setup differently. It is possible to define tags to which base directories can be
+The movie library is set up differently. It is possible to define tags to which base directories can be
 attached. The movie library scanner will not do a full recursive scan. It will scan only one subdirectory
 further.
 
@@ -30,7 +30,7 @@ See the [changelog](CHANGELOG.md) for the latest development progress.
 
 ### Remarks
 
-I was unhappy with the current media players that try to scan and analyze each and every one of my
+I was unhappy with the current media players that try to scan and analyze each one of my
 personal music library that contains over 65000 files. The scanning took way to long and did not have
 any benefits for me.
 
@@ -55,9 +55,9 @@ of interest.
 ### Movie library
 
 The scanning of the movie library is significantly different due to the fact that there is less structure.
-xPlay supports only one sub directory in the movie library base. All sub directories and movie files are
+xPlay supports only one subdirectory in the movie library base. All subdirectories and movie files are
 grouped by a tag. Each tag itself can have multiple directories associated. The movie scanning assumes that the
-movie files in each of the sub directory are distinct. No duplicate names are allowed. Earlier entries will be
+movie files in each of the subdirectory are distinct. No duplicate names are allowed. Earlier entries will be
 overwritten and previous movie file is not accessible.
 
 ## Player Backends
@@ -66,12 +66,18 @@ overwritten and previous movie file is not accessible.
 
 The Phonon/KDE backend supports gapless playback, but it is a bit more complicated to use. On top, there seems
 to be an issue calculating the length of the currently played track. I worked around this issue by utilizing
-the a muted QMediaPlayer object. The Phonon backend is only used for the music player.
+a muted QMediaPlayer object. The Phonon backend is only used for the music player.
 
 ### VLC
 
 The VLC backend is used for the movie player. It replaced the earlier Phonon backend due to stability issues.
 xPlay uses the event based method for libVLC without using a QTimer thread to constantly updating the status.
+
+### PulseAudio
+
+The volume changes are applied to the default PulseAudio sink, not to the xPlay application stream. If the volume
+is muted then the PulseAudio sink and the application stream are both muted. The volume for the application stream
+is set to a 100 percent.
 
 ## Usage
 
@@ -99,7 +105,7 @@ The main screen of the music view has four vertical list for the artists, album,
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select)
 on an album. If you double-click on a track in the track list, then the track and the following tracks of the list
 are added to the queue. If you right-click on a track in the track list, then only this track will be added to the
-queue. Then entire album can be queued by a double click on the corresponding album entry. A double click on an
+queue. Then entire album can be queued by a double-click on the corresponding album entry. A double-click on an
 artist entry will queue all albums for the clicked artist.
 
 The queue does support a shuffle mode in which the queued tracks will be played at random. The jump to an individual
@@ -134,7 +140,7 @@ the *Tags* button at the bottom of the queue list. The tag dialog allows to load
 have a specific tag.
 
 The artist, album and track name can be modified. If the queue is empty and no music file is playing then a
-shifh-right click on an artist, album or track entry will open a popup menu that allows us to rename the
+shift-right click on an artist, album or track entry will open a popup menu that allows us to rename the
 entry. The corresponding directory (for artist and album) or the file name (for track) will be renamed. The tags of
 all affected music files will be updated as well as any matching database entries.
 
@@ -145,7 +151,7 @@ as well as the balance (from -5 to +5).
 #### Visualization
 
 A music visualization based on projectM is available and can be activated via the *Visualization* entry of the 
-*Music View* sub menu. The visualization (when activated) is displayed whenever the the music player is playing and
+*Music View* sub menu. The visualization (when activated) is displayed whenever the music player is playing and
 the artist info view is currently not activated. The visualization (when displayed) reverts to the artist, album and
 track view whenever the music player pauses or stops. A right-click on the visualization opens a popup menu that allows
 selecting a projectM preset. A double-click will display the name of the currently selected preset. A double-click on
@@ -170,12 +176,12 @@ The tracks ordering is not affected by this option. The checkbox is cleared when
 ##### Album Selector
 
 The album selector can be used to filter the displayed albums for an artist. The individual selectors can be modified
-by double-click. A selector in white is currently not used. Selectors in green (at least one of them) must be found in
-the album name. Red represents not matched selectors. An album cannot contain any of the selectors in red as part of its
-album name. The *database* selector uses a mapping of artist and albums are stored in the databases and that have
+by double-click. A selector in white is currently not used. Selectors in green (at least one of them) must be found as
+part of the album name. Red represents not matched selectors. An album cannot contain any of the selectors in red as part 
+of its album name. The *database* selector uses a mapping of artist and albums are stored in the databases and that have
 been played after the given timestamp. The timestamp can easily be adjusted directly or by using the *Now* button
 (current time) or the *Begin* button (beginning of the database). The *database* selector allows to easily filter for
-albums that never have been played or that have recently been played. The *none* selector clears any filtering.
+albums that have never been played or that have recently been played. The *none* selector clears any filtering.
 
 The filtering done by the album selector is applied whenever a selector state changes. The filtering is performed
 on the music library level meaning that artists that do not have any albums that pass the album selector will be
@@ -211,8 +217,8 @@ is shown if it matches the given filter string.
 ![Screenshot Movie View (database overlay)](screenshots/xplay_screenshot_movie_view_02.png)
 
 The main screen of the movie view has three vertical lists for tags, directories and movies. A tag is a
-representation of one or more base directories. The directory list contains all sub directories (only one level)
-of these. An additional entry "." is added for all movies that are not located within a sub directory. The
+representation of one or more base directories. The directory list contains all subdirectories (only one level)
+of these. An additional entry "." is added for all movies that are not located within a subdirectory. The
 movie list displays all movie files, but this list does not act as a queue. Double-click on an entry in the
 movie list will start the playback. The database overlay (if activated) will mark every tag, directory and movie
 with a star (*) if it has been played within the configured time period. For each movie a tooltip is added that
@@ -224,7 +230,7 @@ control section has a *play/pause* and *stop* buttons. The *rew* and *fwd* butto
 forward in the movie. The *full window* button maximizes the video output window. The currently played movie will
 be displayed in the window title. The *scale and crop* checkbox may be usable for some movies that have black borders.
 It is activated by default for the VLC based movie player. The video output window can also be toggled by a
-double-click. In addition you can rewind and forward by 60 seconds using the left and right arrow keys. The up and down
+double-click. In addition, you can rewind and forward by 60 seconds using the left and right arrow keys. The up and down
 arrow keys will increase or decrease the volume by one. The *S* key will toggle the scale and crop mode. The *ESC* key
 can be used to end the full window mode. The full window mode will automatically end if the current movie is about to
 end. If the *Autoplay Next* in the *Options* menu is enabled then the next movie in the movie list will be played as 
@@ -258,7 +264,7 @@ may change for coming versions of QWebEngine.
 ![Screenshot Mobile Sync View (Mark Existing)](screenshots/xplay_screenshot_mobile_sync_view_03.png)
 ![Screenshot Mobile Sync View (Progress)](screenshots/xplay_screenshot_mobile_sync_view_04.png)
 
-The main screen of the mobile sync view is designed to sync a subset of the music library to the so called mobile
+The main screen of the mobile sync view is designed to sync a subset of the music library to the so-called mobile
 library which is usually located on some external storage. The directory for the mobile library can input directory or 
 conveniently selected via a file dialog when pressing the *Open* button. Press the *Scan* button afterwards to 
 initiate a scan of the mobile library. The widget is updated as soon as the scanning process is finished.
@@ -318,8 +324,9 @@ and the KDE 5.x breeze icons.
 * SQLite3 - The Database Access Library (https://sqlite.org/)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
 * libVLC Library (https://wiki.videolan.org/LibVLC/)
-* projectM library (https://github.com/projectM-visualizer/projectm)
-* C++17
+* libpulse Library (https://freedesktop.org/software/pulseaudio/doxygen)
+* projectM Library (https://github.com/projectM-visualizer/projectm)
+* C++17 (clang or gcc)
 
 With Qwt the UI has an improved volume knob and track slider.
 
@@ -335,6 +342,10 @@ With Qwt the UI has an improved volume knob and track slider.
 * VLC audio issues
     * Using VLC on Ubuntu 22.04 can lead to audio stutter after seeking within the movie itself.
     * A workaround switching audio channels back and forth has been implemented.
+* PulseAudio
+    * Changing the default audio sink may not be recognized.
+    * Changing the volume outside xPlay is not recognized by xPlay.
+* May need to use clang instead of gcc for Ubuntu 20.04.  
 
 ## Notes
 
