@@ -114,6 +114,14 @@ private:
      */
     static void paCallbackState(pa_context* context, void* data);
     /**
+     * Callback for the pulseaudio server info.
+     *
+     * @param context pointer to the pulseaudio context.
+     * @param info pointer to the pulseaudio server info.
+     * @param data pointer to addition data.
+     */
+    static void paCallbackServerInfo(pa_context* context, const pa_server_info* info, void* data);
+    /**
      * Callback for the pulseaudio sink info list parsing.
      *
      * @param context pointer to the pulseaudio context.
@@ -123,7 +131,7 @@ private:
      */
     static void paCallbackSinkList(pa_context* context, const pa_sink_info* info, int eol, void* data);
 
-    QString defaultSinkName;
+    std::string defaultSinkName;
     QString defaultSinkDescription;
     pa_cvolume defaultSinkVolume;
     pa_volume_t defaultSinkVolumeAverage;

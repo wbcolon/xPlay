@@ -84,7 +84,7 @@ void xPlayerPulseAudioControls::setVolume(int vol) {
 void xPlayerPulseAudioControls::setMuted(bool mute) {
     // Only set mute state if connected to pulseaudio.
     // Emulate previous mute behavior by saving prior volume setting.
-    // Therefore slightly different to setVolume(0)
+    // Therefore, slightly different to setVolume(0)
     if (paConnect()) {
         auto paVolume = (mute) ? PA_VOLUME_MUTED : PA_VOLUME_NORM * defaultSinkVolumePercent / 100;
         pa_cvolume_set(&defaultSinkVolume, defaultSinkVolume.channels, paVolume);
@@ -114,13 +114,17 @@ bool xPlayerPulseAudioControls::paConnect() {
         if (paState == PA_ERROR) {
             emit error("Error trying to connect to pulse audio. Unable to control audio.");
         }
-        // Get info for default sink only if we connect to pulseaudio.
-        pa_operation* op = pa_context_get_sink_info_by_index(paContext, 0, &xPlayerPulseAudioControls::paCallbackSinkList, this);
+        pa_operation* op = pa_context_get_server_info(paContext, &xPlayerPulseAudioControls::paCallbackServerInfo, this);
         paIterate(op);
         pa_operation_unref(op);
-        qDebug() << "Default Sink: Name: " << defaultSinkName;
+        qDebug() << "Default Sink: Name: " << QString::fromStdString(defaultSinkName);
+        // Get info for default sink only if we connect to pulseaudio.
+        op = pa_context_get_sink_info_by_name(paContext, defaultSinkName.c_str(), &xPlayerPulseAudioControls::paCallbackSinkList, this);
+        paIterate(op);
+        pa_operation_unref(op);
         qDebug() << "Default Sink: Description: " << defaultSinkDescription;
         qDebug() << "Default Sink: Volume: " << defaultSinkVolumePercent;
+        qDebug() << "Default Sink: Channels: " << defaultSinkVolume.channels;
         return true;
     }
 }
@@ -154,6 +158,20 @@ void xPlayerPulseAudioControls::paCallbackState(pa_context* context, void* data)
     }
 }
 
+void xPlayerPulseAudioControls::paCallbackServerInfo(pa_context* context, const pa_server_info* info, void* data) {
+    // Callback for observing the server info
+    auto vControls = reinterpret_cast<xPlayerPulseAudioControls*>(data);
+    switch(pa_context_get_state(context)) {
+        case PA_CONTEXT_READY: {
+            vControls->defaultSinkName = info->default_sink_name;
+        } break;
+        case PA_CONTEXT_FAILED: {
+            vControls->defaultSinkName.clear();
+        } break;
+        default: break;
+    }
+}
+
 void xPlayerPulseAudioControls::paCallbackSinkList(pa_context* context, const pa_sink_info* info, int eol, void* data) {
     Q_UNUSED(context)
     // Check if any error occurred parsing the sink info.
@@ -162,7 +180,6 @@ void xPlayerPulseAudioControls::paCallbackSinkList(pa_context* context, const pa
     }
     // Save the necessary information required for volume control.
     auto vControls = reinterpret_cast<xPlayerPulseAudioControls*>(data);
-    vControls->defaultSinkName = info->name;
     vControls->defaultSinkDescription = info->description;
     vControls->defaultSinkVolume = info->volume;
     vControls->defaultSinkVolumeAverage = pa_cvolume_avg(&info->volume);
