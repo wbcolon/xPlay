@@ -108,7 +108,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryTaggingModeWidget->addItems({{"lltag"}, {"taglib"}});
     musicLibraryTaggingLLTagWidget = new QLineEdit(musicLibraryTab);
     musicLibraryTaggingLLTagOpenButton = new QPushButton(tr("..."), musicLibraryTab);
-    auto musicVisualizationConfigLabel = new QLabel(tr("Visualization Configuration (projectM)"), musicLibraryTab);
+    auto musicVisualizationConfigLabel = new QLabel(tr("Visualization Configuration (projectM) [requires restart]"), musicLibraryTab);
     musicVisualizationConfigWidget = new QLineEdit(musicLibraryTab);
     auto musicVisualizationConfigOpenButton = new QPushButton(tr("..."), musicLibraryTab);
     musicLibraryLayout->addWidget(musicLibraryDirectoryLabel, 0, 0, 1, 5);

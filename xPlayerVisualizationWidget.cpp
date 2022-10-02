@@ -33,10 +33,8 @@ xPlayerVisualizationWidget::xPlayerVisualizationWidget(QWidget *parent):
         visualization(nullptr),
         visualizationPresetIndex(0),
         visualizationPresetMenu(nullptr),
-        visualizationPresetMap() {
-    // Connect to the configuration changes.
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedVisualizationConfigPath,
-            this, &xPlayerVisualizationWidget::updatedVisualizationConfigPath);
+        visualizationPresetMap(),
+        visualizationEnabled(true) {
 }
 
 xPlayerVisualizationWidget::~xPlayerVisualizationWidget() {
@@ -44,15 +42,31 @@ xPlayerVisualizationWidget::~xPlayerVisualizationWidget() {
 }
 
 void xPlayerVisualizationWidget::initializeGL() {
+    if (!visualizationEnabled) {
+        qWarning() << "Problems with projectM. Visualization disabled.";
+        return;
+    }
     // Create projectM object if necessary.
     if (visualization == nullptr) {
         try {
-            visualization = new projectM(visualizationConfigPath.toStdString());
+            visualizationConfigPath = xPlayerConfiguration::configuration()->getVisualizationConfigPath();
+            // We need to check the projectM configuration before trying to create an object.
+            // Invalid file path may lead to crashes or a hanging application.
+            // Maybe removed if projectM code is improved on.
+            visualizationEnabled = checkVisualizationConfigFile();
+            if (visualizationEnabled) {
+                visualization = new projectM(visualizationConfigPath.toStdString());
+            } else {
+                emit visualizationError();
+                return;
+            }
         } catch (...) {
             // Problems creating projectM object.
             visualization = nullptr;
+            visualizationEnabled = false;
             qCritical() << "Unable to initialize projectM. Check your projectM configuration.";
             emit visualizationError();
+            return;
         }
 
         if (visualization) {
@@ -126,7 +140,7 @@ void xPlayerVisualizationWidget::initializeVisualizationGL() {
 }
 
 void xPlayerVisualizationWidget::resizeGL(int glWidth, int glHeight) {
-    if (visualization) {
+    if (visualizationEnabled) {
         visualization->projectM_resetGL(glWidth, glHeight);
         initializeGL();
     }
@@ -134,7 +148,7 @@ void xPlayerVisualizationWidget::resizeGL(int glWidth, int glHeight) {
 }
 
 void xPlayerVisualizationWidget::paintGL() {
-    if (visualization) {
+    if (visualizationEnabled) {
         visualization->renderFrame();
         update();
     }
@@ -142,45 +156,51 @@ void xPlayerVisualizationWidget::paintGL() {
 }
 
 bool xPlayerVisualizationWidget::event(QEvent* e) {
-
-    switch (e->type()) {
-        case QEvent::Show: {
-            makeCurrent();
-        } break;
-        case QEvent::Hide: {
-            doneCurrent();
-        } break;
-        case QEvent::MouseButtonRelease: {
-            auto mouseEvent = reinterpret_cast<QMouseEvent *>(e);
-            if ((mouseEvent->button() == Qt::RightButton) && (visualizationPresetMenu)) {
-                visualizationPresetMenu->exec(mapToGlobal(mouseEvent->pos()));
+    if (visualizationEnabled) {
+        switch (e->type()) {
+            case QEvent::Show: {
+                makeCurrent();
             }
-        } break;
-        case QEvent::MouseButtonDblClick: {
-            auto mouseEvent = reinterpret_cast<QMouseEvent*>(e);
-            if (mouseEvent->button() == Qt::LeftButton) {
-                if (mouseEvent->modifiers() & Qt::ControlModifier) {
-                    visualizationPresetIndex = (visualizationPresetIndex + 1) % visualization->getPlaylistSize();
-                    visualization->selectPreset(visualizationPresetIndex);
+                break;
+            case QEvent::Hide: {
+                doneCurrent();
+            }
+                break;
+            case QEvent::MouseButtonRelease: {
+                auto mouseEvent = reinterpret_cast<QMouseEvent *>(e);
+                if ((mouseEvent->button() == Qt::RightButton) && (visualizationPresetMenu)) {
+                    visualizationPresetMenu->exec(mapToGlobal(mouseEvent->pos()));
                 }
-                showTitle(QString());
-                showTitle(QString::fromStdString(visualization->getPresetName(visualizationPresetIndex)));
             }
-        } break;
-        default: break;
+                break;
+            case QEvent::MouseButtonDblClick: {
+                auto mouseEvent = reinterpret_cast<QMouseEvent *>(e);
+                if (mouseEvent->button() == Qt::LeftButton) {
+                    if (mouseEvent->modifiers() & Qt::ControlModifier) {
+                        visualizationPresetIndex = (visualizationPresetIndex + 1) % visualization->getPlaylistSize();
+                        visualization->selectPreset(visualizationPresetIndex);
+                    }
+                    showTitle(QString());
+                    showTitle(QString::fromStdString(visualization->getPresetName(visualizationPresetIndex)));
+                }
+            }
+                break;
+            default:
+                break;
+        }
     }
     return QOpenGLWidget::event(e);
 }
 
 void xPlayerVisualizationWidget::showTitle(const QString& title) {
-    if (visualization) {
+    if (visualizationEnabled) {
         visualization->projectM_setTitle(title.toStdString());
     }
 }
 
 void xPlayerVisualizationWidget::visualizationStereo(const QVector<qint16>& left, const QVector<qint16>& right) {
     // Did we configure the visualization.
-    if ((visualization) && (isVisible())) {
+    if ((visualizationEnabled) && (isVisible())) {
         short pcmData[2][512] {{0}};
         // Add data to the visualization. Only full sets of 512 samples.
         for (int i = 0; i < left.count()/512; ++i) {
@@ -193,8 +213,30 @@ void xPlayerVisualizationWidget::visualizationStereo(const QVector<qint16>& left
     }
 }
 
-void xPlayerVisualizationWidget::updatedVisualizationConfigPath() {
-    delete visualization;
-    visualization = nullptr;
-    visualizationConfigPath = xPlayerConfiguration::configuration()->getVisualizationConfigPath();
+bool xPlayerVisualizationWidget::checkVisualizationConfigFile() {
+    // Read the projectM config file.
+    QSettings visualizationConfig(visualizationConfigPath, QSettings::NativeFormat);
+
+    auto titleFont = visualizationConfig.value("Title Font").toString();
+    auto menuFont = visualizationConfig.value("Menu Font").toString();
+    auto presetPath = visualizationConfig.value("Preset Path").toString();
+
+    // Extract the paths and remove any comments and unwanted whitespace.
+    titleFont = titleFont.section("#", 0 , 0).trimmed();
+    menuFont = menuFont.section("#", 0 , 0).trimmed();
+    presetPath = presetPath.section("#", 0 , 0).trimmed();
+
+    qDebug() << "projectM (Preset Path): " << presetPath;
+    qDebug() << "projectM (Title Font): " << titleFont;
+    qDebug() << "projectM (Menu Font): " << menuFont;
+
+    // Check the font files and preset directory.
+    if ((!std::filesystem::is_directory(presetPath.toStdString())) ||
+        (!std::filesystem::is_regular_file(titleFont.toStdString())) ||
+        (!std::filesystem::is_regular_file(menuFont.toStdString()))) {
+        qCritical() << "Illegal entries in the projectM configuration. Disable visualization.";
+        return false;
+    }
+
+    return true;
 }

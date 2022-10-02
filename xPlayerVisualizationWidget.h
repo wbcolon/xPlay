@@ -76,18 +76,20 @@ protected:
      */
     bool event(QEvent* e) override;
 
-private slots:
-    /**
-     * Called upon a change of the projectM config path.
-     */
-    void updatedVisualizationConfigPath();
-
 private:
+    /**
+     * Check the font paths and preset directory in projectM config file.
+     *
+     * @return true if paths are correct, false otherwise.
+     */
+    bool checkVisualizationConfigFile();
+
     projectM* visualization;
     QString visualizationConfigPath;
     unsigned visualizationPresetIndex;
     QMenu* visualizationPresetMenu;
     std::map<QString, std::list<std::pair<int, QString>>> visualizationPresetMap;
+    bool visualizationEnabled;
 };
 
 #endif
