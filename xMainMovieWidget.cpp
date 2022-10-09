@@ -21,6 +21,7 @@
 #include <QGroupBox>
 #include <QApplication>
 #include <QDateTime>
+#include <QSplitter>
 
 // Function addGroupBox has to be defined before the constructor due to the auto return.
 auto xMainMovieWidget::addGroupBox(const QString& boxLabel, bool displayTime, QWidget* parent) {
@@ -48,18 +49,40 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
         databaseCutOff(0) {
     // main widget with controls.
     mainWidget = new QWidget(parent);
+    // main splitter for non-fullscreen.
+    auto mainWidgetSplitter = new QSplitter(mainWidget);
+    mainWidgetSplitter->setOrientation(Qt::Horizontal);
+    // Widget for music player and stacked widget.
+    auto boxFilterWidget = new QWidget(mainWidgetSplitter);
+    auto boxFilterLayout = new QVBoxLayout(boxFilterWidget);
+    // Splitter for tags, directories and movies.
+    auto boxSplitter = new QSplitter(boxFilterWidget);
+    boxSplitter->setOrientation(Qt::Vertical);
+    // Create widget for tag/directory
+    auto tagDirectoryBoxes = new QWidget(boxSplitter);
+    auto tagDirectoryLayout = new QHBoxLayout();
     // Create group boxes for tags, directories and movies.
-    auto [ tagBox, tagList_ ] = addGroupBox(tr("Tags"), false, mainWidget);
-    auto [ directoryBox, directoryList_ ] = addGroupBox(tr("Directories"), false, mainWidget);
-    auto [ movieBox, movieList_ ] = addGroupBox(tr("Movies"), true, mainWidget);
-    // Create group box for the player widget.
-    moviePlayerWidget = new xPlayerMovieWidget(moviePlayer, mainWidget);
+    auto [ tagBox, tagList_ ] = addGroupBox(tr("Tags"), false, tagDirectoryBoxes);
+    auto [ directoryBox, directoryList_ ] = addGroupBox(tr("Directories"), false, tagDirectoryBoxes);
+    auto [ movieBox, movieList_ ] = addGroupBox(tr("Movies"), true, boxSplitter);
+    // Layout the tag and box lists horizontally.
+    tagDirectoryLayout->addWidget(tagBox);
+    tagDirectoryLayout->addWidget(directoryBox);
+    tagDirectoryBoxes->setLayout(tagDirectoryLayout);
+    // Add tag box/directory box widget and movie box to splitter
+    boxSplitter->addWidget(tagDirectoryBoxes);
+    boxSplitter->addWidget(movieBox);
+    boxSplitter->setCollapsible(0, false);
+    boxSplitter->setCollapsible(1, false);
+    // Movie box should have three times the size of the tag/directory boxes.
+    boxSplitter->setStretchFactor(1, 3);
     // Setup tag, directory and movie lists.
     tagList = tagList_;
     tagList->enableSorting(true);
     directoryList = directoryList_;
     directoryList->enableSorting(true);
     movieList = movieList_;
+    movieList->setMinimumWidth(xPlayer::AlbumListMinimumWidth);
     // Add filter for movies
     movieFilterBox = new QGroupBox(tr("Filter Movies"), mainWidget);
     movieFilterBox->setFlat(xPlayer::UseFlatGroupBox);
@@ -67,24 +90,34 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     auto movieFilterBoxLayout = new QVBoxLayout();
     movieFilterBoxLayout->addWidget(movieFilter);
     movieFilterBox->setLayout(movieFilterBoxLayout);
+    // Add filter
+    boxFilterLayout->addWidget(boxSplitter);
+    boxFilterLayout->addWidget(movieFilterBox);
+    // Widget for music player and stacked widget.
+    auto moviePlayerStackedWidget = new QWidget(mainWidgetSplitter);
+    auto moviePlayerStackedLayout = new xPlayerLayout(moviePlayerStackedWidget);
+    // Create group box for the player widget.
+    moviePlayerWidget = new xPlayerMovieWidget(moviePlayer, moviePlayerStackedWidget);
     // Stacked widget setup for movie player.
-    movieStack = new QStackedWidget(mainWidget);
-    movieStack->addWidget(new QWidget(mainWidget));
-    moviePlayer->setParent(mainWidget);
+    movieStack = new QStackedWidget(moviePlayerStackedWidget);
+    movieStack->addWidget(new QWidget(moviePlayerStackedWidget));
+    moviePlayer->setParent(moviePlayerStackedWidget);
     movieStack->addWidget(moviePlayer);
     movieStack->setCurrentIndex(0);
     // Layout for the main movie widget.
+    moviePlayerStackedLayout->addWidget(moviePlayerWidget, 0, 0, 2, 5);
+    moviePlayerStackedLayout->addWidget(movieStack, 2, 0, 8, 5);
+    moviePlayerStackedLayout->setRowStretch(8, 2);
+    // Add widget to splitter.
+    mainWidgetSplitter->addWidget(moviePlayerStackedWidget);
+    mainWidgetSplitter->addWidget(boxFilterWidget);
+    mainWidgetSplitter->setCollapsible(0, false);
+    mainWidgetSplitter->setStretchFactor(0, 5);
+    mainWidgetSplitter->setCollapsible(1, false);
+    mainWidgetSplitter->setStretchFactor(1, 3);
+    // Layout for main widget.
     auto movieLayout = new xPlayerLayout(mainWidget);
-    movieLayout->addWidget(moviePlayerWidget, 0, 0, 2, 5);
-    movieLayout->addWidget(movieStack, 2, 0, 8, 5);
-    movieLayout->addWidget(tagBox, 0, 5, 4, 1);
-    movieLayout->addWidget(directoryBox, 0, 6, 4, 1);
-    movieLayout->addWidget(movieBox, 4, 5, 5, 2);
-    movieLayout->addWidget(movieFilterBox, 9, 5, 1, 2);
-    movieLayout->setColumnStretch(0, 6);
-    movieLayout->setColumnStretch(5, 1);
-    movieLayout->setColumnStretch(6, 1);
-    movieLayout->setRowStretch(8, 2);
+    movieLayout->addWidget(mainWidgetSplitter);
     // Connect signals.
     connect(tagList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMovieWidget::selectTag);
     connect(directoryList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMovieWidget::selectDirectory);
