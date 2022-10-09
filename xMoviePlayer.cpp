@@ -79,6 +79,7 @@ void xMoviePlayer::vlcStopMediaPlayer() {
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerPositionChanged, handleVLCEvents, this);
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerLengthChanged, handleVLCEvents, this);
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerBuffering, handleVLCEvents, this);
+    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerChapterChanged, handleVLCEvents, this);
     libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerEncounteredError, handleVLCEvents, this);
     // Stop playing
     libvlc_media_player_stop(movieMediaPlayer);
