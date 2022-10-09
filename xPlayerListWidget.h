@@ -123,7 +123,7 @@ class xPlayerListWidget:public QTreeWidget {
 
 public:
     explicit xPlayerListWidget(QWidget* parent=nullptr, bool displayTime=false);
-    ~xPlayerListWidget() override = default;
+    ~xPlayerListWidget() override;
     /**
      * Enable the sorted mode for the list widget.
      *

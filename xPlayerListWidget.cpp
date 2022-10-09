@@ -246,6 +246,14 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
     });
 }
 
+xPlayerListWidget::~xPlayerListWidget() {
+    if (updateItemsThread) {
+        qDebug() << "Waiting for timer thread to finish.";
+        updateItemsThread->requestInterruption();
+        updateItemsThread->wait();
+    }
+}
+
 void xPlayerListWidget::enableSorting(bool sorted) {
     sortItems = sorted;
 }
@@ -473,13 +481,13 @@ void xPlayerListWidget::updateItems() {
 void xPlayerListWidget::updateItemsWorker() {
     qint64 total = 0;
     for (int index = 0; index < topLevelItemCount(); ++index) {
-        auto item = listItem(index);
-        total += item->updateTime();
-        emit updateTime(item);
         // Check if we want to end the thread.
         if (QThread::currentThread()->isInterruptionRequested()) {
             return;
         }
+        auto item = listItem(index);
+        total += item->updateTime();
+        emit updateTime(item);
     }
     emit totalTime(total);
 }
@@ -547,4 +555,3 @@ void xPlayerListWidget::dropEvent(QDropEvent* event) {
         emit dragDrop(dragDropFromIndex, dragDropToIndex);
     }
 }
-
