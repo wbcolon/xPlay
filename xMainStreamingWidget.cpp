@@ -25,19 +25,28 @@
 #include <QWebEngineCookieStore>
 #include <QGroupBox>
 #include <QPushButton>
+#include <QSplitter>
 #include <QApplication>
 
 xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         zoomFactor(1.0) {
+
     auto streamingLayout = new xPlayerLayout(this);
-    streamingWebView = new QWebEngineView(this);
+    // Splitter for sidebar and the central webview.
+    auto sideBarWebViewSplitter = new QSplitter(this);
+    sideBarWebViewSplitter->setOrientation(Qt::Horizontal);
+    // Webview.
+    streamingWebView = new QWebEngineView(sideBarWebViewSplitter);
     QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+    // Sidebar.
+    auto sideBarWidget = new QWidget(sideBarWebViewSplitter);
+    auto sideBarLayout = new xPlayerLayout(sideBarWidget);
     // Sites box.
-    auto sitesBox = new QGroupBox(tr("Sites"), this);
+    auto sitesBox = new QGroupBox(tr("Sites"), sideBarWidget);
     sitesBox->setFlat(xPlayer::UseFlatGroupBox);
     sitesCombo = new QComboBox(sitesBox);
     auto historyCheckBox = new QCheckBox(tr("History"), sitesBox);
@@ -49,8 +58,8 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     auto clearButton = new QPushButton(QIcon(":/images/xplay-clear-data.svg"), "", sitesBox);
     clearButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     clearButton->setToolTip(tr("Clear"));
-    // Layout.
-    auto siteLayout = new xPlayerLayout();
+    // Sites box layout.
+    auto siteLayout = new xPlayerLayout(sitesBox);
     siteLayout->setSpacing(xPlayerLayout::NoSpace);
     siteLayout->addWidget(sitesCombo, 0, 0, 1, 2);
     siteLayout->addRowSpacer(1, xPlayerLayout::SmallSpace);
@@ -58,29 +67,35 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     siteLayout->addWidget(cookiesCheckBox, 2, 1, 1, 1);
     siteLayout->addWidget(cacheCheckBox, 3, 0, 1, 2);
     siteLayout->addWidget(clearButton, 4, 0, 1, 2);
-    sitesBox->setLayout(siteLayout);
-    // Add a control tab for player and Rotel amp controls
-    auto controlTab = new QTabWidget(this);
+    // Control tab for player and Rotel amp controls
+    auto controlTab = new QTabWidget(sideBarWidget);
     controlTab->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     auto controlVolumeTab = new QWidget(controlTab);
     auto volumeControl = new xPlayerVolumeWidget(true, controlVolumeTab);
     volumeControl->setFixedWidth(xPlayer::ControlButtonWidgetWidth);
-    auto controlVolumeLayout = new xPlayerLayout();
+    // Control tab layout.
+    auto controlVolumeLayout = new xPlayerLayout(controlVolumeTab);
     controlVolumeLayout->addRowSpacer(0, 2);
     controlVolumeLayout->addWidget(volumeControl, 1, 0, 1, 1);
     controlVolumeLayout->addRowStretcher(2);
-    controlVolumeTab->setLayout(controlVolumeLayout);
     auto controlRotelTab = new xPlayerRotelWidget(controlTab, Qt::Vertical);
     controlTab->setTabPosition(QTabWidget::North);
     controlTab->addTab(controlVolumeTab, "xPlay");
     controlTab->addTab(controlRotelTab, "Rotel");
-    // Connect volume and rotel amp controls
-    volumeControl->setVolume(xPlayerPulseAudioControls::controls()->getVolume());
-    connect(volumeControl, &xPlayerVolumeWidget::volume, [](int vol) {
-        xPlayerPulseAudioControls::controls()->setVolume(vol);
-    });
-    connect(volumeControl, &xPlayerVolumeWidget::muted, this, &xMainStreamingWidget::setMuted);
-
+    // Add sites box and control tab to sidebar.
+    sideBarWidget->setMaximumWidth(xPlayer::SidebarWidgetWidth);
+    sideBarLayout->addRowSpacer(0, xPlayerLayout::MediumSpace);
+    sideBarLayout->addWidget(sitesBox, 1, 0);
+    sideBarLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
+    sideBarLayout->addWidget(controlTab, 3, 0);
+    sideBarLayout->addRowStretcher(4);
+    // Add sidebar and webview to splitter.
+    sideBarWebViewSplitter->addWidget(sideBarWidget);
+    sideBarWebViewSplitter->addWidget(streamingWebView);
+    sideBarWebViewSplitter->setCollapsible(0, true);
+    sideBarWebViewSplitter->setStretchFactor(0, 0);
+    sideBarWebViewSplitter->setCollapsible(1, false);
+    sideBarWebViewSplitter->setStretchFactor(1, 1);
     // Navigation elements
     auto homeButton = new QPushButton(QIcon(":/images/xplay-home.svg"), "", this);
     homeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
@@ -106,16 +121,18 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     streamingLayout->addWidget(fwdButton, 0, 3);
     streamingLayout->addWidget(streamingUrl, 0, 4, 1, 44);
     streamingLayout->addWidget(zoomBox, 0, 48, 1, 2);
-    streamingLayout->addWidget(streamingWebView, 1, 4, 25, 46);
-    streamingLayout->addRowSpacer(1, xPlayerLayout::MediumSpace);
-    streamingLayout->addWidget(sitesBox, 2, 0, 2, 4);
-    streamingLayout->addRowSpacer(4, xPlayerLayout::SmallSpace);
-    streamingLayout->addWidget(controlTab, 5, 0, 7, 4);
+    streamingLayout->addWidget(sideBarWebViewSplitter, 1, 0, 25, 50);
     streamingLayout->addRowStretcher(13);
     // Connect Rotel amp widget configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
         controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     } );
+    // Connect volume and rotel amp controls
+    volumeControl->setVolume(xPlayerPulseAudioControls::controls()->getVolume());
+    connect(volumeControl, &xPlayerVolumeWidget::volume, [](int vol) {
+        xPlayerPulseAudioControls::controls()->setVolume(vol);
+    });
+    connect(volumeControl, &xPlayerVolumeWidget::muted, this, &xMainStreamingWidget::setMuted);
     // Connect the navigation controls to the QWebEngineView.
     connect(homeButton, &QPushButton::pressed, [=] () { streamingWebView->load(currentSite.second); } );
     connect(backButton, &QPushButton::pressed, streamingWebView, &QWebEngineView::back);
