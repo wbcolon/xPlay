@@ -41,6 +41,8 @@ const QString xPlayerConfiguration_MovieDefaultSubtitleLanguage { "xPlay/MovieSu
 const QString xPlayerConfiguration_MovieViewFilters { "xPlay/MovieViewFilters" }; // NOLINT
 const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" }; // NOLINT
 const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" }; // NOLINT
+const QString xPlayerConfiguration_StreamingViewSidebar { "xPlay/StreamingViewSidebar" }; // NOLINT
+const QString xPlayerConfiguration_StreamingViewNavigation { "xPlay/StreamingViewNavigation" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" }; // NOLINT
@@ -64,6 +66,8 @@ const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites 
         { "qobuz", QUrl("https://play.qobuz.com/login") },
         { "youtube", QUrl("https://www.youtube.com") },
 };
+const bool xPlayerConfiguration_StreamingViewSidebar_Default = true; // NOLINT
+const bool xPlayerConfiguration_StreamingViewNavigation_Default = true; // NOLINT
 const QStringList xPlayerConfiguration_MovieDefaultLanguages { "english", "german" }; // NOLINT
 const QString xPlayerConfiguration_VisualizationConfigPathDefault { "/usr/share/projectM/config.inp" }; // NOLINT
 const QList<int> xPlayerConfiguration_WebsiteZoomFactors { 50, 75, 100, 125, 150, 175, 200 }; // NOLINT
@@ -235,6 +239,22 @@ void xPlayerConfiguration::setStreamingSites(const QList<std::pair<QString,QUrl>
         settings->setValue(xPlayerConfiguration_StreamingSites, nameUrlString);
         settings->sync();
         emit updatedStreamingSites();
+    }
+}
+
+void xPlayerConfiguration::setStreamingViewSidebar(bool visible) {
+    if (visible != getStreamingViewSidebar()) {
+        settings->setValue(xPlayerConfiguration_StreamingViewSidebar, visible);
+        settings->sync();
+        emit updatedStreamingViewSidebar();
+    }
+}
+
+void xPlayerConfiguration::setStreamingViewNavigation(bool visible) {
+    if (visible != getStreamingViewNavigation()) {
+        settings->setValue(xPlayerConfiguration_StreamingViewNavigation, visible);
+        settings->sync();
+        emit updatedStreamingViewNavigation();
     }
 }
 
@@ -435,6 +455,14 @@ std::pair<QString,QUrl> xPlayerConfiguration::getStreamingSitesDefault() {
     }
 }
 
+bool xPlayerConfiguration::getStreamingViewSidebar() {
+    return settings->value(xPlayerConfiguration_StreamingViewSidebar, xPlayerConfiguration_StreamingViewSidebar_Default).toBool();
+}
+
+bool xPlayerConfiguration::getStreamingViewNavigation() {
+    return settings->value(xPlayerConfiguration_StreamingViewNavigation, xPlayerConfiguration_StreamingViewNavigation_Default).toBool();
+}
+
 QString xPlayerConfiguration::getDatabaseDirectory() {
     auto path = settings->value(xPlayerConfiguration_DatabaseDirectory, "").toString();
     if (path.isEmpty()) {
@@ -560,6 +588,8 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMovieViewFilters();
     emit updatedStreamingSites();
     emit updatedStreamingSitesDefault();
+    emit updatedStreamingViewSidebar();
+    emit updatedStreamingViewNavigation();
     emit updatedDatabaseMusicOverlay();
     emit updatedDatabaseMovieOverlay();
     emit updatedVisualizationConfigPath();

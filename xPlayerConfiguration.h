@@ -146,6 +146,18 @@ public:
      */
     void setStreamingSitesDefault(const std::pair<QString,QUrl>& site);
     /**
+     * Set the visibility status of the sidebar widget.
+     *
+     * @param visible show sidebar if true, hide otherwise.
+     */
+    void setStreamingViewSidebar(bool visible);
+    /**
+     * Set the visibility status of the navigation bar widget.
+     *
+     * @param visible show navigation bar if true, hide otherwise.
+     */
+    void setStreamingViewNavigation(bool visible);
+    /**
      * Set the directory to the database file.
      *
      * @param dir the directory as string.
@@ -347,6 +359,18 @@ public:
      */
     [[nodiscard]] std::pair<QString,QUrl> getStreamingSitesDefault();
     /**
+     * Get the visibility of the sidebar.
+     *
+     * @return true if the sidebar is visible, false otherwise.
+     */
+    [[nodiscard]] bool getStreamingViewSidebar();
+    /**
+     * Get the visibility of the navigation bar.
+     *
+     * @return true if the navigation bar is visible, false otherwise.
+     */
+    [[nodiscard]] bool getStreamingViewNavigation();
+    /**
      * Get the directory to the database file.
      *
      * @return the absolute path as string.
@@ -492,6 +516,14 @@ signals:
      * Signal an update of the default streaming site.
      */
     void updatedStreamingSitesDefault();
+    /**
+     * Signal an update of the sidebar visibility.
+     */
+    void updatedStreamingViewSidebar();
+    /**
+     * Signal an update of the navigation visibility.
+     */
+    void updatedStreamingViewNavigation();
     /**
      * Signal an update of the database overlay for the music view.
      */

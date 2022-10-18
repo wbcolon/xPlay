@@ -456,13 +456,13 @@ void xApplication::createMenus() {
         musicViewVisualization->setEnabled(false);
         xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
     });
-
     // Create music view submenu.
     musicViewMenu->addAction(musicViewSelectors);
     musicViewMenu->addAction(musicViewFilters);
     musicViewMenu->addAction(musicViewVisualization);
 
     auto movieViewMenu = viewMenu->addMenu("Movie View");
+    // Create actions for movie view submenu.
     auto movieViewFilters = new QAction("Filters", this);
     movieViewFilters->setCheckable(true);
     movieViewFilters->setShortcut(QKeySequence("Ctrl+Alt+M"));
@@ -470,9 +470,30 @@ void xApplication::createMenus() {
     connect(movieViewFilters, &QAction::triggered, mainMovieWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMovieViewFilters(checked);
     });
-
     // Create movie view submenu.
     movieViewMenu->addAction(movieViewFilters);
+
+#ifdef USE_STREAMING
+    auto streamingViewMenu = viewMenu->addMenu("Streaming View");
+    // Create actions for streaming view submenu.
+    auto streamingViewSidebar = new QAction("Sidebar", this);
+    streamingViewSidebar->setCheckable(true);
+    streamingViewSidebar->setShortcut(QKeySequence("Ctrl+Alt+B"));
+    streamingViewSidebar->setChecked(xPlayerConfiguration::configuration()->getStreamingViewSidebar());
+    connect(streamingViewSidebar, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setStreamingViewSidebar(checked);
+    });
+    auto streamingViewNavigation = new QAction("Navigation", this);
+    streamingViewNavigation->setCheckable(true);
+    streamingViewNavigation->setShortcut(QKeySequence("Ctrl+Alt+N"));
+    streamingViewNavigation->setChecked(xPlayerConfiguration::configuration()->getStreamingViewNavigation());
+    connect(streamingViewNavigation, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setStreamingViewNavigation(checked);
+    });
+    // Create movie view submenu.
+    streamingViewMenu->addAction(streamingViewSidebar);
+    streamingViewMenu->addAction(streamingViewNavigation);
+#endif
 
     // Create actions for help menu
     auto helpMenuAboutQt = new QAction("About Qt", this);

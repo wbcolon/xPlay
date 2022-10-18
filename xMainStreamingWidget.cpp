@@ -33,17 +33,14 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
         zoomFactor(1.0) {
 
     auto streamingLayout = new xPlayerLayout(this);
-    // Splitter for sidebar and the central webview.
-    auto sideBarWebViewSplitter = new QSplitter(this);
-    sideBarWebViewSplitter->setOrientation(Qt::Horizontal);
     // Webview.
-    streamingWebView = new QWebEngineView(sideBarWebViewSplitter);
+    streamingWebView = new QWebEngineView(this);
     QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
     QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     // Sidebar.
-    auto sideBarWidget = new QWidget(sideBarWebViewSplitter);
+    auto sideBarWidget = new QWidget(this);
     auto sideBarLayout = new xPlayerLayout(sideBarWidget);
     // Sites box.
     auto sitesBox = new QGroupBox(tr("Sites"), sideBarWidget);
@@ -89,13 +86,6 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     sideBarLayout->addRowSpacer(2, xPlayerLayout::SmallSpace);
     sideBarLayout->addWidget(controlTab, 3, 0);
     sideBarLayout->addRowStretcher(4);
-    // Add sidebar and webview to splitter.
-    sideBarWebViewSplitter->addWidget(sideBarWidget);
-    sideBarWebViewSplitter->addWidget(streamingWebView);
-    sideBarWebViewSplitter->setCollapsible(0, true);
-    sideBarWebViewSplitter->setStretchFactor(0, 0);
-    sideBarWebViewSplitter->setCollapsible(1, false);
-    sideBarWebViewSplitter->setStretchFactor(1, 1);
     // Navigation elements
     auto homeButton = new QPushButton(QIcon(":/images/xplay-home.svg"), "", this);
     homeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
@@ -121,7 +111,8 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     streamingLayout->addWidget(fwdButton, 0, 3);
     streamingLayout->addWidget(streamingUrl, 0, 4, 1, 44);
     streamingLayout->addWidget(zoomBox, 0, 48, 1, 2);
-    streamingLayout->addWidget(sideBarWebViewSplitter, 1, 0, 25, 50);
+    streamingLayout->addWidget(sideBarWidget, 1, 0, 25, 4);
+    streamingLayout->addWidget(streamingWebView, 1, 4, 25, 46);
     streamingLayout->addRowStretcher(13);
     // Connect Rotel amp widget configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
@@ -161,6 +152,25 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
             this, &xMainStreamingWidget::updatedStreamingSites);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingSitesDefault,
             this, &xMainStreamingWidget::updatedStreamingSitesDefault);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingViewSidebar, [=]() {
+        auto visible = xPlayerConfiguration::configuration()->getStreamingViewSidebar();
+        streamingLayout->removeWidget(streamingWebView);
+        if (visible) {
+            streamingLayout->addWidget(streamingWebView, 1, 4, 25, 46);
+        } else {
+            streamingLayout->addWidget(streamingWebView, 1, 0, 25, 50);
+        }
+        sideBarWidget->setVisible(visible);
+    });
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedStreamingViewNavigation, [=]() {
+        auto visible = xPlayerConfiguration::configuration()->getStreamingViewNavigation();
+        backButton->setVisible(visible);
+        homeButton->setVisible(visible);
+        reloadButton->setVisible(visible);
+        fwdButton->setVisible(visible);
+        streamingUrl->setVisible(visible);
+        zoomBox->setVisible(visible);
+    });
 }
 
 void xMainStreamingWidget::initializeView() {
