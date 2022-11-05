@@ -1,5 +1,12 @@
 # Changelog
 
+- Add jump to artist if hovered over selector while ctrl is pressed.
+- Add splitter for more flexible UI.
+- Add streaming view submenu.
+- Fix pulseaudio volume control by determining default pulseaudio sink.
+- Disable audio visualization if configuration file not valid.
+- Minor bug fixing.
+
 
 ## 0.13.0 - 2022-08-22
 
