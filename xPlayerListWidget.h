@@ -246,6 +246,12 @@ public:
      */
     int count();
     /**
+     * Ensure that item at given index is visible.
+     *
+     * @param index the index of the item.
+     */
+    void scrollToIndex(int index);
+    /**
      * Refresh item entries.
      *
      * Sort item entries according to the lessThan function if given. All entries are removed from

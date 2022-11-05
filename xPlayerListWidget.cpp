@@ -446,6 +446,10 @@ int xPlayerListWidget::count() {
     return topLevelItemCount();
 }
 
+void xPlayerListWidget::scrollToIndex(int index) {
+    scrollToItem(listItem(index));
+}
+
 void xPlayerListWidget::refreshItems(std::function<bool (xPlayerListWidgetItem*, xPlayerListWidgetItem*)> lesserThan) {
     std::vector<xPlayerListWidgetItem*> items(count());
     auto cItem = currentItem();
