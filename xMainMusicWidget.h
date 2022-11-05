@@ -285,6 +285,15 @@ private slots:
      */
     void selectArtistSelector(const QString& selector);
     /**
+     * Jump to the artist in the list of artists.
+     *
+     * Function is triggered whenever an element out of the selectors is ctrl-clicked.
+     * The selector is retrieved and used to jump to first artist matching the selector.
+     *
+     * @param selector the currently selected selector as string.
+     */
+    void jumpArtistSelector(const QString& selector);
+    /**
      * Reorder the list of artists and albums
      *
      * @param enabled sort by latest time written if true, by name otherwise.
@@ -497,6 +506,13 @@ private:
      * @return filtered list of artists that start with the selector string.
      */
     [[nodiscard]] std::vector<xMusicLibraryArtistEntry*> filterArtists(const std::vector<xMusicLibraryArtistEntry*>& artists);
+    /**
+     * Scan the list of artist to find the first artist with the matching selector.
+     *
+     * @param text the selector as string.
+     * @return index of the first artist starting with the selectors.
+     */
+    [[nodiscard]] int findFirstArtistEntry(const QString& text);
     /**
      * Sort the vector of artist entries.
      *

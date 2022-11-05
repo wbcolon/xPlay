@@ -55,6 +55,12 @@ signals:
      */
     void selectorDoubleClicked(const QString& text);
     /**
+     * Signal emitted if hovered over a selector while ctrl is pressed.
+     *
+     * @param text the selector hovered over as string.
+     */
+    void selectorCtrlHovered(const QString& text);
+    /**
      * Signal emitted if the sorting latest checkbox state has changed.
      *
      * @param enabled sort after the latest write time if true, after name otherwise.
@@ -79,6 +85,15 @@ private slots:
      * @param selectorItem pointer to the list widget item that has been double-clicked.
      */
     void doubleClickedArtistSelector(QListWidgetItem* selectorItem);
+    /**
+     * Triggered if a hovered over a selector while ctrl is pressed.
+     *
+     * Function will only emit "selectorCtrlHovered" if the "none" selector is currently
+     * selected.
+     *
+     * @param selectorItem pointer to the list widget item that we hover over.
+     */
+    void ctrlHoveredArtistSelector(QListWidgetItem* selectorItem);
 
 private:
     QListWidget* selectorList;

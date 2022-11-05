@@ -217,6 +217,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(trackList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::selectTrack);
     connect(trackList, &xPlayerListWidget::totalTime, this, &xMainMusicWidget::updateTracksTotalTime);
     connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selector, this, &xMainMusicWidget::selectArtistSelector);
+    connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selectorCtrlHovered, this, &xMainMusicWidget::jumpArtistSelector);
     connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selectorDoubleClicked, this, &xMainMusicWidget::queueArtistSelector);
     connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::sortingLatest, this, &xMainMusicWidget::selectSortingLatest);
     connect(albumSelectorList, &xPlayerMusicAlbumSelectorWidget::updatedSelectors, this,
@@ -702,11 +703,24 @@ void xMainMusicWidget::selectTrack(xPlayerListWidgetItem* trackItem) {
 }
 
 void xMainMusicWidget::selectArtistSelector(const QString& selector) {
-    // Check if listIndex is valid.
+    // Check if the selector is valid.
     if (!selector.isEmpty()) {
         currentArtistSelector = selector;
         // Call with stored list in order to update artist filtering.
         updateScannedArtists(unfilteredArtists);
+    }
+}
+
+void xMainMusicWidget::jumpArtistSelector(const QString& selector) {
+    // Check if the selector is valid.
+    if (!selector.isEmpty()) {
+        // Find the first selector matching artist.
+        for (int index=0; index < artistList->count(); ++index) {
+            if (artistList->listItem(index)->text().toLower().startsWith(selector)) {
+                artistList->scrollToIndex(index);
+                return;
+            }
+        }
     }
 }
 

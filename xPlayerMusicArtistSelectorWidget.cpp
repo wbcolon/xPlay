@@ -35,6 +35,7 @@ xPlayerMusicArtistSelectorWidget::xPlayerMusicArtistSelectorWidget(QWidget* pare
     setFixedHeight(static_cast<int>(fontMetrics().height()*xPlayer::SelectorHeightFontFactor));
 
     connect(selectorList, &QListWidget::currentRowChanged, this, &xPlayerMusicArtistSelectorWidget::selectArtistSelector);
+    connect(selectorList, &QListWidget::itemEntered, this, &xPlayerMusicArtistSelectorWidget::ctrlHoveredArtistSelector);
     connect(selectorList, &QListWidget::itemDoubleClicked, this, &xPlayerMusicArtistSelectorWidget::doubleClickedArtistSelector);
     connect(sortingLatestBox, &QCheckBox::clicked, this, &xPlayerMusicArtistSelectorWidget::sortingLatest);
 }
@@ -82,8 +83,18 @@ void xPlayerMusicArtistSelectorWidget::selectArtistSelector(int selectorIndex) {
             sortingLatestBox->setChecked(false);
             emit sortingLatest(false);
         }
-        // Call with stored list in order to update artist filtering.
+        // Enable mouse tracking if "None" selector is enabled.
+        selectorList->setMouseTracking(selectorIndex == 0);
+        // Emit selector.
         emit selector(selectorText);
+    }
+}
+
+void xPlayerMusicArtistSelectorWidget::ctrlHoveredArtistSelector(QListWidgetItem* selectorItem) {
+    if (selectorItem) {
+        if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
+            emit selectorCtrlHovered(selectorItem->text());
+        }
     }
 }
 
