@@ -366,4 +366,6 @@ private:
     int movieDefaultSubtitleLanguageIndex;
 };
 
+Q_DECLARE_METATYPE(std::filesystem::path)
+
 #endif
