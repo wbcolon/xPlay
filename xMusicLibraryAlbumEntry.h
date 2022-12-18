@@ -26,7 +26,7 @@ public:
     xMusicLibraryAlbumEntry();
     xMusicLibraryAlbumEntry(const QString& album, const std::filesystem::path& albumPath, xMusicLibraryEntry* artist);
     xMusicLibraryAlbumEntry(const xMusicLibraryAlbumEntry& entry) = default;
-    ~xMusicLibraryAlbumEntry() override = default;
+    ~xMusicLibraryAlbumEntry() override;
     /**
      * Scan for album entries for the given artist.
      */

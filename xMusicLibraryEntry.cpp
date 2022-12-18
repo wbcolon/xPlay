@@ -59,16 +59,21 @@ bool xMusicLibraryEntry::operator < (const xMusicLibraryEntry& entry) const {
 }
 
 std::vector<std::filesystem::directory_entry> xMusicLibraryEntry::scanDirectory() {
-    if (std::filesystem::is_directory(entryPath)) {
-        std::vector<std::filesystem::directory_entry> validDirEntries;
-        for (const auto &dirEntry: std::filesystem::directory_iterator(entryPath)) {
-            if (!isDirectoryEntryValid(dirEntry)) {
-                // Ignore invalid entries
-                continue;
+    try {
+        if (std::filesystem::is_directory(entryPath)) {
+            std::vector<std::filesystem::directory_entry> validDirEntries;
+            for (const auto &dirEntry: std::filesystem::directory_iterator(entryPath)) {
+                if (!isDirectoryEntryValid(dirEntry)) {
+                    // Ignore invalid entries
+                    continue;
+                }
+                validDirEntries.emplace_back(dirEntry);
             }
-            validDirEntries.emplace_back(dirEntry);
+            return validDirEntries;
         }
-        return validDirEntries;
+    }
+    catch (const std::filesystem::filesystem_error& error) {
+        qCritical() << "Unable to scan directory: " << QString::fromStdString(entryPath) << ", error: " << error.what();
     }
     return {};
 }

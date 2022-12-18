@@ -134,6 +134,7 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     layout->addWidget(mobileLibraryScanClearButton, 16, 28, 1, 2);
     this->setLayout(layout);
     // Connect signals.
+    connect(mobileLibrary, &xMusicLibrary::syncFinished, this, &xMainMobileSyncWidget::syncFinished);
     connect(mobileLibraryDirectoryButton, &QPushButton::pressed, this, &xMainMobileSyncWidget::mobileLibraryOpenDirectory);
     connect(mobileLibraryScanClearButton, &QPushButton::pressed, this, &xMainMobileSyncWidget::mobileLibraryScanClear);
     connect(mobileLibraryWidget, &xPlayerMusicLibraryWidget::treeItemCtrlClicked, this, &xMainMobileSyncWidget::musicLibraryFindItem);
@@ -343,18 +344,13 @@ void xMainMobileSyncWidget::actionApplyUpdate(int progress) {
 }
 
 void xMainMobileSyncWidget::actionApplyFinished() {
-    // Sync moblile library content.
-    int mobileFd = open(mobileLibrary->getPath().string().c_str(), O_DIRECTORY | O_RDONLY);
-    if (mobileFd != -1) {
-        auto actionBarFormat = actionBar->format();
-        actionBar->setFormat("sync mobile library");
-        actionBar->setValue(0);
-        syncfs(mobileFd);
-        actionBar->setFormat(actionBarFormat);
-    } else {
-        // Error. We were unable to get fd for mobile library. May not have written music files.
-        qCritical() << "Unable to sync mobile library. File system corruption likely.";
-    }
+    // Sync mobile library content.
+    qDebug() << "Sync mobile library...";
+    mobileLibrary->sync();
+}
+
+void xMainMobileSyncWidget::syncFinished() {
+    qDebug() << "Sync of mobile library finished...";
     // Rescan the library.
     mobileLibraryScanClear();
     // Hide action bar.

@@ -73,7 +73,6 @@ xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const std
     return entryName;
 }
 
-
 std::uintmax_t xMusicLibraryTrackEntry::getFileSize() const {
     return fileSize;
 }

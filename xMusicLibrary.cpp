@@ -17,20 +17,38 @@
 #include "xMusicLibraryAlbumEntry.h"
 #include "xMusicLibraryTrackEntry.h"
 
+#include <QTimer>
 #include <QDebug>
 
 #include <filesystem>
+#include <unistd.h>
+#include <fcntl.h>
 
 
 xMusicLibrary::xMusicLibrary(QObject* parent):
         xMusicLibraryEntry(parent),
+        musicLibraryPathFd(-1),
         musicLibraryScanning(nullptr) {
+}
+
+xMusicLibrary::~xMusicLibrary() {
+    // Close file descriptor if we close the music library.
+   if (musicLibraryPathFd != -1) {
+       close(musicLibraryPathFd);
+   }
 }
 
 void xMusicLibrary::setPath(const std::filesystem::path& base) {
     // Update only if the given path is a directory
     if (std::filesystem::is_directory(base)) {
+        // Set the new path.
         entryPath = base;
+        // Update the file descriptor for the new path.
+        if (musicLibraryPathFd != -1) {
+            close(musicLibraryPathFd);
+            musicLibraryPathFd = -1;
+        }
+        musicLibraryPathFd = open(entryPath.string().c_str(), O_DIRECTORY | O_RDONLY);
         scan();
     } else {
         emit scanningError();
@@ -41,20 +59,40 @@ void xMusicLibrary::setPath(const std::filesystem::path& base) {
     return musicLibraryArtists;
 }
 
-void xMusicLibrary::cleanup() {
+void xMusicLibrary::clear() {
+    if (musicLibraryScanning && musicLibraryScanning->isRunning()) {
+        musicLibraryScanning->requestInterruption();
+        musicLibraryScanning->wait();
+    }
+    // Lock the library before removing everything.
     musicLibraryLock.lock();
+    // Clear all artists.
+    for (auto artist : musicLibraryArtists) {
+        delete artist;
+    }
+    // Clear mappings.
     musicLibraryArtists.clear();
     musicLibraryArtistsMap.clear();
     musicLibraryLock.unlock();
 }
 
+void xMusicLibrary::sync() {
+    if (musicLibraryPathFd == -1) {
+        // No sync necessary. But emit signal anyway.
+        emit syncFinished();
+        return;
+    }
+    QTimer::singleShot(0, [=]() {
+        syncfs(musicLibraryPathFd);
+        emit syncFinished();
+    });
+}
+
 void xMusicLibrary::scan() {
     if (!entryPath.empty()) {
-        if (musicLibraryScanning && musicLibraryScanning->isRunning()) {
-            musicLibraryScanning->requestInterruption();
-            musicLibraryScanning->wait();
-            cleanup();
-        }
+        // Clear music library.
+        clear();
+        // Start new scanning thread.
         musicLibraryScanning = QThread::create([this]() {
             scanThread();
         });
@@ -70,7 +108,7 @@ void xMusicLibrary::scan(const xMusicLibraryFilter& filter) {
             auto removeArtist = true;
             auto filteredAlbums = filterAlbums(*i, filter);
             if (!filteredAlbums.empty()) {
-                // track filtering can be time consuming.
+                // track filtering can be time-consuming.
                 if (filter.hasTrackNameFilter()) {
                     for (auto album : filteredAlbums) {
                         if (!filterTracks(album, filter).empty()) {
@@ -318,18 +356,26 @@ void xMusicLibrary::scanThread() {
     for (const auto& artistEntry : artistEntries) {
         // Is the scanning thread interrupted.
         if (musicLibraryScanning->isInterruptionRequested()) {
-            // Unlock when scanning is interrupted.
+            // Unlock and clear when scanning is interrupted.
+            musicLibraryArtists.clear();
+            musicLibraryArtistsMap.clear();
             musicLibraryLock.unlock();
             return;
         }
         auto artistName = QString::fromStdString(artistEntry.path().filename().string());
         auto artist = new xMusicLibraryArtistEntry(artistName, artistEntry.path(), this);
-        musicLibraryArtists.emplace_back(artist);
-        musicLibraryArtistsMap[artistName] = artist;
         // Scan albums for the current artist.
         artist->scan();
-        totalNoAlbums += artist->getNoOfAlbums();
-        musicLibraryLock.unlock();
+        // Only add the artist is we have albums.
+        if (artist->getNoOfAlbums() > 0) {
+            musicLibraryArtists.emplace_back(artist);
+            musicLibraryArtistsMap[artistName] = artist;
+            totalNoAlbums += artist->getNoOfAlbums();
+        } else {
+            // Remove artist that has no albums.
+            qCritical() << "Removing artist with no albums: " << artist->getArtistName();
+            delete artist;
+        }
     }
     qDebug() << "Total number of albums: " << totalNoAlbums;
     // Unlock only after the base structure is scanned.

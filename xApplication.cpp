@@ -149,7 +149,7 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
 
 void xApplication::closeEvent(QCloseEvent* event) {
     // Do some local cleanup before closing.
-    musicLibrary->cleanup();
+    musicLibrary->clear();
     QMainWindow::closeEvent(event);
 }
 

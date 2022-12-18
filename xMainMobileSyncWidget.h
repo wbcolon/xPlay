@@ -167,9 +167,13 @@ private slots:
      */
     void actionApplyUpdate(int progress);
     /**
-     * Perform cleanup and rescan after the action apply thread is finished.
+     * Perform music library sync after the action apply thread is finished.
      */
     void actionApplyFinished();
+    /**
+     * Perform cleanup and rescan after the action music library sync is finished.
+     */
+    void syncFinished();
 
 private:
     /**

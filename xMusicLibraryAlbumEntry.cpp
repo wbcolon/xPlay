@@ -28,6 +28,13 @@ xMusicLibraryAlbumEntry::xMusicLibraryAlbumEntry(const QString& artist, const st
         albumTracks() {
 }
 
+xMusicLibraryAlbumEntry::~xMusicLibraryAlbumEntry() {
+    // Cleanup track entries.
+    for (auto track : albumTracks) {
+        delete track;
+    }
+}
+
 [[nodiscard]] const QString& xMusicLibraryAlbumEntry::getArtistName() const {
     if (getArtist() == nullptr) {
         throw std::runtime_error("xMusicLibraryAlbumEntry::getArtistName(): album not connected to artist");
@@ -92,12 +99,19 @@ bool xMusicLibraryAlbumEntry::isScanned() const {
 bool xMusicLibraryAlbumEntry::isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) {
     // Only query once for valid extensions.
     static auto validExtensions = xPlayerConfiguration::configuration()->getMusicLibraryExtensionList();
-    // Check if we have a file with a valid music file extension.
-    if (dirEntry.is_regular_file()) {
-        auto extension = QString::fromStdString(dirEntry.path().extension().string());
-        if (validExtensions.contains(extension, Qt::CaseInsensitive)) {
-            return true;
+    try {
+        // Check if we have a file with a valid music file extension.
+        if (dirEntry.exists() && dirEntry.is_regular_file()) {
+            auto extension = QString::fromStdString(dirEntry.path().extension().string());
+            if (validExtensions.contains(extension, Qt::CaseInsensitive)) {
+                return true;
+            }
         }
+    }
+    catch (const std::filesystem::filesystem_error& error) {
+        qCritical() << "Unable to access directory entry: "
+                    << QString::fromStdString(dirEntry.path())
+                    << ", error: " << error.what();
     }
     return false;
 }

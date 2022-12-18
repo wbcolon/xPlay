@@ -27,6 +27,13 @@ xMusicLibraryArtistEntry::xMusicLibraryArtistEntry(const QString& artist, const 
         artistAlbumsMap() {
 }
 
+xMusicLibraryArtistEntry::~xMusicLibraryArtistEntry() {
+    // Cleanup album entries.
+    for (auto album : artistAlbums) {
+        delete album;
+    }
+}
+
 [[nodiscard]] const QString& xMusicLibraryArtistEntry::getArtistName() const {
     return entryName;
 }
@@ -77,7 +84,7 @@ bool xMusicLibraryArtistEntry::isScanned() const {
 
 bool xMusicLibraryArtistEntry::isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) {
     try {
-        if (dirEntry.is_directory()) {
+        if (dirEntry.exists() && dirEntry.is_directory()) {
             auto dirName = dirEntry.path().filename().string();
             // Special directories "." and ".." are not valid. Other directories starting with "." are valid.
             if ((dirName != ".") && (dirName != "..")) {
@@ -85,7 +92,9 @@ bool xMusicLibraryArtistEntry::isDirectoryEntryValid(const std::filesystem::dire
             }
         }
     } catch (const std::filesystem::filesystem_error& error) {
-        qCritical() << "Unable to access directory entry, error: " << error.what();
+        qCritical() << "Unable to access directory entry: "
+                    << QString::fromStdString(dirEntry.path())
+                    << ", error: " << error.what();
     }
     return false;
 }
