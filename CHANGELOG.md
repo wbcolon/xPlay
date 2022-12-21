@@ -1,5 +1,10 @@
 # Changelog
 
+
+## Unreleased
+
+- Add mobile library IO for mobile sync view.
+- Add improved sync functionality to music library.
 - Add jump to artist if hovered over selector while ctrl is pressed.
 - Add splitter for more flexible UI.
 - Add streaming view submenu.

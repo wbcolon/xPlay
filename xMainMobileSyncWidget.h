@@ -56,6 +56,13 @@ signals:
      * @param enabled scanning of music library allowed if true, not allowed otherwise.
      */
     void enableMusicLibraryScanning(bool enabled);
+    /**
+     * Signal emitted with read/write IO for mobile library.
+     *
+     * @param readBytes no of bytes per second read.
+     * @param writeBytes no of bytes per second written.
+     */
+    void mobileLibraryIO(quint64 readBytes, quint64 writeBytes);
 
 private slots:
     /**
@@ -94,6 +101,17 @@ private slots:
      * Update mobile library view after scan is finished.
      */
     void mobileLibraryReady();
+    /**
+     * Read IO stats for the mobile library access.
+     */
+    void mobileLibraryReadIOThread(const QString& mobileLibraryPath);
+    /**
+     * Update progess bars with read and write bytes per second.
+     *
+     * @param readBytes no of bytes per second read.
+     * @param writeBytes no of bytes per second written.
+     */
+    void mobileLibraryUpdateIO(quint64 readBytes, quint64 writeBytes);
     /**
      * Compare the music with the mobile directory.
      *
@@ -207,12 +225,16 @@ private:
     QPushButton* mobileLibraryScanClearButton;
     QLineEdit* mobileLibraryDirectoryWidget;
     QProgressBar* mobileLibraryStorageBar;
+    QProgressBar* mobileLibraryIOReadBar;
+    QProgressBar* mobileLibraryIOWriteBar;
     std::filesystem::space_info mobileLibrarySpaceInfo;
+    QThread* mobileLibraryIOThread;
     QListWidget* actionAddToWidget;
     QGroupBox* actionAddToGroupBox;
     QListWidget* actionRemoveFromWidget;
     QGroupBox* actionRemoveFromGroupBox;
     QProgressBar* actionStorageBar;
+    QLabel* actionBarLabel;
     QProgressBar* actionBar;
     QPushButton* actionApplyButton;
     std::vector<xPlayerMusicLibraryWidgetItem*> actionAddToItems;

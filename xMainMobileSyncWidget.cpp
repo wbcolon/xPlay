@@ -26,10 +26,9 @@
 #include <QCheckBox>
 #include <QDebug>
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <fcntl.h>
-#include <unistd.h>
 
 
 xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* parent, Qt::WindowFlags flags):
@@ -37,6 +36,7 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
         musicLibrary(library),
         musicLibraryExisting(),
         mobileLibrarySpaceInfo(),
+        mobileLibraryIOThread(nullptr),
         actionThread(nullptr) {
     // Library tree sections.
     auto layout = new xPlayerLayout(this);
@@ -49,6 +49,11 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     musicLibraryFilter->setLayout(musicLibraryFilterLayout);
     musicLibraryExistingWidget = new QListWidget(this);
     musicLibraryExistingWidget->setEnabled(false);
+    musicLibraryMarksButton = new QPushButton(tr("Marks"), this);
+    musicLibraryMarksButton->setEnabled(false);
+    musicLibraryExistingButton = new QPushButton(tr("Existing"), this);
+    musicLibraryExistingButton->setEnabled(false);
+    // Mobile library.
     mobileLibrary = new xMusicLibrary();
     mobileLibraryWidget = new xPlayerMusicLibraryWidget(mobileLibrary, tr("Mobile Library"), this);
     mobileLibraryFilter = new QGroupBox(tr("Filter Artists"), this);
@@ -62,14 +67,19 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     musicLibraryCompareButton->setEnabled(false);
     musicLibrarySortBySize = new QCheckBox(tr("Sort by Size"), this);
     musicLibrarySortBySize->setEnabled(false);
+    // Storage and IO bars.
     mobileLibraryStorageBar = new QProgressBar(this);
+    auto mobileLibraryIOReadLabel = new QLabel(tr("Reading"), this);
+    mobileLibraryIOReadLabel->setAlignment(Qt::AlignCenter);
+    mobileLibraryIOReadBar = new QProgressBar(this);
+    mobileLibraryIOReadBar->setRange(0, 1);
+    auto mobileLibraryIOWriteLabel = new QLabel(tr("Writing"), this);
+    mobileLibraryIOWriteLabel->setAlignment(Qt::AlignCenter);
+    mobileLibraryIOWriteBar = new QProgressBar(this);
+    mobileLibraryIOWriteBar->setRange(0, 1);
     mobileLibraryDirectoryButton = new QPushButton(tr("Open..."), this);
     mobileLibraryDirectoryWidget = new QLineEdit(this);
     mobileLibraryScanClearButton = new QPushButton(tr("Clear"), this);
-    musicLibraryMarksButton = new QPushButton(tr("Marks"), this);
-    musicLibraryMarksButton->setEnabled(false);
-    musicLibraryExistingButton = new QPushButton(tr("Existing"), this);
-    musicLibraryExistingButton->setEnabled(false);
 
     auto musicLibraryExistingMenu = new QMenu(this);
     musicLibraryExistingMenu->addAction(tr("Save Mobile Library to Existing"), this,
@@ -106,6 +116,10 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     actionStorageBar = new QProgressBar(this);
     actionApplyButton = new QPushButton(tr("Apply"), this);
     actionApplyButton->setEnabled(false);
+    // Action bar is only visible if action is applied.
+    actionBarLabel = new QLabel(tr("Syncing"), this);
+    actionBarLabel->setAlignment(Qt::AlignCenter);
+    actionBarLabel->setVisible(false);
     actionBar = new QProgressBar(this);
     actionBar->setVisible(false);
     // Setup layout.
@@ -115,25 +129,31 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     layout->addRowSpacer(14, xPlayerLayout::SmallSpace);
     layout->addWidget(musicLibraryExistingButton, 15, 0, 1, 2);
     layout->addWidget(musicLibraryMarksButton, 16, 0, 1, 2);
-    layout->addWidget(musicLibraryExistingWidget, 15, 2, 2, 6);
+    layout->addWidget(musicLibraryExistingWidget, 15, 2, 3, 6);
     layout->addWidget(musicLibrarySortBySize, 15, 8, 1, 2);
-    layout->addWidget(musicLibraryCompareButton, 16, 8, 1, 2);
+    layout->addWidget(musicLibraryCompareButton, 17, 8, 1, 2);
     layout->addColumnSpacer(10, xPlayerLayout::SmallSpace);
     // Action layout.
     layout->addLayout(actionLayout, 0, 11, 14, 8);
     layout->addWidget(actionStorageBar, 15, 11, 1, 8);
-    layout->addWidget(actionApplyButton, 16, 17, 1, 2);
-    layout->addWidget(actionBar, 16, 11, 1, 6);
+    layout->addWidget(actionBarLabel, 16, 11, 1, 2);
+    layout->addWidget(actionBar, 16, 13, 1, 6);
+    layout->addWidget(actionApplyButton, 17, 17, 1, 2);
     layout->addColumnSpacer(19, xPlayerLayout::SmallSpace);
     // Mobile library layout
     layout->addWidget(mobileLibraryWidget, 0, 20, 13, 10);
     layout->addWidget(mobileLibraryFilter, 13, 20, 1, 10);
     layout->addWidget(mobileLibraryStorageBar, 15, 20, 1, 10);
-    layout->addWidget(mobileLibraryDirectoryButton, 16, 20, 1, 2);
-    layout->addWidget(mobileLibraryDirectoryWidget, 16, 22, 1, 6);
-    layout->addWidget(mobileLibraryScanClearButton, 16, 28, 1, 2);
+    layout->addWidget(mobileLibraryIOReadLabel, 16, 20, 1, 2);
+    layout->addWidget(mobileLibraryIOReadBar, 16, 22, 1, 3);
+    layout->addWidget(mobileLibraryIOWriteBar, 16, 25, 1, 3);
+    layout->addWidget(mobileLibraryIOWriteLabel, 16, 28, 1, 2);
+    layout->addWidget(mobileLibraryDirectoryButton, 17, 20, 1, 2);
+    layout->addWidget(mobileLibraryDirectoryWidget, 17, 22, 1, 6);
+    layout->addWidget(mobileLibraryScanClearButton, 17, 28, 1, 2);
     this->setLayout(layout);
     // Connect signals.
+    connect(this, &xMainMobileSyncWidget::mobileLibraryIO, this, &xMainMobileSyncWidget::mobileLibraryUpdateIO);
     connect(mobileLibrary, &xMusicLibrary::syncFinished, this, &xMainMobileSyncWidget::syncFinished);
     connect(mobileLibraryDirectoryButton, &QPushButton::pressed, this, &xMainMobileSyncWidget::mobileLibraryOpenDirectory);
     connect(mobileLibraryScanClearButton, &QPushButton::pressed, this, &xMainMobileSyncWidget::mobileLibraryScanClear);
@@ -355,6 +375,7 @@ void xMainMobileSyncWidget::syncFinished() {
     mobileLibraryScanClear();
     // Hide action bar.
     actionBar->setVisible(false);
+    actionBarLabel->setVisible(false);
     // Enable widgets.
     musicLibraryWidget->setEnabled(true);
     musicLibraryMarksButton->setEnabled(true);
@@ -427,6 +448,7 @@ void xMainMobileSyncWidget::actionApply() {
     // Prepare action bar and make it visible.
     actionBar->setVisible(true);
     actionBar->setRange(0, static_cast<int>(actionRemoveFromItems.size()+actionAddToExpandedItems.size()));
+    actionBarLabel->setVisible(true);
 
     connect(this, &xMainMobileSyncWidget::actionApplyProgress, this, &xMainMobileSyncWidget::actionApplyUpdate);
     actionThread = QThread::create([=]() { actionApplyThread(actionAddToExpandedItems); });
@@ -472,6 +494,15 @@ void xMainMobileSyncWidget::mobileLibraryScanClear() {
                                                                 mobileLibrarySpaceInfo.capacity));
             // Update action section.
             updateActionStorage();
+            // Stop old IO thread and start new IO Thread.
+            if (mobileLibraryIOThread) {
+                mobileLibraryIOThread->requestInterruption();
+                mobileLibraryIOThread->wait();
+            }
+            mobileLibraryIOThread = QThread::create([=]() {
+                mobileLibraryReadIOThread(QString::fromStdString(mobileLibraryPath));
+            });
+            mobileLibraryIOThread->start();
         } catch (const std::filesystem::filesystem_error& error) {
             qCritical() << "Unable to determine capacity for mobile library.";
         }
@@ -479,12 +510,25 @@ void xMainMobileSyncWidget::mobileLibraryScanClear() {
         musicLibraryExisting.erase(mobileLibraryPath);
         updateExistingList();
     } else {
+        if (mobileLibraryIOThread) {
+            mobileLibraryIOThread->requestInterruption();
+            mobileLibraryIOThread->wait();
+            mobileLibraryIOThread = nullptr;
+        }
         mobileLibraryWidget->clear();
         // Clear storage bars.
         mobileLibrarySpaceInfo = std::filesystem::space_info{};
         mobileLibraryStorageBar->setRange(0, 1);
         mobileLibraryStorageBar->setValue(0);
         mobileLibraryStorageBar->setFormat("");
+        // Clear IO bars.
+        mobileLibraryIOReadBar->setRange(0, 1);
+        mobileLibraryIOReadBar->setValue(0);
+        mobileLibraryIOReadBar->setFormat("");
+        mobileLibraryIOWriteBar->setRange(0, 1);
+        mobileLibraryIOWriteBar->setValue(0);
+        mobileLibraryIOWriteBar->setFormat("");
+        // Clear action bar.
         actionStorageBar->setRange(0, 1);
         actionStorageBar->setValue(0);
         actionStorageBar->setFormat("");
@@ -534,6 +578,85 @@ void xMainMobileSyncWidget::mobileLibraryReady() {
     mobileLibraryScanClearButton->setEnabled(true);
     mobileLibraryDirectoryButton->setEnabled(true);
     mobileLibraryDirectoryWidget->setEnabled(true);
+}
+
+void xMainMobileSyncWidget::mobileLibraryUpdateIO(quint64 readBytes, quint64 writeBytes) {
+    int readKiloBytes = static_cast<int>(readBytes/1024);
+    int writeKiloBytes = static_cast<int>(writeBytes/1024);
+    if (mobileLibraryIOReadBar->maximum() < readKiloBytes) {
+        mobileLibraryIOReadBar->setRange(0, readKiloBytes);
+    }
+    if (mobileLibraryIOWriteBar->maximum() < writeKiloBytes) {
+        mobileLibraryIOWriteBar->setRange(0, writeKiloBytes);
+    }
+    mobileLibraryIOReadBar->setValue(readKiloBytes);
+    mobileLibraryIOReadBar->setFormat(QString("%1 MB/sec").arg(readKiloBytes/1024.0, -1, 'f', 2));
+    mobileLibraryIOWriteBar->setValue(writeKiloBytes);
+    mobileLibraryIOWriteBar->setFormat(QString("%1 MB/sec").arg(writeKiloBytes/1024.0, -1, 'f', 2));
+}
+
+void xMainMobileSyncWidget::mobileLibraryReadIOThread(const QString &mobileLibraryPath) {
+    // Determine device from path.
+    struct stat pathStat{};
+    if (stat(mobileLibraryPath.toStdString().c_str(), &pathStat) < 0) {
+        qCritical() << "Unable to call stat for path: " << mobileLibraryPath;
+        return;
+    }
+    auto deviceMajor = major(pathStat.st_dev);
+    auto deviceMinor = minor(pathStat.st_dev);
+    // Use major:minor to read sector size and stats.
+    QString deviceSectorSizePath = QString("/sys/dev/block/%1:%2/queue/hw_sector_size").arg(deviceMajor).arg(deviceMinor);
+    QString deviceStatPath = QString("/sys/dev/block/%1:%2/stat").arg(deviceMajor).arg(deviceMinor);
+    // Determine the sector size
+    QFile deviceSectorSizeFile(deviceSectorSizePath);
+    if (!deviceSectorSizeFile.open(QIODevice::ReadOnly|QIODevice::Text)) {
+        qCritical() << "Unable to read sector size for device: " << deviceSectorSizePath;
+        return;
+    }
+    QTextStream deviceSectorSizeStream(&deviceSectorSizeFile);
+    unsigned long deviceSectorSize = deviceSectorSizeStream.readLine().toULong();
+    deviceSectorSizeFile.close();
+    // Open the device stat file.
+    QFile deviceStatFile(deviceStatPath);
+    if (!deviceStatFile.open(QIODevice::ReadOnly|QIODevice::Text)) {
+        qCritical() << "Unable to open device stat file: " << deviceStatPath;
+        return;
+    }
+    // Initialize sectors.
+    unsigned long currentSectorsRead = 0;
+    unsigned long currentSectorsWrite = 0;
+    unsigned long sectorsRead = 0;
+    unsigned long sectorsWrite = 0;
+    // Read sectors read/write initial values.
+    QTextStream deviceStatStream(&deviceStatFile);
+    QStringList deviceStat = deviceStatStream.readLine().split(' ', Qt::SkipEmptyParts);
+    if (deviceStat.size() > 6) {
+        currentSectorsRead = deviceStat[2].toULong();
+        currentSectorsWrite = deviceStat[6].toULong();
+    }
+    while (!deviceStatStream.atEnd()) {
+        if (QThread::currentThread()->isInterruptionRequested()) {
+            break;
+        }
+        // Reset stat file stream.
+        deviceStatStream.seek(0);
+        deviceStat = deviceStatStream.readLine().split(' ', Qt::SkipEmptyParts);
+        if (deviceStat.size() > 6) {
+            sectorsRead = deviceStat[2].toULong();
+            sectorsWrite = deviceStat[6].toULong();
+        }
+        auto bytesRead = (sectorsRead - currentSectorsRead) * deviceSectorSize;
+        auto bytesWrite = (sectorsWrite - currentSectorsWrite) * deviceSectorSize;
+        // Emit IO data.
+        emit mobileLibraryIO(bytesRead, bytesWrite);
+        currentSectorsRead = sectorsRead;
+        currentSectorsWrite = sectorsWrite;
+        // Read every second.
+        QThread::sleep(1);
+    }
+    // Close file.
+    deviceStatFile.close();
+
 }
 
 void xMainMobileSyncWidget::musicLibraryCompare() {
