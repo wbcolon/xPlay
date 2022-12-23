@@ -31,6 +31,9 @@
 #include <fcntl.h>
 
 
+const QString pathToDeviceSectorSize { "/sys/dev/block/%1:%2/queue/hw_sector_size" }; // NO_LINT
+const QString pathToDeviceStat { "/sys/dev/block/%1:%2/stat" }; // NO_LINT
+
 xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         musicLibrary(library),
@@ -154,7 +157,6 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     this->setLayout(layout);
     // Connect signals.
     connect(this, &xMainMobileSyncWidget::mobileLibraryIO, this, &xMainMobileSyncWidget::mobileLibraryUpdateIO);
-    connect(mobileLibrary, &xMusicLibrary::syncFinished, this, &xMainMobileSyncWidget::syncFinished);
     connect(mobileLibraryDirectoryButton, &QPushButton::pressed, this, &xMainMobileSyncWidget::mobileLibraryOpenDirectory);
     connect(mobileLibraryScanClearButton, &QPushButton::pressed, this, &xMainMobileSyncWidget::mobileLibraryScanClear);
     connect(mobileLibraryWidget, &xPlayerMusicLibraryWidget::treeItemCtrlClicked, this, &xMainMobileSyncWidget::musicLibraryFindItem);
@@ -364,12 +366,6 @@ void xMainMobileSyncWidget::actionApplyUpdate(int progress) {
 }
 
 void xMainMobileSyncWidget::actionApplyFinished() {
-    // Sync mobile library content.
-    qDebug() << "Sync mobile library...";
-    mobileLibrary->sync();
-}
-
-void xMainMobileSyncWidget::syncFinished() {
     qDebug() << "Sync of mobile library finished...";
     // Rescan the library.
     mobileLibraryScanClear();
@@ -397,6 +393,14 @@ void xMainMobileSyncWidget::syncFinished() {
     actionApplyButton->setText("Apply");
     // Allow music library scanning again.
     emit enableMusicLibraryScanning(true);
+}
+
+xMainMobileSyncWidget::~xMainMobileSyncWidget() {
+   if (mobileLibraryIOThread) {
+       qDebug() << "Waiting for IO thread to finish.";
+       mobileLibraryIOThread->requestInterruption();
+       mobileLibraryIOThread->wait();
+   }
 }
 
 void xMainMobileSyncWidget::actionApply() {
@@ -604,22 +608,20 @@ void xMainMobileSyncWidget::mobileLibraryReadIOThread(const QString &mobileLibra
     }
     auto deviceMajor = major(pathStat.st_dev);
     auto deviceMinor = minor(pathStat.st_dev);
-    // Use major:minor to read sector size and stats.
-    QString deviceSectorSizePath = QString("/sys/dev/block/%1:%2/queue/hw_sector_size").arg(deviceMajor).arg(deviceMinor);
-    QString deviceStatPath = QString("/sys/dev/block/%1:%2/stat").arg(deviceMajor).arg(deviceMinor);
+    qDebug() << "MAJOR: " << deviceMajor << ", MINOR: " << deviceMinor;
     // Determine the sector size
-    QFile deviceSectorSizeFile(deviceSectorSizePath);
-    if (!deviceSectorSizeFile.open(QIODevice::ReadOnly|QIODevice::Text)) {
-        qCritical() << "Unable to read sector size for device: " << deviceSectorSizePath;
-        return;
+    unsigned long deviceSectorSize = 512;
+    QFile deviceSectorSizeFile(pathToDeviceSectorSize.arg(deviceMajor).arg(deviceMinor));
+    if (deviceSectorSizeFile.open(QIODevice::ReadOnly|QIODevice::Text)) {
+        QTextStream deviceSectorSizeStream(&deviceSectorSizeFile);
+        deviceSectorSizeFile.close();
+    } else {
+        qWarning() << "Unable to read sector size for device. Defaulting to 512 Bytes";
     }
-    QTextStream deviceSectorSizeStream(&deviceSectorSizeFile);
-    unsigned long deviceSectorSize = deviceSectorSizeStream.readLine().toULong();
-    deviceSectorSizeFile.close();
     // Open the device stat file.
-    QFile deviceStatFile(deviceStatPath);
+    QFile deviceStatFile(pathToDeviceStat.arg(deviceMajor).arg(deviceMinor));
     if (!deviceStatFile.open(QIODevice::ReadOnly|QIODevice::Text)) {
-        qCritical() << "Unable to open device stat file: " << deviceStatPath;
+        qCritical() << "Unable to open device stat file: " << deviceStatFile.fileName();
         return;
     }
     // Initialize sectors.

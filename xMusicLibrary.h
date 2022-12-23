@@ -27,7 +27,7 @@ class xMusicLibrary: public xMusicLibraryEntry {
 
 public:
     explicit xMusicLibrary(QObject* parent=nullptr);
-    ~xMusicLibrary() override;
+    ~xMusicLibrary() override = default;
     /**
      * Set base directory for the music library.
      *
@@ -41,10 +41,6 @@ public:
      * Scan the entire music library.
      */
     void scan() override;
-    /**
-     * Sync the music library device.
-     */
-    void sync();
     /**
      * Verify if the music library has been scanned.
      *
@@ -77,10 +73,6 @@ signals:
      * Signal that the complete scanning process is finished.
      */
     void scanningFinished();
-    /**
-     * Signal that the sync process is finished.
-     */
-    void syncFinished();
     /**
      * The following signals are triggers by the different scanning functions.
      * They are used to communicate the scanning result from the music library
@@ -297,7 +289,6 @@ private:
                                std::list<xMusicLibraryTrackEntry*>& missing, std::list<xMusicLibraryTrackEntry*>& additional,
                                std::pair<std::list<xMusicLibraryTrackEntry*>, std::list<xMusicLibraryTrackEntry*>>& different);
 
-    int musicLibraryPathFd;
     // Use mutex to secure access to the artists structures.
     mutable QMutex musicLibraryLock;
     QThread* musicLibraryScanning;

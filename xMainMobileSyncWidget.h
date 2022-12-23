@@ -31,7 +31,7 @@ class xMainMobileSyncWidget:public QWidget {
 
 public:
     explicit xMainMobileSyncWidget(xMusicLibrary* library, QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
-    ~xMainMobileSyncWidget() override = default;
+    ~xMainMobileSyncWidget() override;
     /**
      * Perform initial commands required when switching to this view.
      */
@@ -185,13 +185,9 @@ private slots:
      */
     void actionApplyUpdate(int progress);
     /**
-     * Perform music library sync after the action apply thread is finished.
+     * Perform rescan after the action is finished.
      */
     void actionApplyFinished();
-    /**
-     * Perform cleanup and rescan after the action music library sync is finished.
-     */
-    void syncFinished();
 
 private:
     /**

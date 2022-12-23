@@ -27,15 +27,7 @@
 
 xMusicLibrary::xMusicLibrary(QObject* parent):
         xMusicLibraryEntry(parent),
-        musicLibraryPathFd(-1),
         musicLibraryScanning(nullptr) {
-}
-
-xMusicLibrary::~xMusicLibrary() {
-    // Close file descriptor if we close the music library.
-   if (musicLibraryPathFd != -1) {
-       close(musicLibraryPathFd);
-   }
 }
 
 void xMusicLibrary::setPath(const std::filesystem::path& base) {
@@ -43,12 +35,6 @@ void xMusicLibrary::setPath(const std::filesystem::path& base) {
     if (std::filesystem::is_directory(base)) {
         // Set the new path.
         entryPath = base;
-        // Update the file descriptor for the new path.
-        if (musicLibraryPathFd != -1) {
-            close(musicLibraryPathFd);
-            musicLibraryPathFd = -1;
-        }
-        musicLibraryPathFd = open(entryPath.string().c_str(), O_DIRECTORY | O_RDONLY);
         scan();
     } else {
         emit scanningError();
@@ -74,18 +60,6 @@ void xMusicLibrary::clear() {
     musicLibraryArtists.clear();
     musicLibraryArtistsMap.clear();
     musicLibraryLock.unlock();
-}
-
-void xMusicLibrary::sync() {
-    if (musicLibraryPathFd == -1) {
-        // No sync necessary. But emit signal anyway.
-        emit syncFinished();
-        return;
-    }
-    QTimer::singleShot(0, [=]() {
-        syncfs(musicLibraryPathFd);
-        emit syncFinished();
-    });
 }
 
 void xMusicLibrary::scan() {
