@@ -25,7 +25,7 @@ public:
      * Constructors/Destructor
      */
     xMusicLibraryArtistEntry();
-    xMusicLibraryArtistEntry(const QString& artist, const std::filesystem::path& artistPath, xMusicLibraryEntry* parent);
+    xMusicLibraryArtistEntry(const QString& artist, const QUrl& artistUrl, xMusicLibraryEntry* parent);
     xMusicLibraryArtistEntry(const xMusicLibraryArtistEntry& entry) = default;
     ~xMusicLibraryArtistEntry() override;
     /**
@@ -77,7 +77,7 @@ protected:
      * @param dirEntry the directory entry.
      * @return true if the entry is valid album, false otherwise.
      */
-    bool isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) override;
+    bool isDirectoryEntryValid(const QUrl& dirEntry) override;
     /**
      * Access the a specific child.
      *

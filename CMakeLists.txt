@@ -29,8 +29,14 @@ find_package(Qt5WebEngineWidgets REQUIRED)
 find_package(Qt5Test REQUIRED)
 find_package(Phonon4Qt5)
 find_package(SQLite3)
+find_package(CURL)
 find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(PUGIXML pugixml)
+set(CMAKE_REQUIRED_INCLUDES "${PUGIXML_INCLUDE_DIRS}")
+set(CMAKE_REQUIRED_CFLAGS "${PUGIXML_CFLAGS}")
+set(CMAKE_REQUIRED_LIBRARIES "${PUGIXML_LIBRARIES}")
 
 pkg_check_modules(TAGLIB taglib)
 set(CMAKE_REQUIRED_INCLUDES "${TAGLIB_INCLUDE_DIRS}")
@@ -58,6 +64,7 @@ set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${SQLITE3_INCLUDE_DIRS})
 
+add_definitions(${PUGIXML_CFLAGS})
 add_definitions(${TAGLIB_CFLAGS})
 add_definitions(${PROJECTM_CFLAGS})
 add_definitions(${VLCLIB_CFLAGS})
@@ -90,6 +97,7 @@ set(xPlay_sources
         xPlayerBalanceWidget.cpp
         xPlayerControlButtonWidget.cpp
         xPlayerPulseAudioControls.cpp
+        xPlayerBluOSControl.cpp
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
         xPlayerMusicArtistSelectorWidget.cpp
@@ -112,6 +120,8 @@ set(xPlay_libraries
         ${TAGLIB_LIBRARIES}
         ${PROJECTM_LIBRARIES}
         OpenGL::GL
+        curl
+        ${PUGIXML_LIBRARIES}
         ${PALIB_LIBRARIES}
         ${VLCLIB_LIBRARIES})
 

@@ -25,6 +25,8 @@
 #include <QLineEdit>
 #include <QLabel>
 
+#include <filesystem>
+
 
 class xMainMobileSyncWidget:public QWidget {
     Q_OBJECT
@@ -65,6 +67,10 @@ signals:
     void mobileLibraryIO(quint64 readBytes, quint64 writeBytes);
 
 private slots:
+    /**
+     * Disable mobile sync widget if BluOS player library is used.
+     */
+    void useMusicLibraryBluOS();
     /**
      * Open a file dialog.
      *

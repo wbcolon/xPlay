@@ -16,13 +16,14 @@
 #include "xMusicLibraryArtistEntry.h"
 #include "xMusicLibraryAlbumEntry.h"
 #include "xMusicLibraryTrackEntry.h"
+#include "xPlayerBluOSControl.h"
 
+#include <QFileInfo>
 #include <QTimer>
 #include <QDebug>
 
 #include <filesystem>
 #include <unistd.h>
-#include <fcntl.h>
 
 
 xMusicLibrary::xMusicLibrary(QObject* parent):
@@ -30,15 +31,42 @@ xMusicLibrary::xMusicLibrary(QObject* parent):
         musicLibraryScanning(nullptr) {
 }
 
-void xMusicLibrary::setPath(const std::filesystem::path& base) {
-    // Update only if the given path is a directory
-    if (std::filesystem::is_directory(base)) {
-        // Set the new path.
-        entryPath = base;
-        scan();
-    } else {
-        emit scanningError();
+xMusicLibrary::~xMusicLibrary() {
+    xPlayerBluOSControls::controls()->disconnect();
+    clear();
+}
+
+void xMusicLibrary::setUrl(const QUrl& base) {
+    // Do not update if no change
+    if (entryUrl == base) {
+        return;
     }
+    // Clear if new url is empty.
+    if (base.isEmpty()) {
+        clear();
+        // clear url.
+        entryUrl.clear();
+    } else {
+        // Update only if the given path is a directory
+        if (base.isLocalFile()) {
+            if (QFileInfo(base.toLocalFile()).isDir()) {
+                // Disconnect any BluOS player.
+                xPlayerBluOSControls::controls()->disconnect();
+                // Set the new path.
+                entryUrl = base;
+                scan();
+            } else {
+                emit scanningError();
+            }
+        } else {
+            entryUrl = base;
+            // Connect to BluOS player.
+            xPlayerBluOSControls::controls()->connect(entryUrl);
+            xPlayerBluOSControls::controls()->clearQueue();
+            scan();
+        }
+    }
+    musicLibraryScanLock.unlock();
 }
 
 [[nodiscard]] std::vector<xMusicLibraryArtistEntry*> xMusicLibrary::getArtists() {
@@ -47,6 +75,7 @@ void xMusicLibrary::setPath(const std::filesystem::path& base) {
 
 void xMusicLibrary::clear() {
     if (musicLibraryScanning && musicLibraryScanning->isRunning()) {
+        qDebug() << "Waiting for scanning thread to finish.";
         musicLibraryScanning->requestInterruption();
         musicLibraryScanning->wait();
     }
@@ -63,19 +92,20 @@ void xMusicLibrary::clear() {
 }
 
 void xMusicLibrary::scan() {
-    if (!entryPath.empty()) {
-        // Clear music library.
-        clear();
-        // Start new scanning thread.
-        musicLibraryScanning = QThread::create([this]() {
-            scanThread();
-        });
-        connect(musicLibraryScanning, &QThread::finished, this, &xMusicLibrary::scanningFinished);
-        musicLibraryScanning->start(QThread::IdlePriority);
-    }
+    // Clear music library.
+    clear();
+    // Start new scanning thread.
+    musicLibraryScanning = QThread::create([this]() {
+        scanThread();
+    });
+    connect(musicLibraryScanning, &QThread::finished, this, &xMusicLibrary::scanningFinished);
+    musicLibraryScanning->start(QThread::IdlePriority);
 }
 
 void xMusicLibrary::scan(const xMusicLibraryFilter& filter) {
+    if (!musicLibraryScanLock.try_lock()) {
+        return;
+    }
     auto filteredArtists = filterArtists(musicLibraryArtists, filter);
     if ((filter.hasAlbumFilter()) || (filter.hasTrackNameFilter())) {
         for (auto i = filteredArtists.begin(); i != filteredArtists.end();) {
@@ -102,6 +132,7 @@ void xMusicLibrary::scan(const xMusicLibraryFilter& filter) {
         }
     }
     emit scannedArtists(filteredArtists);
+    musicLibraryScanLock.unlock();
 }
 
 void xMusicLibrary::scanForArtist(const QString& artistName) {
@@ -123,14 +154,17 @@ void xMusicLibrary::scanForArtist(const QString& artistName, const xMusicLibrary
     auto artistAlbum = musicLibraryArtistsMap.find(artistName);
     if (artistAlbum != musicLibraryArtistsMap.end()) {
         filteredAlbums = filterAlbums(artistAlbum->second, filter);
-        for (auto i = filteredAlbums.begin(); i != filteredAlbums.end();) {
-            // Scan album tracks.
-            (*i)->scan();
-            // Remove album from list if no matching tracks are found.
-            if (filterTracks(*i, filter).empty()) {
-                i = filteredAlbums.erase(i);
-            } else {
-                ++i;
+        // Only directly scan album if we have filter for track names.
+        if (filter.hasTrackNameFilter()) {
+            for (auto i = filteredAlbums.begin(); i != filteredAlbums.end();) {
+                // Scan album tracks.
+                (*i)->scan();
+                // Remove album from list if no matching tracks are found.
+                if (filterTracks(*i, filter).empty()) {
+                    i = filteredAlbums.erase(i);
+                } else {
+                    ++i;
+                }
             }
         }
     }
@@ -298,10 +332,10 @@ void xMusicLibrary::scanForUnknownEntries(const std::list<std::tuple<QString, QS
             }
         }
         // We need to match the relative path generated by artist/album/track with the absolute paths stored.
-        auto entryTrack = std::get<2>(entry).toStdString();
+        auto entryTrack = std::get<2>(entry);
         auto currentTracksPos = std::find_if(currentTracks.begin(), currentTracks.end(),
                                              [&entryTrack](xMusicLibraryTrackEntry* trackObject) {
-                                                 return (trackObject->getPath().filename() == entryTrack);
+                                                 return (trackObject->getUrl().toLocalFile() == entryTrack);
                                              });
         // If we do not find the track then we append the entry to the unknown list.
         if (currentTracksPos == currentTracks.end()) {
@@ -317,8 +351,18 @@ bool xMusicLibrary::isScanned() const {
     return (!musicLibraryArtists.empty());
 }
 
+bool xMusicLibrary::isLocal() const {
+    return entryUrl.isEmpty() || entryUrl.isLocalFile();
+}
+
 void xMusicLibrary::scanThread() {
-    auto artistEntries = scanDirectory();
+    musicLibraryScanLock.lock();
+    std::vector<std::tuple<QUrl,QString>> artistEntries;
+    if (isLocal()) {
+        artistEntries = scanDirectory();
+    } else {
+        artistEntries = xPlayerBluOSControls::controls()->getArtists();
+    }
     size_t totalNoAlbums = 0;
     std::sort(artistEntries.begin(), artistEntries.end());
     // Protect access to the music library
@@ -328,16 +372,18 @@ void xMusicLibrary::scanThread() {
     musicLibraryArtistsMap.clear();
     // Fill vector and map
     for (const auto& artistEntry : artistEntries) {
+        qDebug() << "scanThread: artistUrl: " << std::get<0>(artistEntry);
         // Is the scanning thread interrupted.
         if (musicLibraryScanning->isInterruptionRequested()) {
             // Unlock and clear when scanning is interrupted.
             musicLibraryArtists.clear();
             musicLibraryArtistsMap.clear();
             musicLibraryLock.unlock();
+            musicLibraryScanLock.unlock();
             return;
         }
-        auto artistName = QString::fromStdString(artistEntry.path().filename().string());
-        auto artist = new xMusicLibraryArtistEntry(artistName, artistEntry.path(), this);
+        auto artistName = std::get<1>(artistEntry);
+        auto artist = new xMusicLibraryArtistEntry(artistName, std::get<0>(artistEntry), this);
         // Scan albums for the current artist.
         artist->scan();
         // Only add the artist is we have albums.
@@ -357,27 +403,32 @@ void xMusicLibrary::scanThread() {
     if (!musicLibraryArtists.empty()) {
         // Emit scanned structure
         emit scannedArtists(musicLibraryArtists);
-        size_t currentNoAlbum = 0;
-        // Scan the remaining structure.
-        for (auto artist : musicLibraryArtists) {
-            auto albums = artist->getAlbums();
-            for (auto album : albums) {
-                // Is the scanning thread interrupted.
-                if (musicLibraryScanning->isInterruptionRequested()) {
-                    return;
+        // Only scan all tracks directly if we have a local library.
+        if (isLocal()) {
+            size_t currentNoAlbum = 0;
+            // Scan the remaining structure.
+            for (auto artist : musicLibraryArtists) {
+                auto albums = artist->getAlbums();
+                for (auto album : albums) {
+                    // Is the scanning thread interrupted.
+                    if (musicLibraryScanning->isInterruptionRequested()) {
+                        musicLibraryScanLock.unlock();
+                        return;
+                    }
+                    // Lock around the scanning of the album tracks.
+                    musicLibraryLock.lock();
+                    album->scan();
+                    ++currentNoAlbum;
+                    musicLibraryLock.unlock();
+                    emit scanningProgress(static_cast<int>(currentNoAlbum*100 / totalNoAlbums));
                 }
-                // Lock around the scanning of the album tracks.
-                musicLibraryLock.lock();
-                album->scan();
-                ++currentNoAlbum;
-                musicLibraryLock.unlock();
-                emit scanningProgress(static_cast<int>(currentNoAlbum*100 / totalNoAlbums));
             }
         }
     } else {
         // No artists found. Emit error.
         emit scanningError();
     }
+    musicLibraryScanLock.unlock();
 }
 
 void xMusicLibrary::compare(const xMusicLibrary* library, QStringList& missingArtists, QStringList& additionalArtists,
@@ -548,19 +599,21 @@ void xMusicLibrary::listDifference(const std::vector<xMusicLibraryTrackEntry*>& 
     }
 }
 
-bool xMusicLibrary::isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) {
-    try {
-        if (dirEntry.is_directory()) {
-            auto dirName = dirEntry.path().filename().string();
+bool xMusicLibrary::isDirectoryEntryValid(const QUrl& dirEntry) {
+    if (dirEntry.isLocalFile()) {
+        QFileInfo dirPath(dirEntry.toLocalFile());
+        if ((dirPath.isDir()) && (dirPath.exists())) {
+            auto dirName = dirPath.fileName();
             // Special directories "." and ".." are not valid. Other directories starting with "." are valid.
             if ((dirName != ".") && (dirName != "..")) {
                 return true;
             }
         }
-    } catch (const std::filesystem::filesystem_error& error) {
-        qCritical() << "Unable to access directory entry, error: " << error.what();
+        return false;
+    } else {
+        // Function is not used for remote BluOS player library.
+        return false;
     }
-    return false;
 }
 
 xMusicLibraryEntry* xMusicLibrary::child(size_t index) {

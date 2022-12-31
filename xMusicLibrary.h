@@ -27,16 +27,16 @@ class xMusicLibrary: public xMusicLibraryEntry {
 
 public:
     explicit xMusicLibrary(QObject* parent=nullptr);
-    ~xMusicLibrary() override = default;
+    ~xMusicLibrary() override;
     /**
      * Set base directory for the music library.
      *
      * A certain structure of the music library is expected.
      * The music library is scanned (@see scan).
      *
-     * @param path directory that contains the music library.
+     * @param url directory or url that contains the music library.
      */
-    void setPath(const std::filesystem::path& base);
+    void setUrl(const QUrl& base);
     /**
      * Scan the entire music library.
      */
@@ -47,6 +47,12 @@ public:
      * @return true if the entry has been scanned, false otherwise.
      */
     [[nodiscard]] bool isScanned() const override;
+    /**
+     * Verify if the music library is local
+     *
+     * @return true if the music library is local, false otherwise.
+     */
+    [[nodiscard]] bool isLocal() const;
     /**
      * Get all artists.
      *
@@ -237,7 +243,7 @@ private:
      * @param dirEntry the directory entry.
      * @return true if the entry is a valid artist directory, false otherwise.
      */
-    bool isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) override;
+    bool isDirectoryEntryValid(const QUrl& dirEntry) override;
     /**
      * Access the a specific child.
      *
@@ -289,6 +295,8 @@ private:
                                std::list<xMusicLibraryTrackEntry*>& missing, std::list<xMusicLibraryTrackEntry*>& additional,
                                std::pair<std::list<xMusicLibraryTrackEntry*>, std::list<xMusicLibraryTrackEntry*>>& different);
 
+    // Use mutex to protect the setting of the base library.
+    mutable QMutex musicLibraryScanLock;
     // Use mutex to secure access to the artists structures.
     mutable QMutex musicLibraryLock;
     QThread* musicLibraryScanning;

@@ -23,7 +23,7 @@
 class xPlayerMusicLibraryWidgetItem:public QTreeWidgetItem {
 
 public:
-    explicit xPlayerMusicLibraryWidgetItem(const QString& entryName, const std::filesystem::path& entryPath,
+    explicit xPlayerMusicLibraryWidgetItem(const QString& entryName, const QUrl& entryUrl,
                                            xPlayerMusicLibraryWidgetItem* parent=nullptr);
     explicit xPlayerMusicLibraryWidgetItem(xMusicLibraryTrackEntry* file, xPlayerMusicLibraryWidgetItem* parent);
     ~xPlayerMusicLibraryWidgetItem() override = default;
@@ -100,7 +100,7 @@ public:
      *
      * @return the path for the entry.
      */
-    [[nodiscard]] const std::filesystem::path& entryPath() const;
+    [[nodiscard]] const QUrl& entryUrl() const;
     /**
      * Return the track entry object for this item in the tree.
      *
@@ -116,7 +116,7 @@ public:
 
 private:
     QString itemEntryName;
-    std::filesystem::path itemEntryPath;
+    QUrl itemEntryUrl;
     xMusicLibraryTrackEntry* itemTrackEntry;
     std::uintmax_t itemTotalSize;
     xPlayerMusicLibraryWidgetItem* itemParent;
@@ -135,7 +135,7 @@ public:
      *
      * @param base the new base directory as path.
      */
-    void setPath(const std::filesystem::path& base);
+    void setUrl(const QUrl& base);
     /**
      * Enable or disable the sorting by size mode.
      *

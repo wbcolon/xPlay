@@ -17,8 +17,8 @@
 
 #include <QObject>
 #include <QString>
-
-#include <filesystem>
+#include <QUrl>
+#include <QDateTime>
 
 class xMusicLibraryEntry:public QObject {
 
@@ -28,7 +28,7 @@ public:
      *
      * @return the filesystem::path to the entry.
      */
-    [[nodiscard]] const std::filesystem::path& getPath() const;
+    [[nodiscard]] const QUrl& getUrl() const;
     /**
      * Get the name for the entry.
      *
@@ -40,7 +40,7 @@ public:
      *
      * @return the last writtem time stamp.
      */
-    [[nodiscard]] const std::filesystem::file_time_type& getLastWritten() const;
+    [[nodiscard]] const QDateTime& getLastWritten() const;
     /**
      * Scan for child entries.
      */
@@ -71,23 +71,23 @@ protected:
      * Constructors/Destructor
      */
     explicit xMusicLibraryEntry(QObject* qParent = nullptr);
-    xMusicLibraryEntry(const QString& eName, const std::filesystem::path& ePath,
+    xMusicLibraryEntry(const QString& eName, const QUrl& eUrl,
                        xMusicLibraryEntry* eParent = nullptr, QObject* qParent = nullptr);
     xMusicLibraryEntry(const xMusicLibraryEntry& entry);
     ~xMusicLibraryEntry() override = default;
     /**
      * Scan the entry path (if it is a directory) for valid entries.
      *
-     * @return a vector of valid directory entries.
+     * @return a vector of valid tuple of url and file name.
      */
-    std::vector<std::filesystem::directory_entry> scanDirectory();
+    std::vector<std::tuple<QUrl,QString>> scanDirectory();
     /**
      * Determine status of the given directory entry.
      *
      * @param dirEntry the directory entry.
      * @return true if the entry is valid, false otherwise.
      */
-    virtual bool isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) = 0;
+    virtual bool isDirectoryEntryValid(const QUrl& dirEntry) = 0;
     /**
      * Access the a specific child.
      *
@@ -100,7 +100,7 @@ protected:
      *
      * @param entryParentPath the new path of the parent entry.
      */
-    void updateChild(const std::filesystem::path& entryParentPath);
+    void updateChild(const QUrl& entryParentUrl);
     /**
      * Update the child.
      */
@@ -117,8 +117,8 @@ protected:
     void updateLastTimeWritten();
 
     QString entryName;
-    std::filesystem::path entryPath;
-    std::filesystem::file_time_type entryLastWritten;
+    QUrl entryUrl;
+    QDateTime entryLastWritten;
     xMusicLibraryEntry* entryParent;
 };
 

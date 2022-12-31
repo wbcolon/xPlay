@@ -23,11 +23,11 @@
 #include <QMenu>
 #include <QDebug>
 
-xPlayerMusicLibraryWidgetItem::xPlayerMusicLibraryWidgetItem(const QString& entry, const std::filesystem::path& path,
+xPlayerMusicLibraryWidgetItem::xPlayerMusicLibraryWidgetItem(const QString& entry, const QUrl& entryUrl,
                                                              xPlayerMusicLibraryWidgetItem* parent):
         QTreeWidgetItem(QStringList(entry)),
         itemEntryName(entry),
-        itemEntryPath(path),
+        itemEntryUrl(entryUrl),
         itemTrackEntry(nullptr),
         itemTotalSize(0),
         itemParent(parent) {
@@ -188,8 +188,8 @@ const QString& xPlayerMusicLibraryWidgetItem::entryName() const {
     return itemEntryName;
 }
 
-const std::filesystem::path& xPlayerMusicLibraryWidgetItem::entryPath() const {
-    return itemEntryPath;
+const QUrl& xPlayerMusicLibraryWidgetItem::entryUrl() const {
+    return itemEntryUrl;
 }
 
 xMusicLibraryTrackEntry* xPlayerMusicLibraryWidgetItem::trackEntry() const {
@@ -249,12 +249,12 @@ xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, con
     });
 }
 
-void xPlayerMusicLibraryWidget::setPath(const std::filesystem::path &base) {
+void xPlayerMusicLibraryWidget::setUrl(const QUrl& base) {
     // Clear everything before we initiate a scan.
     clear();
     // Initiate a new scan.
     musicLibraryReady = false;
-    musicLibrary->setPath(base);
+    musicLibrary->setUrl(base);
 }
 
 void xPlayerMusicLibraryWidget::setSortBySize(bool enabled) {
@@ -444,13 +444,13 @@ void xPlayerMusicLibraryWidget::scanningFinished() {
     // Create new music library tree.
     auto artists = musicLibrary->getArtists();
     for (auto artist : artists) {
-        auto artistItem = new xPlayerMusicLibraryWidgetItem(artist->getArtistName(), artist->getPath());
+        auto artistItem = new xPlayerMusicLibraryWidgetItem(artist->getArtistName(), artist->getUrl());
         artistItem->updateTotalSize(artist->getTotalSize());
         mapArtists[artist->getArtistName()] = artistItem;
         std::map<QString, xPlayerMusicLibraryWidgetItem*> mapAlbumsForArtist;
         auto albums = artist->getAlbums();
         for (auto album : albums) {
-            auto albumItem = new xPlayerMusicLibraryWidgetItem(album->getAlbumName(), album->getPath(), artistItem);
+            auto albumItem = new xPlayerMusicLibraryWidgetItem(album->getAlbumName(), album->getUrl(), artistItem);
             albumItem->updateTotalSize(album->getTotalSize());
             artistItem->addChild(albumItem);
             mapAlbumsForArtist[album->getAlbumName()] = albumItem;

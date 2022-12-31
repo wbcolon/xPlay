@@ -14,14 +14,16 @@
 
 #include "xMusicLibraryArtistEntry.h"
 #include "xMusicLibraryAlbumEntry.h"
+#include "xPlayerBluOSControl.h"
 
+#include <QFileInfo>
 #include <QDebug>
 
 
 xMusicLibraryArtistEntry::xMusicLibraryArtistEntry():xMusicLibraryEntry() {
 }
 
-xMusicLibraryArtistEntry::xMusicLibraryArtistEntry(const QString& artist, const std::filesystem::path& musicLibraryPath, xMusicLibraryEntry* mParent):
+xMusicLibraryArtistEntry::xMusicLibraryArtistEntry(const QString& artist, const QUrl& musicLibraryPath, xMusicLibraryEntry* mParent):
         xMusicLibraryEntry(artist, musicLibraryPath, mParent),
         artistAlbums(),
         artistAlbumsMap() {
@@ -64,15 +66,20 @@ xMusicLibraryArtistEntry::~xMusicLibraryArtistEntry() {
 }
 
 void xMusicLibraryArtistEntry::scan() {
-    auto albumEntries = scanDirectory();
+    std::vector<std::tuple<QUrl,QString>> albumEntries;
+    if (entryUrl.isLocalFile()) {
+        albumEntries = scanDirectory();
+    } else {
+        albumEntries = xPlayerBluOSControls::controls()->getAlbums(entryName);
+    }
     std::sort(albumEntries.begin(), albumEntries.end());
     // Clear vector and map
     artistAlbums.clear();
     artistAlbumsMap.clear();
     // Fill vector and map
     for (const auto& albumEntry : albumEntries) {
-        auto albumName = QString::fromStdString(albumEntry.path().filename().string());
-        auto album = new xMusicLibraryAlbumEntry(albumName, albumEntry.path(), this);
+        auto albumName = std::get<1>(albumEntry);
+        auto album = new xMusicLibraryAlbumEntry(albumName, std::get<0>(albumEntry), this);
         artistAlbums.emplace_back(album);
         artistAlbumsMap[albumName] = album;
     }
@@ -82,21 +89,21 @@ bool xMusicLibraryArtistEntry::isScanned() const {
     return (!artistAlbums.empty());
 }
 
-bool xMusicLibraryArtistEntry::isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) {
-    try {
-        if (dirEntry.exists() && dirEntry.is_directory()) {
-            auto dirName = dirEntry.path().filename().string();
+bool xMusicLibraryArtistEntry::isDirectoryEntryValid(const QUrl& dirEntry) {
+    if (dirEntry.isLocalFile()) {
+        QFileInfo dirPath(dirEntry.toLocalFile());
+        if ((dirPath.isDir()) && (dirPath.exists())) {
+            auto dirName = dirPath.fileName();
             // Special directories "." and ".." are not valid. Other directories starting with "." are valid.
             if ((dirName != ".") && (dirName != "..")) {
                 return true;
             }
         }
-    } catch (const std::filesystem::filesystem_error& error) {
-        qCritical() << "Unable to access directory entry: "
-                    << QString::fromStdString(dirEntry.path())
-                    << ", error: " << error.what();
+        return false;
+    } else {
+        // Function is not used for remote BluOS player library.
+        return false;
     }
-    return false;
 }
 
 xMusicLibraryEntry* xMusicLibraryArtistEntry::child(size_t index) {

@@ -15,16 +15,18 @@
 #include "xMusicLibraryAlbumEntry.h"
 #include "xMusicLibraryArtistEntry.h"
 #include "xMusicLibraryTrackEntry.h"
+#include "xPlayerBluOSControl.h"
 #include "xPlayerConfiguration.h"
 
+#include <QFileInfo>
 #include <QDebug>
 
 
 xMusicLibraryAlbumEntry::xMusicLibraryAlbumEntry():xMusicLibraryEntry() {
 }
 
-xMusicLibraryAlbumEntry::xMusicLibraryAlbumEntry(const QString& artist, const std::filesystem::path& musicLibraryPath, xMusicLibraryEntry* mParent):
-        xMusicLibraryEntry(artist, musicLibraryPath, mParent),
+xMusicLibraryAlbumEntry::xMusicLibraryAlbumEntry(const QString& artist, const QUrl& musicLibraryUrl, xMusicLibraryEntry* mParent):
+        xMusicLibraryEntry(artist, musicLibraryUrl, mParent),
         albumTracks() {
 }
 
@@ -78,17 +80,32 @@ void xMusicLibraryAlbumEntry::scan() {
     if (isScanned()) {
         return;
     }
-    // Scan for tracks in album directory.
-    auto trackEntries = scanDirectory();
-    // Sort the entries according to their name.
-    std::sort(trackEntries.begin(), trackEntries.end());
-    // Clear vector and map
-    albumTracks.clear();
-    // Fill vector and map
-    for (const auto& trackEntry : trackEntries) {
-        auto trackName = QString::fromStdString(trackEntry.path().filename().string());
-        auto track = new xMusicLibraryTrackEntry(trackName, trackEntry.path(), this);
-        albumTracks.emplace_back(track);
+    if (entryUrl.isLocalFile()) {
+        // Scan for tracks in album directory.
+        auto trackEntries = scanDirectory();
+        // Sort the entries according to their name.
+        std::sort(trackEntries.begin(), trackEntries.end());
+        // Clear vector and map
+        albumTracks.clear();
+        // Fill vector and map
+        for (const auto& trackEntry : trackEntries) {
+            auto trackName = std::get<1>(trackEntry);
+            auto track = new xMusicLibraryTrackEntry(trackName, std::get<0>(trackEntry), this);
+            albumTracks.emplace_back(track);
+        }
+    } else {
+        auto trackEntries = xPlayerBluOSControls::controls()->getTracks(getArtistName(), getAlbumName());
+        // Sort the entries according to their name.
+        std::sort(trackEntries.begin(), trackEntries.end());
+        // Clear vector and map
+        albumTracks.clear();
+        // Fill vector and map
+        for (const auto& trackEntry : trackEntries) {
+            auto trackName = std::get<1>(trackEntry);
+            auto track = new xMusicLibraryTrackEntry(trackName, std::get<0>(trackEntry), std::get<3>(trackEntry),
+                    std::get<2>(trackEntry), this);
+            albumTracks.emplace_back(track);
+        }
     }
 }
 
@@ -96,24 +113,22 @@ bool xMusicLibraryAlbumEntry::isScanned() const {
     return (!albumTracks.empty());
 }
 
-bool xMusicLibraryAlbumEntry::isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) {
+bool xMusicLibraryAlbumEntry::isDirectoryEntryValid(const QUrl& dirEntry) {
     // Only query once for valid extensions.
     static auto validExtensions = xPlayerConfiguration::configuration()->getMusicLibraryExtensionList();
-    try {
-        // Check if we have a file with a valid music file extension.
-        if (dirEntry.exists() && dirEntry.is_regular_file()) {
-            auto extension = QString::fromStdString(dirEntry.path().extension().string());
+    if (dirEntry.isLocalFile()) {
+        QFileInfo dirPath(dirEntry.toLocalFile());
+        if ((dirPath.isFile()) && (dirPath.exists())) {
+            auto extension = "." + dirPath.completeSuffix();
             if (validExtensions.contains(extension, Qt::CaseInsensitive)) {
                 return true;
             }
         }
+        return false;
+    } else {
+        // Function is not used for remote BluOS player library.
+        return false;
     }
-    catch (const std::filesystem::filesystem_error& error) {
-        qCritical() << "Unable to access directory entry: "
-                    << QString::fromStdString(dirEntry.path())
-                    << ", error: " << error.what();
-    }
-    return false;
 }
 
 xMusicLibraryEntry* xMusicLibraryAlbumEntry::child(size_t index) {

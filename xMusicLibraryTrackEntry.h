@@ -21,7 +21,9 @@ class xMusicLibraryTrackEntry:public xMusicLibraryEntry {
 
 public:
     xMusicLibraryTrackEntry();
-    xMusicLibraryTrackEntry(const QString& track, const std::filesystem::path& trackPath, xMusicLibraryEntry* album);
+    xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, xMusicLibraryEntry* album);
+    xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, const QString& path,
+                            qint64 length, xMusicLibraryEntry* album);
     xMusicLibraryTrackEntry(const xMusicLibraryTrackEntry& file) = default;
     ~xMusicLibraryTrackEntry() override = default;
     /**
@@ -56,6 +58,15 @@ public:
      * @return the track name as string.
      */
     [[nodiscard]] const QString& getTrackName() const;
+    /**
+     * Retrieve the track path associated with the track entry
+     *
+     * The track path equals the entryUrl for local files. For BluOS
+     * libraries it contains the path within the BluOS system.
+     *
+     * @return the track path as string.
+     */
+    [[nodiscard]] const QString& getTrackPath() const;
     /**
      * Get the album to the track.
      *
@@ -127,7 +138,7 @@ protected:
      *
      * Not called. Throws exception.
      */
-    bool isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) override;
+    bool isDirectoryEntryValid(const QUrl& dirEntry) override;
     /**
      * Access the a specific child.
      *
@@ -152,6 +163,7 @@ private:
     void scanTags() const;
 
     std::uintmax_t fileSize;
+    QString trackPath;
     // make track properties mutable, because we scan the file only on demand.
     mutable qint64 trackLength;
     mutable int trackBitsPerSample;

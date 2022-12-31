@@ -19,6 +19,7 @@
 
 #include <QRegularExpression>
 #include <QProcess>
+#include <QFileInfo>
 #include <QDebug>
 
 #include <taglib/fileref.h>
@@ -36,19 +37,26 @@ xMusicLibraryTrackEntry::xMusicLibraryTrackEntry():
     trackSampleRate(-1) {
 }
 
-xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const std::filesystem::path& trackPath, xMusicLibraryEntry* album):
-        xMusicLibraryEntry(track, trackPath, album),
+xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, xMusicLibraryEntry* album):
+        xMusicLibraryEntry(track, trackUrl, album),
+        trackPath(),
         trackLength(-1),
         trackBitsPerSample(-1),
         trackBitrate(-1),
         trackSampleRate(-1) {
-    try {
-        fileSize = std::filesystem::file_size(trackPath);
-    } catch (const std::filesystem::filesystem_error& error) {
-        qCritical() << "Unable to access track: "
-                    << QString::fromStdString(entryPath.generic_string()) << ", error: " << error.what();
-        fileSize = static_cast<std::uintmax_t>(-1);
-    }
+    trackPath = trackUrl.toLocalFile();
+    fileSize = QFileInfo(trackPath).size();
+}
+
+xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, const QString& path,
+                                                 qint64 length, xMusicLibraryEntry* album):
+        xMusicLibraryEntry(track, trackUrl, album),
+        fileSize(-1),
+        trackPath(path),
+        trackLength(length),
+        trackBitsPerSample(-1),
+        trackBitrate(-1),
+        trackSampleRate(-1) {
 }
 
 [[nodiscard]] xMusicLibraryAlbumEntry* xMusicLibraryTrackEntry::getAlbum() const {
@@ -71,6 +79,10 @@ xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const std
 
 [[nodiscard]] const QString& xMusicLibraryTrackEntry::getTrackName() const {
     return entryName;
+}
+
+[[nodiscard]] const QString& xMusicLibraryTrackEntry::getTrackPath() const {
+    return trackPath;
 }
 
 std::uintmax_t xMusicLibraryTrackEntry::getFileSize() const {
@@ -106,6 +118,9 @@ void xMusicLibraryTrackEntry::scan() {
 }
 
 void xMusicLibraryTrackEntry::updateTags() {
+    if (!entryUrl.isLocalFile()) {
+        return;
+    }
     // Split the track name into nr, name and extension.
     QRegularExpression trackNameRegExp(R"((?<nr>\d\d) (?<name>.*)\.(?<ext>.*))");
     auto trackNameMatch = trackNameRegExp.match(entryName);
@@ -121,14 +136,14 @@ void xMusicLibraryTrackEntry::updateTags() {
             lltagProcess->setProcessChannelMode(QProcess::MergedChannels);
             lltagProcess->start(xPlayerConfiguration::configuration()->getLLTag(),
                                 { {"--yes"}, {"--ARTIST"}, artistName, {"--ALBUM"}, albumName, {"--TITLE"},
-                                  trackName, {"--NUMBER"}, trackNr, QString::fromStdString(entryPath.string()) });
+                                  trackName, {"--NUMBER"}, trackNr, entryUrl.toLocalFile() });
             lltagProcess->waitForFinished(-1);
             if (lltagProcess->exitCode() != QProcess::NormalExit) {
                 qWarning() << "updateTags(): unable to update tags using lltag. Using taglib fallback...";
             }
         } else {
             // Use taglib to update artist, album, track nr and name.
-            TagLib::FileRef currentTrack(entryPath.c_str(), true, TagLib::AudioProperties::Fast);
+            TagLib::FileRef currentTrack(entryUrl.toLocalFile().toStdString().c_str(), true, TagLib::AudioProperties::Fast);
             auto currentTag = currentTrack.tag();
             currentTag->setArtist(artistName.toStdString());
             currentTag->setAlbum(albumName.toStdString());
@@ -144,11 +159,11 @@ void xMusicLibraryTrackEntry::updateTags() {
 void xMusicLibraryTrackEntry::scanTags() const {
     // Scanning for tags only on demand if corresponding properties are accessed. Therefor const and mutable.
     // Check if we have a file defined.
-    if (isScanned() || (entryPath.empty())) {
+    if (isScanned() || (!entryUrl.isLocalFile())) {
         return;
     }
     // Use taglib to determine the sample rate, bitrate, bits per sample and length.
-    TagLib::FileRef currentTrack(entryPath.c_str(), true, TagLib::AudioProperties::Fast);
+    TagLib::FileRef currentTrack(entryUrl.toLocalFile().toStdString().c_str(), true, TagLib::AudioProperties::Fast);
     TagLib::AudioProperties* currentTrackProperties = currentTrack.audioProperties();
     if (currentTrackProperties == nullptr) {
         qCritical() << "Unable to get audio proprties.";
@@ -157,18 +172,18 @@ void xMusicLibraryTrackEntry::scanTags() const {
     // Most files do only support 16 bits per sample.
     trackBitsPerSample = 16;
     try {
-        auto trackPathExt = QString::fromStdString(entryPath.extension());
-        if (trackPathExt.compare(".flac", Qt::CaseInsensitive) == 0) {
+        auto trackPathExt = QFileInfo(entryUrl.toLocalFile()).completeSuffix();
+        if (trackPathExt.compare("flac", Qt::CaseInsensitive) == 0) {
             auto* currentFlacProperties = dynamic_cast<TagLib::FLAC::Properties*>(currentTrackProperties);
             trackBitsPerSample = currentFlacProperties->bitsPerSample();
-        } else if (trackPathExt.compare(".wv", Qt::CaseInsensitive) == 0) {
+        } else if (trackPathExt.compare("wv", Qt::CaseInsensitive) == 0) {
             auto* currentWvProperties = dynamic_cast<TagLib::WavPack::Properties*>(currentTrackProperties);
             trackBitsPerSample = currentWvProperties->bitsPerSample();
         }
     } catch(const std::bad_cast& error) {
         // Ignore error.
         qCritical() << "Unable to scan properties for: "
-                    << QString::fromStdString(entryPath.generic_string()) << ", error: " << error.what();
+                    << entryUrl.toLocalFile() << ", error: " << error.what();
     }
     trackBitrate = currentTrackProperties->bitrate();
     trackSampleRate = currentTrackProperties->sampleRate();
@@ -196,7 +211,7 @@ int xMusicLibraryTrackEntry::compareTrackName(xMusicLibraryTrackEntry* track) co
 }
 
 
-bool xMusicLibraryTrackEntry::isDirectoryEntryValid(const std::filesystem::directory_entry& dirEntry) {
+bool xMusicLibraryTrackEntry::isDirectoryEntryValid(const QUrl& dirEntry) {
     // No directory entry scanning for tracks.
     Q_UNUSED(dirEntry)
     throw std::runtime_error("invalid call of xMusicLibraryTrackEntry::isDirectoryEntryValid");

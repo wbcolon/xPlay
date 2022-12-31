@@ -15,6 +15,7 @@
 #include "xMainMobileSyncWidget.h"
 #include "xPlayerUI.h"
 #include "xMusicLibraryTrackEntry.h"
+#include "xPlayerConfiguration.h"
 
 #include <QApplication>
 #include <QMenu>
@@ -172,6 +173,8 @@ xMainMobileSyncWidget::xMainMobileSyncWidget(xMusicLibrary* library, QWidget* pa
     connect(actionAddToWidget, &QListWidget::customContextMenuRequested, this, &xMainMobileSyncWidget::actionAddToDelete);
     connect(actionRemoveFromWidget, &QListWidget::customContextMenuRequested, this, &xMainMobileSyncWidget::actionRemoveFromDelete);
     connect(actionApplyButton, &QPushButton::pressed, this, &xMainMobileSyncWidget::actionApply);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS,
+            this, &xMainMobileSyncWidget::useMusicLibraryBluOS);
     // Update text on scan button based on the content of the mobile library directory entry.
     connect(mobileLibraryDirectoryWidget, &QLineEdit::textChanged, [=](const QString& text) {
         if (text.isEmpty()) {
@@ -302,9 +305,9 @@ void xMainMobileSyncWidget::actionApplyThread(const std::list<xPlayerMusicLibrar
         }
         try {
             if (removeFromItem->trackEntry()) {
-                std::filesystem::remove(removeFromItem->trackEntry()->getPath());
+                std::filesystem::remove(removeFromItem->trackEntry()->getUrl().toLocalFile().toStdString());
             } else {
-                std::filesystem::remove_all(removeFromItem->entryPath());
+                std::filesystem::remove_all(removeFromItem->entryUrl().toLocalFile().toStdString());
             }
         } catch (const std::filesystem::filesystem_error& error) {
             qCritical() << "Unable to remove item: " << removeFromItem->description() << ", error: " << error.what();
@@ -323,14 +326,14 @@ void xMainMobileSyncWidget::actionApplyThread(const std::list<xPlayerMusicLibrar
             std::filesystem::path destinationPath;
             std::error_code errorCode;
             // Determine source and destination path.
-            destinationPath = mobileLibrary->getPath();
+            destinationPath = mobileLibrary->getUrl().toLocalFile().toStdString();
             if (addToItem->trackEntry()) {
-                sourcePath = addToItem->trackEntry()->getPath();
+                sourcePath = addToItem->trackEntry()->getUrl().toLocalFile().toStdString();
                 destinationPath = destinationPath /
                                   addToItem->artist()->entryName().toStdString() /
                                   addToItem->album()->entryName().toStdString();
             } else {
-                sourcePath = addToItem->entryPath();
+                sourcePath = addToItem->entryUrl().toLocalFile().toStdString();
                 if (addToItem->artist()) {
                     destinationPath = destinationPath /
                                       addToItem->artist()->entryName().toStdString() /
@@ -358,7 +361,7 @@ void xMainMobileSyncWidget::actionApplyThread(const std::list<xPlayerMusicLibrar
 void xMainMobileSyncWidget::actionApplyUpdate(int progress) {
     actionBar->setValue(progress);
     // Determine available space and capacity.
-    auto currentSpaceInfo = std::filesystem::space(mobileLibrary->getPath());
+    auto currentSpaceInfo = std::filesystem::space(mobileLibrary->getUrl().toLocalFile().toStdString());
     actionStorageBar->setRange(0, static_cast<int>(currentSpaceInfo.capacity / 1048576));
     actionStorageBar->setValue(static_cast<int>((currentSpaceInfo.capacity-currentSpaceInfo.available) / 1048576));
     // Set the progress bar text.
@@ -464,6 +467,15 @@ void xMainMobileSyncWidget::actionApply() {
     actionApplyButton->setText(tr("Cancel"));
 }
 
+void xMainMobileSyncWidget::useMusicLibraryBluOS() {
+    if (xPlayerConfiguration::configuration()->useMusicLibraryBluOS()) {
+        clear();
+        setEnabled(false);
+    } else {
+        setEnabled(true);
+    }
+}
+
 void xMainMobileSyncWidget::mobileLibraryOpenDirectory() {
     QString mobileLibraryDirectoryPath =
             QFileDialog::getExistingDirectory(this, tr("Open Mobile Library"), mobileLibraryDirectoryWidget->text(),
@@ -486,7 +498,7 @@ void xMainMobileSyncWidget::mobileLibraryScanClear() {
         mobileLibraryDirectoryWidget->setEnabled(false);
 
         auto mobileLibraryPath = std::filesystem::path(mobileLibraryDirectory.toStdString());
-        mobileLibraryWidget->setPath(mobileLibraryPath);
+        mobileLibraryWidget->setUrl(QUrl::fromLocalFile(mobileLibraryDirectory));
         try {
             // Determine available space and capacity.
             mobileLibrarySpaceInfo = std::filesystem::space(mobileLibraryPath);
@@ -555,7 +567,7 @@ void xMainMobileSyncWidget::mobileLibrarySaveToExisting() {
     std::map<QString, std::map<QString, std::list<xMusicLibraryTrackEntry*>>> equalTracks;
     // Determine equal tracks. The map contains music file pointer from the music library.
     musicLibrary->compare(mobileLibrary, equalTracks);
-    musicLibraryExisting[mobileLibrary->getPath()] = equalTracks;
+    musicLibraryExisting[mobileLibrary->getUrl().toLocalFile().toStdString()] = equalTracks;
     // Update list of existing mobile libraries.
     updateExistingList();
 }
@@ -727,7 +739,7 @@ void xMainMobileSyncWidget::updateActionStorage() {
     // Compute size after applied actions and update action storage bar.
     std::uintmax_t actionTotalSize = mobileLibrarySpaceInfo.capacity-mobileLibrarySpaceInfo.available+addSize-removeSize;
     auto actionStorageBarPalette = actionStorageBar->palette();
-    if (actionTotalSize >= mobileLibrarySpaceInfo.capacity) {
+    if (actionTotalSize > mobileLibrarySpaceInfo.capacity) {
         double dOverCapacity = static_cast<double>(actionTotalSize-mobileLibrarySpaceInfo.capacity) / 1073741824.0;
         // Set storage bar to max and color it in red.
         actionStorageBarPalette.setColor(QPalette::Highlight, Qt::red);

@@ -14,22 +14,29 @@
 
 #include "xMusicLibraryEntry.h"
 
+#include <QFileInfo>
+#include <QFile>
+#include <QDir>
+#include <QThread>
+#include <QNetworkRequest>
 #include <QDebug>
+
+#include <filesystem>
 
 
 xMusicLibraryEntry::xMusicLibraryEntry(QObject* qParent):
         QObject(qParent),
         entryName(),
-        entryPath(),
+        entryUrl(),
         entryLastWritten(),
         entryParent(nullptr) {
 }
 
-xMusicLibraryEntry::xMusicLibraryEntry(const QString& eName, const std::filesystem::path& ePath,
+xMusicLibraryEntry::xMusicLibraryEntry(const QString& eName, const QUrl& eUrl,
                                        xMusicLibraryEntry* eParent, QObject* qParent):
         QObject(qParent),
         entryName(eName),
-        entryPath(ePath),
+        entryUrl(eUrl),
         entryParent(eParent) {
     updateLastTimeWritten();
 }
@@ -37,20 +44,20 @@ xMusicLibraryEntry::xMusicLibraryEntry(const QString& eName, const std::filesyst
 xMusicLibraryEntry::xMusicLibraryEntry(const xMusicLibraryEntry& entry):
         QObject(entry.parent()),
         entryName(entry.entryName),
-        entryPath(entry.entryPath),
+        entryUrl(entry.entryUrl),
         entryLastWritten(entry.entryLastWritten),
         entryParent(entry.entryParent) {
 }
 
-[[nodiscard]] const std::filesystem::path& xMusicLibraryEntry::getPath() const {
-    return entryPath;
+[[nodiscard]] const QUrl& xMusicLibraryEntry::getUrl() const {
+    return entryUrl;
 }
 
 [[nodiscard]] const QString& xMusicLibraryEntry::getName() const {
     return entryName;
 }
 
-[[nodiscard]] const std::filesystem::file_time_type& xMusicLibraryEntry::getLastWritten() const {
+[[nodiscard]] const QDateTime& xMusicLibraryEntry::getLastWritten() const {
     return entryLastWritten;
 }
 
@@ -58,33 +65,35 @@ bool xMusicLibraryEntry::operator < (const xMusicLibraryEntry& entry) const {
     return (entryName.compare(entry.entryName, Qt::CaseInsensitive) < 0);
 }
 
-std::vector<std::filesystem::directory_entry> xMusicLibraryEntry::scanDirectory() {
-    try {
-        if (std::filesystem::is_directory(entryPath)) {
-            std::vector<std::filesystem::directory_entry> validDirEntries;
-            for (const auto &dirEntry: std::filesystem::directory_iterator(entryPath)) {
-                if (!isDirectoryEntryValid(dirEntry)) {
-                    // Ignore invalid entries
-                    continue;
+std::vector<std::tuple<QUrl,QString>> xMusicLibraryEntry::scanDirectory() {
+    std::vector<std::tuple<QUrl,QString>> validDirEntries;
+    if (entryUrl.isLocalFile()) {
+        QFileInfo entryPath(entryUrl.toLocalFile());
+        if (entryPath.isDir()) {
+            auto dirEntries = QDir(entryUrl.toLocalFile()).entryInfoList(QDir::NoFilter, QDir::Name);
+            for (const auto& dirEntry : dirEntries) {
+                auto dirEntryUrl = QUrl::fromLocalFile(dirEntry.filePath());
+                if (isDirectoryEntryValid(dirEntryUrl)) {
+                    validDirEntries.emplace_back(dirEntryUrl, dirEntry.fileName());
                 }
-                validDirEntries.emplace_back(dirEntry);
             }
-            return validDirEntries;
         }
     }
-    catch (const std::filesystem::filesystem_error& error) {
-        qCritical() << "Unable to scan directory: " << QString::fromStdString(entryPath) << ", error: " << error.what();
-    }
-    return {};
+    return validDirEntries;
 }
 
 bool xMusicLibraryEntry::rename(const QString& newEntryName) {
+    // No rename possible for non-local files.
+    if (!entryUrl.isLocalFile()) {
+        return false;
+    }
     // No name change. No need to rename.
     if (newEntryName == entryName) {
         return true;
     }
     // Rename.
     try {
+        std::filesystem::path entryPath(entryUrl.toLocalFile().toStdString());
         auto entryParentPath = entryPath.parent_path();
         auto oldEntryPath = entryParentPath / entryName.toStdString();
         auto newEntryPath = entryParentPath / newEntryName.toStdString();
@@ -97,7 +106,7 @@ bool xMusicLibraryEntry::rename(const QString& newEntryName) {
         updateLastTimeWritten();
         // Update the child using the new entry path as the childs new parent path.
         for (size_t index = 0; child(index) != nullptr; ++index) {
-            child(index)->updateChild(entryPath);
+            child(index)->updateChild(QUrl::fromLocalFile(QString::fromStdString(entryPath)));
         }
         // Update the parent.
         entryParent->updateParent(this);
@@ -109,11 +118,15 @@ bool xMusicLibraryEntry::rename(const QString& newEntryName) {
     }
 }
 
-void xMusicLibraryEntry::updateChild(const std::filesystem::path& newParentPath) {
-    entryPath = newParentPath / entryName.toStdString();
+void xMusicLibraryEntry::updateChild(const QUrl& newParentUrl) {
+    // No child updates for non-local file URLs.
+    if (!newParentUrl.isLocalFile()) {
+        return;
+    }
+    entryUrl = newParentUrl.toLocalFile() + "/" + entryName;
     // Update the child using the new entry path as the childs new parent path.
     for (size_t index = 0; child(index) != nullptr; ++index) {
-        child(index)->updateChild(entryPath);
+        child(index)->updateChild(entryUrl);
     }
     update();
     updateLastTimeWritten();
@@ -124,11 +137,8 @@ void xMusicLibraryEntry::update() {
 }
 
 void xMusicLibraryEntry::updateLastTimeWritten() {
-    try {
-        entryLastWritten = std::filesystem::last_write_time(entryPath);
-    } catch (std::filesystem::filesystem_error &error) {
-        qCritical() << "Unable to access entry " << QString::fromStdString(entryPath) << ", error: " << error.what();
-        entryLastWritten = std::filesystem::file_time_type();
+    if (entryUrl.isLocalFile()) {
+        entryLastWritten = QFileInfo(entryUrl.toLocalFile()).fileTime(QFile::FileModificationTime);
     }
 }
 
