@@ -39,6 +39,18 @@ public:
      */
     void setMusicLibraryDirectory(const QString& directory);
     /**
+     * Set the url to the BluOS player library.
+     *
+     * @param url the url as string.
+     */
+    void setMusicLibraryBluOS(const QString& url);
+    /**
+     * Enable or disable the use of the BluOS player library.
+     *
+     * @param enabled use BluOS library if true, local library otherwise.
+     */
+    void useMusicLibraryBluOS(bool enabled);
+    /**
      * Set the set of accepted extensions for music files.
      *
      * @param extensions a space separated list of extensions.
@@ -220,6 +232,18 @@ public:
      * @return the music library directory as string.
      */
     [[nodiscard]] QString getMusicLibraryDirectory();
+    /**
+     * Get the url of the BluOS player library.
+     *
+     * @return the url as string.
+     */
+    [[nodiscard]] QString getMusicLibraryBluOS();
+    /**
+     * Get which music library to use.
+     *
+     * @return true if BluOS player library is enabled, false otherwise.
+     */
+    [[nodiscard]] bool useMusicLibraryBluOS();
     /**
      * Get the base directory of the music library.
      *
@@ -448,6 +472,14 @@ signals:
      * Signal an update of the music library directory.
      */
     void updatedMusicLibraryDirectory();
+    /**
+     * Signal an update of the BluOS player library.
+     */
+    void updatedMusicLibraryBluOS();
+    /**
+     * Signal an update of the music library use.
+     */
+    void updatedUseMusicLibraryBluOS();
     /**
      * Signal an update of the accepted music file extensions.
      */

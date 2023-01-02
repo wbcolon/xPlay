@@ -138,6 +138,7 @@ private:
     void updateStreamingSitesDefault();
 
     QLineEdit* musicLibraryDirectoryWidget;
+    QLineEdit* musicLibraryBluOSWidget;
     QLineEdit* musicLibraryExtensionsWidget;
     QLineEdit* musicLibraryAlbumSelectorsWidget;
     QLineEdit* musicLibraryTagsWidget;

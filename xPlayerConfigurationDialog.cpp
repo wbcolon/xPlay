@@ -97,6 +97,8 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     auto musicLibraryDirectoryLabel = new QLabel(tr("Directory"), musicLibraryTab);
     musicLibraryDirectoryWidget = new QLineEdit(musicLibraryTab);
     auto musicLibraryDirectoryOpenButton = new QPushButton(tr("..."), musicLibraryTab);
+    auto musicLibraryBluOSLabel = new QLabel(tr("BluOS Player"), musicLibraryTab);
+    musicLibraryBluOSWidget = new QLineEdit(musicLibraryTab);
     auto musicLibraryExtensionsLabel = new QLabel(tr("Extensions"), musicLibraryTab);
     musicLibraryExtensionsWidget = new QLineEdit(musicLibraryTab);
     auto musicLibraryAlbumSelectorsLabel = new QLabel(tr("Album Selectors"), musicLibraryTab);
@@ -114,23 +116,25 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryLayout->addWidget(musicLibraryDirectoryLabel, 0, 0, 1, 5);
     musicLibraryLayout->addWidget(musicLibraryDirectoryWidget, 1, 0, 1, 4);
     musicLibraryLayout->addWidget(musicLibraryDirectoryOpenButton, 1, 4);
-    musicLibraryLayout->addWidget(musicLibraryExtensionsLabel, 2, 0, 1, 5);
-    musicLibraryLayout->addWidget(musicLibraryExtensionsWidget, 3, 0, 1, 5);
-    musicLibraryLayout->addWidget(musicLibraryAlbumSelectorsLabel, 4, 0, 1, 5);
-    musicLibraryLayout->addWidget(musicLibraryAlbumSelectorsWidget, 5, 0, 1, 5);
-    musicLibraryLayout->addRowSpacer(6, xPlayerLayout::LargeSpace);
-    musicLibraryLayout->addWidget(musicLibraryTagsLabel, 7, 0, 1, 5);
-    musicLibraryLayout->addWidget(musicLibraryTagsWidget, 8, 0, 1, 5);
-    musicLibraryLayout->addRowSpacer(9, xPlayerLayout::LargeSpace);
-    musicLibraryLayout->addWidget(musicLibraryTaggingModeLabel, 10, 0, 1, 5);
-    musicLibraryLayout->addWidget(musicLibraryTaggingModeWidget, 11, 0);
-    musicLibraryLayout->addWidget(musicLibraryTaggingLLTagWidget, 11, 1, 1, 3);
-    musicLibraryLayout->addWidget(musicLibraryTaggingLLTagOpenButton, 11, 4);
-    musicLibraryLayout->addRowSpacer(12, xPlayerLayout::LargeSpace);
-    musicLibraryLayout->addWidget(musicVisualizationConfigLabel, 13, 0, 1, 5);
-    musicLibraryLayout->addWidget(musicVisualizationConfigWidget, 14, 0, 1, 4);
-    musicLibraryLayout->addWidget(musicVisualizationConfigOpenButton, 14, 4);
-    musicLibraryLayout->addRowStretcher(15);
+    musicLibraryLayout->addWidget(musicLibraryBluOSLabel, 2, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryBluOSWidget, 3, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryExtensionsLabel, 4, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryExtensionsWidget, 5, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryAlbumSelectorsLabel, 6, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryAlbumSelectorsWidget, 7, 0, 1, 5);
+    musicLibraryLayout->addRowSpacer(8, xPlayerLayout::LargeSpace);
+    musicLibraryLayout->addWidget(musicLibraryTagsLabel, 9, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryTagsWidget, 10, 0, 1, 5);
+    musicLibraryLayout->addRowSpacer(11, xPlayerLayout::LargeSpace);
+    musicLibraryLayout->addWidget(musicLibraryTaggingModeLabel, 12, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicLibraryTaggingModeWidget, 13, 0);
+    musicLibraryLayout->addWidget(musicLibraryTaggingLLTagWidget, 13, 1, 1, 3);
+    musicLibraryLayout->addWidget(musicLibraryTaggingLLTagOpenButton, 13, 4);
+    musicLibraryLayout->addRowSpacer(14, xPlayerLayout::LargeSpace);
+    musicLibraryLayout->addWidget(musicVisualizationConfigLabel, 15, 0, 1, 5);
+    musicLibraryLayout->addWidget(musicVisualizationConfigWidget, 16, 0, 1, 4);
+    musicLibraryLayout->addWidget(musicVisualizationConfigOpenButton, 16, 4);
+    musicLibraryLayout->addRowStretcher(17);
     musicLibraryTab->setLayout(musicLibraryLayout);
     // Setup streaming sites with URL and short name.
     auto streamingSitesLayout = new xPlayerLayout();
@@ -248,6 +252,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
 
 void xPlayerConfigurationDialog::loadSettings() {
     auto musicLibraryDirectory = xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
+    auto musicLibraryBluOS = xPlayerConfiguration::configuration()->getMusicLibraryBluOS();
     auto musicLibraryExtensions = xPlayerConfiguration::configuration()->getMusicLibraryExtensions();
     auto musicLibraryAlbumSelectors = xPlayerConfiguration::configuration()->getMusicLibraryAlbumSelectors();
     auto musicLibraryUseLLTag = xPlayerConfiguration::configuration()->useLLTag();
@@ -268,6 +273,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto userAgent = xPlayerConfiguration::configuration()->getWebsiteUserAgent();
     // Update the configuration dialog UI.
     musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
+    musicLibraryBluOSWidget->setText(musicLibraryBluOS);
     musicLibraryExtensionsWidget->setText(musicLibraryExtensions);
     musicLibraryAlbumSelectorsWidget->setText(musicLibraryAlbumSelectors);
     musicLibraryTaggingLLTagWidget->setText(musicLibraryLLTag);
@@ -328,6 +334,7 @@ void xPlayerConfigurationDialog::loadSettings() {
 void xPlayerConfigurationDialog::saveSettings() {
     // Read setting entries.
     auto musicLibraryDirectory = musicLibraryDirectoryWidget->text();
+    auto musicLibraryBluOS = musicLibraryBluOSWidget->text();
     auto musicLibraryExtensions = musicLibraryExtensionsWidget->text();
     auto musicLibraryAlbumSelectors = musicLibraryAlbumSelectorsWidget->text();
     auto musicLibraryLLTag = musicLibraryTaggingLLTagWidget->text();
@@ -364,6 +371,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     auto userAgent = websiteUserAgent->text();
     // Debug output
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryDirectory: " << musicLibraryDirectory;
+    qDebug() << "xPlayerConfigurationDialog: save: musicLibraryBluOS: " << musicLibraryBluOS;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryExtensions: " << musicLibraryExtensions;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryAlbumSelectors: " << musicLibraryAlbumSelectors;
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryUseLLTag: " << musicLibraryTaggingLLTagWidget->isEnabled();
@@ -388,6 +396,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: websiteUserAgent: " << userAgent;
     // Save settings.
     xPlayerConfiguration::configuration()->setMusicLibraryDirectory(musicLibraryDirectory);
+    xPlayerConfiguration::configuration()->setMusicLibraryBluOS(musicLibraryBluOS);
     xPlayerConfiguration::configuration()->setMusicLibraryExtensions(musicLibraryExtensions);
     xPlayerConfiguration::configuration()->setMusicLibraryAlbumSelectors(musicLibraryAlbumSelectors);
     xPlayerConfiguration::configuration()->useLLTag(musicLibraryTaggingLLTagWidget->isEnabled());

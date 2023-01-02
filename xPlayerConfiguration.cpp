@@ -23,6 +23,8 @@
 
 // Configuration strings.
 const QString xPlayerConfiguration_MusicLibraryDirectory { "xPlay/MusicLibraryDirectory" }; // NOLINT
+const QString xPlayerConfiguration_MusicLibraryBluOS { "xPlay/MusicLibraryBluOS" }; // NOLINT
+const QString xPlayerConfiguration_UseMusicLibraryBluOS { "xPlay/UseMusicLibraryBluOS" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryExtensions { "xPlay/MusicLibraryExtensions" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors { "xPlay/MusicLibraryAlbumSelectors" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryTags { "xPlay/MusicLibraryTags" }; // NOLINT
@@ -53,6 +55,7 @@ const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor"
 const QString xPlayerConfiguration_WebsiteUserAgent { "xPlay/WebsiteUserAgent" }; // NOLINT
 
 // Configuration defaults.
+const bool xPlayerConfiguration_UseMusicLibraryBluOS_Default = false; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryExtensions_Default { ".flac .ogg .mp3" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryAlbumSelectors_Default { "(live) [hd] [mp3]" }; // NOLINT
 const QString xPlayerConfiguration_MusicLibraryTags_Default { "[ballads] [epics] [favorites]" }; // NOLINT
@@ -98,6 +101,22 @@ void xPlayerConfiguration::setMusicLibraryDirectory(const QString& directory) {
         settings->setValue(xPlayerConfiguration_MusicLibraryDirectory, directory);
         settings->sync();
         emit updatedMusicLibraryDirectory();
+    }
+}
+
+void xPlayerConfiguration::setMusicLibraryBluOS(const QString& url) {
+    if (url != getMusicLibraryBluOS()) {
+        settings->setValue(xPlayerConfiguration_MusicLibraryBluOS, url);
+        settings->sync();
+        emit updatedMusicLibraryBluOS();
+    }
+}
+
+void xPlayerConfiguration::useMusicLibraryBluOS(bool enabled) {
+    if (enabled != useMusicLibraryBluOS()) {
+        settings->setValue(xPlayerConfiguration_UseMusicLibraryBluOS, enabled);
+        settings->sync();
+        emit updatedUseMusicLibraryBluOS();
     }
 }
 
@@ -345,6 +364,14 @@ QString xPlayerConfiguration::getMusicLibraryDirectory() {
     return settings->value(xPlayerConfiguration_MusicLibraryDirectory, "").toString();
 }
 
+QString xPlayerConfiguration::getMusicLibraryBluOS() {
+    return settings->value(xPlayerConfiguration_MusicLibraryBluOS, "").toString();
+}
+
+bool xPlayerConfiguration::useMusicLibraryBluOS() {
+    return settings->value(xPlayerConfiguration_UseMusicLibraryBluOS, xPlayerConfiguration_UseMusicLibraryBluOS_Default).toBool();
+}
+
 std::filesystem::path xPlayerConfiguration::getMusicLibraryDirectoryPath() {
     return std::filesystem::path{ getMusicLibraryDirectory().toStdString() };
 }
@@ -572,6 +599,8 @@ std::pair<QString,QUrl> xPlayerConfiguration::splitStreamingShortNameAndUrl(cons
 void xPlayerConfiguration::updatedConfiguration() {
     // Fire all update signals.
     emit updatedMusicLibraryDirectory();
+    emit updatedMusicLibraryBluOS();
+    emit updatedUseMusicLibraryBluOS();
     emit updatedMusicLibraryExtensions();
     emit updatedMusicLibraryAlbumSelectors();
     emit updatedUseLLTag();
