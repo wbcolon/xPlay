@@ -285,6 +285,8 @@ private slots:
      */
     void visualizationUpdate(const QMap<Phonon::AudioDataOutput::Channel, QVector<qint16>>& data);
 
+    void playerStatus(const QString& path, qint64 position);
+
 private:
     /**
      * Compute a permutation for 0...elements-1. Allow for a fixed starting index.
@@ -308,6 +310,7 @@ private:
     xMusicLibrary* musicLibrary;
     std::vector<std::tuple<QString,QString,xMusicLibraryTrackEntry*>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;
+    QStringList musicPlaylistRemote;
     QVector<int> musicPlaylistPermutation;
     Phonon::MediaObject* musicPlayer;
     Phonon::AudioOutput* musicOutput;
@@ -316,6 +319,9 @@ private:
     int musicVisualizationSampleRate;
     xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;
+    // We need to track the current remote track played to avoid duplicate database entries.
+    QString musicCurrentRemote;
+    qint64 musicCurrentPositionRemote;
     // We need to track if the current track played to work around some phonon issues.
     bool musicCurrentFinished;
     // Only required due to track length issues with phonon.

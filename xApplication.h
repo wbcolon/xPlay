@@ -48,9 +48,9 @@ private slots:
      */
     void databaseUpdateError();
     /**
-     * Set the music library directory if it has been updated.
+     * Set the music library if it has been updated.
      */
-    void setMusicLibraryDirectory();
+    void setMusicLibrary();
     /**
      * Notify about an error while scanning the music library.
      */
@@ -71,6 +71,10 @@ private slots:
      * Check the music database entries against the music library for unknown entries.
      */
     void checkMovieDatabase();
+    /**
+     * Reindex the BluOS player library.
+     */
+    void reIndexMusicLibraryBluOS();
     /**
      * Toggle play/pause in current view (music/movie) after dbus call.
      */

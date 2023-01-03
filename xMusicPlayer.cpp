@@ -15,6 +15,7 @@
 #include "xMusicLibrary.h"
 #include "xMusicLibraryTrackEntry.h"
 #include "xPlayerDatabase.h"
+#include "xPlayerBluOSControl.h"
 
 #include <QRandomGenerator>
 #include <cmath>
@@ -30,6 +31,8 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         musicVisualizationSampleRate(44100 / xMusicPlayer_MusicVisualizationSamplesFactor),
         musicPlayerState(State::StopState),
         useShuffleMode(false),
+        musicCurrentRemote(),
+        musicCurrentPositionRemote(-1),
         musicCurrentFinished(false) {
     pulseAudioControls = xPlayerPulseAudioControls::controls();
     // Set up the media player.
@@ -52,6 +55,8 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayer::currentTrackSource);
     connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayer::stateChanged);
     connect(musicPlayer, &Phonon::MediaObject::aboutToFinish, this, &xMusicPlayer::aboutToFinish);
+    // Connect status update from BluOS player.
+    connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStatus, this, &xMusicPlayer::playerStatus);
 
     // We only need this one to determine the time due to issues with Phonon
     musicPlayerForTime = new QMediaPlayer(this);
@@ -66,67 +71,82 @@ void xMusicPlayer::queueTracks(const QString& artist, const QString& album, cons
     // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
     for (const auto& track : tracks) {
         auto queueEntry = std::make_tuple(artist, album, track);
-        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(track->getPath().generic_string())));
-        if (queueSource.type() != Phonon::MediaSource::Invalid) {
+        if (track->getUrl().isLocalFile()) {
+            auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(track->getUrl().toLocalFile()));
+            if (queueSource.type() != Phonon::MediaSource::Invalid) {
+                musicPlaylistEntries.push_back(queueEntry);
+                musicPlaylist.push_back(queueSource);
+            }
+        } else {
             musicPlaylistEntries.push_back(queueEntry);
-            musicPlaylist.push_back(queueSource);
+            musicPlaylistRemote.push_back(track->getTrackPath());
+            xPlayerBluOSControls::controls()->addQueue(track->getTrackPath());
         }
     }
 }
 
 void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
-    // Enable autoplay if playlist is currently emtpy, and we are in a stopped state.
-    autoPlay = autoPlay && ((musicPlayer->queue().empty()) && (musicPlayer->state() == Phonon::StoppedState));
-    // Check if there is an invalid or empty file.
-    bool noMedia = ((musicPlayer->currentSource().type() == Phonon::MediaSource::Invalid) ||
-                    (musicPlayer->currentSource().type() == Phonon::MediaSource::Empty));
-    // Find the index of the current media source in the playlist.
-    auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
-    if (useShuffleMode) {
-        if (currentIndex >= 0) {
-            currentIndex = musicPlaylistPermutation.indexOf(currentIndex);
-            // Check if we are in the process of filling the queue in shuffle mode.
-            if ((currentIndex == 0) && (musicPlayer->state() == Phonon::StoppedState)) {
-                // Treat as empty queue;
-                currentIndex = -1;
+    bool noMedia = false;
+    if (musicLibrary->isLocal()) {
+        // Enable autoplay if playlist is currently emtpy, and we are in a stopped state.
+        autoPlay = autoPlay && ((musicPlayer->queue().empty()) && (musicPlayer->state() == Phonon::StoppedState));
+        // Check if there is an invalid or empty file.
+        noMedia = ((musicPlayer->currentSource().type() == Phonon::MediaSource::Invalid) ||
+                   (musicPlayer->currentSource().type() == Phonon::MediaSource::Empty));
+        // Find the index of the current media source in the playlist.
+        auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
+        if (useShuffleMode) {
+            if (currentIndex >= 0) {
+                currentIndex = musicPlaylistPermutation.indexOf(currentIndex);
+                // Check if we are in the process of filling the queue in shuffle mode.
+                if ((currentIndex == 0) && (musicPlayer->state() == Phonon::StoppedState)) {
+                    // Treat as empty queue;
+                    currentIndex = -1;
+                }
             }
-        }
-        // The musicPlaylistPermutation still has the old size.
-        if ((currentIndex >= 0) && (currentIndex < musicPlaylistPermutation.count())) {
-            // A song was already playing.
-            musicPlaylistPermutation = extendPermutation(musicPlaylistPermutation.mid(0, currentIndex+1),
-                                                         musicPlaylist.count(), currentIndex);
-            // Clear queue and enqueue the remaining entries.
-            musicPlayer->clearQueue();
-            for (auto i = currentIndex+1; i < musicPlaylistPermutation.count(); ++i) {
-                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+            // The musicPlaylistPermutation still has the old size.
+            if ((currentIndex >= 0) && (currentIndex < musicPlaylistPermutation.count())) {
+                // A song was already playing.
+                musicPlaylistPermutation = extendPermutation(musicPlaylistPermutation.mid(0, currentIndex + 1),
+                                                             musicPlaylist.count(), currentIndex);
+                // Clear queue and enqueue the remaining entries.
+                musicPlayer->clearQueue();
+                for (auto i = currentIndex + 1; i < musicPlaylistPermutation.count(); ++i) {
+                    musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+                }
+            } else {
+                // No current song was playing. Queue possibly empty. No start index given.
+                musicPlaylistPermutation = computePermutation(musicPlaylist.count(), -1);
+                // Clear queue and enqueue all entries.
+                musicPlayer->clearQueue();
+                for (auto i = 0; i < musicPlaylistPermutation.count(); ++i) {
+                    musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+                }
             }
         } else {
-            // No current song was playing. Queue possibly empty. No start index given.
-            musicPlaylistPermutation = computePermutation(musicPlaylist.count(), -1);
-            // Clear queue and enqueue all entries.
+            // Enqueue in regular order.
+            // If no track currently played and queue empty then currentIndex == -1.
+            // Clear queue and enqueue the remaining entries.
             musicPlayer->clearQueue();
-            for (auto i = 0; i < musicPlaylistPermutation.count(); ++i) {
-                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+            for (auto i = currentIndex + 1; i < static_cast<int>(musicPlaylistEntries.size()); ++i) {
+                musicPlayer->enqueue(musicPlaylist[i]);
+            }
+        }
+        // Play if autoplay is enabled.
+        if (autoPlay) {
+            if (noMedia) {
+                emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
+                musicPlayer->play();
+            } else {
+                // Go to next if music player queue is empty but files are in the general queue.
+                next();
             }
         }
     } else {
-        // Enqueue in regular order.
-        // If no track currently played and queue empty then currentIndex == -1.
-        // Clear queue and enqueue the remaining entries.
-        musicPlayer->clearQueue();
-        for (auto i = currentIndex+1; i < static_cast<int>(musicPlaylistEntries.size()); ++i) {
-            musicPlayer->enqueue(musicPlaylist[i]);
-        }
-    }
-    // Play if autoplay is enabled.
-    if (autoPlay) {
-        if (noMedia) {
+        // Play if autoplay is enabled.
+        if (autoPlay) {
             emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
-            musicPlayer->play();
-        } else {
-            // Go to next if music player queue is empty but files are in the general queue.
-            next();
+            xPlayerBluOSControls::controls()->play();
         }
     }
 }
@@ -172,46 +192,59 @@ void xMusicPlayer::dequeTrack(int index) {
     if (useShuffleMode) {
         return;
     }
-    // Determine the index of the currently played song.
-    auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
-    // Remove the selected track from the playlist and entries.
-    musicPlaylist.removeAt(index);
-    musicPlaylistEntries.erase(musicPlaylistEntries.begin()+index);
-    // Special handling if the current track is to be removed
-    // This track is not in the music player playlist. It is its
-    // current source. We therefore need to stop and clear everything.
-    if (index == currentIndex) {
-        // Determine the state of the music player.
-        auto state = musicPlayer->state();
-        // We need to stop everything because we are deleting the currently played track
-        musicPlayer->stop();
-        musicPlayer->clear();
-        musicPlayer->clearQueue();
-        // Remaining tracks include the new current one.
-        for (auto i = currentIndex; i < musicPlaylist.size(); ++i) {
-            musicPlayer->enqueue(musicPlaylist[i]);
+    if (musicLibrary->isLocal()) {
+        // Determine the index of the currently played song.
+        auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
+        // Remove the selected track from the playlist and entries.
+        musicPlaylist.removeAt(index);
+        musicPlaylistEntries.erase(musicPlaylistEntries.begin()+index);
+        // Special handling if the current track is to be removed
+        // This track is not in the music player playlist. It is its
+        // current source. We therefore need to stop and clear everything.
+        if (index == currentIndex) {
+            // Determine the state of the music player.
+            auto state = musicPlayer->state();
+            // We need to stop everything because we are deleting the currently played track
+            musicPlayer->stop();
+            musicPlayer->clear();
+            musicPlayer->clearQueue();
+            // Remaining tracks include the new current one.
+            for (auto i = currentIndex; i < musicPlaylist.size(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[i]);
+            }
+            // We do not need to signal an update on the state because we did not change it overall.
+            if (state == Phonon::PlayingState) {
+                musicPlayer->play();
+            }
+        } else if (index > currentIndex) {
+            // Do not stop, just clear the queue
+            musicPlayer->clearQueue();
+            // Remaining tracks include the current
+            for (auto i = currentIndex+1; i < musicPlaylist.size(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[i]);
+            }
         }
-        // We do not need to signal an update on the state because we did not change it overall.
-        if (state == Phonon::PlayingState) {
-            musicPlayer->play();
-        }
-    } else if (index > currentIndex) {
-        // Do not stop, just clear the queue
-        musicPlayer->clearQueue();
-        // Remaining tracks include the current
-        for (auto i = currentIndex+1; i < musicPlaylist.size(); ++i) {
-            musicPlayer->enqueue(musicPlaylist[i]);
-        }
+    } else {
+        // Remove the selected track from the remote playlist and entries.
+        musicPlaylistRemote.removeAt(index);
+        musicPlaylistEntries.erase(musicPlaylistEntries.begin()+index);
+        xPlayerBluOSControls::controls()->removeQueue(index);
     }
 }
 
 void xMusicPlayer::clearQueue() {
     // Stop the music player and clear its state (including queue).
     emit currentState(musicPlayerState = State::StopState);
-    musicPlayer->stop();
-    musicPlayer->clear();
+    if (musicLibrary->isLocal()) {
+        musicPlayer->stop();
+        musicPlayer->clear();
+    } else {
+        xPlayerBluOSControls::controls()->clearQueue();
+        xPlayerBluOSControls::controls()->stop();
+    }
     // Remove entries from the play lists.
     musicPlaylistEntries.clear();
+    musicPlaylistRemote.clear();
     musicPlaylist.clear();
 }
 
@@ -229,9 +262,9 @@ void xMusicPlayer::loadQueueFromPlaylist(const QString& name) {
             playlistEntries.erase(entry);
             continue;
         }
-        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(entryObject->getPath().generic_string())));
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(entryObject->getUrl().toLocalFile()));
         if (queueSource.type() != Phonon::MediaSource::Invalid) {
-            musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
+            musicPlaylistEntries.emplace_back(entryArtist, entryAlbum, entryObject);
             musicPlaylist.push_back(queueSource);
             // Enqueue entries.
             musicPlayer->enqueue(queueSource);
@@ -266,9 +299,9 @@ void xMusicPlayer::loadQueueFromTag(const QString& tag, bool extend) {
                                       }) != musicPlaylistEntries.end())) {
             continue;
         }
-        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(QString::fromStdString(entryObject->getPath().generic_string())));
+        auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(entryObject->getUrl().toLocalFile()));
         if (queueSource.type() != Phonon::MediaSource::Invalid) {
-            musicPlaylistEntries.emplace_back(std::make_tuple(entryArtist, entryAlbum, entryObject));
+            musicPlaylistEntries.emplace_back(entryArtist, entryAlbum, entryObject);
             musicPlaylist.push_back(queueSource);
             // Enqueue entries.
             musicPlayer->enqueue(queueSource);
@@ -282,9 +315,9 @@ void xMusicPlayer::loadQueueFromTag(const QString& tag, bool extend) {
         taggedEntries.clear();
         for (const auto& entry : musicPlaylistEntries) {
             auto entryObject = std::get<2>(entry);
-            taggedEntries.emplace_back(std::make_tuple(entryObject->getArtistName(),
+            taggedEntries.emplace_back(entryObject->getArtistName(),
                                                        entryObject->getAlbumName(),
-                                                       entryObject->getTrackName()));
+                                                       entryObject->getTrackName());
         }
     }
     emit playlist(taggedEntries);
@@ -296,8 +329,8 @@ void xMusicPlayer::saveQueueToPlaylist(const QString& name) {
     // First convert to database format.
     std::vector<std::tuple<QString,QString,QString>> databasePlaylistEntries;
     for (const auto& entry : musicPlaylistEntries) {
-        databasePlaylistEntries.emplace_back(std::make_tuple(std::get<0>(entry),
-                std::get<1>(entry), std::get<2>(entry)->getTrackName()));
+        databasePlaylistEntries.emplace_back(std::get<0>(entry),
+                std::get<1>(entry), std::get<2>(entry)->getTrackName());
     }
     auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, databasePlaylistEntries);
     emit playlistState(name, saved);
@@ -305,12 +338,23 @@ void xMusicPlayer::saveQueueToPlaylist(const QString& name) {
 
 void xMusicPlayer::playPause() {
     // Pause if the media player is in playing state, resume play.
-    if (musicPlayer->state() == Phonon::PlayingState) {
-        emit currentState(musicPlayerState = State::PauseState);
-        musicPlayer->pause();
+    if (musicLibrary->isLocal()) {
+        if (musicPlayer->state() == Phonon::PlayingState) {
+            emit currentState(musicPlayerState = State::PauseState);
+            musicPlayer->pause();
+        } else {
+            emit currentState(musicPlayerState = State::PlayingState);
+            musicPlayer->play();
+        }
     } else {
-        emit currentState(musicPlayerState = State::PlayingState);
-        musicPlayer->play();
+        auto state = xPlayerBluOSControls::controls()->state();
+        if (state == "play") {
+            emit currentState(musicPlayerState = State::PauseState);
+            xPlayerBluOSControls::controls()->pause();
+        } else {
+            emit currentState(musicPlayerState = State::PlayingState);
+            xPlayerBluOSControls::controls()->play();
+        }
     }
 }
 
@@ -319,122 +363,165 @@ void xMusicPlayer::play(int index) {
     if (useShuffleMode) {
         return;
     }
-    // Check if the index is valid.
-    if ((index >= 0) && (index < musicPlaylist.size())) {
-        // Stop the player and clear its state.
-        musicPlayer->stop();
-        musicPlayer->clear();
-        // Queue the tracks starting at position index.
-        for (auto i = index; i < musicPlaylist.size(); ++i) {
-            musicPlayer->enqueue(musicPlaylist[i]);
+    if (musicLibrary->isLocal()) {
+        // Check if the index is valid.
+        if ((index >= 0) && (index < musicPlaylist.size())) {
+            // Stop the player and clear its state.
+            musicPlayer->stop();
+            musicPlayer->clear();
+            // Queue the tracks starting at position index.
+            for (auto i = index; i < musicPlaylist.size(); ++i) {
+                musicPlayer->enqueue(musicPlaylist[i]);
+            }
+            // Play.
+            emit currentState(musicPlayerState = State::PlayingState);
+            musicPlayer->play();
         }
-        // Play.
-        emit currentState(musicPlayerState = State::PlayingState);
-        musicPlayer->play();
+    } else {
+        if ((index >= 0) && (index < musicPlaylistRemote.size())) {
+            emit currentState(musicPlayerState = State::PlayingState);
+            xPlayerBluOSControls::controls()->play(index);
+        }
     }
 }
 
 void xMusicPlayer::seek(qint64 position) {
     // Jump to position (in milliseconds) in the current track.
-    musicPlayer->seek(position);
+    if (musicLibrary->isLocal()) {
+        musicPlayer->seek(position);
+    } else {
+        xPlayerBluOSControls::controls()->seek(position);
+    }
 }
 
 void xMusicPlayer::jump(qint64 delta) {
     // Jump to the current position plus delta (in milliseconds) in the current track.
-    auto jumpPosition = musicPlayer->currentTime()+delta;
-    musicPlayer->seek(std::clamp(jumpPosition, static_cast<qint64>(0), musicPlayer->totalTime()));
+    if (musicLibrary->isLocal()) {
+        auto jumpPosition = musicPlayer->currentTime()+delta;
+        musicPlayer->seek(std::clamp(jumpPosition, static_cast<qint64>(0), musicPlayer->totalTime()));
+    } else {
+        xPlayerBluOSControls::controls()->seek(musicCurrentPositionRemote+delta);
+    }
 }
 
 void xMusicPlayer::stop() {
     // Stop the media player.
     emit currentState(musicPlayerState = State::StopState);
-    musicPlayer->stop();
+    if (musicLibrary->isLocal()) {
+        musicPlayer->stop();
+    } else {
+        xPlayerBluOSControls::controls()->stop();
+    }
 }
 
 void xMusicPlayer::prev() {
-    // Jump to the previous element in the playlist if it exists.
-    auto position = musicPlaylist.indexOf(musicPlayer->currentSource());
-    // If we are in shuffle mode then we need to find the position in our permutation.
-    if (useShuffleMode) {
-        position = musicPlaylistPermutation.indexOf(position);
-    }
-    if (position > 0) {
-        // Stop the player and clear its state.
-        musicPlayer->stop();
-        musicPlayer->clear();
-        // Queue all tracks starting with position - 1.
+    if (musicLibrary->isLocal()) {
+        // Jump to the previous element in the playlist if it exists.
+        auto position = musicPlaylist.indexOf(musicPlayer->currentSource());
+        // If we are in shuffle mode then we need to find the position in our permutation.
         if (useShuffleMode) {
-            for (auto i = position - 1; i < musicPlaylist.size(); ++i) {
-                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
-            }
-        } else{
-            for (auto i = position - 1; i < musicPlaylist.size(); ++i) {
-                musicPlayer->enqueue(musicPlaylist[i]);
-            }
+            position = musicPlaylistPermutation.indexOf(position);
         }
-        // Play.
-        emit currentState(musicPlayerState = State::PlayingState);
-        musicPlayer->play();
+        if (position > 0) {
+            // Stop the player and clear its state.
+            musicPlayer->stop();
+            musicPlayer->clear();
+            // Queue all tracks starting with position - 1.
+            if (useShuffleMode) {
+                for (auto i = position - 1; i < musicPlaylist.size(); ++i) {
+                    musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+                }
+            } else {
+                for (auto i = position - 1; i < musicPlaylist.size(); ++i) {
+                    musicPlayer->enqueue(musicPlaylist[i]);
+                }
+            }
+            // Play.
+            emit currentState(musicPlayerState = State::PlayingState);
+            musicPlayer->play();
+        }
+    } else {
+        xPlayerBluOSControls::controls()->prev();
     }
 }
 
 void xMusicPlayer::next() {
-    // Jump to the next element in the playlist if it exists.
-    auto position = musicPlaylist.indexOf(musicPlayer->currentSource());
-    // If we are in shuffle mode then we need to find the position in our permutation.
-    if (useShuffleMode) {
-        position = musicPlaylistPermutation.indexOf(position);
-    }
-    if (position < musicPlaylist.size()-1) {
-        // Stop the player and clear its state.
-        musicPlayer->stop();
-        musicPlayer->clear();
-        // Queue all tracks starting with position + 1.
+    if (musicLibrary->isLocal()) {
+        // Jump to the next element in the playlist if it exists.
+        auto position = musicPlaylist.indexOf(musicPlayer->currentSource());
+        // If we are in shuffle mode then we need to find the position in our permutation.
         if (useShuffleMode) {
-            for (auto i = position + 1; i < musicPlaylist.size(); ++i) {
-                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
-            }
-        } else {
-            for (auto i = position + 1; i < musicPlaylist.size(); ++i) {
-                musicPlayer->enqueue(musicPlaylist[i]);
-            }
+            position = musicPlaylistPermutation.indexOf(position);
         }
-        // Play.
-        emit currentState(musicPlayerState = State::PlayingState);
-        musicPlayer->play();
+        if (position < musicPlaylist.size()-1) {
+            // Stop the player and clear its state.
+            musicPlayer->stop();
+            musicPlayer->clear();
+            // Queue all tracks starting with position + 1.
+            if (useShuffleMode) {
+                for (auto i = position + 1; i < musicPlaylist.size(); ++i) {
+                    musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+                }
+            } else {
+                for (auto i = position + 1; i < musicPlaylist.size(); ++i) {
+                    musicPlayer->enqueue(musicPlaylist[i]);
+                }
+            }
+            // Play.
+            emit currentState(musicPlayerState = State::PlayingState);
+            musicPlayer->play();
+        }
+    } else {
+        xPlayerBluOSControls::controls()->next();
     }
 }
 
 void xMusicPlayer::setMuted(bool mute) {
     // Mute/Unmute the stream and the pulseaudio sink.
-    musicOutput->setMuted(mute);
-    pulseAudioControls->setMuted(mute);
+    if (musicLibrary->isLocal()) {
+        musicOutput->setMuted(mute);
+        pulseAudioControls->setMuted(mute);
+    } else {
+        xPlayerBluOSControls::controls()->setMuted(mute);
+    }
 }
 
 bool xMusicPlayer::isMuted() const {
     // The stream and the pulseaudio sink is muted. Use stream state to check.
-    return musicOutput->isMuted();
+    if (musicLibrary->isLocal()) {
+        return musicOutput->isMuted();
+    } else {
+        return xPlayerBluOSControls::controls()->isMuted();
+    }
 }
 
 bool xMusicPlayer::isPlaying() const {
-    return musicPlayer->state() == Phonon::PlayingState;
+    if (musicLibrary->isLocal()) {
+        return musicPlayer->state() == Phonon::PlayingState;
+    } else {
+        return xPlayerBluOSControls::controls()->state() == "play";
+    }
 }
 
 void xMusicPlayer::setShuffleMode(bool shuffle) {
     useShuffleMode = shuffle;
-    if (useShuffleMode) {
-        auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
-        if ((currentIndex >= 0) && (currentIndex < musicPlaylist.count())) {
-            musicPlaylistPermutation = computePermutation(musicPlaylist.count(), currentIndex);
-            // Do not stop, just clear the queue
-            musicPlayer->clearQueue();
-            // Remaining tracks include the current
-            for (auto i = 1; i < musicPlaylistPermutation.count(); ++i) {
-                musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+    if (musicLibrary->isLocal()) {
+        if (useShuffleMode) {
+            auto currentIndex = musicPlaylist.indexOf(musicPlayer->currentSource());
+            if ((currentIndex >= 0) && (currentIndex < musicPlaylist.count())) {
+                musicPlaylistPermutation = computePermutation(musicPlaylist.count(), currentIndex);
+                // Do not stop, just clear the queue
+                musicPlayer->clearQueue();
+                // Remaining tracks include the current
+                for (auto i = 1; i < musicPlaylistPermutation.count(); ++i) {
+                    musicPlayer->enqueue(musicPlaylist[musicPlaylistPermutation[i]]);
+                }
             }
+        } else {
+            musicPlaylistPermutation.clear();
         }
     } else {
-        musicPlaylistPermutation.clear();
+        xPlayerBluOSControls::controls()->setShuffle(useShuffleMode);
     }
 }
 
@@ -443,23 +530,33 @@ bool xMusicPlayer::getShuffleMode() const {
 }
 
 void xMusicPlayer::setVolume(int vol) {
-    if (!musicOutput->isMuted()) {
-        vol = std::clamp(vol, 0, 100);
-        pulseAudioControls->setVolume(vol);
+    vol = std::clamp(vol, 0, 100);
+    if (musicLibrary->isLocal()) {
+        if (!musicOutput->isMuted()) {
+            pulseAudioControls->setVolume(vol);
+        }
+    } else {
+        xPlayerBluOSControls::controls()->setVolume(vol);
     }
 }
 
 void xMusicPlayer::setVisualization(bool enabled) {
-    musicVisualizationEnabled = enabled;
-    if (musicVisualizationEnabled) {
-        connect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayer::visualizationUpdate);
-    } else {
-        disconnect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayer::visualizationUpdate);
+    if (musicLibrary->isLocal()) {
+        musicVisualizationEnabled = enabled;
+        if (musicVisualizationEnabled) {
+            connect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayer::visualizationUpdate);
+        } else {
+            disconnect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayer::visualizationUpdate);
+        }
     }
 }
 
 int xMusicPlayer::getVolume() const {
-    return pulseAudioControls->getVolume();
+    if (musicLibrary->isLocal()) {
+        return pulseAudioControls->getVolume();
+    } else {
+        return xPlayerBluOSControls::controls()->getVolume();
+    }
 }
 
 bool xMusicPlayer::supportsVisualization() {
@@ -559,6 +656,26 @@ void xMusicPlayer::visualizationUpdate(const QMap<Phonon::AudioDataOutput::Chann
         right.resize(xMusicPlayer_MusicVisualizationSamples);
         // Emit signal to visualization.
         emit visualizationStereo(left, right);
+    }
+}
+
+void xMusicPlayer::playerStatus(const QString& path, qint64 position) {
+    // Translate updates from the BluOS player.
+    auto index = musicPlaylistRemote.indexOf(path);
+    if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
+        if (musicCurrentRemote != path) {
+            // Update currently played remote track.
+            musicCurrentRemote = path;
+            auto entry = musicPlaylistEntries[index];
+            auto entryObject = std::get<2>(entry);
+            emit currentTrackLength(entryObject->getLength());
+            emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
+                              entryObject->getTrackName(), entryObject->getBitrate(),
+                              entryObject->getSampleRate(), entryObject->getBitsPerSample());
+        }
+        // Update current position.
+        musicCurrentPositionRemote = position;
+        emit currentTrackPlayed(musicCurrentPositionRemote);
     }
 }
 

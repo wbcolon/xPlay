@@ -85,6 +85,8 @@ private:
     xPlayerControlButtonWidget* controlButtonWidget;
     xPlayerSliderWidget* sliderWidget;
     xPlayerRotelWidget* controlTabRotel;
+    xPlayerVolumeWidget* volumeWidget;
+    xMusicPlayer* musicPlayer;
 };
 
 #endif

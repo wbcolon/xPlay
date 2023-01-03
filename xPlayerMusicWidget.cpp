@@ -22,8 +22,9 @@
 #include <QMouseEvent>
 #include <taglib/fileref.h>
 
-xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* parent, Qt::WindowFlags flags):
-    QWidget(parent, flags) {
+xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt::WindowFlags flags):
+    QWidget(parent, flags),
+    musicPlayer(player) {
     // Create labels for artist, album and track
     auto artistLabel = new QLabel(tr("Artist"), this);
     artistName = new QLabel(this);
@@ -59,7 +60,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     // Create control buttons.
     controlButtonWidget = new xPlayerControlButtonWidget(xPlayerControlButtonWidget::MusicPlayerMode, controlTabPlayer);
-    auto volumeWidget = new xPlayerVolumeWidget(true, controlTabPlayer);
+    volumeWidget = new xPlayerVolumeWidget(true, controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, musicPlayer, &xMusicPlayer::setMuted);
@@ -120,10 +121,11 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* musicPlayer, QWidget* paren
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelWidget, [=]() {
         controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     });
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS, [=]() {
+        volumeWidget->setVolume(musicPlayer->getVolume());
+    });
     // Do not resize the player widget vertically
     //setFixedHeight(sizeHint().height());
-    // Setup volume
-    volumeWidget->setVolume(musicPlayer->getVolume());
 }
 
 void xPlayerMusicWidget::clear() {
@@ -151,9 +153,20 @@ void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QS
     artistName->setText(artist);
     albumName->setText(album);
     trackName->setText(track);
-    trackSampleRate->setText(QString("%1Hz").arg(sampleRate));
-    trackBitsPerSample->setText(QString("%1-bit").arg(bitsPerSample));
-    trackBitrate->setText(QString("%1 kbit/s").arg(bitrate));
+    // sample rate, bits per sample and bitrate may not be available for BluOS player tracks.
+    if ((sampleRate > 0) && (bitsPerSample > 0)) {
+        trackSampleRate->setText(QString("%1Hz").arg(sampleRate));
+        trackBitsPerSample->setText(QString("%1-bit").arg(bitsPerSample));
+    } else {
+        trackSampleRate->setText("n/a");
+        trackBitsPerSample->setText("");
+
+    }
+    if (bitrate > 0) {
+        trackBitrate->setText(QString("%1 kbit/s").arg(bitrate));
+    } else {
+        trackBitrate->setText("n/a");
+    }
 }
 
 void xPlayerMusicWidget::currentState(xMusicPlayer::State state) {
