@@ -346,14 +346,14 @@ std::pair<int,qint64> xPlayerDatabase::updateMusicFile(const QString& artist, co
         if (sqlite3_step(sqlStatement) != SQLITE_DONE) {
             auto playCount = sqlite3_column_int(sqlStatement, 0);
             dbCheck(sqlite3_finalize(sqlStatement));
-            if (playCount > 0) {
+            if ((sampleRate < 0) || (bitsPerSample < 0)) {
                 dbCheck(sqlite3_prepare_v2(sqlDatabase, "UPDATE music SET playCount=?,timeStamp=? WHERE hash=?",
                                            -1, &sqlStatement, nullptr));
                 dbCheck(sqlite3_bind_int(sqlStatement, 1, playCount + 1));
                 dbCheck(sqlite3_bind_int64(sqlStatement, 2, timeStamp));
                 dbCheck(sqlite3_bind_text(sqlStatement, 3, hash.c_str(), static_cast<int>(hash.size()), nullptr));
             } else {
-                // Update entries that were put in for the playlist but have not been played so far.
+                // Update missing entries.
                 dbCheck(sqlite3_prepare_v2(sqlDatabase,
                                            "UPDATE music SET playCount=?,timeStamp=?,sampleRate=?,bitsPerSample=? WHERE hash=?",
                                            -1, &sqlStatement, nullptr));
