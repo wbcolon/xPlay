@@ -121,6 +121,7 @@ private:
     int maxScaleSections;
     QwtSlider* trackSlider;
     xPlayerWidgetScaleDraw* scaleDraw;
+    qint64 trackLengthValue;
     QLCDNumber* trackLengthLabel;
     QLCDNumber* trackPlayedLabel;
 };

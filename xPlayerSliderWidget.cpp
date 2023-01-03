@@ -17,7 +17,8 @@
 xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         showHours(false),
-        maxScaleSections(0) {
+        maxScaleSections(0),
+        trackLengthValue(0) {
     auto sliderLayout = new xPlayerLayout(this);
     // Create a slider that displays the played time and can be used
     // to seek within a track.
@@ -54,6 +55,8 @@ xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags)
     connect(trackSlider, &QwtSlider::sliderMoved, [=](double position) { emit seek(static_cast<qint64>(position)); } );
     // Setup max sections.
     useScaleSections(10); // NOLINT
+    // Clear played and length LCD display.
+    clear();
 }
 
 void xPlayerSliderWidget::clear() {
@@ -63,6 +66,8 @@ void xPlayerSliderWidget::clear() {
     // Clear the lcd numbers.
     trackPlayedLabel->display("");
     trackLengthLabel->display("");
+    // Reset track length.
+    trackLengthValue = 0;
 }
 
 void xPlayerSliderWidget::useHourScale(bool hourScale) {
@@ -81,19 +86,25 @@ void xPlayerSliderWidget::useHourScale(bool hourScale) {
 
 void xPlayerSliderWidget::trackLength(qint64 length) {
     // Update the length of the current track.
-    trackLengthLabel->display(xPlayer::millisecondsToTimeFormat(length, showHours));
-    // Set maximum of slider to the length of the track. Reset the slider position-
-    trackSlider->setScaleStepSize(determineScaleDivider(length));
-    trackSlider->setLowerBound(0);
-    trackSlider->setUpperBound(static_cast<double>(length));
-    trackSlider->setValue(0);
+    trackLengthValue = length;
+    if (trackLengthValue > 0) {
+        trackLengthLabel->display(xPlayer::millisecondsToTimeFormat(length, showHours));
+        // Set maximum of slider to the length of the track. Reset the slider position-
+        trackSlider->setScaleStepSize(determineScaleDivider(length));
+        trackSlider->setLowerBound(0);
+        trackSlider->setUpperBound(static_cast<double>(length));
+        trackSlider->setValue(0);
+    }
 }
 
 void xPlayerSliderWidget::trackPlayed(qint64 played) {
-    // Update the time played for the current track.
-    trackPlayedLabel->display(xPlayer::millisecondsToTimeFormat(played, showHours));
-    // Update the slider position.
-    trackSlider->setValue(static_cast<double>(played));
+    // Only update the played slider if the length has been set.
+    if (trackLengthValue > 0) {
+        // Update the time played for the current track.
+        trackPlayedLabel->display(xPlayer::millisecondsToTimeFormat(played, showHours));
+        // Update the slider position.
+        trackSlider->setValue(static_cast<double>(played));
+    }
 }
 
 bool xPlayerSliderWidget::hourScale() const {
