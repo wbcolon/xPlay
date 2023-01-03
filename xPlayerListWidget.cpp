@@ -16,6 +16,7 @@
 #include "xMusicLibraryArtistEntry.h"
 #include "xMusicLibraryAlbumEntry.h"
 #include "xMusicLibraryTrackEntry.h"
+#include "xPlayerConfiguration.h"
 #include "xPlayerUI.h"
 
 #include <QResizeEvent>
@@ -215,6 +216,7 @@ void xPlayerListWidgetItem::updateTimeDisplay() {
 xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
         QTreeWidget(parent),
         sortItems(false),
+        dragDropItems(false),
         updateItemsThread(nullptr),
         dragDropFromIndex(-1),
         dragDropToIndex(-1),
@@ -244,6 +246,10 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
     connect(this, &xPlayerListWidget::updateTime, [=](xPlayerListWidgetItem* item) {
         item->updateTimeDisplay();
     });
+    // Disable drag and drop for BluOS player libraries. Not supported.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS, [=]() {
+        enableDragAndDrop(!xPlayerConfiguration::configuration()->useMusicLibraryBluOS());
+    });
 }
 
 xPlayerListWidget::~xPlayerListWidget() {
@@ -257,6 +263,11 @@ xPlayerListWidget::~xPlayerListWidget() {
 void xPlayerListWidget::enableSorting(bool sorted) {
     sortItems = sorted;
 }
+
+void xPlayerListWidget::enableDragAndDrop(bool dad) {
+    dragDropItems = dad;
+}
+
 void xPlayerListWidget::addListItem(const QString& text) {
     addListItem(text, QString());
 }
@@ -527,35 +538,39 @@ void xPlayerListWidget::resizeEvent(QResizeEvent* event) {
 }
 
 void xPlayerListWidget::dragEnterEvent(QDragEnterEvent* event) {
-    if (event) {
-        // currentListIndex is more accurate than using the event position.
-        // converting the position sometimes leads to an incorrect listIndex.
-        dragDropFromIndex = currentListIndex();
-        QTreeWidget::dragEnterEvent(event);
+    if (dragDropItems) {
+        if (event) {
+            // currentListIndex is more accurate than using the event position.
+            // converting the position sometimes leads to an incorrect listIndex.
+            dragDropFromIndex = currentListIndex();
+            QTreeWidget::dragEnterEvent(event);
+        }
     }
 }
 
 void xPlayerListWidget::dropEvent(QDropEvent* event) {
-    if (event) {
-        auto dropPosition = event->posF();
-        auto dragDropToItem = itemAt(event->pos());
-        if (dragDropToItem) {
-            auto dropItemRect = visualItemRect(dragDropToItem);
-            dragDropToIndex = indexOfTopLevelItem(dragDropToItem);
-            // We insert before the current element if the position is in the upper half of the listItem widget.
-            if (dropPosition.y() > dropItemRect.y() + (dropItemRect.height()/2.0)) {
-                dropPosition.setY(dropItemRect.bottom());
-                ++dragDropToIndex;
+    if (dragDropItems) {
+        if (event) {
+            auto dropPosition = event->posF();
+            auto dragDropToItem = itemAt(event->pos());
+            if (dragDropToItem) {
+                auto dropItemRect = visualItemRect(dragDropToItem);
+                dragDropToIndex = indexOfTopLevelItem(dragDropToItem);
+                // We insert before the current element if the position is in the upper half of the listItem widget.
+                if (dropPosition.y() > dropItemRect.y() + (dropItemRect.height() / 2.0)) {
+                    dropPosition.setY(dropItemRect.bottom());
+                    ++dragDropToIndex;
+                } else {
+                    dropPosition.setY(dropItemRect.top());
+                }
             } else {
-                dropPosition.setY(dropItemRect.top());
+                // No listItem at position means move to the end of the list.
+                dragDropToIndex = topLevelItemCount();
             }
-        } else {
-            // No listItem at position means move to the end of the list.
-            dragDropToIndex = topLevelItemCount();
+            auto adjustedEvent = new QDropEvent(dropPosition, event->possibleActions(), event->mimeData(),
+                                                event->mouseButtons(), event->keyboardModifiers(), event->type());
+            QTreeWidget::dropEvent(adjustedEvent);
+            emit dragDrop(dragDropFromIndex, dragDropToIndex);
         }
-        auto adjustedEvent = new QDropEvent(dropPosition, event->possibleActions(), event->mimeData(),
-                                            event->mouseButtons(), event->keyboardModifiers(), event->type());
-        QTreeWidget::dropEvent(adjustedEvent);
-        emit dragDrop(dragDropFromIndex, dragDropToIndex);
     }
 }

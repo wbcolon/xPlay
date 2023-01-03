@@ -127,6 +127,12 @@ public:
     /**
      * Enable the sorted mode for the list widget.
      *
+     * @param dad the widget supports drag and drop if true, no support otherwise.
+     */
+    void enableDragAndDrop(bool dad);
+    /**
+     * Enable the sorted mode for the list widget.
+     *
      * @param sorted items are sorted if true, unsorted otherwise.
      */
     void enableSorting(bool sorted);
@@ -395,6 +401,7 @@ private:
                               int currentFiles, int maxFiles);
 
     bool sortItems;
+    bool dragDropItems;
     QThread* updateItemsThread;
     int dragDropFromIndex;
     int dragDropToIndex;
