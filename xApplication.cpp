@@ -117,12 +117,15 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
 #endif
     // Do not connect main widget to music player here. It is done in the main widget
     // Connect Settings.
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryDirectory,
-            this, &xApplication::setMusicLibrary);
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryBluOS,
-            this, &xApplication::setMusicLibrary);
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS,
-            this, &xApplication::setMusicLibrary);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryDirectory, [=]() {
+        setMusicLibrary();
+    });
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryBluOS, [=]() {
+        setMusicLibrary();
+    });
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS, [=]() {
+        setMusicLibrary();
+    });
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieLibraryTagsAndDirectories,
             this, &xApplication::setMovieLibraryTagsAndDirectories);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedRotelNetworkAddress,
@@ -330,7 +333,7 @@ int xApplication::unknownEntriesDialog(const QString& dialogTitle, const std::li
     return unknownDialog->exec();
 }
 
-void xApplication::setMusicLibrary() {
+void xApplication::setMusicLibrary(bool force) {
     QUrl musicLibraryUrl;
     if (xPlayerConfiguration::configuration()->useMusicLibraryBluOS()) {
         musicLibraryUrl = QUrl(xPlayerConfiguration::configuration()->getMusicLibraryBluOS());
@@ -339,7 +342,7 @@ void xApplication::setMusicLibrary() {
     }
     mainMusicWidget->clear();
     qInfo() << "Update music library path to " << musicLibraryUrl;
-    musicLibrary->setUrl(musicLibraryUrl);
+    musicLibrary->setUrl(musicLibraryUrl, force);
 }
 
 void xApplication::scanningErrorMusicLibrary() {
@@ -385,8 +388,7 @@ void xApplication::reIndexMusicLibraryBluOS() {
     xPlayerBluOSControls::controls()->reIndex();
     reIndexBox.exec();
     // Rescan library.
-    musicLibrary->setUrl(QUrl());
-    setMusicLibrary();
+    setMusicLibrary(true);
 }
 
 void xApplication::createMenus() {
@@ -403,8 +405,7 @@ void xApplication::createMenus() {
     // Connect actions from file menu.
     connect(fileMenuConfigure, &QAction::triggered, this, &xApplication::configure);
     connect(fileMenuRescanMusicLibrary, &QAction::triggered, [=]() {
-        musicLibrary->setUrl(QUrl());
-        setMusicLibrary();
+        setMusicLibrary(true);
     });
     connect(fileMenuRescanMovieLibrary, &QAction::triggered, this, &xApplication::setMovieLibraryTagsAndDirectories);
     connect(fileMenuCheckMusicDatabase, &QAction::triggered, this, &xApplication::checkMusicDatabase);

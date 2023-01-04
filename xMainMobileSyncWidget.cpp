@@ -498,7 +498,8 @@ void xMainMobileSyncWidget::mobileLibraryScanClear() {
         mobileLibraryDirectoryWidget->setEnabled(false);
 
         auto mobileLibraryPath = std::filesystem::path(mobileLibraryDirectory.toStdString());
-        mobileLibraryWidget->setUrl(QUrl::fromLocalFile(mobileLibraryDirectory));
+        // Force rescan.
+        mobileLibraryWidget->setUrl(QUrl::fromLocalFile(mobileLibraryDirectory), true);
         try {
             // Determine available space and capacity.
             mobileLibrarySpaceInfo = std::filesystem::space(mobileLibraryPath);
@@ -620,7 +621,6 @@ void xMainMobileSyncWidget::mobileLibraryReadIOThread(const QString &mobileLibra
     }
     auto deviceMajor = major(pathStat.st_dev);
     auto deviceMinor = minor(pathStat.st_dev);
-    qDebug() << "MAJOR: " << deviceMajor << ", MINOR: " << deviceMinor;
     // Determine the sector size
     unsigned long deviceSectorSize = 512;
     QFile deviceSectorSizeFile(pathToDeviceSectorSize.arg(deviceMajor).arg(deviceMinor));
@@ -670,7 +670,6 @@ void xMainMobileSyncWidget::mobileLibraryReadIOThread(const QString &mobileLibra
     }
     // Close file.
     deviceStatFile.close();
-
 }
 
 void xMainMobileSyncWidget::musicLibraryCompare() {

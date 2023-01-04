@@ -249,12 +249,12 @@ xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, con
     });
 }
 
-void xPlayerMusicLibraryWidget::setUrl(const QUrl& base) {
+void xPlayerMusicLibraryWidget::setUrl(const QUrl& base, bool force) {
     // Clear everything before we initiate a scan.
     clear();
     // Initiate a new scan.
     musicLibraryReady = false;
-    musicLibrary->setUrl(base);
+    musicLibrary->setUrl(base, force);
 }
 
 void xPlayerMusicLibraryWidget::setSortBySize(bool enabled) {

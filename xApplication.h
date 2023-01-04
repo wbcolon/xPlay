@@ -49,8 +49,10 @@ private slots:
     void databaseUpdateError();
     /**
      * Set the music library if it has been updated.
+     *
+     * @param force force scanning of the library if true.
      */
-    void setMusicLibrary();
+    void setMusicLibrary(bool force=false);
     /**
      * Notify about an error while scanning the music library.
      */

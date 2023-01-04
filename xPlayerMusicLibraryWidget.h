@@ -134,8 +134,9 @@ public:
      * Set base directory for the music library and initiate a scan.
      *
      * @param base the new base directory as path.
+     * @param force force scanning of the library if true.
      */
-    void setUrl(const QUrl& base);
+    void setUrl(const QUrl& base, bool force=false);
     /**
      * Enable or disable the sorting by size mode.
      *

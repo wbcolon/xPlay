@@ -35,8 +35,9 @@ public:
      * The music library is scanned (@see scan).
      *
      * @param url directory or url that contains the music library.
+     * @param force force scanning of the library if true.
      */
-    void setUrl(const QUrl& base);
+    void setUrl(const QUrl& base, bool force=false);
     /**
      * Scan the entire music library.
      */

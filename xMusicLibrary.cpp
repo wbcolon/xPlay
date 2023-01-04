@@ -36,9 +36,9 @@ xMusicLibrary::~xMusicLibrary() {
     clear();
 }
 
-void xMusicLibrary::setUrl(const QUrl& base) {
-    // Do not update if no change
-    if (entryUrl == base) {
+void xMusicLibrary::setUrl(const QUrl& base, bool force) {
+    // Do not update if no change, and force not enabled.
+    if ((entryUrl == base) && (!force)) {
         return;
     }
     // Clear if new url is empty.
