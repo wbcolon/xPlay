@@ -46,9 +46,10 @@ directories. The scanning is so fast that there is no need for a database of sca
 therefore can be performed each time on startup. The music view is updated after this initial scan
 is complete. The files (tracks) within "artist/album" will only be scanned on demand and cached, if an
 artist and corresponding album have been selected. The music library scan continues in the background in
-order to fill the "artist/ablum" file (tracks) cache. The tracks itself will initially not be scanned or analyzed
+order to fill the "artist/album" file (tracks) cache. The tracks itself will initially not be scanned or analyzed
 in order to retrieve any media tags. They will only be analyzed if necessary. Until then only the file names are
-of interest.
+of interest. xPlay does support remote access to BluOS player libraries. The Player itself has to be fully configured
+and the folder structure for its library has to match the artist/album/track structure.
 
 *Note:* The initial scan takes only a few seconds for my setup (Raspberry Pi 4 as Samba server).
 
@@ -79,6 +80,11 @@ The volume changes are applied to the default PulseAudio sink, not to the xPlay 
 is muted then the PulseAudio sink and the application stream are both muted. The volume for the application stream
 is set to a 100 percent.
 
+### BluOS player
+
+BluOS does not support moving files within the playlist. Drag and drop within the queue is therefor disabled if a
+BluOS player library is used. The volume changes are applied to the BluOS player volume, not the PulseAudio sink.
+
 ## Usage
 
 xPlay has a simple and easy to use UI interface that provides the set on functionalities that I expect from a
@@ -100,6 +106,7 @@ xPlay has a music view, a movie view, a streaming view and a mobile sync view.
 ![Screenshot Music View (artistinfo)](screenshots/xplay_screenshot_music_view_08.png)
 ![Screenshot Music View (visualization)](screenshots/xplay_screenshot_music_view_09.png)
 ![Screenshot Music View (rename)](screenshots/xplay_screenshot_music_view_10.png)
+![Screenshot Music View (bluos)](screenshots/xplay_screenshot_music_view_11.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select)
@@ -118,12 +125,14 @@ playlists (including their entries).
 The database overlay (if activated) marks every artist, album and track with a star (*) if it has been played within the
 configured time period (see configuration dialog). For each track a tooltip is added that shows how many times this
 track has been played and the last time it was played. The overlay makes it easier to identify music that you have not
-listen too in some time or at all.
+listened too in some time or at all.
 
-The player itself displays the artist, album and track currently played. It includes a slider to seek within the
-currently played file. In addition, there is player control section with a *play/pause*, *stop*, *prev*, *next*
-and *clear queue* buttons and a volume dialer. If you double-click on an entry of the queue then the player jumps
-to this track. Right-clicking on a queue entry will remove this track from the queue.
+The player itself displays the artist, album and track currently played. Additional information such as sample rate, 
+bits per sample and bitrate are only displayed for local music libraries. BluOS does not provide access to this
+information. It includes a slider to seek within the currently played file. In addition, there is player control 
+section with a *play/pause*, *stop*, *prev*, *next* and *clear queue* buttons and a volume dialer. If you 
+double-click on an entry of the queue then the player jumps to this track. Right-clicking on a queue entry will 
+remove this track from the queue.
 
 The artist popup menu can be accessed through a context menu by a right-click on an entry in the artist list. The 
 menu entry *Link To Website* leads to the artist info which is a small simple web browser with minimal navigational 
@@ -155,7 +164,8 @@ A music visualization based on projectM is available and can be activated via th
 the artist info view is currently not activated. The visualization (when displayed) reverts to the artist, album and
 track view whenever the music player pauses or stops. A right-click on the visualization opens a popup menu that allows
 selecting a projectM preset. A double-click will display the name of the currently selected preset. A double-click on
-the player widget itself will toggle the music visualization.
+the player widget itself will toggle the music visualization. The music visualization is not supported for the
+BluOS player music library.
 
 #### Selectors and Filters
 
@@ -323,6 +333,8 @@ and the KDE 5.x breeze icons.
 * Qwt 6.x for Qt5 (http://qwt.sf.net)
 * SQLite3 - The Database Access Library (https://sqlite.org/)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
+* libcurl Library (https://curl.se/libcurl/)
+* PugiXML Library (https://pugixml.org/)
 * libVLC Library (https://wiki.videolan.org/LibVLC/)
 * libpulse Library (https://freedesktop.org/software/pulseaudio/doxygen)
 * projectM Library (https://github.com/projectM-visualizer/projectm)
