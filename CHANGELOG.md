@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## 0.14.0 - 2023-01-04
 
 - Add support for BluOS player libraries.
 - Add mobile library IO for mobile sync view.
