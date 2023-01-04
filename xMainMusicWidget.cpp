@@ -803,8 +803,9 @@ void xMainMusicWidget::currentState(xMusicPlayer::State state) {
 }
 
 void xMainMusicWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track,
-                                    int bitrate, int sampleRate, int bitsPerSample) {
+                                    int bitrate, int sampleRate, int bitsPerSample, const QString& quality) {
     Q_UNUSED(bitrate)
+    Q_UNUSED(quality)
     // Update queue
     currentQueueTrack(index);
     // Update database.

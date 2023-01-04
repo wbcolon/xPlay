@@ -184,7 +184,7 @@ void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
     // Update queue list.
     auto entryObject = std::get<2>(musicPlaylistEntries[currentIndex]);
     emit currentTrack(currentIndex, entryObject->getArtistName(), entryObject->getAlbumName(), entryObject->getTrackName(),
-                      entryObject->getBitrate(), entryObject->getSampleRate(), entryObject->getBitsPerSample());
+                      entryObject->getBitrate(), entryObject->getSampleRate(), entryObject->getBitsPerSample(), {});
 }
 
 void xMusicPlayer::dequeTrack(int index) {
@@ -581,7 +581,7 @@ void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {
         auto entryObject = std::get<2>(entry);
         emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
                           entryObject->getTrackName(), entryObject->getBitrate(),
-                          entryObject->getSampleRate(), entryObject->getBitsPerSample());
+                          entryObject->getSampleRate(), entryObject->getBitsPerSample(), {});
         // Save sample rate for music visualization scaling
         musicVisualizationSampleRate = entryObject->getSampleRate() / xMusicPlayer_MusicVisualizationSamplesFactor;
         // Use hack to determine the proper total length.
@@ -659,7 +659,7 @@ void xMusicPlayer::visualizationUpdate(const QMap<Phonon::AudioDataOutput::Chann
     }
 }
 
-void xMusicPlayer::playerStatus(const QString& path, qint64 position) {
+void xMusicPlayer::playerStatus(const QString& path, qint64 position, const QString& quality) {
     // Translate updates from the BluOS player.
     auto index = musicPlaylistRemote.indexOf(path);
     if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
@@ -671,7 +671,8 @@ void xMusicPlayer::playerStatus(const QString& path, qint64 position) {
             emit currentTrackLength(entryObject->getLength());
             emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
                               entryObject->getTrackName(), entryObject->getBitrate(),
-                              entryObject->getSampleRate(), entryObject->getBitsPerSample());
+                              entryObject->getSampleRate(), entryObject->getBitsPerSample(),
+                              quality);
         }
         // Update current position.
         musicCurrentPositionRemote = position;

@@ -18,6 +18,7 @@
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
+#include <QFileInfo>
 #include <QTabWidget>
 #include <QMouseEvent>
 #include <taglib/fileref.h>
@@ -77,9 +78,9 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt
     playerLayout->addWidget(albumName, 1, 1, 1, 4);
     playerLayout->addWidget(trackLabel, 2, 0);
     playerLayout->addWidget(trackName, 2, 1, 1, 4);
-    auto trackSampleRateLabel = new QLabel(tr("Sample rate"));
+    trackSampleRateLabel = new QLabel(this);
     trackSampleRateLabel->setAlignment(Qt::AlignRight);
-    auto trackBitrateLabel = new QLabel(tr("Bitrate"));
+    trackBitrateLabel = new QLabel(this);
     trackBitrateLabel->setAlignment(Qt::AlignRight);
     playerLayout->addWidget(trackSampleRateLabel, 0, 5);
     playerLayout->addWidget(trackSampleRate, 0, 6);
@@ -133,8 +134,10 @@ void xPlayerMusicWidget::clear() {
     artistName->clear();
     albumName->clear();
     trackName->clear();
+    trackSampleRateLabel->clear();
     trackSampleRate->clear();
     trackBitsPerSample->clear();
+    trackBitrateLabel->clear();
     trackBitrate->clear();
     sliderWidget->clear();
 }
@@ -147,25 +150,39 @@ void xPlayerMusicWidget::mouseDoubleClickEvent(QMouseEvent* event) {
 }
 
 void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track,
-                                      int bitrate, int sampleRate, int bitsPerSample) {
+                                      int bitrate, int sampleRate, int bitsPerSample, const QString& quality) {
     Q_UNUSED(index)
     // Display the current track information (without length)
     artistName->setText(artist);
     albumName->setText(album);
     trackName->setText(track);
-    // sample rate, bits per sample and bitrate may not be available for BluOS player tracks.
+    // BluOS player status does not contain sample rate, bits per sample, but contains a quality string.
     if ((sampleRate > 0) && (bitsPerSample > 0)) {
+        // Only display the sample rate if given.
+        trackSampleRateLabel->setText(tr("Sample rate"));
         trackSampleRate->setText(QString("%1Hz").arg(sampleRate));
         trackBitsPerSample->setText(QString("%1-bit").arg(bitsPerSample));
     } else {
-        trackSampleRate->setText("n/a");
-        trackBitsPerSample->setText("");
-
+        // The quality string can be either a bit/s value or quality type such as cd or hd.
+        trackSampleRateLabel->setText(tr("Quality"));
+        bool qualityIsBitrate = false;
+        auto qualityBitrate = quality.toInt(&qualityIsBitrate);
+        if (qualityIsBitrate) {
+            // Set bitrate if the quality string contains a bit/s value.
+            bitrate = qualityBitrate / 1000; // convert to kbit/s
+            trackSampleRate->setText(QFileInfo(track).suffix().toLower());
+        } else {
+            trackSampleRate->setText(quality.toLower());
+        }
+        trackBitsPerSample->clear();
     }
     if (bitrate > 0) {
+        // Only display bitrate if given.
+        trackBitrateLabel->setText(tr("Bitrate"));
         trackBitrate->setText(QString("%1 kbit/s").arg(bitrate));
     } else {
-        trackBitrate->setText("n/a");
+        trackBitrateLabel->clear();
+        trackBitrate->clear();
     }
 }
 

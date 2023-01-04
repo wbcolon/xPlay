@@ -86,9 +86,10 @@ signals:
      * @param track the name of the current track.
      * @param bitrate the bitrate in kb/sec.
      * @param sampleRate the sample rate in Hz.
+     * @param quality the quality as string.
      */
-    void currentTrack(int index, const QString& artist, const QString& album,
-                      const QString& track, int bitrate, int sampleRate, int bitsPerSample);
+    void currentTrack(int index, const QString& artist, const QString& album, const QString& track,
+                      int bitrate, int sampleRate, int bitsPerSample, const QString& quality);
     /**
      * Signal the amount played for the current track.
      *
@@ -284,8 +285,14 @@ private slots:
      * @param data the map of samples.
      */
     void visualizationUpdate(const QMap<Phonon::AudioDataOutput::Channel, QVector<qint16>>& data);
-
-    void playerStatus(const QString& path, qint64 position);
+    /**
+     * Handle the status of the BluOS player.
+     *
+     * @param path the path of the currently plqyed track.
+     * @param position the currently play portion of the song in ms.
+     * @param quality the quality of track as string.
+     */
+    void playerStatus(const QString& path, qint64 position, const QString& quality);
 
 private:
     /**

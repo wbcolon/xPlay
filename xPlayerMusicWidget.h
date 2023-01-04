@@ -59,9 +59,10 @@ private slots:
      * @param bitrate the bitrate in kb/sec.
      * @param sampleRate the sample rate in Hz.
      * @param bitsPerSample the number of bits per sample (mostly 16 of 24).
+     * @param quality the quality as string.
      */
-    void currentTrack(int index, const QString& artist, const QString& album,
-                      const QString& track, int bitrate, int sampleRate, int bitsPerSample);
+    void currentTrack(int index, const QString& artist, const QString& album, const QString& track,
+                      int bitrate, int sampleRate, int bitsPerSample, const QString& quality);
     /**
      * Update the player UI based on the player state.
      *
@@ -76,7 +77,9 @@ private:
     QLabel* artistName;
     QLabel* albumName;
     QLabel* trackName;
+    QLabel* trackSampleRateLabel;
     QLabel* trackSampleRate;
+    QLabel* trackBitrateLabel;
     QLabel* trackBitrate;
     QLabel* trackBitsPerSample;
     /**

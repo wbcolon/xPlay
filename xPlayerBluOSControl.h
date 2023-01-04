@@ -166,14 +166,9 @@ public:
 
 signals:
     void playerReIndexing(int noTracks);
-    void playerStatus(const QString& path, qint64 position);
+    void playerStatus(const QString& path, qint64 position, const QString& quality);
 
 private:
-    struct track {
-        QString name;
-        QString path;
-        qint64 length;
-    };
     /**
      * Constructor. Create network manager and connect signals.
      */

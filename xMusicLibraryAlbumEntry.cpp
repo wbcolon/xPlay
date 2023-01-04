@@ -119,7 +119,7 @@ bool xMusicLibraryAlbumEntry::isDirectoryEntryValid(const QUrl& dirEntry) {
     if (dirEntry.isLocalFile()) {
         QFileInfo dirPath(dirEntry.toLocalFile());
         if ((dirPath.isFile()) && (dirPath.exists())) {
-            auto extension = "." + dirPath.completeSuffix();
+            auto extension = "." + dirPath.suffix();
             if (validExtensions.contains(extension, Qt::CaseInsensitive)) {
                 return true;
             }

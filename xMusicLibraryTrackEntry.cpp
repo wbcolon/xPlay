@@ -172,7 +172,7 @@ void xMusicLibraryTrackEntry::scanTags() const {
     // Most files do only support 16 bits per sample.
     trackBitsPerSample = 16;
     try {
-        auto trackPathExt = QFileInfo(entryUrl.toLocalFile()).completeSuffix();
+        auto trackPathExt = QFileInfo(entryUrl.toLocalFile()).suffix();
         if (trackPathExt.compare("flac", Qt::CaseInsensitive) == 0) {
             auto* currentFlacProperties = dynamic_cast<TagLib::FLAC::Properties*>(currentTrackProperties);
             trackBitsPerSample = currentFlacProperties->bitsPerSample();

@@ -279,9 +279,9 @@ void xPlayerBluOSControls::parsePlayerStatus(const QString &commandResult) {
     pugi::xml_parse_result result = bluOSStatusResponse.load_string(commandResult.toStdString().c_str());
     if (result) {
         auto status = bluOSStatusResponse.child("status");
-        qDebug() << "STATUS: " << status.child("fn").child_value() << "," << status.child("secs").child_value();
-                 emit playerStatus(status.child("fn").child_value(),
-                          QString::fromStdString(status.child("secs").child_value()).toInt()*1000);
+        emit playerStatus(status.child("fn").child_value(),
+                          QString::fromStdString(status.child("secs").child_value()).toInt()*1000,
+                          status.child("quality").child_value());
     } else {
         qCritical() << "Unable to parse result for state: " << result.description();
     }

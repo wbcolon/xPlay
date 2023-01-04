@@ -365,9 +365,10 @@ private slots:
      * @param track the name of the current track.
      * @param bitrate the bitrate in kb/sec.
      * @param sampleRate the sample rate in Hz.
+     * @param quality the quality as string.
      */
     void currentTrack(int index, const QString& artist, const QString& album, const QString& track,
-                      int bitrate, int sampleRate, int bitsPerSample);
+                      int bitrate, int sampleRate, int bitsPerSample, const QString& quality);
     /**
      * Select the current track in the playlist (queue).
      *
