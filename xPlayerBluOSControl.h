@@ -17,6 +17,7 @@
 #include <QTimer>
 #include <QMutex>
 #include <QUrl>
+#include <QRegularExpression>
 
 #include <pugixml.hpp>
 #include <curl/curl.h>
@@ -163,6 +164,13 @@ public:
      * @return vector of tuples of url, track name, length and path.
      */
     std::vector<std::tuple<QUrl,QString,qint64,QString>> getTracks(const QString& artist, const QString& album);
+    /**
+     * Return the info for the given track ID.
+     *
+     * @param path the path to the track on the BluOS player as string.
+     * @return a tuple of sample rate and bits per sample.
+     */
+    std::tuple<int, int> getTrackInfo(const QString& path);
 
 signals:
     void playerReIndexing(int noTracks);
@@ -220,6 +228,14 @@ private:
      */
     bool parseShuffle(const QString& commandResult);
     /**
+     * Parse the result for the playlist query.
+     *
+     * @param commandResult the result of the query as string.
+     * @param path the path of the track to be found.
+     * @return the song id as integer.
+     */
+    int parsePlaylistTrackId(const QString& commandResult, const QString& path);
+    /**
      * Parse the result for indexing of the status query.
      *
      * @param commandResult the result of the query as string.
@@ -241,6 +257,15 @@ private:
      */
     std::vector<std::tuple<QString,qint64,QString>> parseTracks(const QString& commandResult);
     /**
+     * Parse the result of the track info query.
+     *
+     * Note: the result is HTTP rather than XML.
+     *
+     * @param commandResult the result of the query as string.
+     * @return a tuple of bitrate and bits per sample.
+     */
+    std::tuple<int,int> parseTrackInfo(const QString& commandResult);
+    /**
      * Parse the result of a playlist query.
      *
      * @param commandResult the result of the query as string.
@@ -261,6 +286,7 @@ private:
     bool bluOSReIndexing;
     CURL* bluOSRequests;
     pugi::xml_document bluOSResponse;
+    QRegularExpression* bluOSTrackInfoRegExpr;
     static xPlayerBluOSControls* bluOSControls;
     QMutex bluOSMutex;
     QTimer* bluOSStatus;

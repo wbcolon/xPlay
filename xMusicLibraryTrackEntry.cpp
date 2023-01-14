@@ -16,6 +16,7 @@
 #include "xMusicLibraryAlbumEntry.h"
 #include "xMusicLibraryArtistEntry.h"
 #include "xPlayerConfiguration.h"
+#include "xPlayerBluOSControl.h"
 
 #include <QRegularExpression>
 #include <QProcess>
@@ -90,7 +91,10 @@ std::uintmax_t xMusicLibraryTrackEntry::getFileSize() const {
 }
 
 qint64 xMusicLibraryTrackEntry::getLength() const {
-    scanTags();
+    // Remote tracks include the length.
+    if (trackLength <= 0) {
+        scanTags();
+    }
     return trackLength;
 }
 
@@ -110,7 +114,7 @@ int xMusicLibraryTrackEntry::getBitrate() const {
 }
 
 bool xMusicLibraryTrackEntry::isScanned() const {
-    return (trackLength > 0);
+    return (trackBitsPerSample > 0);
 }
 
 void xMusicLibraryTrackEntry::scan() {
@@ -159,35 +163,42 @@ void xMusicLibraryTrackEntry::updateTags() {
 void xMusicLibraryTrackEntry::scanTags() const {
     // Scanning for tags only on demand if corresponding properties are accessed. Therefor const and mutable.
     // Check if we have a file defined.
-    if (isScanned() || (!entryUrl.isLocalFile())) {
+    if (isScanned()) {
         return;
     }
-    // Use taglib to determine the sample rate, bitrate, bits per sample and length.
-    TagLib::FileRef currentTrack(entryUrl.toLocalFile().toStdString().c_str(), true, TagLib::AudioProperties::Fast);
-    TagLib::AudioProperties* currentTrackProperties = currentTrack.audioProperties();
-    if (currentTrackProperties == nullptr) {
-        qCritical() << "Unable to get audio proprties.";
-        return;
-    }
-    // Most files do only support 16 bits per sample.
-    trackBitsPerSample = 16;
-    try {
-        auto trackPathExt = QFileInfo(entryUrl.toLocalFile()).suffix();
-        if (trackPathExt.compare("flac", Qt::CaseInsensitive) == 0) {
-            auto* currentFlacProperties = dynamic_cast<TagLib::FLAC::Properties*>(currentTrackProperties);
-            trackBitsPerSample = currentFlacProperties->bitsPerSample();
-        } else if (trackPathExt.compare("wv", Qt::CaseInsensitive) == 0) {
-            auto* currentWvProperties = dynamic_cast<TagLib::WavPack::Properties*>(currentTrackProperties);
-            trackBitsPerSample = currentWvProperties->bitsPerSample();
+    if (entryUrl.isLocalFile()) {
+        // Use taglib to determine the sample rate, bitrate, bits per sample and length.
+        TagLib::FileRef currentTrack(entryUrl.toLocalFile().toStdString().c_str(), true, TagLib::AudioProperties::Fast);
+        TagLib::AudioProperties* currentTrackProperties = currentTrack.audioProperties();
+        if (currentTrackProperties == nullptr) {
+            qCritical() << "Unable to get audio proprties.";
+            return;
         }
-    } catch(const std::bad_cast& error) {
-        // Ignore error.
-        qCritical() << "Unable to scan properties for: "
-                    << entryUrl.toLocalFile() << ", error: " << error.what();
+        // Most files do only support 16 bits per sample.
+        trackBitsPerSample = 16;
+        try {
+            auto trackPathExt = QFileInfo(entryUrl.toLocalFile()).suffix();
+            if (trackPathExt.compare("flac", Qt::CaseInsensitive) == 0) {
+                auto* currentFlacProperties = dynamic_cast<TagLib::FLAC::Properties*>(currentTrackProperties);
+                trackBitsPerSample = currentFlacProperties->bitsPerSample();
+            } else if (trackPathExt.compare("wv", Qt::CaseInsensitive) == 0) {
+                auto* currentWvProperties = dynamic_cast<TagLib::WavPack::Properties*>(currentTrackProperties);
+                trackBitsPerSample = currentWvProperties->bitsPerSample();
+            }
+        } catch(const std::bad_cast& error) {
+            // Ignore error.
+            qCritical() << "Unable to scan properties for: "
+                        << entryUrl.toLocalFile() << ", error: " << error.what();
+        }
+        trackBitrate = currentTrackProperties->bitrate();
+        trackSampleRate = currentTrackProperties->sampleRate();
+        trackLength = currentTrackProperties->lengthInMilliseconds();
+    } else {
+        auto trackInfo = xPlayerBluOSControls::controls()->getTrackInfo(trackPath);
+        trackSampleRate = std::get<0>(trackInfo);
+        trackBitsPerSample = std::get<1>(trackInfo);
+        qDebug() << "SAMPLE: " << trackPath << " : " << trackSampleRate  << "," << trackBitsPerSample;
     }
-    trackBitrate = currentTrackProperties->bitrate();
-    trackSampleRate = currentTrackProperties->sampleRate();
-    trackLength = currentTrackProperties->lengthInMilliseconds();
 }
 
 bool xMusicLibraryTrackEntry::equal(xMusicLibraryTrackEntry* track, bool checkFileSize) const {

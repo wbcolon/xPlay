@@ -1,6 +1,12 @@
 # Changelog
 
 
+## Unreleased
+
+- Disable repeat for BluOS player libraries.
+- Extract partial track info for BluOS player libraries.
+
+
 ## 0.14.0 - 2023-01-04
 
 - Add support for BluOS player libraries.

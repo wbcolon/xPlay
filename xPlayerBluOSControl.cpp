@@ -36,6 +36,7 @@ xPlayerBluOSControls::xPlayerBluOSControls():
             parsePlayerStatus(sendCommand(QUrl(bluOSUrl+"/Status")));
         }
     });
+    bluOSTrackInfoRegExpr = new QRegularExpression("sample.*rate.*>(?<samplerate>\\d+).*\n.*sample.*size.*>(?<bitspersample>\\d+)");
 }
 
 xPlayerBluOSControls::~xPlayerBluOSControls() {
@@ -43,6 +44,7 @@ xPlayerBluOSControls::~xPlayerBluOSControls() {
     if (bluOSStatus) {
         bluOSStatus->stop();
     }
+    delete bluOSTrackInfoRegExpr;
 }
 
 xPlayerBluOSControls* xPlayerBluOSControls::controls() {
@@ -178,6 +180,12 @@ std::vector<std::tuple<QUrl,QString,qint64,QString>> xPlayerBluOSControls::getTr
     return tracks;
 }
 
+std::tuple<int,int> xPlayerBluOSControls::getTrackInfo(const QString& path) {
+    auto trackId = parsePlaylistTrackId(sendCommand(QUrl(bluOSUrl+"/Playlist")), path);
+    auto trackInfoPath = bluOSUrl + QString("/Info?service=LocalMusic&category=technical&songid=%1&service=library").arg(trackId);
+    return parseTrackInfo(sendCommand(trackInfoPath));
+}
+
 // Helper function for sendCommand. Callback that stores the result into a string.
 static size_t CurlWriteMemoryCallback(void* contents, size_t mSize, size_t nMembers, void* userPointer) {
   auto response = static_cast<QString*>(userPointer);
@@ -260,6 +268,21 @@ bool xPlayerBluOSControls::parseShuffle(const QString& commandResult) {
     return false;
 }
 
+int xPlayerBluOSControls::parsePlaylistTrackId(const QString &commandResult, const QString& path) {
+    pugi::xml_parse_result result = bluOSResponse.load_string(commandResult.toStdString().c_str());
+    if (result) {
+        // Parse through all elements. Find the track ID.
+        for (auto song : bluOSResponse.child("playlist").children()) {
+            if (path == song.child("fn").child_value()) {
+                return QString(song.attribute("songid").value()).toInt();
+            }
+        }
+    } else {
+        qCritical() << "Unable to parse result for playlist: " << result.description();
+    }
+    return -1;
+}
+
 int xPlayerBluOSControls::parseIndexing(const QString &commandResult) {
     pugi::xml_parse_result result = bluOSResponse.load_string(commandResult.toStdString().c_str());
     if (result) {
@@ -317,6 +340,17 @@ std::vector<std::tuple<QString,qint64,QString>> xPlayerBluOSControls::parseTrack
     return tracks;
 }
 
+std::tuple<int,int> xPlayerBluOSControls::parseTrackInfo(const QString& commandResult) {
+    // The result is a mini HTTP page. Use simple regular expression for parsing.
+    QRegularExpressionMatch match;
+    match = bluOSTrackInfoRegExpr->match(commandResult.toLower());
+    if (match.hasMatch()) {
+        return std::make_tuple(match.captured("samplerate").toInt(), match.captured("bitspersample").toInt());
+    } else {
+        return std::make_tuple(-1, -1);
+    }
+}
+
 std::vector<QString> xPlayerBluOSControls::parsePlaylist(const QString& commandResult) {
     std::vector<QString> queue;
     pugi::xml_parse_result result = bluOSResponse.load_string(commandResult.toStdString().c_str());
@@ -335,6 +369,8 @@ void xPlayerBluOSControls::connect(const QUrl& url) {
     bluOSUrl = url.toEncoded();
     bluOSBasePath = parseBasePath(sendCommand(QUrl(bluOSUrl+"/Folders?&service=LocalMusic")));
     qDebug() << "xPlayerBluOSControls::connect: " << bluOSUrl << "," << bluOSBasePath;
+    // Disable repeat of the queue.
+    sendCommand(QUrl(bluOSUrl+"/Repeat?&state=2"));
 }
 
 void xPlayerBluOSControls::disconnect() {

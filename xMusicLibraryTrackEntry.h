@@ -116,6 +116,11 @@ public:
      */
     [[nodiscard]] int getBitrate() const;
     /**
+     * Update the unique ID for the given track.
+     * @param id the new ID.
+     */
+    void updateTrackId(int id);
+    /**
      * Compare music files based on artist, album, track name and size.
      *
      * @param file the other music file to compare to.
