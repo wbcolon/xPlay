@@ -465,6 +465,8 @@ void xApplication::createMenus() {
     musicViewUseBluOSPlayer->setChecked(xPlayerConfiguration::configuration()->useMusicLibraryBluOS());
     connect(musicViewUseBluOSPlayer, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->useMusicLibraryBluOS(checked);
+        // Disable menu entry if BluOS is enabled.
+        musicViewVisualization->setEnabled(!checked);
     });
     auto musicViewReIndexBluOSPlayer = new QAction("ReIndex BluOS Player", this);
     connect(musicViewReIndexBluOSPlayer, &QAction::triggered, this, &xApplication::reIndexMusicLibraryBluOS);
@@ -486,6 +488,7 @@ void xApplication::createMenus() {
     musicViewVisualization->setCheckable(true);
     musicViewVisualization->setShortcut(QKeySequence("Ctrl+Alt+V"));
     musicViewVisualization->setChecked(xPlayerConfiguration::configuration()->getMusicViewVisualization());
+    musicViewVisualization->setDisabled(xPlayerConfiguration::configuration()->useMusicLibraryBluOS());
     connect(musicViewVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
     });

@@ -114,6 +114,10 @@ void xPlayerConfiguration::setMusicLibraryBluOS(const QString& url) {
 
 void xPlayerConfiguration::useMusicLibraryBluOS(bool enabled) {
     if (enabled != useMusicLibraryBluOS()) {
+        // Disable visualization if we enable the BluOS player library.
+        if (enabled) {
+            setMusicViewVisualization(false);
+        }
         settings->setValue(xPlayerConfiguration_UseMusicLibraryBluOS, enabled);
         settings->sync();
         emit updatedUseMusicLibraryBluOS();
@@ -177,6 +181,11 @@ void xPlayerConfiguration::setMusicViewFilters(bool visible) {
 }
 
 void xPlayerConfiguration::setMusicViewVisualization(bool visible) {
+    // Visualization is disabled for BluOS player libraries.
+    if (useMusicLibraryBluOS()) {
+        emit updatedMusicViewVisualization();
+        return;
+    }
     if (visible != getMusicViewVisualization()) {
         settings->setValue(xPlayerConfiguration_MusicViewVisualization, visible);
         settings->sync();

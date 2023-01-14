@@ -3,8 +3,9 @@
 
 ## Unreleased
 
-- Disable repeat for BluOS player libraries.
+- Disable repeat queue for BluOS player libraries.
 - Extract partial track info for BluOS player libraries.
+- Disable music visualization for BluOS player libraries (missing music data feed).
 
 
 ## 0.14.0 - 2023-01-04
