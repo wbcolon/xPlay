@@ -55,6 +55,7 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayer::currentTrackSource);
     connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayer::stateChanged);
     connect(musicPlayer, &Phonon::MediaObject::aboutToFinish, this, &xMusicPlayer::aboutToFinish);
+    connect(musicLibrary, &xMusicLibrary::scanningInitialized, this, &xMusicPlayer::reInitialize);
     // Connect status update from BluOS player.
     connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStatus, this, &xMusicPlayer::playerStatus);
 
@@ -334,6 +335,14 @@ void xMusicPlayer::saveQueueToPlaylist(const QString& name) {
     }
     auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, databasePlaylistEntries);
     emit playlistState(name, saved);
+}
+
+void xMusicPlayer::reInitialize() {
+    if (musicLibrary->isLocal()) {
+        emit currentVolume(xPlayerPulseAudioControls::controls()->getVolume());
+    } else {
+        emit currentVolume(xPlayerBluOSControls::controls()->getVolume());
+    }
 }
 
 void xMusicPlayer::playPause() {

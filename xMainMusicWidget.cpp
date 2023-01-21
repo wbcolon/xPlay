@@ -305,7 +305,7 @@ void xMainMusicWidget::clear() {
 }
 
 void xMainMusicWidget::scanningProgress(int percent) {
-    if (percent < 100) {
+    if ((percent > 0) && (percent < 100)) {
         artistBox->setTitle(tr("Artists")+QString(" - scanning %1%").arg(percent));
     } else {
         artistBox->setTitle(tr("Artists"));

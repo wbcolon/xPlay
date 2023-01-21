@@ -77,6 +77,10 @@ signals:
      */
     void scanningProgress(int percent);
     /**
+     * Signal that the scanning process is started.
+     */
+    void scanningInitialized();
+    /**
      * Signal that the complete scanning process is finished.
      */
     void scanningFinished();

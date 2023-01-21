@@ -68,7 +68,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     auto controlTab = new QTabWidget(sideBarWidget);
     controlTab->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     auto controlVolumeTab = new QWidget(controlTab);
-    auto volumeControl = new xPlayerVolumeWidget(true, controlVolumeTab);
+    auto volumeControl = new xPlayerVolumeWidget(controlVolumeTab);
     volumeControl->setFixedWidth(xPlayer::ControlButtonWidgetWidth);
     // Control tab layout.
     auto controlVolumeLayout = new xPlayerLayout(controlVolumeTab);

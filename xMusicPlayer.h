@@ -293,6 +293,10 @@ private slots:
      * @param quality the quality of track as string.
      */
     void playerStatus(const QString& path, qint64 position, const QString& quality);
+    /**
+     * Possibly reinitialize the music player when we switch music libraries.
+     */
+    void reInitialize();
 
 private:
     /**

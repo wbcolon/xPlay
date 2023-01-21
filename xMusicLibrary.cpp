@@ -66,7 +66,7 @@ void xMusicLibrary::setUrl(const QUrl& base, bool force) {
             scan();
         }
     }
-    musicLibraryScanLock.unlock();
+    emit scanningInitialized();
 }
 
 [[nodiscard]] std::vector<xMusicLibraryArtistEntry*> xMusicLibrary::getArtists() {
@@ -370,6 +370,8 @@ void xMusicLibrary::scanThread() {
     // Clear vector and map
     musicLibraryArtists.clear();
     musicLibraryArtistsMap.clear();
+    // Initialize scanning progress.
+    emit scanningProgress(0);
     // Fill vector and map
     for (const auto& artistEntry : artistEntries) {
         qDebug() << "scanThread: artistUrl: " << std::get<0>(artistEntry);
