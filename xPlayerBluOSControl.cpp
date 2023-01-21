@@ -24,17 +24,15 @@
 xPlayerBluOSControls* xPlayerBluOSControls::bluOSControls = nullptr;
 
 xPlayerBluOSControls::xPlayerBluOSControls():
-        QObject(),
-        bluOSReIndexing(false),
-        bluOSStatus(nullptr) {
+        QObject() {
     bluOSRequests = curl_easy_init();
     bluOSStatus = new QTimer(this);
+    bluOSReIndexing = new QTimer(this);
     QObject::connect(bluOSStatus, &QTimer::timeout, [=]() {
-        if (bluOSReIndexing) {
-            parseIndexing(sendCommand(QUrl(bluOSUrl+"/Status")));
-        } else {
-            parsePlayerStatus(sendCommand(QUrl(bluOSUrl+"/Status")));
-        }
+        parsePlayerStatus(sendCommand(QUrl(bluOSUrl+"/Status")));
+    });
+    QObject::connect(bluOSReIndexing, &QTimer::timeout, [=]() {
+        parseIndexing(sendCommand(QUrl(bluOSUrl+"/Status")));
     });
     bluOSTrackInfoRegExpr = new QRegularExpression("sample.*rate.*>(?<samplerate>\\d+).*\n.*sample.*size.*>(?<bitspersample>\\d+)");
 }
@@ -59,10 +57,9 @@ void xPlayerBluOSControls::reIndex() {
     // Stop the player.
     stop();
     // Force the reindexing.
-    bluOSReIndexing = true;
     sendCommand(QUrl(bluOSUrl+"/Reindex"));
-    if (!bluOSStatus->isActive()) {
-        bluOSStatus->start(1000);
+    if (!bluOSReIndexing->isActive()) {
+        bluOSReIndexing->start(2000);
     }
 }
 
@@ -124,6 +121,7 @@ void xPlayerBluOSControls::clearQueue() {
 
 void xPlayerBluOSControls::setVolume(int vol) {
     sendCommand(QUrl(bluOSUrl+QString("/Volume?level=%1").arg(vol)));
+    emit volume(vol);
 }
 
 int xPlayerBluOSControls::getVolume() {
@@ -132,6 +130,7 @@ int xPlayerBluOSControls::getVolume() {
 
 void xPlayerBluOSControls::setMuted(bool mute) {
     sendCommand(QUrl(bluOSUrl+QString("/Volume?mute=%1").arg(static_cast<int>(mute))));
+    emit muted(mute);
 }
 
 bool xPlayerBluOSControls::isMuted() {
@@ -289,8 +288,7 @@ int xPlayerBluOSControls::parseIndexing(const QString &commandResult) {
         auto noTracks = QString::fromStdString(bluOSResponse.child("status").child("indexing").child_value()).toInt();
         emit playerReIndexing(noTracks);
         if (!noTracks) {
-            bluOSStatus->stop();
-            bluOSReIndexing = false;
+            bluOSReIndexing->stop();
         }
     } else {
         qCritical() << "Unable to parse result for state(shuffle): " << result.description();

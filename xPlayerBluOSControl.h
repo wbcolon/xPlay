@@ -173,7 +173,31 @@ public:
     std::tuple<int, int> getTrackInfo(const QString& path);
 
 signals:
+    /**
+     * Signal emitted if volume is updated by a setVolume command.
+     *
+     * @param vol the new volume as integer.
+     */
+    void volume(int vol);
+    /**
+     * Signal emitted if the mute state is updated by a setMuted command.
+     *
+     * @param m the new mute state as boolean.
+     */
+    void muted(bool m);
+    /**
+     * Signal emitted if reindexing the BluOS player library.
+     *
+     * @param noTracks number of tracks currently scanned.
+     */
     void playerReIndexing(int noTracks);
+    /**
+     * Signal the current BlusOS player status.
+     *
+     * @param path path of the currently played track.
+     * @param position the position in ms within the song.
+     * @param quality the track quality as string.
+     */
     void playerStatus(const QString& path, qint64 position, const QString& quality);
 
 private:
@@ -283,13 +307,13 @@ private:
 
     QString bluOSUrl;
     QString bluOSBasePath;
-    bool bluOSReIndexing;
     CURL* bluOSRequests;
     pugi::xml_document bluOSResponse;
     QRegularExpression* bluOSTrackInfoRegExpr;
     static xPlayerBluOSControls* bluOSControls;
     QMutex bluOSMutex;
     QTimer* bluOSStatus;
+    QTimer* bluOSReIndexing;
     pugi::xml_document bluOSStatusResponse;
 };
 
