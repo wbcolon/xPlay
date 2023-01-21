@@ -313,7 +313,7 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     auto rotelLayout = new xPlayerLayout(this);
     rotelLayout->setSpacing(xPlayerLayout::NoSpace);
     // Create a volume knob.
-    rotelVolume = new xPlayerVolumeWidget(false, this);
+    rotelVolume = new xPlayerVolumeWidget(this);
     // Create rotel control buttons widget.
     auto rotelControlButton = new QWidget(this);
     auto rotelControlButtonLayout = new xPlayerLayout();

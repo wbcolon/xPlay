@@ -83,7 +83,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     controlBoxLayout->addWidget(chapterLabel, 0, 7, 1, 2);
     controlBoxLayout->addWidget(chapterBox, 1, 7, 1, 2);
     // Volume widget.
-    auto volumeWidget = new xPlayerVolumeWidget(true, controlTabPlayer);
+    auto volumeWidget = new xPlayerVolumeWidget(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, moviePlayer, &xMoviePlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, moviePlayer, &xMoviePlayer::setMuted);

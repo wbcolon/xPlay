@@ -61,7 +61,7 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt
     controlTab->setTabEnabled(1, xPlayerConfiguration::configuration()->rotelWidget());
     // Create control buttons.
     controlButtonWidget = new xPlayerControlButtonWidget(xPlayerControlButtonWidget::MusicPlayerMode, controlTabPlayer);
-    volumeWidget = new xPlayerVolumeWidget(true, controlTabPlayer);
+    volumeWidget = new xPlayerVolumeWidget(controlTabPlayer);
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, musicPlayer, &xMusicPlayer::setMuted);

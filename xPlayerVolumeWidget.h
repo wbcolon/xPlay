@@ -21,7 +21,7 @@ class xPlayerVolumeWidget:public QWidget {
     Q_OBJECT
 
 public:
-    explicit xPlayerVolumeWidget(bool pulseAudioMode, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    explicit xPlayerVolumeWidget(QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
     ~xPlayerVolumeWidget() override = default;
     /**
       * Retrieve the current volume of displayed in the UI.

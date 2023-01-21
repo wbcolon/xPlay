@@ -22,7 +22,7 @@
 #include <cmath>
 
 
-xPlayerVolumeWidget::xPlayerVolumeWidget(bool pulseAudioMode, QWidget *parent, Qt::WindowFlags flags):
+xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         currentVolume(0),
         currentMuted(false) {
@@ -64,15 +64,6 @@ xPlayerVolumeWidget::xPlayerVolumeWidget(bool pulseAudioMode, QWidget *parent, Q
             setVolume(currentVolume+1);
         }
     } );
-    if (pulseAudioMode) {
-        // Connect to pulse audio controls.
-        connect(xPlayerPulseAudioControls::controls(), &xPlayerPulseAudioControls::volume, [=](int vol) {
-            setVolume(vol);
-        });
-        connect(xPlayerPulseAudioControls::controls(), &xPlayerPulseAudioControls::muted, [=](bool muted) {
-            setMuted(muted);
-        });
-    }
     // Set size.
     setFixedWidth(xPlayer::VolumeWidgetWidth);
 }
