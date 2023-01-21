@@ -1,11 +1,14 @@
 # Changelog
 
 
-## Unreleased
+## 0.14.1 - 2023-01-21
 
-- Disable repeat queue for BluOS player libraries.
-- Extract partial track info for BluOS player libraries.
-- Disable music visualization for BluOS player libraries (missing music data feed).
+- Restore music player volume when switching between local and BluOS player library.
+- Use separate timer for BluOS player library reindexing.
+- Disable repeat queue for BluOS player library.
+- Extract partial track info for BluOS player library.
+- Disable music visualization for BluOS player library (missing music data feed).
+- Fix scanning progress when interrupting a full scan by switching to BluOS player library.
 
 
 ## 0.14.0 - 2023-01-04
