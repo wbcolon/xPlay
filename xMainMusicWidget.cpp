@@ -813,13 +813,13 @@ void xMainMusicWidget::currentState(xMusicPlayer::State state) {
     }
     switch (state) {
         case xMusicPlayer::PlayingState: {
-            currentTrack->setIcon(":/images/xplay-play.svg");
+            currentTrack->setIcon(":/images/xplay-play.png");
         } break;
         case xMusicPlayer::PauseState: {
-            currentTrack->setIcon(":/images/xplay-pause.svg");
+            currentTrack->setIcon(":/images/xplay-pause.png");
         } break;
         case xMusicPlayer::StopState: {
-            currentTrack->setIcon(":/images/xplay-stop.svg");
+            currentTrack->setIcon(":/images/xplay-stop.png");
         } break;
         default: {
             currentTrack->removeIcon();
@@ -866,7 +866,7 @@ void xMainMusicWidget::currentQueueTrack(int index) {
     // Set play icon only for currently played one.
     auto playedItem = queueList->listItem(playedTrack);
     if (playedItem) {
-        playedItem->setIcon(":/images/xplay-play.svg");
+        playedItem->setIcon(":/images/xplay-play.png");
     }
     queueList->setCurrentListIndex(index);
 }
@@ -1104,7 +1104,7 @@ void xMainMusicWidget::updatePlayedArtists() {
         for (const auto& playedArtist : playedArtists) {
             // Update icon and tooltip if movie already played.
             if (playedArtist == artist) {
-                artistItem->setIcon(":images/xplay-star.svg");
+                artistItem->setIcon(":images/xplay-star.png");
                 break;
             }
         }
@@ -1130,7 +1130,7 @@ void xMainMusicWidget::updatePlayedAlbums() {
         for (const auto& playedAlbum : playedAlbums) {
             // Update icon and tooltip if movie already played.
             if (playedAlbum == album) {
-                albumItem->setIcon(":images/xplay-star.svg");
+                albumItem->setIcon(":images/xplay-star.png");
                 break;
             }
         }
@@ -1157,17 +1157,17 @@ void xMainMusicWidget::updatePlayedTracks() {
         auto trackItem = trackList->listItem(i);
         auto track = trackItem->text();
         if (std::get<0>(*playedMusicTrack) == track) {
-            trackItem->setIcon(":images/xplay-star.svg");
+            trackItem->setIcon(":images/xplay-star.png");
             // Adjust tooltip to play count "once" vs "x times".
             auto playCount = std::get<1>(*playedMusicTrack);
             if (playCount > 1) {
                 trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
                         arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(
-                        Qt::DefaultLocaleLongDate)));
+                        Qt::TextDate)));
             } else {
                 trackItem->addToolTip(QString(tr("played once, last time on %1")).
                         arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(
-                        Qt::DefaultLocaleLongDate)));
+                        Qt::TextDate)));
             }
             // Move to the next element in the list.
             ++playedMusicTrack;
@@ -1189,7 +1189,7 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     // Update the artists.
     auto artistPlayedItems = artistList->findListItems(artist);
     for (auto& artistPlayedItem : artistPlayedItems) {
-        artistPlayedItem->setIcon(":images/xplay-star.svg");
+        artistPlayedItem->setIcon(":images/xplay-star.png");
     }
     // If no artist selected or the artist does not match the selected
     // artists then we do not need to update the albums.
@@ -1200,7 +1200,7 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     // Update the albums.
     auto albumPlayedItems = albumList->findListItems(album);
     for (auto& albumPlayedItem : albumPlayedItems) {
-        albumPlayedItem->setIcon(":images/xplay-star.svg");
+        albumPlayedItem->setIcon(":images/xplay-star.png");
     }
     // If no album selected or the album does not match the selected
     // album then we do not need to update the tracks.
@@ -1209,13 +1209,13 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     }
     auto trackPlayedItems = trackList->findListItems(track);
     for (auto& trackPlayedItem : trackPlayedItems) {
-        trackPlayedItem->setIcon(":images/xplay-star.svg");
+        trackPlayedItem->setIcon(":images/xplay-star.png");
         if (playCount > 1) {
             trackPlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
         } else {
             trackPlayedItem->addToolTip(QString(tr("played once, last time on %1")).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
         }
     }
 }

@@ -39,7 +39,7 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(const QString& text, QTreeWidget* p
         itemMovieEntry(nullptr) {
     Q_ASSERT(parent != nullptr);
     setText(0, text);
-    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+    itemTextWidth = parent->fontMetrics().size(Qt::TextSingleLine, itemText+"...").width();
 }
 
 xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryArtistEntry* artist, QTreeWidget* parent):
@@ -55,7 +55,7 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryArtistEntry* artist, Q
     Q_ASSERT(artist != nullptr);
     itemText = itemArtistEntry->getArtistName();
     setText(0, itemText);
-    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+    itemTextWidth = parent->fontMetrics().size(Qt::TextSingleLine, itemText+"...").width();
 }
 
 xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryAlbumEntry* album, QTreeWidget* parent):
@@ -71,7 +71,7 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryAlbumEntry* album, QTr
     Q_ASSERT(album != nullptr);
     itemText = itemAlbumEntry->getAlbumName();
     setText(0, itemText);
-    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+    itemTextWidth = parent->fontMetrics().size(Qt::TextSingleLine, itemText+"...").width();
 }
 
 xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryTrackEntry* track, QTreeWidget* parent):
@@ -95,7 +95,7 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryTrackEntry* track, QTr
         updateTimeDisplay();
     }
     setText(0, itemText);
-    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+    itemTextWidth = parent->fontMetrics().size(Qt::TextSingleLine, itemText+"...").width();
 }
 
 xPlayerListWidgetItem::xPlayerListWidgetItem(xMovieLibraryEntry* movie, QTreeWidget* parent):
@@ -119,7 +119,7 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(xMovieLibraryEntry* movie, QTreeWid
         updateTimeDisplay();
     }
     setText(0, itemText);
-    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+    itemTextWidth = parent->fontMetrics().size(Qt::TextSingleLine, itemText+"...").width();
 }
 
 void xPlayerListWidgetItem::setIcon(const QString& fileName) {
@@ -225,7 +225,7 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
     header()->setSectionResizeMode(0, QHeaderView::Stretch);
     if (displayTime) {
         setColumnCount(2);
-        setColumnWidth(1, fontMetrics().width("99:99:99"));
+        setColumnWidth(1, fontMetrics().size(Qt::TextSingleLine, "99:99:99").width());
     } else {
         setColumnCount(1);
     }

@@ -1,22 +1,23 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-    <file>images/xplay-play.svg</file>
-    <file>images/xplay-pause.svg</file>
-    <file>images/xplay-next.svg</file>
-    <file>images/xplay-previous.svg</file>
-    <file>images/xplay-stop.svg</file>
-    <file>images/xplay-eject.svg</file>
-    <file>images/xplay-forward.svg</file>
-    <file>images/xplay-rewind.svg</file>
-    <file>images/xplay-home.svg</file>
-    <file>images/xplay-refresh.svg</file>
-    <file>images/xplay-clear-data.svg</file>
-    <file>images/xplay-left-arrow.svg</file>
-    <file>images/xplay-right-arrow.svg</file>
-    <file>images/xplay-fullwindow.svg</file>
-    <file>images/xplay-star.svg</file>
-    <file>images/xplay-empty-star.svg</file>
-    <file>images/xplay-close-window.svg</file>
+    <file>images/xplay-play.png</file>
+    <file>images/xplay-pause.png</file>
+    <file>images/xplay-next.png</file>
+    <file>images/xplay-previous.png</file>
+    <file>images/xplay-stop.png</file>
+    <file>images/xplay-stop.png</file>
+    <file>images/xplay-eject.png</file>
+    <file>images/xplay-forward.png</file>
+    <file>images/xplay-rewind.png</file>
+    <file>images/xplay-home.png</file>
+    <file>images/xplay-refresh.png</file>
+    <file>images/xplay-clear-data.png</file>
+    <file>images/xplay-left-arrow.png</file>
+    <file>images/xplay-right-arrow.png</file>
+    <file>images/xplay-fullwindow.png</file>
+    <file>images/xplay-star.png</file>
+    <file>images/xplay-empty-star.png</file>
+    <file>images/xplay-close-window.png</file>
     <file>images/xplay-bluos.png</file>
 </qresource>
 </RCC>

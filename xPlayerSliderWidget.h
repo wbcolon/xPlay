@@ -17,6 +17,7 @@
 #include <QSlider>
 #include <QString>
 #include <QLabel>
+#include <QSlider>
 #include <QLCDNumber>
 
 #include <cmath>

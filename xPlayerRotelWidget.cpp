@@ -81,7 +81,7 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     QObject::connect(rotelVolume, &xPlayerVolumeWidget::muted, rotelControls, &xPlayerRotelControls::setMuted);
     QObject::connect(rotelBass, SIGNAL(valueChanged(int)), rotelControls, SLOT(setBass(int)));
     QObject::connect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
-    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
+    QObject::connect(rotelSource, SIGNAL(currentTextChanged(QString)), rotelControls, SLOT(setSource(QString)));
     QObject::connect(rotelBalance, &xPlayerBalanceWidget::balance, rotelControls, &xPlayerRotelControls::setBalance);
     // Connect Rotel controls to Rotel widget.
     QObject::connect(rotelControls, &xPlayerRotelControls::volume, this, &xPlayerRotelWidget::updateVolume);
@@ -126,9 +126,9 @@ void xPlayerRotelWidget::updateBalance(int b) {
 
 void xPlayerRotelWidget::updateSource(const QString& source) {
     qDebug() << "xPlayerRotel: updateSource: " << source;
-    QObject::disconnect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
+    QObject::disconnect(rotelSource, SIGNAL(currentTextChanged(QString)), rotelControls, SLOT(setSource(QString)));
     rotelSource->setCurrentIndex(Rotel::Sources.indexOf(source));
-    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
+    QObject::connect(rotelSource, SIGNAL(currentTextChanged(QString)), rotelControls, SLOT(setSource(QString)));
 }
 
 void xPlayerRotelWidget::updateMuted(bool mute) {

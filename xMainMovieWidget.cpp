@@ -350,7 +350,7 @@ void xMainMovieWidget::updatePlayedTags() {
         for (const auto& playedTag : playedTags) {
             // Update icon and tooltip if movie already played.
             if (playedTag == tag) {
-                tagItem->setIcon(":images/xplay-star.svg");
+                tagItem->setIcon(":images/xplay-star.png");
                 break;
             }
         }
@@ -377,7 +377,7 @@ void xMainMovieWidget::updatePlayedDirectories() {
         for (const auto& playedDirectory : playedDirectories) {
             // Update icon and tooltip if movie already played.
             if (playedDirectory == directory) {
-                directoryItem->setIcon(":images/xplay-star.svg");
+                directoryItem->setIcon(":images/xplay-star.png");
                 break;
             }
         }
@@ -406,15 +406,15 @@ void xMainMovieWidget::updatePlayedMovies() {
         for (auto playedMovie = playedMovies.begin(); playedMovie != playedMovies.end(); ++playedMovie) {
             // Update icon and tooltip if movie already played.
             if (std::get<0>(*playedMovie) == movie) {
-                movieItem->setIcon(":images/xplay-star.svg");
+                movieItem->setIcon(":images/xplay-star.png");
                 // Adjust tooltip to play count "once" vs "x times".
                 auto playCount = std::get<1>(*playedMovie);
                 if (playCount > 1) {
                     movieItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::TextDate)));
                 } else {
                     movieItem->addToolTip(QString(tr("played once, last time on %1")).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::TextDate)));
                 }
                 // Remove element to speed up search in the next iteration.
                 playedMovies.erase(playedMovie);
@@ -439,7 +439,7 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
     // Update the tags.
     auto tagPlayedItems = tagList->findListItems(tag);
     for (auto& tagPlayedItem : tagPlayedItems) {
-        tagPlayedItem->setIcon(":images/xplay-star.svg");
+        tagPlayedItem->setIcon(":images/xplay-star.png");
     }
     // If no tag selected or the tag does not match the selected
     // tags then we do not need to update the albums.
@@ -452,7 +452,7 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
         // Update the directorys.
         auto directoryPlayedItems = directoryList->findListItems(directory);
         for (auto& directoryPlayedItem : directoryPlayedItems) {
-            directoryPlayedItem->setIcon(":images/xplay-star.svg");
+            directoryPlayedItem->setIcon(":images/xplay-star.png");
         }
         // If no directory selected or the directory does not match the selected
         // directory then we do not need to update the tracks.
@@ -462,13 +462,13 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
     }
     auto moviePlayedItems = movieList->findListItems(movie);
     for (auto& moviePlayedItem : moviePlayedItems) {
-        moviePlayedItem->setIcon(":images/xplay-star.svg");
+        moviePlayedItem->setIcon(":images/xplay-star.png");
         if (playCount > 1) {
             moviePlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
         } else {
             moviePlayedItem->addToolTip(QString(tr("played once, last time on %1")).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
         }
     }
 }

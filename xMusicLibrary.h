@@ -15,8 +15,10 @@
 #ifndef __XMUSICLIBRARY_H__
 #define __XMUSICLIBRARY_H__
 
-#include "xMusicLibraryEntry.h"
 #include "xMusicLibraryFilter.h"
+#include "xMusicLibraryArtistEntry.h"
+#include "xMusicLibraryAlbumEntry.h"
+#include "xMusicLibraryTrackEntry.h"
 
 #include <QThread>
 #include <QMutex>
@@ -308,7 +310,6 @@ private:
     std::vector<xMusicLibraryArtistEntry*> musicLibraryArtists;
     std::map<QString, xMusicLibraryArtistEntry*> musicLibraryArtistsMap;
 };
-
 
 
 #endif

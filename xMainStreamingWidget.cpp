@@ -18,10 +18,10 @@
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
-#include <QtWebEngineWidgets/QWebEngineView>
-#include <QtWebEngineWidgets/QWebEngineSettings>
-#include <QtWebEngineWidgets/QWebEngineProfile>
-#include <QtWebEngineWidgets/QWebEngineHistory>
+#include <QWebEngineView>
+#include <QWebEngineSettings>
+#include <QWebEngineProfile>
+#include <QWebEngineHistory>
 #include <QWebEngineCookieStore>
 #include <QGroupBox>
 #include <QPushButton>
@@ -36,9 +36,9 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     // Webview.
     streamingWebView = new QWebEngineView(this);
     QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+    streamingWebView->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    streamingWebView->settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
+    streamingWebView->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     // Sidebar.
     auto sideBarWidget = new QWidget(this);
     auto sideBarLayout = new xPlayerLayout(sideBarWidget);
@@ -52,7 +52,7 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     cookiesCheckBox->setChecked(true);
     auto cacheCheckBox = new QCheckBox(tr("Cache"), sitesBox);
     cacheCheckBox->setChecked(true);
-    auto clearButton = new QPushButton(QIcon(":/images/xplay-clear-data.svg"), "", sitesBox);
+    auto clearButton = new QPushButton(QIcon(":/images/xplay-clear-data.png"), "", sitesBox);
     clearButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     clearButton->setToolTip(tr("Clear"));
     // Sites box layout.
@@ -87,16 +87,16 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     sideBarLayout->addWidget(controlTab, 3, 0);
     sideBarLayout->addRowStretcher(4);
     // Navigation elements
-    auto homeButton = new QPushButton(QIcon(":/images/xplay-home.svg"), "", this);
+    auto homeButton = new QPushButton(QIcon(":/images/xplay-home.png"), "", this);
     homeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     homeButton->setToolTip(tr("Home"));
-    auto backButton = new QPushButton(QIcon(":/images/xplay-left-arrow.svg"), "", this);
+    auto backButton = new QPushButton(QIcon(":/images/xplay-left-arrow.png"), "", this);
     backButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     backButton->setToolTip(tr("Back"));
-    auto fwdButton = new QPushButton(QIcon(":/images/xplay-right-arrow.svg"), "", this);
+    auto fwdButton = new QPushButton(QIcon(":/images/xplay-right-arrow.png"), "", this);
     fwdButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     fwdButton->setToolTip(tr("Forward"));
-    auto reloadButton = new QPushButton(QIcon(":/images/xplay-refresh.svg"), "", this);
+    auto reloadButton = new QPushButton(QIcon(":/images/xplay-refresh.png"), "", this);
     reloadButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     reloadButton->setToolTip(tr("Reload"));
     streamingUrl = new QLineEdit(this);

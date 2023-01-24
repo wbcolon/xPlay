@@ -32,6 +32,7 @@ protected:
     void paintEvent(QPaintEvent* event) override;
 };
 
+
 class xPlayerVolumeWidget:public QWidget {
     Q_OBJECT
 

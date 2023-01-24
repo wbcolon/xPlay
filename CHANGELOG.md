@@ -20,6 +20,8 @@
 - Fix status for prev(), next() and seek() for BluOS player library.
 - Fix queue handling for BluOS player library.
 - Fix tests.
+- Port to Qt6. Requires phonon and phonon-gstreamer backend for Qt6.
+  * Qt6 currently not officially supported phonon-gstreamer. Upstream my patches after some cleanup.
 
 
 ## 0.14.2 - 2023-01-31

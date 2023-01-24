@@ -18,9 +18,9 @@
 #include "xPlayerUI.h"
 
 #include <QComboBox>
-#include <QtWebEngineWidgets/QWebEngineSettings>
-#include <QtWebEngineWidgets/QWebEngineProfile>
-#include <QtWebEngineWidgets/QWebEngineHistory>
+#include <QWebEngineSettings>
+#include <QWebEngineProfile>
+#include <QWebEngineHistory>
 #include <QWebEngineCookieStore>
 #include <QToolButton>
 
@@ -31,29 +31,29 @@ xPlayerArtistInfo::xPlayerArtistInfo(QWidget* parent, Qt::WindowFlags flags):
     layout->setSpacing(xPlayerLayout::NoSpace);
     // Setup URL bar with bookmark selection.
     urlEdit = new QLineEdit(this);
-    urlEditAction = new QAction(QIcon(":images/xplay-empty-star.svg"), "Bookmark", urlEdit);
+    urlEditAction = new QAction(QIcon(":images/xplay-empty-star.png"), "Bookmark", urlEdit);
     urlEditAction->setCheckable(true);
     urlEdit->addAction(urlEditAction, QLineEdit::LeadingPosition);
-    urlView = new QWebEngineView(this);
+    urlView = new QWebEngineView();
     // Configure QWebEngine.
     QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+    urlView->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    urlView->settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
+    urlView->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     // Navigation buttons and zoom factor box.
-    homeButton = new QPushButton(QIcon(":images/xplay-home.svg"), "", this);
+    homeButton = new QPushButton(QIcon(":images/xplay-home.png"), "", this);
     homeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     homeButton->setToolTip(tr("Home"));
-    auto backButton = new QPushButton(QIcon(":images/xplay-left-arrow.svg"), "", this);
+    auto backButton = new QPushButton(QIcon(":images/xplay-left-arrow.png"), "", this);
     backButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     backButton->setToolTip(tr("Back"));
-    auto fwdButton = new QPushButton(QIcon(":images/xplay-right-arrow.svg"), "", this);
+    auto fwdButton = new QPushButton(QIcon(":images/xplay-right-arrow.png"), "", this);
     fwdButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     fwdButton->setToolTip(tr("Forward"));
-    auto reloadButton = new QPushButton(QIcon(":/images/xplay-refresh.svg"), "", this);
+    auto reloadButton = new QPushButton(QIcon(":/images/xplay-refresh.png"), "", this);
     reloadButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     reloadButton->setToolTip(tr("Reload"));
-    auto closeButton = new QPushButton(QIcon(":images/xplay-close-window.svg"), "", this);
+    auto closeButton = new QPushButton(QIcon(":images/xplay-close-window.png"), "", this);
     closeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));
     zoomBox = new QComboBox(this);
     for (const auto percent : xPlayerConfiguration::getWebsiteZoomFactors()) {
@@ -116,10 +116,10 @@ void xPlayerArtistInfo::show(const QString& artist) {
     if (artistUrl.isEmpty()) {
         artistUrl = QString("https://en.wikipedia.org/w/index.php?search=%1").arg(artistName);
         urlEditAction->setChecked(false);
-        urlEditAction->setIcon(QIcon(":images/xplay-empty-star.svg"));
+        urlEditAction->setIcon(QIcon(":images/xplay-empty-star.png"));
     } else {
         urlEditAction->setChecked(true);
-        urlEditAction->setIcon(QIcon(":images/xplay-star.svg"));
+        urlEditAction->setIcon(QIcon(":images/xplay-star.png"));
     }
     connect(urlEditAction, &QAction::toggled, this, &xPlayerArtistInfo::bookmarkToggled);
     // Load the site.
@@ -129,10 +129,10 @@ void xPlayerArtistInfo::show(const QString& artist) {
 
 void xPlayerArtistInfo::bookmarkToggled(bool enabled) {
     if (enabled) {
-        urlEditAction->setIcon(QIcon(":images/xplay-star.svg"));
+        urlEditAction->setIcon(QIcon(":images/xplay-star.png"));
         xPlayerDatabase::database()->updateArtistURL(artistName, urlEdit->text());
     } else {
-        urlEditAction->setIcon(QIcon(":images/xplay-empty-star.svg"));
+        urlEditAction->setIcon(QIcon(":images/xplay-empty-star.png"));
         xPlayerDatabase::database()->removeArtistURL(artistName);
     }
 }

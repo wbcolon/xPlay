@@ -152,6 +152,5 @@ private:
 };
 
 Q_DECLARE_METATYPE(xMovieLibraryEntry)
-Q_DECLARE_METATYPE(xMovieLibraryEntry*)
 
 #endif

@@ -18,6 +18,7 @@
 #include "xPlayerBluOSControl.h"
 
 #include <QRandomGenerator>
+#include <QAudioOutput>
 #include <cmath>
 
 constexpr auto xMusicPlayer_MusicVisualizationSamples = 1024;
@@ -62,10 +63,12 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStatus, this, &xMusicPlayer::playerStatus);
     connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStopped, this, &xMusicPlayer::stop);
     // We only need this one to determine the time due to issues with Phonon
+    auto musicPlayerForTimeAudio = new QAudioOutput(this);
     musicPlayerForTime = new QMediaPlayer(this);
-    // This player is muted. It is only used to determine the proper duration.
-    musicPlayerForTime->setVolume(0);
-    musicPlayerForTime->setMuted(true);
+    musicPlayerForTime->setAudioOutput(musicPlayerForTimeAudio);
+    // This player is muted. It is only used to determine the proper duration
+    musicPlayerForTime->audioOutput()->setVolume(0.0);
+    musicPlayerForTime->audioOutput()->setMuted(true);
     // Connect musicPlayerForTime.
     connect(musicPlayerForTime, &QMediaPlayer::durationChanged, this, &xMusicPlayer::currentTrackDuration);
 }
@@ -636,7 +639,7 @@ void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {
         // Use hack to determine the proper total length.
         // We need the muted musicPlayerForTime to play until the total time has been determined
         // and the durationChanged signal was triggered.
-        musicPlayerForTime->setMedia(QUrl::fromLocalFile(current.fileName()));
+        musicPlayerForTime->setSource(QUrl::fromLocalFile(current.fileName()));
         musicPlayerForTime->play();
         musicCurrentFinished = false;
     }

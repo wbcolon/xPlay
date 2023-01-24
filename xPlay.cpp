@@ -13,6 +13,7 @@
  */
 
 #include <QApplication>
+#include <QWebEngineView>
 #include "xApplication.h"
 
 bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser) {
