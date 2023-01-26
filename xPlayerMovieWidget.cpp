@@ -87,8 +87,8 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     // Connect the volume knob and track slider to the music player.
     connect(volumeWidget, &xPlayerVolumeWidget::volume, moviePlayer, &xMoviePlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, moviePlayer, &xMoviePlayer::setMuted);
-    connect(moviePlayer, &xMoviePlayer::currentMoviePlayed, sliderWidget, &xPlayerSliderWidget::trackPlayed);
-    connect(moviePlayer, &xMoviePlayer::currentMovieLength, sliderWidget, &xPlayerSliderWidget::trackLength);
+    connect(moviePlayer, &xMoviePlayer::currentMoviePlayed, sliderWidget, &xPlayerSliderWidget::setPlayed);
+    connect(moviePlayer, &xMoviePlayer::currentMovieLength, sliderWidget, &xPlayerSliderWidget::setLength);
     // Layout
     auto controlLayout = new xPlayerLayout(controlTabPlayer);
     controlLayout->setSpacing(xPlayerLayout::NoSpace);
@@ -245,11 +245,11 @@ void xPlayerMovieWidget::currentChapters(const QStringList& chapters) {
 }
 
 void xPlayerMovieWidget::currentMoviePlayed(qint64 played) {
-    sliderWidget->trackPlayed(played);
+    sliderWidget->setPlayed(played);
 }
 
 void xPlayerMovieWidget::currentMovieLength(qint64 length) {
-    sliderWidget->trackLength(length);
+    sliderWidget->setLength(length);
 }
 
 void xPlayerMovieWidget::currentState(xMoviePlayer::State state) {

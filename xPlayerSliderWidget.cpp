@@ -14,45 +14,148 @@
 #include "xPlayerSliderWidget.h"
 #include "xPlayerUI.h"
 
+#include <QPainter>
+#include <QPaintEvent>
+#include <QSpacerItem>
+#include <QStyle>
+
+xPlayerSliderScaleWidget::xPlayerSliderScaleWidget(int offset, QWidget *parent, Qt::WindowFlags flags):
+        QWidget(parent, flags),
+        hourScale(true),
+        sliderX(offset),
+        labelX(0),
+        lengthValue(0),
+        maxScaleSections(8) {
+    useHourScale(false);
+    scaleDivider = determineScaleDivider(lengthValue);
+    // Determine the slider control thickness.
+    auto sliderThickness = style()->pixelMetric(QStyle::PM_SliderControlThickness);
+    sliderX = offset + (sliderThickness+1)/2;  // add half to the offset.
+    setFixedHeight(xPlayerLayout::HugeSpace);
+}
+
+void xPlayerSliderScaleWidget::setLength(qint64 length) {
+   lengthValue = length;
+   scaleDivider = determineScaleDivider(lengthValue);
+   repaint();
+}
+
+void xPlayerSliderScaleWidget::useHourScale(bool enable) {
+    if (hourScale == enable) {
+        return;
+    }
+    hourScale = enable;
+    if (hourScale) {
+        labelSize = fontMetrics().size(Qt::TextSingleLine, "88:88:88");
+    } else {
+        labelSize = fontMetrics().size(Qt::TextSingleLine, "888:88");
+    }
+    // offset for label box.
+    labelX = ((labelSize.width() + 1) / 2);
+    labelBox.setSize(labelSize);
+}
+
+void xPlayerSliderScaleWidget::useScaleSections(int scaleSections) {
+    maxScaleSections = scaleSections;
+}
+
+void xPlayerSliderScaleWidget::paintEvent(QPaintEvent* event) {
+    QWidget::paintEvent(event);
+    if ((event) && (lengthValue > 0)) {
+        QRect region = event->rect();
+        QPainter scale(this);
+        scale.setPen(Qt::SolidLine);
+        auto posY = region.top();
+        auto tickY = region.top() + 6;
+        auto halfTickY = region.top() + 3;
+        // Draw horizontal line
+        scale.drawLine(region.left()+sliderX, posY, region.right()-sliderX, posY);
+        auto scaleLength = (region.right() - region.left() - 2 * sliderX);
+        auto scaleSections = static_cast<double>(lengthValue)/static_cast<double>(scaleDivider);
+        auto scaleSectionLength = scaleLength / scaleSections;
+        double currentSection = 0.0;
+        qint64 currentLabel = 0;
+        while (currentSection < scaleLength) {
+            // Draw full tick.
+            auto currentSectionX = static_cast<int>(std::round(currentSection));
+            scale.drawLine(region.left()+sliderX+currentSectionX, posY,
+                           region.left()+sliderX+currentSectionX, tickY);
+            // Draw half tick.
+            auto currentHalfTickX = static_cast<int>(std::round(currentSection + scaleSectionLength/2));
+            if (currentHalfTickX < scaleLength) {
+                scale.drawLine(region.left()+sliderX+currentHalfTickX, posY,
+                               region.left()+sliderX+currentHalfTickX, halfTickY);
+            }
+            // Draw label for full tick.
+            labelBox.moveTo(currentSectionX+sliderX-labelX, tickY);
+            scale.drawText(labelBox, Qt::AlignCenter, scaleLabel(currentLabel));
+            // Update
+            currentLabel += scaleDivider;
+            currentSection += scaleSectionLength;
+        }
+    }
+}
+
+qint64 xPlayerSliderScaleWidget::determineScaleDivider(qint64 length) const {
+    for (auto divider : { 10000, 30000, 60000, 120000, 300000, 600000, 1200000, 3000000, 6000000 }) {
+        if ((length / divider) <= maxScaleSections) {
+            return divider;
+        }
+    }
+    return 6000000;
+}
+
+QString xPlayerSliderScaleWidget::scaleLabel(qint64 value) const {
+    if (hourScale) {
+        return QString("%1:%2:%3").arg(value/3600000).arg((value/60000)%60, 2, 10, QChar('0')).
+                arg((value/1000)%60, 2, 10, QChar('0'));
+    } else {
+        return QString("%1:%2").arg((value/60000)).arg((value/1000)%60, 2, 10, QChar('0'));
+    }
+}
+
+
 xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         showHours(false),
-        maxScaleSections(0),
-        trackLengthValue(0) {
+        lengthValue(0) {
     auto sliderLayout = new xPlayerLayout(this);
+    sliderLayout->setContentsMargins(0, 0, 0, 0);
+    sliderLayout->setSpacing(0);
     // Create a slider that displays the played time and can be used
     // to seek within a track.
-    trackSlider = new QwtSlider(Qt::Horizontal, this);
+    slider = new QSlider(Qt::Horizontal, this);
     // Scale below
-    trackSlider->setScalePosition(QwtSlider::LeadingScale);
-    trackSlider->setTracking(false);
-    scaleDraw = new xPlayerWidgetScaleDraw();
-    trackSlider->setScaleDraw(scaleDraw);
+    slider->setTracking(false);
+    slider->setTickPosition(QSlider::NoTicks);
+    slider->setContentsMargins(0, 0, 0, 0);
     // Slider initially empty
-    trackSlider->setLowerBound(0);
-    trackSlider->setUpperBound(0);
-    trackSlider->setGroove(false);
-    trackSlider->setTrough(false);
-    // Adjust the size of the Handle. A little smaller.
-    trackSlider->setHandleSize(QSize(16, 24));
-    trackSlider->setSpacing(2);
+    slider->setMinimum(0);
+    slider->setMaximum(0);
+    scale = new xPlayerSliderScaleWidget(xPlayer::SliderWidgetSliderOffset, this);
     // Create labels for length of the track and time played.
     // Labels located on the left and right of a slider.
-    trackLengthLabel = new QLCDNumber(this);
-    trackLengthLabel->setSegmentStyle(QLCDNumber::Flat);
-    trackLengthLabel->setFrameStyle(QFrame::NoFrame);
-    trackLengthLabel->setDigitCount(8);
-    trackLengthLabel->setFixedHeight(xPlayerLayout::LargeSpace);
-    trackPlayedLabel = new QLCDNumber(this);
-    trackPlayedLabel->setSegmentStyle(QLCDNumber::Flat);
-    trackPlayedLabel->setFrameStyle(QFrame::NoFrame);
-    trackPlayedLabel->setDigitCount(8);
-    trackPlayedLabel->setFixedHeight(xPlayerLayout::LargeSpace);
-    sliderLayout->addWidget(trackPlayedLabel, 0, 0);
-    sliderLayout->addWidget(trackLengthLabel, 0, 7);
-    sliderLayout->addWidget(trackSlider, 0, 1, 2, 6);
+    lengthLabel = new QLCDNumber(this);
+    lengthLabel->setSegmentStyle(QLCDNumber::Flat);
+    lengthLabel->setFrameStyle(QFrame::NoFrame);
+    lengthLabel->setDigitCount(8);
+    lengthLabel->setFixedHeight(xPlayerLayout::LargeSpace);
+    playedLabel = new QLCDNumber(this);
+    playedLabel->setSegmentStyle(QLCDNumber::Flat);
+    playedLabel->setFrameStyle(QFrame::NoFrame);
+    playedLabel->setDigitCount(8);
+    playedLabel->setFixedHeight(xPlayerLayout::LargeSpace);
+    sliderLayout->addWidget(playedLabel, 0, 0, 1, 1);
+    sliderLayout->addWidget(lengthLabel, 0, 7, 1, 1);
+    // Add spacer item left and right of the actual slider to allow space for scale label instead.
+    sliderLayout->addItem(new QSpacerItem(xPlayer::SliderWidgetSliderOffset, xPlayer::SliderWidgetSliderOffset,
+                                          QSizePolicy::Fixed, QSizePolicy::Minimum), 0, 1, 1, 1);
+    sliderLayout->addItem(new QSpacerItem(xPlayer::SliderWidgetSliderOffset, xPlayer::SliderWidgetSliderOffset,
+                                          QSizePolicy::Fixed, QSizePolicy::Minimum), 0, 6, 1, 1);
+    sliderLayout->addWidget(slider, 0, 2, 1, 4);
+    sliderLayout->addWidget(scale, 1, 1, 1, 6);
     // Connect the track slider to the music player. Do proper conversion using lambdas.
-    connect(trackSlider, &QwtSlider::sliderMoved, [=](double position) { emit seek(static_cast<qint64>(position)); } );
+    connect(slider, &QSlider::sliderMoved, [=](int position) { emit seek(static_cast<qint64>(position)); } );
     // Setup max sections.
     useScaleSections(10); // NOLINT
     // Clear played and length LCD display.
@@ -61,49 +164,51 @@ xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags)
 
 void xPlayerSliderWidget::clear() {
     // Reset the slider range.
-    trackSlider->setLowerBound(0);
-    trackSlider->setUpperBound(0);
+    slider->setMinimum(0);
+    slider->setMaximum(0);
+    // Reset the scale.
+    scale->setLength(0);
     // Clear the lcd numbers.
-    trackPlayedLabel->display("");
-    trackLengthLabel->display("");
+    playedLabel->display("");
+    lengthLabel->display("");
     // Reset track length.
-    trackLengthValue = 0;
+    lengthValue = 0;
 }
 
 void xPlayerSliderWidget::useHourScale(bool hourScale) {
-    scaleDraw->useHourScale(hourScale);
     showHours = hourScale;
     if (hourScale) {
         // hours:minutes:seconds
-        trackPlayedLabel->setDigitCount(7);
-        trackLengthLabel->setDigitCount(7);
+        playedLabel->setDigitCount(7);
+        lengthLabel->setDigitCount(7);
     } else {
         // minutes:seconds.hseconds
-        trackPlayedLabel->setDigitCount(8);
-        trackLengthLabel->setDigitCount(8);
+        playedLabel->setDigitCount(8);
+        lengthLabel->setDigitCount(8);
     }
+    scale->useHourScale(hourScale);
 }
 
-void xPlayerSliderWidget::trackLength(qint64 length) {
+void xPlayerSliderWidget::setLength(qint64 length) {
     // Update the length of the current track.
-    trackLengthValue = length;
-    if (trackLengthValue > 0) {
-        trackLengthLabel->display(xPlayer::millisecondsToTimeFormat(length, showHours));
+    lengthValue = length;
+    if (lengthValue > 0) {
+        scale->setLength(length);
+        lengthLabel->display(xPlayer::millisecondsToTimeFormat(length, showHours));
         // Set maximum of slider to the length of the track. Reset the slider position-
-        trackSlider->setScaleStepSize(determineScaleDivider(length));
-        trackSlider->setLowerBound(0);
-        trackSlider->setUpperBound(static_cast<double>(length));
-        trackSlider->setValue(0);
+        slider->setMinimum(0);
+        slider->setMaximum(static_cast<int>(length));
+        slider->setValue(0);
     }
 }
 
-void xPlayerSliderWidget::trackPlayed(qint64 played) {
+void xPlayerSliderWidget::setPlayed(qint64 played) {
     // Only update the played slider if the length has been set.
-    if (trackLengthValue > 0) {
+    if (lengthValue > 0) {
         // Update the time played for the current track.
-        trackPlayedLabel->display(xPlayer::millisecondsToTimeFormat(played, showHours));
+        playedLabel->display(xPlayer::millisecondsToTimeFormat(played, showHours));
         // Update the slider position.
-        trackSlider->setValue(static_cast<double>(played));
+        slider->setValue(static_cast<int>(played));
     }
 }
 
@@ -111,19 +216,7 @@ bool xPlayerSliderWidget::hourScale() const {
     return showHours;
 }
 
-int xPlayerSliderWidget::scaleSections() const {
-    return maxScaleSections;
-}
-
 void xPlayerSliderWidget::useScaleSections(int scaleSections) {
-    maxScaleSections = scaleSections;
+    scale->useScaleSections(scaleSections);
 }
 
-int xPlayerSliderWidget::determineScaleDivider(qint64 length) const {
-    for (auto scaleDivider : { 10000, 30000, 60000, 120000, 300000, 600000, 1200000, 3000000, 6000000 }) {
-        if ((length / scaleDivider) <= maxScaleSections) {
-            return scaleDivider;
-        }
-    }
-    return 6000000;
-}

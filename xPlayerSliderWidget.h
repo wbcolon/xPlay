@@ -14,43 +14,71 @@
 #ifndef __XPLAYERSLIDERWIDGET_H__
 #define __XPLAYERSLIDERWIDGET_H__
 
-#include <qwt/qwt_date_scale_draw.h>
-#include <qwt/qwt_slider.h>
-
-#include <QWidget>
+#include <QSlider>
 #include <QString>
 #include <QLabel>
 #include <QLCDNumber>
 
 #include <cmath>
 
-/*
- * Helper class in order to adjust the scale labels (only QWT)
- */
-class xPlayerWidgetScaleDraw:public QwtScaleDraw {
+
+class xPlayerSliderScaleWidget:public QWidget {
+    Q_OBJECT
+
 public:
-    xPlayerWidgetScaleDraw():
-            QwtScaleDraw(),
-            showHours(false) { }
-    ~xPlayerWidgetScaleDraw() override = default;
+    explicit xPlayerSliderScaleWidget(int offset, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags());
+    ~xPlayerSliderScaleWidget() override = default;
+    /**
+     * Update the length label.
+     *
+     * @param length the length of the current track in milliseconds.
+     */
+    void setLength(qint64 length);
+    /**
+     * Set the maximum number of scale sections (therefore labels) allowed.
+     *
+     * @param scaleSections number of sections.
+     */
+    void useScaleSections(int scaleSections);
+    /**
+     * Determine the format used for the track slider.
+     *
+     * @param hourScale decide whether to include hours in the time format.
+     */
+    void useHourScale(bool hourScale);
 
-    void useHourScale(bool hours) {
-        showHours = hours;
-    }
+protected:
+    /**
+     * Overload paint function. Add scale.
+     */
+    void paintEvent(QPaintEvent* event) override;
 
-    [[nodiscard]] QwtText label(double value) const override {
-        if (showHours) {
-            return QwtText(QString("%1:%2:%3").arg(static_cast<int>(round(value)/3600000)).
-                    arg(static_cast<int>(round(value)/60000)%60, 2, 10, QChar('0')).
-                    arg((static_cast<int>(round(value))/1000)%60, 2, 10, QChar('0')));
-        } else {
-            return QwtText(QString("%1:%2").arg(static_cast<int>(round(value)/60000)).
-                    arg((static_cast<int>(round(value))/1000)%60, 2, 10, QChar('0')));
-        }
-    }
 private:
-    bool showHours;
+    /**
+     * Find a scale layout.
+     *
+     * @param length current length of the for the track slider.
+     * @return the divider used for the track slider.
+     */
+    [[nodiscard]] qint64 determineScaleDivider(qint64 length) const;
+    /**
+     * Convert the value into a time output.
+     *
+     * @param value the time in ms.
+     * @return the time output as string.
+     */
+    [[nodiscard]] QString scaleLabel(qint64 value) const;
+
+    QSize labelSize;
+    bool hourScale;
+    int sliderX;
+    int labelX;
+    QRect labelBox;
+    qint64 lengthValue;
+    qint64 scaleDivider;
+    qint64 maxScaleSections;
 };
+
 
 class xPlayerSliderWidget:public QWidget {
     Q_OBJECT
@@ -64,11 +92,6 @@ public:
      * @return true if hours are enables in the scale, false otherwise.
      */
     [[nodiscard]] bool hourScale() const;
-    /**
-     * Return the maxnumber of sections of the scale.
-     * @return number of sections as integer.
-     */
-    [[nodiscard]] int scaleSections() const;
     /**
      * Clear the state of the slider widget.
      */
@@ -92,13 +115,13 @@ public slots:
      *
      * @param length the length of the current track in milliseconds.
      */
-    void trackLength(qint64 length);
+    void setLength(qint64 length);
     /**
      * Update the played time label.
      *
      * @param played the amount played of the current track in milliseconds.
      */
-    void trackPlayed(qint64 played);
+    void setPlayed(qint64 played);
 
 signals:
     /**
@@ -109,21 +132,12 @@ signals:
     void seek(qint64 position);
 
 private:
-    /**
-     * Find a scale layout.
-     *
-     * @param length current length of the for the track slider.
-     * @return the divider used for the track slider.
-     */
-    [[nodiscard]] int determineScaleDivider(qint64 length) const;
-
     bool showHours;
-    int maxScaleSections;
-    QwtSlider* trackSlider;
-    xPlayerWidgetScaleDraw* scaleDraw;
-    qint64 trackLengthValue;
-    QLCDNumber* trackLengthLabel;
-    QLCDNumber* trackPlayedLabel;
+    QSlider* slider;
+    xPlayerSliderScaleWidget* scale;
+    qint64 lengthValue;
+    QLCDNumber* lengthLabel;
+    QLCDNumber* playedLabel;
 };
 
 #endif

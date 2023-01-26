@@ -66,8 +66,8 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt
     connect(volumeWidget, &xPlayerVolumeWidget::volume, musicPlayer, &xMusicPlayer::setVolume);
     connect(volumeWidget, &xPlayerVolumeWidget::muted, musicPlayer, &xMusicPlayer::setMuted);
     connect(musicPlayer, &xMusicPlayer::currentVolume, volumeWidget, &xPlayerVolumeWidget::setVolume);
-    connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, sliderWidget, &xPlayerSliderWidget::trackPlayed);
-    connect(musicPlayer, &xMusicPlayer::currentTrackLength, sliderWidget, &xPlayerSliderWidget::trackLength);
+    connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, sliderWidget, &xPlayerSliderWidget::setPlayed);
+    connect(musicPlayer, &xMusicPlayer::currentTrackLength, sliderWidget, &xPlayerSliderWidget::setLength);
     // Create the basic player widget layout.
     // Add labels, buttons and the slider.
     auto playerLayout = new xPlayerLayout(this);
