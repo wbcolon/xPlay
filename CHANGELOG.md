@@ -9,6 +9,8 @@
   - Added tests for handling reply message.
 - Fix bug in update of reindexing status dialog.
 - Disable Sorting Latest for BluOS player libraries. Not file date/time for available.
+- Port to Qt6. Requires phonon and phonon-gstreamer backend for Qt6.
+  * Qt6 currently not officially supported phonon-gstreamer. Upstream my patches after some cleanup.
 
 
 ## 0.14.3 - 2023-02-04
@@ -20,8 +22,6 @@
 - Fix status for prev(), next() and seek() for BluOS player library.
 - Fix queue handling for BluOS player library.
 - Fix tests.
-- Port to Qt6. Requires phonon and phonon-gstreamer backend for Qt6.
-  * Qt6 currently not officially supported phonon-gstreamer. Upstream my patches after some cleanup.
 
 
 ## 0.14.2 - 2023-01-31

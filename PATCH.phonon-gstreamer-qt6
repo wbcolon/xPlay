@@ -1,0 +1,263 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e308a467..d9f8d594 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -33,7 +33,10 @@ set_package_properties(Phonon4Qt${QT_MAJOR_VERSION} PROPERTIES
+     DESCRIPTION "Phonon core library"
+     URL "https://api.kde.org/phonon/html/index.html")
+ 
++find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Widgets DBus REQUIRED)
++find_package(Qt${QT_MAJOR_VERSION}OpenGLWidgets REQUIRED)
+ find_package(Phonon4Qt${QT_MAJOR_VERSION}Experimental 4.10.60 NO_MODULE)
++
+ set_package_properties(Phonon4Qt${QT_MAJOR_VERSION}Experimental PROPERTIES
+     TYPE OPTIONAL
+     DESCRIPTION "Phonon experimental library"
+diff --git a/gstreamer/CMakeLists.txt b/gstreamer/CMakeLists.txt
+index 5c7ae930..59353992 100644
+--- a/gstreamer/CMakeLists.txt
++++ b/gstreamer/CMakeLists.txt
+@@ -67,6 +67,7 @@ set(phonon_gstreamer_SRCS
+   videowidget.cpp
+   volumefadereffect.cpp
+   widgetrenderer.cpp
++  x11renderer.cpp
+   )
+ 
+ if(PHONON_FOUND_EXPERIMENTAL)
+@@ -100,6 +101,8 @@ set_target_properties(phonon_gstreamer PROPERTIES
+ target_link_libraries(phonon_gstreamer
+     Qt::Core
+     Qt::Widgets
++    Qt::OpenGL
++    Qt::OpenGLWidgets
+     Phonon::phonon4qt${QT_MAJOR_VERSION}
+     ${PHONON_LIBRARY}
+     ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
+diff --git a/gstreamer/debug.cpp b/gstreamer/debug.cpp
+index 2f7421fc..1c859018 100644
+--- a/gstreamer/debug.cpp
++++ b/gstreamer/debug.cpp
+@@ -21,7 +21,7 @@
+ #include "debug.h"
+ #include "debug_p.h"
+ 
+-#include <QtCore/QMutex>
++#include <QtCore/QRecursiveMutex>
+ #include <QtCore/QObject>
+ #include <QApplication>
+ 
+@@ -37,7 +37,7 @@
+ #define DEBUG_INDENT_OBJECTNAME QLatin1String("Debug_Indent_object")
+ 
+ 
+-QMutex Phonon::Gstreamer::Debug::mutex( QMutex::Recursive );
++QRecursiveMutex Phonon::Gstreamer::Debug::mutex;
+ 
+ using namespace Phonon::Gstreamer;
+ using namespace Phonon::Gstreamer::Debug;
+diff --git a/gstreamer/debug.h b/gstreamer/debug.h
+index 213bf719..c5bfa8d7 100644
+--- a/gstreamer/debug.h
++++ b/gstreamer/debug.h
+@@ -26,7 +26,7 @@
+ #undef KDE_NO_DEBUG_OUTPUT
+ 
+ #include <QtCore/QDebug>
+-#include <QtCore/QMutex>
++#include <QtCore/QRecursiveMutex>
+ 
+ #if QT_VERSION >= 0x040700
+ # include <QtCore/QElapsedTimer>
+@@ -77,7 +77,7 @@ namespace Gstreamer {
+  */
+ namespace Debug
+ {
+-    extern QMutex mutex;
++    extern QRecursiveMutex mutex;
+ 
+     enum DebugLevel {
+         DEBUG_INFO  = 0,
+@@ -187,8 +187,6 @@ namespace Debug
+     void stamp();
+ }
+ 
+-#include <QtCore/QVariant>
+-
+ namespace Debug
+ {
+     /**
+diff --git a/gstreamer/debug_p.h b/gstreamer/debug_p.h
+index 676df7c5..9874459b 100644
+--- a/gstreamer/debug_p.h
++++ b/gstreamer/debug_p.h
+@@ -21,6 +21,7 @@
+ 
+ #include "debug.h"
+ 
++#include <QtCore/QIODevice>
+ #include <QtCore/QString>
+ 
+ class IndentPrivate
+diff --git a/gstreamer/glrenderer.cpp b/gstreamer/glrenderer.cpp
+index ca241324..e521fa79 100644
+--- a/gstreamer/glrenderer.cpp
++++ b/gstreamer/glrenderer.cpp
+@@ -21,6 +21,7 @@
+ 
+ #include <QtGui/QPainter>
+ #include <QtGui/QResizeEvent>
++#include <QOpenGLContext>
+ 
+ #ifndef QT_NO_OPENGL
+ 
+@@ -76,9 +77,7 @@ GLRenderer::GLRenderer(VideoWidget* videoWidget) :
+     , m_glWindow(0)
+ {
+     debug() << "Creating OpenGL renderer";
+-    QGLFormat format = QGLFormat::defaultFormat();
+-    format.setSwapInterval(1);    // Enable vertical sync on draw to avoid tearing
+-    m_glWindow = new GLRenderWidgetImplementation(videoWidget, format);
++    m_glWindow = new GLRenderWidgetImplementation(videoWidget);
+ 
+     GstElement *videoSink = m_glWindow->createVideoSink();
+     if (videoSink) {
+@@ -218,8 +217,8 @@ const char *const yuvToRgb =
+     "DP3 result.color.z, R1, c[1].xwyw;"
+     "END";
+ 
+-GLRenderWidgetImplementation::GLRenderWidgetImplementation(VideoWidget*videoWidget, const QGLFormat &format) :
+-        QGLWidget(format, videoWidget)
++GLRenderWidgetImplementation::GLRenderWidgetImplementation(VideoWidget*videoWidget) :
++        QOpenGLWidget(videoWidget)
+         , m_program(0)
+         , m_yuvSupport(false)
+         , m_videoWidget(videoWidget)
+@@ -227,11 +226,11 @@ GLRenderWidgetImplementation::GLRenderWidgetImplementation(VideoWidget*videoWidg
+     makeCurrent();
+     glGenTextures(3, m_texture);
+ 
+-    glProgramStringARB = (_glProgramStringARB) context()->getProcAddress(QLatin1String("glProgramStringARB"));
+-    glBindProgramARB = (_glBindProgramARB) context()->getProcAddress(QLatin1String("glBindProgramARB"));
+-    glDeleteProgramsARB = (_glDeleteProgramsARB) context()->getProcAddress(QLatin1String("glDeleteProgramsARB"));
+-    glGenProgramsARB = (_glGenProgramsARB) context()->getProcAddress(QLatin1String("glGenProgramsARB"));
+-    glActiveTexture = (_glActiveTexture) context()->getProcAddress(QLatin1String("glActiveTexture"));
++    glProgramStringARB = (_glProgramStringARB) context()->getProcAddress(QByteArray("glProgramStringARB"));
++    glBindProgramARB = (_glBindProgramARB) context()->getProcAddress(QByteArray("glBindProgramARB"));
++    glDeleteProgramsARB = (_glDeleteProgramsARB) context()->getProcAddress(QByteArray("glDeleteProgramsARB"));
++    glGenProgramsARB = (_glGenProgramsARB) context()->getProcAddress(QByteArray("glGenProgramsARB"));
++    glActiveTexture = (_glActiveTexture) context()->getProcAddress(QByteArray("glActiveTexture"));
+ 
+     m_hasPrograms = glProgramStringARB && glBindProgramARB && glDeleteProgramsARB && glGenProgramsARB && glActiveTexture;
+ 
+@@ -252,7 +251,7 @@ GLRenderWidgetImplementation::GLRenderWidgetImplementation(VideoWidget*videoWidg
+     }
+ 
+     QPalette palette;
+-    palette.setColor(QPalette::Background, Qt::black);
++    palette.setColor(QPalette::Window, Qt::black);
+     setPalette(palette);
+     setAutoFillBackground(true);
+     // Videowidget always have this property to allow hiding the mouse cursor
+diff --git a/gstreamer/glrenderer.h b/gstreamer/glrenderer.h
+index c4416927..c0abe897 100644
+--- a/gstreamer/glrenderer.h
++++ b/gstreamer/glrenderer.h
+@@ -22,7 +22,7 @@
+ 
+ #ifndef QT_NO_OPENGL
+ 
+-#include <QtOpenGL/QGLWidget>
++#include <QtOpenGLWidgets/QOpenGLWidget>
+ 
+ #ifndef QT_OPENGL_ES
+ class QString;
+@@ -49,7 +49,7 @@ private:
+     GLRenderWidgetImplementation *m_glWindow;
+ };
+ 
+-class GLRenderWidgetImplementation : public QGLWidget
++class GLRenderWidgetImplementation : public QOpenGLWidget
+ {
+     Q_OBJECT
+ 
+@@ -60,7 +60,7 @@ class GLRenderWidgetImplementation : public QGLWidget
+     typedef void (*_glGenProgramsARB) (GLsizei, GLuint *);
+     typedef void (*_glActiveTexture) (GLenum);
+ public:
+-    GLRenderWidgetImplementation(VideoWidget *control, const QGLFormat &format);
++    GLRenderWidgetImplementation(VideoWidget *control);
+     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
+     GstElement *createVideoSink();
+     void updateTexture(const QByteArray &array, int width, int height);
+diff --git a/gstreamer/mediaobject.cpp b/gstreamer/mediaobject.cpp
+index ee490d56..4e57b164 100644
+--- a/gstreamer/mediaobject.cpp
++++ b/gstreamer/mediaobject.cpp
+@@ -30,7 +30,6 @@
+ #include "gsthelper.h"
+ #include "pipeline.h"
+ 
+-#include <QtCore/QByteRef>
+ #include <QtCore/QEvent>
+ #include <QtCore/QFile>
+ #include <QtCore/QFileInfo>
+diff --git a/gstreamer/videowidget.cpp b/gstreamer/videowidget.cpp
+index bd131dd9..34f7d1ba 100644
+--- a/gstreamer/videowidget.cpp
++++ b/gstreamer/videowidget.cpp
+@@ -80,7 +80,7 @@ VideoWidget::~VideoWidget()
+ 
+ void VideoWidget::updateWindowID()
+ {
+-    X11Renderer *render = dynamic_cast<X11Renderer*>(m_renderer);
++    auto *render = reinterpret_cast<X11Renderer*>(m_renderer);
+     if (render) {
+         render->setOverlay();
+     }
+diff --git a/gstreamer/videowidget.h b/gstreamer/videowidget.h
+index 3ceec953..24d43e2a 100644
+--- a/gstreamer/videowidget.h
++++ b/gstreamer/videowidget.h
+@@ -20,7 +20,6 @@
+ #define Phonon_GSTREAMER_VIDEOWIDGET_H
+ 
+ #include <phonon/videowidgetinterface.h>
+-
+ #include "medianode.h"
+ 
+ #ifndef QT_NO_PHONON_VIDEO
+diff --git a/gstreamer/widgetrenderer.cpp b/gstreamer/widgetrenderer.cpp
+index 751da125..2a7f6e98 100644
+--- a/gstreamer/widgetrenderer.cpp
++++ b/gstreamer/widgetrenderer.cpp
+@@ -80,7 +80,7 @@ WidgetRenderer::WidgetRenderer(VideoWidget *videoWidget_)
+ 
+     // Clear the background with black by default
+     QPalette palette;
+-    palette.setColor(QPalette::Background, Qt::black);
++    palette.setColor(QPalette::Window, Qt::black);
+     videoWidget()->setPalette(palette);
+     videoWidget()->setAutoFillBackground(true);
+     videoWidget()->setAttribute(Qt::WA_NoSystemBackground, false);
+diff --git a/gstreamer/x11renderer.cpp b/gstreamer/x11renderer.cpp
+index 32de24e7..f10b16f4 100644
+--- a/gstreamer/x11renderer.cpp
++++ b/gstreamer/x11renderer.cpp
+@@ -21,6 +21,7 @@
+ 
+ #ifndef Q_WS_QWS
+ 
++#include <typeinfo>
+ #include "backend.h"
+ #include "debug.h"
+ #include "mediaobject.h"
+@@ -72,7 +73,7 @@ X11Renderer::X11Renderer(VideoWidget *videoWidget)
+     m_renderWidget = new OverlayWidget(videoWidget, this);
+     debug() << "Creating X11 overlay renderer";
+     QPalette palette;
+-    palette.setColor(QPalette::Background, Qt::black);
++    palette.setColor(QPalette::Window, Qt::black);
+     videoWidget->setPalette(palette);
+     videoWidget->setAutoFillBackground(true);
+     m_renderWidget->setMouseTracking(true);
