@@ -98,6 +98,7 @@ set(xPlay_sources
         xPlayerControlButtonWidget.cpp
         xPlayerPulseAudioControls.cpp
         xPlayerBluOSControl.cpp
+        xPlayerRotelControls.cpp
         xPlayerRotelWidget.cpp
         xPlayerMovieWidget.cpp
         xPlayerMusicArtistSelectorWidget.cpp
