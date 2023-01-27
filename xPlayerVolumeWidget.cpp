@@ -12,14 +12,13 @@
  * GNU General Public License for more details.
  */
 #include "xPlayerVolumeWidget.h"
-#include "xPlayerPulseAudioControls.h"
 
 #include "xPlayerUI.h"
+#include <QPainter>
 #include <QLabel>
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QDebug>
-#include <cmath>
 
 
 xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags):
@@ -27,12 +26,13 @@ xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags)
         currentVolume(0),
         currentMuted(false) {
     auto volumeLayout = new xPlayerLayout(this);
-    volumeKnob = new QwtKnob(this);
-    volumeKnob->setLowerBound(0);
-    volumeKnob->setUpperBound(100);
-    volumeKnob->setScaleStepSize(20);
+    volumeKnob = new QDial(this);
+    volumeKnob->setMinimum(0);
+    volumeKnob->setMaximum(100);
+    volumeKnob->setSingleStep(1);
     volumeKnob->setWrapping(false);
     volumeKnob->setContentsMargins(0, 0, 0, 0);
+    volumeKnob->setNotchesVisible(true);
     auto volumePlusButton = new QPushButton(tr("+"), this);
     volumePlusButton->setFlat(true);
     volumePlusButton->setFixedWidth(xPlayerLayout::HugeSpace);
@@ -44,15 +44,14 @@ xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags)
     // Only stretch top and bottom.
     volumeLayout->addRowStretcher(0);
     // Qwt implementation. Layout here overlap on purpose
-    volumeLayout->addWidget(volumeKnob, 1, 0, 4, 4);
+    volumeLayout->addWidget(volumeKnob, 1, 0, 3, 4);
     volumeLayout->addWidget(volumeMinusButton, 4, 0);
     volumeLayout->addWidget(volumeMuteButton, 4, 1, 1, 2);
     volumeLayout->addWidget(volumePlusButton, 4, 3);
     volumeLayout->addItem(new QSpacerItem(1, xPlayer::VolumeWidgetHeight), 3, 0, 1, 4);
     volumeLayout->addRowStretcher(5);
     // Connect the volume slider to the widgets signal. Use lambda to do proper conversion.
-    connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { emit volume(static_cast<int>(vol)); } );
-    connect(volumeKnob, &QwtKnob::valueChanged, [=](double vol) { currentVolume = static_cast<int>(vol); } );
+    connect(volumeKnob, &QDial::valueChanged, this, &xPlayerVolumeWidget::volumeChanged);
     connect(volumeMuteButton, &QPushButton::pressed, this, &xPlayerVolumeWidget::toggleMuted);
     connect(volumeMinusButton, &QPushButton::pressed, [=]() {
         if (currentVolume > 0) {
@@ -70,7 +69,9 @@ xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags)
 
 void xPlayerVolumeWidget::setVolume(int vol) {
     currentVolume = vol;
-    volumeKnob->setValue(static_cast<double>(vol));
+    volumeKnob->setValue(vol);
+    volumeMuteButton->setText(tr("Volume"));
+    volumeKnob->setToolTip(QString("%1").arg(currentVolume));
 }
 
 void xPlayerVolumeWidget::setMuted(bool mute) {
@@ -91,8 +92,14 @@ bool xPlayerVolumeWidget::isMuted() const {
     return currentMuted;
 }
 
+void xPlayerVolumeWidget::volumeChanged(int vol) {
+    currentVolume = vol;
+    volumeMuteButton->setText(tr("Volume"));
+    volumeKnob->setToolTip(QString("%1").arg(currentVolume));
+    emit volume(vol);
+}
+
 void xPlayerVolumeWidget::toggleMuted() {
     setMuted(!isMuted());
     emit muted(isMuted());
 }
-

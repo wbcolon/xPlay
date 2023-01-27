@@ -14,8 +14,8 @@
 #ifndef __XPLAYERVOLUMEWIDGET_H__
 #define __XPLAYERVOLUMEWIDGET_H__
 
+#include <QDial>
 #include <QPushButton>
-#include <qwt/qwt_knob.h>
 
 class xPlayerVolumeWidget:public QWidget {
     Q_OBJECT
@@ -69,11 +69,19 @@ public slots:
      */
     virtual void toggleMuted();
 
+private slots:
+    /**
+     * Called if valueChanged is emitted.
+     *
+     * @param vol the current value as int.
+     */
+    void volumeChanged(int vol);
+
 private:
     int currentVolume;
     bool currentMuted;
     QPushButton* volumeMuteButton;
-    QwtKnob* volumeKnob;
+    QDial* volumeKnob;
 };
 
 #endif
