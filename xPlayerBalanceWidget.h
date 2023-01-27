@@ -15,12 +15,11 @@
 #ifndef __XPLAYERBALANCEWIDGET_H__
 #define __XPLAYERBALANCEWIDGET_H__
 
-#include <QWidget>
+#include <QSlider>
 #include <QLabel>
 #include <QGridLayout>
 #include <QString>
 
-#include <qwt/qwt_slider.h>
 
 class xPlayerBalanceWidget:public QWidget {
     Q_OBJECT
@@ -85,7 +84,7 @@ private:
      */
     void updateSliderRange(int value);
 
-    QwtSlider* balanceSlider;
+    QSlider* balanceSlider;
     QGridLayout* balanceLayout;
     QLabel* balanceLeftLabel;
     QLabel* balanceRightLabel;

@@ -14,11 +14,14 @@
 
 #include "xPlayerBalanceWidget.h"
 
-#include <qwt/qwt_scale_draw.h>
 #include <QApplication>
+#include <QPaintEvent>
+#include <QPainter>
 
 xPlayerBalanceWidget::xPlayerBalanceWidget(QWidget *parent, Qt::WindowFlags flags):
-        QWidget(parent, flags) {
+        QWidget(parent, flags),
+        balanceRange(0),
+        balanceValue(0) {
     balanceLeftLabel = new QLabel();
     balanceLeftLabel->setAlignment(Qt::AlignLeft);
     balanceRightLabel = new QLabel();
@@ -29,31 +32,24 @@ xPlayerBalanceWidget::xPlayerBalanceWidget(QWidget *parent, Qt::WindowFlags flag
     balanceLayout->setColumnStretch(1, 2);
     balanceLayout->setColumnStretch(2, 2);
     balanceLayout->setSpacing(0);
-    balanceSlider = new QwtSlider(Qt::Horizontal, this);
+    balanceSlider = new QSlider(Qt::Horizontal, this);
     balanceSlider->setValue(0);
-    balanceSlider->setScaleStepSize(1.0);
-    balanceSlider->setStepAlignment(true);
-    balanceSlider->setScalePosition(QwtSlider::LeadingScale);
-    balanceSlider->setGroove(false);
-    balanceSlider->setTrough(false);
-    balanceSlider->setHandleSize(QSize(12, 16));
-    balanceSlider->setSpacing(2);
-    balanceSlider->setSingleSteps(1);
-    auto* balanceScaleDraw = new QwtScaleDraw();
-    balanceScaleDraw->enableComponent(QwtAbstractScaleDraw::Labels, false);
-    balanceSlider->setScaleDraw(balanceScaleDraw);
+    balanceSlider->setTickPosition(QSlider::NoTicks);
     balanceLayout->addWidget(balanceSlider, 0, 1, 1, 2);
     setLayout(balanceLayout);
     // Connect slider movements to updatedSlider slot.
-    connect(balanceSlider, &QwtSlider::valueChanged, [this](double value) { updatedSlider(static_cast<int>(value)); });
+    connect(balanceSlider, &QSlider::valueChanged, this, &xPlayerBalanceWidget::updatedSlider);
+    setFixedHeight(48);
 }
 
 void xPlayerBalanceWidget::updateSliderRange(int value) {
-    balanceSlider->setLowerBound(-value);
-    balanceSlider->setUpperBound(value);
-    balanceSlider->setScaleStepSize(value);
-    balanceLeftLabel->setFixedWidth(QApplication::fontMetrics().width(QString::number(value)));
-    balanceRightLabel->setFixedWidth(QApplication::fontMetrics().width(QString::number(value)));
+    balanceSlider->setMinimum(-value);
+    balanceSlider->setMaximum(value);
+    balanceSlider->setTickInterval(value);
+    balanceLeftLabel->setFixedWidth(QApplication::fontMetrics().size(Qt::TextSingleLine, QString::number(value)).width());
+    balanceRightLabel->setFixedWidth(QApplication::fontMetrics().size(Qt::TextSingleLine, QString::number(value)).width());
+    // Set initial labels after the range has been set. The actual value will be set later on.
+    updatedSlider(0);
 }
 
 void xPlayerBalanceWidget::setBalance(int value) {
@@ -87,5 +83,5 @@ void xPlayerBalanceWidget::updatedSlider(int value) {
 }
 
 void xPlayerBalanceWidget::updateSlider(int value) {
-    balanceSlider->setValue(static_cast<double>(value));
+    balanceSlider->setValue(value);
 }
