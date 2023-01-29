@@ -1,6 +1,16 @@
 # Changelog
 
 
+## 0.14.2 - 2023-01-31
+
+- Remove Qwt dependency.
+  - Use QDial with embedded QLCDNumber as a volume knob.
+  - Use QSlider with self drawn scale.
+- Fix movie player default language/subtitle auto-select.
+- Movie player code and UI cleanups.
+- Rotel widget and controls code split.
+
+
 ## 0.14.1 - 2023-01-21
 
 - Restore music player volume when switching between local and BluOS player library.
