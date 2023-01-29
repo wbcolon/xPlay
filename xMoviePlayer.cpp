@@ -34,6 +34,21 @@ std::list<std::pair<QString,QString>> xMoviePlayer::supportedAspectRatio() {
     };
 }
 
+const std::list<int> VLC_MediaPlayer_Events {  // NOLINT
+        libvlc_MediaPlayerPlaying,
+        libvlc_MediaPlayerEndReached,
+        libvlc_MediaPlayerAudioVolume,
+        libvlc_MediaPlayerPositionChanged,
+        libvlc_MediaPlayerLengthChanged,
+        libvlc_MediaPlayerBuffering,
+        libvlc_MediaPlayerChapterChanged,
+        libvlc_MediaPlayerEncounteredError
+};
+
+const std::list<int> VLC_Media_Events {  // NOLINT
+        libvlc_MediaParsedChanged, libvlc_MediaDurationChanged, libvlc_MediaStateChanged,
+};
+
 void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
     // Create a new libvlc instance. Use "--verbose=2" for additional libvlc output.
     const char* const movieVLCArgs[] = {
@@ -61,26 +76,16 @@ void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
     }
     movieMediaPlayer = libvlc_media_player_new(movieInstance);
     movieMediaPlayerEventManager = libvlc_media_player_event_manager(movieMediaPlayer);
-    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerPlaying, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerEndReached, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerAudioVolume, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerPositionChanged, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerLengthChanged, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerBuffering, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerChapterChanged, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaPlayerEventManager,libvlc_MediaPlayerEncounteredError, handleVLCEvents, this);
+    for (auto event : VLC_MediaPlayer_Events) {
+        libvlc_event_attach(movieMediaPlayerEventManager, event, handleVLCMediaPlayerEvents, this);
+    }
 }
 
 void xMoviePlayer::vlcStopMediaPlayer() {
     // Detach events
-    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerPlaying, handleVLCEvents, this);
-    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerEndReached, handleVLCEvents, this);
-    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerAudioVolume, handleVLCEvents, this);
-    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerPositionChanged, handleVLCEvents, this);
-    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerLengthChanged, handleVLCEvents, this);
-    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerBuffering, handleVLCEvents, this);
-    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerChapterChanged, handleVLCEvents, this);
-    libvlc_event_detach(movieMediaPlayerEventManager,libvlc_MediaPlayerEncounteredError, handleVLCEvents, this);
+    for (auto event : VLC_MediaPlayer_Events) {
+        libvlc_event_detach(movieMediaPlayerEventManager, event, handleVLCMediaPlayerEvents, this);
+    }
     // Stop playing
     libvlc_media_player_stop(movieMediaPlayer);
     // Free the media_player
@@ -114,6 +119,7 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     connect(this, &xMoviePlayer::eventHandler_setMovie, this, &xMoviePlayer::setMovie);
     connect(this, &xMoviePlayer::eventHandler_selectAudioChannel, this, &xMoviePlayer::selectAudioChannel);
     connect(this, &xMoviePlayer::eventHandler_selectSubtitle, this, &xMoviePlayer::selectSubtitle);
+    connect(this, &xMoviePlayer::eventHandler_parseFinished, this, &xMoviePlayer::parseFinished);
     // Connect to configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultAudioLanguage,
             this, &xMoviePlayer::updatedDefaultAudioLanguage);
@@ -214,29 +220,34 @@ void xMoviePlayer::stop() {
 void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory) {
     // Stop parsing if current movie file is still being parsed.
     if (movieMedia) {
-        libvlc_event_detach(movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, this);
-        libvlc_event_detach(movieMediaEventManager,libvlc_MediaDurationChanged, handleVLCEvents, this);
-        libvlc_event_detach(movieMediaEventManager,libvlc_MediaStateChanged, handleVLCEvents, this);
+        for (auto event: VLC_Media_Events) {
+            libvlc_event_detach(movieMediaEventManager, event, handleVLCMediaEvents, this);
+        }
         libvlc_media_parse_stop(movieMedia);
         libvlc_media_release(movieMedia);
         movieMedia = nullptr;
     }
     movieMedia = libvlc_media_new_path(movieInstance, path.generic_string().c_str());
     movieMediaEventManager = libvlc_media_event_manager(movieMedia);
-    libvlc_event_attach(movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaEventManager,libvlc_MediaDurationChanged, handleVLCEvents, this);
-    libvlc_event_attach(movieMediaEventManager,libvlc_MediaStateChanged, handleVLCEvents, this);
+    for (auto event: VLC_Media_Events) {
+        libvlc_event_attach(movieMediaEventManager, event, handleVLCMediaEvents, this);
+    }
+    // Handle events coming in any order.
+    movieMediaParsed = false;
+    movieMediaPlaying = false;
     // Create a media player playing environment.
     libvlc_media_player_set_media(movieMediaPlayer, movieMedia);
     // Start parsing the file. Allow up to 1 second for preparsing.
     libvlc_media_parse_with_options(movieMedia, libvlc_media_parse_network, 1000);
+    // Update display.
+    emit currentMovie(path, name, tag, directory);
+}
+
+void xMoviePlayer::parseFinished() {
+    movieMediaInitialPlay = true;
+    movieMediaPlaying = true;
     libvlc_media_player_set_xwindow(movieMediaPlayer, winId());
     libvlc_media_player_play(movieMediaPlayer);
-    movieMediaInitialPlay = true;
-    // Handle events coming in any order.
-    movieMediaParsed = false;
-    movieMediaPlaying = false;
-    emit currentMovie(path, name, tag, directory);
     emit currentState(xMoviePlayer::PlayingState);
 }
 
@@ -305,7 +316,7 @@ void xMoviePlayer::selectSubtitle(int index) {
     }
 }
 
-void xMoviePlayer::handleVLCEvents(const libvlc_event_t *event, void *data) {
+void xMoviePlayer::handleVLCMediaEvents(const libvlc_event_t *event, void *data) {
     // Reconvert data to this (as self).
     auto self = reinterpret_cast<xMoviePlayer*>(data);
     switch (event->type) {
@@ -319,10 +330,11 @@ void xMoviePlayer::handleVLCEvents(const libvlc_event_t *event, void *data) {
                 // Scan for chapters.
                 self->scanForChapters();
                 // Scanning successful. No need for movieMedia pointer any more.
-                libvlc_event_detach(self->movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCEvents, self);
+                libvlc_event_detach(self->movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCMediaEvents, self);
                 libvlc_media_release(self->movieMedia);
                 self->movieMedia = nullptr;
                 self->movieMediaParsed = true;
+                emit self->eventHandler_parseFinished();
             }
         } break;
         case libvlc_MediaDurationChanged: {
@@ -336,6 +348,13 @@ void xMoviePlayer::handleVLCEvents(const libvlc_event_t *event, void *data) {
         case libvlc_MediaStateChanged: {
             qDebug() << "[libvlc_MediaStateChanged] new state: " << event->u.media_state_changed.new_state;
         } break;
+    }
+}
+
+void xMoviePlayer::handleVLCMediaPlayerEvents(const libvlc_event_t *event, void *data) {
+    // Reconvert data to this (as self).
+    auto self = reinterpret_cast<xMoviePlayer*>(data);
+    switch (event->type) {
         case libvlc_MediaPlayerAudioVolume: {
             auto volume =  static_cast<int>(event->u.media_player_audio_volume.volume*100);
             emit self->currentVolume(volume);
@@ -383,12 +402,12 @@ void xMoviePlayer::handleVLCEvents(const libvlc_event_t *event, void *data) {
             self->movieMediaInitialPlay = false;
             // Select default audio channel in the UI and the player.
             if (self->movieDefaultAudioLanguageIndex >= 0) {
-                emit self->currentAudioChannel(self->movieDefaultAudioLanguageIndex);
                 emit self->eventHandler_selectAudioChannel(self->movieDefaultAudioLanguageIndex);
+                emit self->currentAudioChannel(self->movieDefaultAudioLanguageIndex);
             }
             // Select default subtitle in the UI and the player.
-            emit self->currentSubtitle(self->movieDefaultSubtitleLanguageIndex);
             emit self->eventHandler_selectSubtitle(self->movieDefaultSubtitleLanguageIndex);
+            emit self->currentSubtitle(self->movieDefaultSubtitleLanguageIndex);
         }
     }
 }

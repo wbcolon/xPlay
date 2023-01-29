@@ -156,6 +156,10 @@ signals:
      * Helper signal to call selectSubtitle from the event handler callback.
      */
     void eventHandler_selectSubtitle(int subtitle);
+    /*
+     * Helper signal to call parseFinished from the event handler callback.
+     */
+    void eventHandler_parseFinished();
 
 public slots:
     /**
@@ -283,6 +287,10 @@ private slots:
      * Called if default subtitle language has been changed.
      */
     void updatedDefaultSubtitleLanguage();
+    /**
+     * Called if the parsing is finished and the playback actually starts.
+     */
+    void parseFinished();
 
 protected:
     /**
@@ -305,7 +313,14 @@ protected:
     void mousePressEvent(QMouseEvent* mouseEvent) override;
 
 private:
-    static void handleVLCEvents(const libvlc_event_t*  event, void* data);
+    /**
+     * VLC handler for Media events.
+     */
+    static void handleVLCMediaEvents(const libvlc_event_t*  event, void* data);
+    /**
+     * VLC handler for MediaPlayer events.
+     */
+    static void handleVLCMediaPlayerEvents(const libvlc_event_t*  event, void* data);
     /**
      * Scan the media file for audio and subtitle tracks.
      */
