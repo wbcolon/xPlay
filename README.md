@@ -330,7 +330,6 @@ and the KDE 5.x breeze icons.
 
 * Qt 5.x (https://www.qt.io/)
 * Phonon (https://github.com/KDE/phonon)
-* Qwt 6.x for Qt5 (http://qwt.sf.net)
 * SQLite3 - The Database Access Library (https://sqlite.org/)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
 * libcurl Library (https://curl.se/libcurl/)
@@ -339,8 +338,6 @@ and the KDE 5.x breeze icons.
 * libpulse Library (https://freedesktop.org/software/pulseaudio/doxygen)
 * projectM Library (https://github.com/projectM-visualizer/projectm)
 * C++17 (clang or gcc)
-
-With Qwt the UI has an improved volume knob and track slider.
 
 ## Known Issues
 
@@ -362,7 +359,5 @@ With Qwt the UI has an improved volume knob and track slider.
 ## Notes
 
 xPlay started out as a little project over the weekend in order to evaluate the Clion C++ IDE.
-
-xPlay is based in part on the work of the Qwt project (http://qwt.sf.net).
 
 **Please support artists by buying their products.**

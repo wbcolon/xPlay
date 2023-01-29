@@ -115,7 +115,6 @@ set(xPlay_sources
 
 set(xPlay_libraries
         Qt5::WebEngineWidgets Qt5::Widgets Qt5::Multimedia Qt5::MultimediaWidgets Qt5::DBus
-        qwt-qt5
         Phonon::phonon4qt5
         sqlite3
         ${TAGLIB_LIBRARIES}
