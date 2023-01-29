@@ -32,7 +32,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
 
     // Slider widget for showing movie length and played time.
     sliderWidget = new xPlayerSliderWidget(this);
-    sliderWidget->useScaleSections(8);
+    sliderWidget->useScaleSections(7);
     sliderWidget->useHourScale(true);
     // Name of the movie (filename).
     movieLabel = new QLabel(this);

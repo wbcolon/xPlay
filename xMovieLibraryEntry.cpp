@@ -93,21 +93,20 @@ void xMovieLibraryEntry::scan() const {
     static const char* const vlcArgs[] = { "--vout=none", "--quiet" };
     static auto vlcInstance = libvlc_new(sizeof(vlcArgs)/sizeof(vlcArgs[0]), vlcArgs);
     auto vlcMedia = libvlc_media_new_path(vlcInstance, entryPath.generic_string().c_str());
-    libvlc_media_parse_with_options(vlcMedia, libvlc_media_parse_network, 5000);
+    libvlc_media_parse_with_options(vlcMedia, libvlc_media_parse_network, 1000);
     auto vlcStatus = libvlc_media_get_parsed_status(vlcMedia);
-    // Wait until parsing complete. Wait for 5 seconds maximum.
+    // Wait until parsing complete. Wait for 10 seconds maximum.
     for (auto vlcStatusLoop = 0; (vlcStatus != libvlc_media_parsed_status_done) &&
                                  (vlcStatus != libvlc_media_parsed_status_failed) &&
-                                 (vlcStatusLoop < 20); ++vlcStatusLoop) {
-        // Wait for 250ms.
-        QThread::msleep(250);
+                                 (vlcStatusLoop < 50); ++vlcStatusLoop) {
+        // Wait for 200ms.
+        QThread::msleep(200);
         vlcStatus = libvlc_media_get_parsed_status(vlcMedia);
     }
     entryLength = static_cast<qint64>(libvlc_media_get_duration(vlcMedia));
     // Release media and vlc instance.
     libvlc_media_release(vlcMedia);
-    //libvlc_release(vlcInstance);
-    qCritical() << "LENGTH: " << entryLength << ", SIZE: " << entrySize;
+    qDebug() << "Scan: length: " << entryLength << ", size: " << entrySize;
 }
 
 bool xMovieLibraryEntry::isScanned() const {
