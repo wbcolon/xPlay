@@ -16,6 +16,7 @@
 
 #include <QPainter>
 #include <QPaintEvent>
+#include <QResizeEvent>
 #include <QSpacerItem>
 #include <QStyle>
 
@@ -55,8 +56,15 @@ void xPlayerSliderScaleWidget::useHourScale(bool enable) {
     labelBox.setSize(labelSize);
 }
 
-void xPlayerSliderScaleWidget::useScaleSections(int scaleSections) {
-    maxScaleSections = scaleSections;
+void xPlayerSliderScaleWidget::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    if (event) {
+        maxScaleSections = event->size().width() / labelBox.width() - 2;
+        // Only update scaleDivider if length already set.
+        if (lengthValue > 0) {
+            scaleDivider = determineScaleDivider(lengthValue);
+        }
+    }
 }
 
 void xPlayerSliderScaleWidget::paintEvent(QPaintEvent* event) {
@@ -156,8 +164,6 @@ xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags)
     sliderLayout->addWidget(scale, 1, 1, 1, 6);
     // Connect the track slider to the music player. Do proper conversion using lambdas.
     connect(slider, &QSlider::sliderMoved, [=](int position) { emit seek(static_cast<qint64>(position)); } );
-    // Setup max sections.
-    useScaleSections(10); // NOLINT
     // Clear played and length LCD display.
     clear();
 }
@@ -215,8 +221,3 @@ void xPlayerSliderWidget::setPlayed(qint64 played) {
 bool xPlayerSliderWidget::hourScale() const {
     return showHours;
 }
-
-void xPlayerSliderWidget::useScaleSections(int scaleSections) {
-    scale->useScaleSections(scaleSections);
-}
-
