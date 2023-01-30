@@ -52,7 +52,10 @@ protected:
      * Overload paint function. Add scale.
      */
     void paintEvent(QPaintEvent* event) override;
-
+    /**
+     * Overload resize function. Adjust scale segments.
+     */
+    void resizeEvent(QResizeEvent* event) override;
 private:
     /**
      * Find a scale layout.
@@ -104,12 +107,6 @@ public slots:
      * @param hourScale decide whether to include hours in the time format.
      */
     void useHourScale(bool hourScale);
-    /**
-     * Set the maximum number of scale sections (therefore labels) allowed.
-     *
-     * @param scaleSections number of sections.
-     */
-    void useScaleSections(int scaleSections);
     /**
      * Update the length label.
      *
