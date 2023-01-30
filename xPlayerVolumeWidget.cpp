@@ -19,6 +19,39 @@
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QDebug>
+#include <QLCDNumber>
+
+
+xPlayerVolumeDial::xPlayerVolumeDial(QWidget *parent):
+        QDial(parent) {
+}
+
+void xPlayerVolumeDial::paintEvent(QPaintEvent* event) {
+    QDial::paintEvent(event);
+    if (event) {
+        QRect region = event->rect();
+        QPainter scale(this);
+        QLCDNumber number(3);  // No parent. We render into pixmap.
+        number.resize(xPlayer::VolumeWidgetLCDWidth, xPlayer::VolumeWidgetLCDHeight);
+        number.setSegmentStyle(QLCDNumber::Flat);
+        number.setFrameStyle(QFrame::Panel | QFrame::Sunken);
+        number.setAutoFillBackground(true);
+        number.display(QString("%1").arg(value(), 3, 10, QChar('0')));
+        // Use QDial highlight color for lcd background.
+        QPalette numberPalette;
+        numberPalette.setColor(QPalette::Window, palette().color(QPalette::Highlight));
+        number.setPalette(numberPalette);
+        // Render into pixmap.
+        QPixmap numberPixmap(xPlayer::VolumeWidgetLCDWidth, xPlayer::VolumeWidgetLCDHeight);
+        number.render(&numberPixmap);
+        scale.setPen(Qt::SolidLine);
+        // Determine position for pixmap.
+        auto posX = (region.left() + region.right() - xPlayer::VolumeWidgetLCDWidth)/2;
+        auto posY = (region.top() + region.bottom() - xPlayer::VolumeWidgetLCDHeight)/2;
+        // Draw lcd pixmap into middle of dial.
+        scale.drawPixmap(posX, posY, numberPixmap);
+    }
+}
 
 
 xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags):
@@ -26,7 +59,7 @@ xPlayerVolumeWidget::xPlayerVolumeWidget(QWidget *parent, Qt::WindowFlags flags)
         currentVolume(0),
         currentMuted(false) {
     auto volumeLayout = new xPlayerLayout(this);
-    volumeKnob = new QDial(this);
+    volumeKnob = new xPlayerVolumeDial(this);
     volumeKnob->setMinimum(0);
     volumeKnob->setMaximum(100);
     volumeKnob->setSingleStep(1);
@@ -71,7 +104,6 @@ void xPlayerVolumeWidget::setVolume(int vol) {
     currentVolume = vol;
     volumeKnob->setValue(vol);
     volumeMuteButton->setText(tr("Volume"));
-    volumeKnob->setToolTip(QString("%1").arg(currentVolume));
 }
 
 void xPlayerVolumeWidget::setMuted(bool mute) {
@@ -95,7 +127,6 @@ bool xPlayerVolumeWidget::isMuted() const {
 void xPlayerVolumeWidget::volumeChanged(int vol) {
     currentVolume = vol;
     volumeMuteButton->setText(tr("Volume"));
-    volumeKnob->setToolTip(QString("%1").arg(currentVolume));
     emit volume(vol);
 }
 

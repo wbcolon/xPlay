@@ -17,6 +17,21 @@
 #include <QDial>
 #include <QPushButton>
 
+
+class xPlayerVolumeDial:public QDial {
+    Q_OBJECT
+
+public:
+    explicit xPlayerVolumeDial(QWidget* parent=nullptr);
+    ~xPlayerVolumeDial() override = default;
+
+protected:
+    /**
+     * Overload paint function. Add value text in the dial middle.
+     */
+    void paintEvent(QPaintEvent* event) override;
+};
+
 class xPlayerVolumeWidget:public QWidget {
     Q_OBJECT
 
@@ -81,7 +96,7 @@ private:
     int currentVolume;
     bool currentMuted;
     QPushButton* volumeMuteButton;
-    QDial* volumeKnob;
+    xPlayerVolumeDial* volumeKnob;
 };
 
 #endif

@@ -27,6 +27,8 @@ const double SelectorHeightFontFactor = 1.6;
 const int SliderWidgetSliderOffset = 32;
 const int VolumeWidgetWidth = 188;
 const int VolumeWidgetHeight = 132;
+const int VolumeWidgetLCDWidth = 40;
+const int VolumeWidgetLCDHeight = 28;
 const int ControlButtonWidgetWidth = 200;
 const int SidebarWidgetWidth = 300;
 
