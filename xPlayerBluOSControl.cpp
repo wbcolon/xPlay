@@ -93,10 +93,16 @@ void xPlayerBluOSControls::seek(qint64 position) {
 
 void xPlayerBluOSControls::prev() {
     sendCommand(QUrl(bluOSUrl+"/Back"));
+    if (!bluOSStatus->isActive()) {
+        bluOSStatus->start(1000);
+    }
 }
 
 void xPlayerBluOSControls::next() {
     sendCommand(QUrl(bluOSUrl+"/Skip"));
+    if (!bluOSStatus->isActive()) {
+        bluOSStatus->start(1000);
+    }
 }
 
 QString xPlayerBluOSControls::state() {
@@ -303,6 +309,10 @@ void xPlayerBluOSControls::parsePlayerStatus(const QString &commandResult) {
         emit playerStatus(status.child("fn").child_value(),
                           QString::fromStdString(status.child("secs").child_value()).toInt()*1000,
                           status.child("quality").child_value());
+        // Try to detect stop at the end of the queue.
+        if (status.child("quality").empty() && status.child("canSeek").empty()) {
+            emit playerStopped();
+        }
     } else {
         qCritical() << "Unable to parse result for state: " << result.description();
     }

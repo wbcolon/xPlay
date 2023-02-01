@@ -192,6 +192,10 @@ signals:
      */
     void playerReIndexing(int noTracks);
     /**
+     * Signal emitted when the BluOS player stopped.
+     */
+    void playerStopped();
+    /**
      * Signal the current BlusOS player status.
      *
      * @param path path of the currently played track.
