@@ -33,6 +33,7 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         useShuffleMode(false),
         musicCurrentRemote(),
         musicCurrentPositionRemote(-1),
+        musicRemoteQueuePlayNext(false),
         musicCurrentFinished(false) {
     pulseAudioControls = xPlayerPulseAudioControls::controls();
     // Set up the media player.
@@ -58,7 +59,7 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     connect(musicLibrary, &xMusicLibrary::scanningInitialized, this, &xMusicPlayer::reInitialize);
     // Connect status update from BluOS player.
     connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStatus, this, &xMusicPlayer::playerStatus);
-
+    connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStopped, this, &xMusicPlayer::stop);
     // We only need this one to determine the time due to issues with Phonon
     musicPlayerForTime = new QMediaPlayer(this);
     // This player is muted. It is only used to determine the proper duration.
@@ -69,16 +70,25 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
 }
 
 void xMusicPlayer::queueTracks(const QString& artist, const QString& album, const std::vector<xMusicLibraryTrackEntry*>& tracks) {
-    // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
-    for (const auto& track : tracks) {
-        auto queueEntry = std::make_tuple(artist, album, track);
-        if (track->getUrl().isLocalFile()) {
+
+    if (musicLibrary->isLocal()) {
+        // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
+        for (const auto& track : tracks) {
+            auto queueEntry = std::make_tuple(artist, album, track);
             auto queueSource = Phonon::MediaSource(QUrl::fromLocalFile(track->getUrl().toLocalFile()));
             if (queueSource.type() != Phonon::MediaSource::Invalid) {
                 musicPlaylistEntries.push_back(queueEntry);
                 musicPlaylist.push_back(queueSource);
             }
-        } else {
+        }
+    } else {
+        // Determine if we jump to the next track in the queue after we finished queueing tracks.
+        musicRemoteQueuePlayNext |= (musicPlaylistRemote.length() > 0) &&
+                (musicPlaylistRemote.constLast() == musicCurrentRemote) &&
+                (musicPlayerState == State::StopState);
+        // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
+        for (const auto& track : tracks) {
+            auto queueEntry = std::make_tuple(artist, album, track);
             musicPlaylistEntries.push_back(queueEntry);
             musicPlaylistRemote.push_back(track->getTrackPath());
             xPlayerBluOSControls::controls()->addQueue(track->getTrackPath());
@@ -147,7 +157,12 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
         // Play if autoplay is enabled.
         if (autoPlay) {
             emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
-            xPlayerBluOSControls::controls()->play();
+            if (musicRemoteQueuePlayNext) {
+                xPlayerBluOSControls::controls()->next();
+            } else {
+                xPlayerBluOSControls::controls()->play();
+            }
+            musicRemoteQueuePlayNext = false;
         }
     }
 }
@@ -446,12 +461,12 @@ void xMusicPlayer::prev() {
                 }
             }
             // Play.
-            emit currentState(musicPlayerState = State::PlayingState);
             musicPlayer->play();
         }
     } else {
         xPlayerBluOSControls::controls()->prev();
     }
+    emit currentState(musicPlayerState = State::PlayingState);
 }
 
 void xMusicPlayer::next() {
@@ -477,12 +492,12 @@ void xMusicPlayer::next() {
                 }
             }
             // Play.
-            emit currentState(musicPlayerState = State::PlayingState);
             musicPlayer->play();
         }
     } else {
         xPlayerBluOSControls::controls()->next();
     }
+    emit currentState(musicPlayerState = State::PlayingState);
 }
 
 void xMusicPlayer::setMuted(bool mute) {

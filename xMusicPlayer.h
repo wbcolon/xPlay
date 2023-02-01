@@ -333,6 +333,7 @@ private:
     // We need to track the current remote track played to avoid duplicate database entries.
     QString musicCurrentRemote;
     qint64 musicCurrentPositionRemote;
+    bool musicRemoteQueuePlayNext;
     // We need to track if the current track played to work around some phonon issues.
     bool musicCurrentFinished;
     // Only required due to track length issues with phonon.
