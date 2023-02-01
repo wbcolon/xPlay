@@ -1,6 +1,17 @@
 # Changelog
 
 
+## 0.14.3 - 2023-02-04
+
+- Adjust shuffle mode for BluOS player library.
+  - Allow enabling shuffle mode if queue not empty.
+  - Do not queue additional tracks if shuffle is enabled.
+- Reset position after stop() for BluOS player library.
+- Fix status for prev(), next() and seek() for BluOS player library.
+- Fix queue handling for BluOS player library.
+- Fix tests.
+
+
 ## 0.14.2 - 2023-01-31
 
 - Remove Qwt dependency.

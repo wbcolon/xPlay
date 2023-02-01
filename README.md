@@ -303,7 +303,7 @@ a rescan of the currently configured music or movie library. The *Check Music Da
 will verify the database entries against the database. Any unknown entries will displayed in a dialog box and can be
 removed. The entries *View* menu allows to switch between the *Music View*, *Movie View*, *Streaming View* or
 *Mobile Sync View*.
-The *Help* menu has two entries displaying copyright information about the used Qt and Qwt libraries.
+The *Help* menu has a single entry displaying copyright information about the used Qt library.
 
 #### Configuration Dialog
 
