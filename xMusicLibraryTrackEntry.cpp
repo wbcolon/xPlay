@@ -46,7 +46,8 @@ xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const QUr
         trackBitrate(-1),
         trackSampleRate(-1) {
     trackPath = trackUrl.toLocalFile();
-    fileSize = QFileInfo(trackPath).size();
+    QFileInfo fileInfo(trackPath);
+    fileSize = fileInfo.exists() ? fileInfo.size() : -1;
 }
 
 xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, const QString& path,
