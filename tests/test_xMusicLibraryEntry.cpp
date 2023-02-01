@@ -20,18 +20,18 @@
 #include <filesystem>
 
 void test_xMusicLibraryEntry::testSimpleAccessFunctions() {
-    xMusicLibraryAlbumEntry albumEntry("album", std::filesystem::path(), nullptr);
+    xMusicLibraryAlbumEntry albumEntry("album", QUrl(), nullptr);
     QVERIFY(albumEntry.getAlbumName() == QString("album"));
 }
 
 void test_xMusicLibraryEntry::testAccessFunctions() {
-    xMusicLibraryArtistEntry artistEntry("ac-dc", std::filesystem::path("../tests/input/musiclibrary/ac-dc"), nullptr);
-    xMusicLibraryAlbumEntry albumEntry("back in black [hd]", std::filesystem::path("../tests/input/musiclibrary/ac-dc/back in black [hd]"), &artistEntry);
+    xMusicLibraryArtistEntry artistEntry("ac-dc", QUrl::fromLocalFile("../tests/input/musiclibrary/ac-dc"), nullptr);
+    xMusicLibraryAlbumEntry albumEntry("back in black [hd]", QUrl::fromLocalFile("../tests/input/musiclibrary/ac-dc/back in black [hd]"), &artistEntry);
     QVERIFY(artistEntry.getArtistName() == QString("ac-dc"));
-    QVERIFY(artistEntry.getPath() == std::filesystem::path("../tests/input/musiclibrary/ac-dc"));
+    QVERIFY(artistEntry.getUrl() == QUrl::fromLocalFile("../tests/input/musiclibrary/ac-dc"));
     QVERIFY(albumEntry.getArtistName() == QString("ac-dc"));
     QVERIFY(albumEntry.getAlbumName() == QString("back in black [hd]"));
-    QVERIFY(albumEntry.getPath() == std::filesystem::path("../tests/input/musiclibrary/ac-dc/back in black [hd]"));
+    QVERIFY(albumEntry.getUrl() == QUrl::fromLocalFile("../tests/input/musiclibrary/ac-dc/back in black [hd]"));
     QVERIFY(albumEntry.getLastWritten() >= artistEntry.getLastWritten());
     QVERIFY(artistEntry < albumEntry);
 }

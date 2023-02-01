@@ -34,7 +34,7 @@ void test_xMusicLibrary::initTestCase() {
 
 void test_xMusicLibrary::testScanInvalidLibrary() {
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scanningError);
-    musicLibrary->setPath(std::filesystem::path("../tests/input/musiclibrary.empty"));
+    musicLibrary->setUrl(QUrl::fromLocalFile("../tests/input/musiclibrary.empty"));
     spy.wait();
     QVERIFY(spy.count() == 1);
 }
@@ -46,7 +46,7 @@ void test_xMusicLibrary::testScannedArtists() {
     };
     QSignalSpy spy(musicLibrary, &xMusicLibrary::scannedArtists);
     QSignalSpy spyFinished(musicLibrary, &xMusicLibrary::scanningFinished);
-    musicLibrary->setPath(std::filesystem::path("../tests/input/musiclibrary"));
+    musicLibrary->setUrl(QUrl::fromLocalFile("../tests/input/musiclibrary"));
     spy.wait();
     QVERIFY(spy.count() == 1);
     // Convert result to string list.
