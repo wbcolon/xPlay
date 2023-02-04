@@ -268,6 +268,15 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xMainMusicWidget::currentTrack);
     // Connect update of playlist.
     connect(musicPlayer, &xMusicPlayer::playlist, this, &xMainMusicWidget::playlist);
+    // Connect to shuffe mode.
+    connect(musicPlayer, &xMusicPlayer::allowShuffleMode, [=](bool enable) {
+        if (!enable) {
+            queueShuffleCheck->setChecked(false);
+            musicPlayer->setShuffleMode(false);
+            queueList->setEnabled(true);
+        }
+        queueShuffleCheck->setEnabled(enable);
+    });
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicOverlay,
             this, &xMainMusicWidget::updatedDatabaseMusicOverlay);

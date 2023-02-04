@@ -115,6 +115,12 @@ signals:
      */
     void currentState(xMusicPlayer::State state);
     /**
+     * Signal if the music player allows enabling the shuffle mode in its current state.
+     *
+     * @param enable shuffle mode can be enabled if true, not otherwise.
+     */
+    void allowShuffleMode(bool enable);
+    /**
      * Signal the currently loaded playlist to update queue UI.
      *
      * @param entries playlist entries as tuple of artist, album and track.
@@ -333,7 +339,7 @@ private:
     // We need to track the current remote track played to avoid duplicate database entries.
     QString musicCurrentRemote;
     qint64 musicCurrentPositionRemote;
-    bool musicRemoteQueuePlayNext;
+    bool musicRemoteAutoNext;
     // We need to track if the current track played to work around some phonon issues.
     bool musicCurrentFinished;
     // Only required due to track length issues with phonon.

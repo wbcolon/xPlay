@@ -33,7 +33,7 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         useShuffleMode(false),
         musicCurrentRemote(),
         musicCurrentPositionRemote(-1),
-        musicRemoteQueuePlayNext(false),
+        musicRemoteAutoNext(false),
         musicCurrentFinished(false) {
     pulseAudioControls = xPlayerPulseAudioControls::controls();
     // Set up the media player.
@@ -82,8 +82,7 @@ void xMusicPlayer::queueTracks(const QString& artist, const QString& album, cons
             }
         }
     } else {
-        // Determine if we jump to the next track in the queue after we finished queueing tracks.
-        musicRemoteQueuePlayNext |= (musicPlaylistRemote.length() > 0) &&
+        musicRemoteAutoNext |= (musicPlaylistRemote.length() > 0) &&
                 (musicPlaylistRemote.constLast() == musicCurrentRemote) &&
                 (musicPlayerState == State::StopState);
         // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
@@ -91,7 +90,6 @@ void xMusicPlayer::queueTracks(const QString& artist, const QString& album, cons
             auto queueEntry = std::make_tuple(artist, album, track);
             musicPlaylistEntries.push_back(queueEntry);
             musicPlaylistRemote.push_back(track->getTrackPath());
-            xPlayerBluOSControls::controls()->addQueue(track->getTrackPath());
         }
     }
 }
@@ -154,17 +152,27 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
             }
         }
     } else {
+        auto queue = xPlayerBluOSControls::controls()->queue();
+        // Do we autoplay.
+        autoPlay = autoPlay && ((queue.empty()) && (musicPlayerState == State::StopState));
+        // Add tracks to queue.
+        for (auto i = queue.size(); i < musicPlaylistRemote.size(); ++i) {
+            xPlayerBluOSControls::controls()->addQueue(musicPlaylistRemote[i]);
+        }
         // Play if autoplay is enabled.
-        if (autoPlay) {
+        if (musicRemoteAutoNext) {
             emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
-            if (musicRemoteQueuePlayNext) {
-                xPlayerBluOSControls::controls()->next();
-            } else {
+            xPlayerBluOSControls::controls()->next();
+            musicRemoteAutoNext = false;
+        } else {
+            if (autoPlay) {
+                emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
                 xPlayerBluOSControls::controls()->play();
             }
-            musicRemoteQueuePlayNext = false;
         }
     }
+    // Allow shuffle mode to be enabled.
+    emit allowShuffleMode(true);
 }
 
 void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
@@ -254,14 +262,17 @@ void xMusicPlayer::clearQueue() {
     if (musicLibrary->isLocal()) {
         musicPlayer->stop();
         musicPlayer->clear();
+        emit allowShuffleMode(true);
     } else {
         xPlayerBluOSControls::controls()->clearQueue();
         xPlayerBluOSControls::controls()->stop();
+        emit allowShuffleMode(false);
     }
     // Remove entries from the play lists.
     musicPlaylistEntries.clear();
     musicPlaylistRemote.clear();
     musicPlaylist.clear();
+    musicCurrentRemote.clear();
 }
 
 void xMusicPlayer::loadQueueFromPlaylist(const QString& name) {
@@ -354,8 +365,10 @@ void xMusicPlayer::saveQueueToPlaylist(const QString& name) {
 
 void xMusicPlayer::reInitialize() {
     if (musicLibrary->isLocal()) {
+        emit allowShuffleMode(true);
         emit currentVolume(xPlayerPulseAudioControls::controls()->getVolume());
     } else {
+        emit allowShuffleMode(false);
         emit currentVolume(xPlayerBluOSControls::controls()->getVolume());
     }
 }
@@ -415,6 +428,8 @@ void xMusicPlayer::seek(qint64 position) {
         musicPlayer->seek(position);
     } else {
         xPlayerBluOSControls::controls()->seek(position);
+        // Seeking will start the BluOS player.
+        emit currentState(musicPlayerState = State::PlayingState);
     }
 }
 
@@ -425,6 +440,8 @@ void xMusicPlayer::jump(qint64 delta) {
         musicPlayer->seek(std::clamp(jumpPosition, static_cast<qint64>(0), musicPlayer->totalTime()));
     } else {
         xPlayerBluOSControls::controls()->seek(musicCurrentPositionRemote+delta);
+        // Seeking will start the BluOS player.
+        emit currentState(musicPlayerState = State::PlayingState);
     }
 }
 
@@ -435,6 +452,9 @@ void xMusicPlayer::stop() {
         musicPlayer->stop();
     } else {
         xPlayerBluOSControls::controls()->stop();
+        // Update current position.
+        musicCurrentPositionRemote = 0;
+        emit currentTrackPlayed(musicCurrentPositionRemote);
     }
 }
 
