@@ -102,7 +102,7 @@ public:
      *
      * @return a list of strings of track paths.
      */
-    std::vector<QString> getQueue();
+    QStringList queue();
     /**
      * Clear the BluOS player queue.
      */
@@ -299,7 +299,7 @@ private:
      * @param commandResult the result of the query as string.
      * @return a vector of paths in the playlist.
      */
-    std::vector<QString> parsePlaylist(const QString& commandResult);
+    QStringList parsePlaylist(const QString& commandResult);
     /**
      * Parse the result of the status query.
      *

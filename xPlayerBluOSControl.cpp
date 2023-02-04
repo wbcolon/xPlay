@@ -89,6 +89,10 @@ void xPlayerBluOSControls::stop() {
 
 void xPlayerBluOSControls::seek(qint64 position) {
     sendCommand(QUrl(bluOSUrl+QString("/Play?seek=%1").arg(position/1000)));
+    // Seek will start playing the current track.
+    if (!bluOSStatus->isActive()) {
+        bluOSStatus->start(1000);
+    }
 }
 
 void xPlayerBluOSControls::prev() {
@@ -117,7 +121,7 @@ void xPlayerBluOSControls::removeQueue(int index) {
     sendCommand(QUrl(bluOSUrl+QString("/Delete?id=%1").arg(index)));
 }
 
-std::vector<QString> xPlayerBluOSControls::getQueue() {
+QStringList xPlayerBluOSControls::queue() {
     return parsePlaylist(sendCommand(QUrl(bluOSUrl+"/Playlist")));
 }
 
@@ -359,13 +363,13 @@ std::tuple<int,int> xPlayerBluOSControls::parseTrackInfo(const QString& commandR
     }
 }
 
-std::vector<QString> xPlayerBluOSControls::parsePlaylist(const QString& commandResult) {
-    std::vector<QString> queue;
+QStringList xPlayerBluOSControls::parsePlaylist(const QString& commandResult) {
+    QStringList queue;
     pugi::xml_parse_result result = bluOSResponse.load_string(commandResult.toStdString().c_str());
     if (result) {
         // Parse through all subfolders.
         for (auto song : bluOSResponse.child("playlist").children()) {
-            queue.emplace_back(song.child("fn").child_value());
+            queue.push_back(song.child("fn").child_value());
         }
     } else {
         qCritical() << "Unable to parse result for tracks: " << result.description();
