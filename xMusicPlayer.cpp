@@ -573,6 +573,10 @@ bool xMusicPlayer::getShuffleMode() const {
     return useShuffleMode;
 }
 
+bool xMusicPlayer::isQueueTracksAllowed() const {
+    return (!useShuffleMode) || musicLibrary->isLocal();
+}
+
 void xMusicPlayer::setVolume(int vol) {
     vol = std::clamp(vol, 0, 100);
     if (musicLibrary->isLocal()) {

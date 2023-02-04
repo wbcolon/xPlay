@@ -75,6 +75,12 @@ public:
      * @return true if the shuffle mode is enabled.
      */
     [[nodiscard]] bool getShuffleMode() const;
+    /**
+     * Return if queue tracks is allowed.
+     *
+     * @return true if queue track is allowed, false if no tracks should be queued.
+     */
+    [[nodiscard]] bool isQueueTracksAllowed() const;
 
 signals:
     /**

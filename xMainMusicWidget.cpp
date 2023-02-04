@@ -579,6 +579,10 @@ void xMainMusicWidget::selectArtist(int index) {
 }
 
 void xMainMusicWidget::queueArtist(xPlayerListWidgetItem* artistItem) {
+    // Do we allow queue tracks.
+    if (!musicPlayer->isQueueTracksAllowed()) {
+        return;
+    }
     // Retrieve listIndex for the selected listItem and check if it's valid.
     auto index = artistList->listIndex(artistItem);
     if ((index >= 0) && (index < artistList->count())) {
@@ -646,6 +650,10 @@ void xMainMusicWidget::selectAlbum(int index) {
 }
 
 void xMainMusicWidget::queueAlbum(xPlayerListWidgetItem* albumItem) {
+    // Do we allow queue tracks.
+    if (!musicPlayer->isQueueTracksAllowed()) {
+        return;
+    }
     // Emulate behavior of selecting album and clicking on the first track.
     if (albumItem == albumList->currentItem()) {
         if (trackList->count() > 0) {
@@ -683,6 +691,10 @@ void xMainMusicWidget::currentAlbumRightClicked(const QPoint& point) {
 }
 
 void xMainMusicWidget::selectTrack(xPlayerListWidgetItem* trackItem) {
+    // Do we allow queue tracks.
+    if (!musicPlayer->isQueueTracksAllowed()) {
+        return;
+    }
     // Retrieve listIndex for the selected listItem and check if it's valid.
     auto track = trackList->listIndex(trackItem);
     if ((track >= 0) && (track< trackList->count())) {
@@ -739,6 +751,10 @@ void xMainMusicWidget::selectSortingLatest(bool enabled) {
 }
 
 void xMainMusicWidget::queueArtistSelector(const QString& selector) {
+    // Do we allow queue tracks.
+    if (!musicPlayer->isQueueTracksAllowed()) {
+        return;
+    }
     // Currently unused
     if (!selector.isEmpty()) {
         currentArtistSelector = selector;
