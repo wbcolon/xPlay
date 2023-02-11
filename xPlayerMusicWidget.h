@@ -82,6 +82,7 @@ private:
     QLabel* trackBitrateLabel;
     QLabel* trackBitrate;
     QLabel* trackBitsPerSample;
+    QPixmap trackBluOS;
     /**
      * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
      */

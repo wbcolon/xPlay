@@ -42,6 +42,7 @@ const int DialogMinimumWidth = 400;
 const int QueueCriticalNumberEntries = 50000;
 
 const int IconSize = 24;
+const int LargeIconSize = 32;
 
 /**
  * Convert the time given to human readable time stamp.

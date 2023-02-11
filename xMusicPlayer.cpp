@@ -32,7 +32,8 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         musicPlayerState(State::StopState),
         useShuffleMode(false),
         musicCurrentRemote(),
-        musicCurrentPositionRemote(-1),
+        musicCurrentRemoteIndex(-1),
+        musicCurrentRemotePosition(-1),
         musicRemoteAutoNext(false),
         musicCurrentFinished(false) {
     pulseAudioControls = xPlayerPulseAudioControls::controls();
@@ -439,7 +440,7 @@ void xMusicPlayer::jump(qint64 delta) {
         auto jumpPosition = musicPlayer->currentTime()+delta;
         musicPlayer->seek(std::clamp(jumpPosition, static_cast<qint64>(0), musicPlayer->totalTime()));
     } else {
-        xPlayerBluOSControls::controls()->seek(musicCurrentPositionRemote+delta);
+        xPlayerBluOSControls::controls()->seek(musicCurrentRemotePosition+delta);
         // Seeking will start the BluOS player.
         emit currentState(musicPlayerState = State::PlayingState);
     }
@@ -453,8 +454,8 @@ void xMusicPlayer::stop() {
     } else {
         xPlayerBluOSControls::controls()->stop();
         // Update current position.
-        musicCurrentPositionRemote = 0;
-        emit currentTrackPlayed(musicCurrentPositionRemote);
+        musicCurrentRemotePosition = 0;
+        emit currentTrackPlayed(musicCurrentRemotePosition);
     }
 }
 
@@ -707,13 +708,17 @@ void xMusicPlayer::visualizationUpdate(const QMap<Phonon::AudioDataOutput::Chann
     }
 }
 
-void xMusicPlayer::playerStatus(const QString& path, qint64 position, const QString& quality) {
-    // Translate updates from the BluOS player.
-    auto index = musicPlaylistRemote.indexOf(path);
+void xMusicPlayer::playerStatus(const QString& path, int index, qint64 position, const QString& quality) {
+    // Translate updates from the BluOS player. Index will be incorrect for shuffle mode.
+    if (musicPlaylistRemote.value(index) != path) {
+        index = musicPlaylistRemote.indexOf(path);
+    }
     if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
-        if (musicCurrentRemote != path) {
+        if ((musicCurrentRemote != path) || (musicCurrentRemoteIndex != index)) {
             // Update currently played remote track.
             musicCurrentRemote = path;
+            // Update current index.
+            musicCurrentRemoteIndex = index;
             auto entry = musicPlaylistEntries[index];
             auto entryObject = std::get<2>(entry);
             emit currentTrackLength(entryObject->getLength());
@@ -723,8 +728,8 @@ void xMusicPlayer::playerStatus(const QString& path, qint64 position, const QStr
                               quality);
         }
         // Update current position.
-        musicCurrentPositionRemote = position;
-        emit currentTrackPlayed(musicCurrentPositionRemote);
+        musicCurrentRemotePosition = position;
+        emit currentTrackPlayed(musicCurrentRemotePosition);
     }
 }
 

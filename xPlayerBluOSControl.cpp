@@ -311,6 +311,7 @@ void xPlayerBluOSControls::parsePlayerStatus(const QString &commandResult) {
     if (result) {
         auto status = bluOSStatusResponse.child("status");
         emit playerStatus(status.child("fn").child_value(),
+                          QString::fromStdString(status.child("song").child_value()).toInt(),
                           QString::fromStdString(status.child("secs").child_value()).toInt()*1000,
                           status.child("quality").child_value());
         // Try to detect stop at the end of the queue.

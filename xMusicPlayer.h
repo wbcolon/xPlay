@@ -301,10 +301,11 @@ private slots:
      * Handle the status of the BluOS player.
      *
      * @param path the path of the currently plqyed track.
+     * @param index the index in the playlist.
      * @param position the currently play portion of the song in ms.
      * @param quality the quality of track as string.
      */
-    void playerStatus(const QString& path, qint64 position, const QString& quality);
+    void playerStatus(const QString& path, int index, qint64 position, const QString& quality);
     /**
      * Possibly reinitialize the music player when we switch music libraries.
      */
@@ -344,7 +345,8 @@ private:
     bool useShuffleMode;
     // We need to track the current remote track played to avoid duplicate database entries.
     QString musicCurrentRemote;
-    qint64 musicCurrentPositionRemote;
+    int musicCurrentRemoteIndex;
+    qint64 musicCurrentRemotePosition;
     bool musicRemoteAutoNext;
     // We need to track if the current track played to work around some phonon issues.
     bool musicCurrentFinished;

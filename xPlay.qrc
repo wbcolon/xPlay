@@ -17,5 +17,6 @@
     <file>images/xplay-star.svg</file>
     <file>images/xplay-empty-star.svg</file>
     <file>images/xplay-close-window.svg</file>
+    <file>images/xplay-bluos.png</file>
 </qresource>
 </RCC>

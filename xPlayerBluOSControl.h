@@ -199,10 +199,11 @@ signals:
      * Signal the current BlusOS player status.
      *
      * @param path path of the currently played track.
+     * @param index the index in the playlist.
      * @param position the position in ms within the song.
      * @param quality the track quality as string.
      */
-    void playerStatus(const QString& path, qint64 position, const QString& quality);
+    void playerStatus(const QString& path, int index, qint64 position, const QString& quality);
 
 private:
     /**

@@ -125,6 +125,8 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS, [=]() {
         volumeWidget->setVolume(musicPlayer->getVolume());
     });
+    // Assign BluOS Pixmax. Resize to proper size.
+    trackBluOS = QPixmap(":images/xplay-bluos.png").scaledToHeight(xPlayer::LargeIconSize, Qt::SmoothTransformation);
     // Do not resize the player widget vertically
     //setFixedHeight(sizeHint().height());
 }
@@ -166,10 +168,8 @@ void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QS
         // The quality string can be either a bit/s value or quality type such as cd or hd.
         trackSampleRateLabel->setText(tr("Quality"));
         bool qualityIsBitrate = false;
-        auto qualityBitrate = quality.toInt(&qualityIsBitrate);
+        quality.toInt(&qualityIsBitrate);
         if (qualityIsBitrate) {
-            // Set bitrate if the quality string contains a bit/s value.
-            bitrate = qualityBitrate / 1000; // convert to kbit/s
             trackSampleRate->setText(QFileInfo(track).suffix().toLower());
         } else {
             trackSampleRate->setText(quality.toLower());
@@ -183,6 +183,7 @@ void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QS
     } else {
         trackBitrateLabel->clear();
         trackBitrate->clear();
+        trackBitrate->setPixmap(trackBluOS);
     }
 }
 
