@@ -200,7 +200,13 @@ QString xPlayerRotelControls::cleanupReplyMessage(const QString& message) {
     qDebug() << "RotelControls: cleanupReplayMessage (before): " << message;
     auto replyMessage = message;
     while (replyMessage.startsWith("amp:freq")) {
-        replyMessage = replyMessage.remove(0, replyMessage.indexOf("$")+1);
+        // Check if we have additional commands after the amp:freq
+        if (replyMessage.indexOf("$") > 0) {
+            replyMessage = replyMessage.remove(0, replyMessage.indexOf("$")+1);
+        } else {
+            // Last command is also an amp:freq info.
+            replyMessage.clear();
+        }
     }
     qDebug() << "RotelControls: cleanupReplayMessage (after): " << replyMessage;
     return replyMessage;

@@ -1,6 +1,14 @@
 # Changelog
 
 
+## Unreleased
+
+- Add BluOS icon when playing from BluOS player library.
+- Improve queue handling for BluOS player libraries.
+- Fix bug if reply from Rotel amp ends with amp:freq command sequence.
+  - Added tests for handling reply message.
+
+
 ## 0.14.3 - 2023-02-04
 
 - Adjust shuffle mode for BluOS player library.

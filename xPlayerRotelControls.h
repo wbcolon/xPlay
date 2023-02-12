@@ -58,8 +58,13 @@ const QString PowerOff = "amp:power_off!"; // NOLINT
 
 }
 
+// Allow test class to access everything.
+class test_xPlayerRotelControls;
+
 class xPlayerRotelControls:public QObject {
     Q_OBJECT
+
+    friend class test_xPlayerRotelControls;
 
 public:
     /**

@@ -132,6 +132,7 @@ if (USE_TESTS)
             tests/test_xMusicLibraryEntry.cpp
             tests/test_xMusicLibrary.cpp
             tests/test_xMovieLibrary.cpp
+            tests/test_xPlayerRotelControls.cpp
             tests/test_xPlay.cpp)
     target_link_libraries(test_xPlay Qt5::Test ${xPlay_libraries})
 else()

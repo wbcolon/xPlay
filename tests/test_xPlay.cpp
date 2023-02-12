@@ -16,6 +16,7 @@
 #include "test_xMusicLibraryEntry.h"
 #include "test_xMusicLibrary.h"
 #include "test_xMovieLibrary.h"
+#include "test_xPlayerRotelControls.h"
 
 #include "xMusicLibraryArtistEntry.h"
 #include "xMusicLibraryAlbumEntry.h"
@@ -45,9 +46,11 @@ int main(int argc, char** argv) {
     test_xMusicLibraryEntry musicLibraryEntry;
     test_xMusicLibrary musicLibrary;
     test_xMovieLibrary movieLibrary;
+    test_xPlayerRotelControls rotelControls;
 
     return QTest::qExec(&musicLibraryTrackEntry, argc, argv) |
            QTest::qExec(&musicLibraryEntry, argc, argv) |
            QTest::qExec(&musicLibrary, argc, argv) |
-           QTest::qExec(&movieLibrary, argc, argv);
+           QTest::qExec(&movieLibrary, argc, argv) |
+           QTest::qExec(&rotelControls, argc, argv);
 }
