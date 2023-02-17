@@ -56,10 +56,12 @@ xPlayerBluOSControls* xPlayerBluOSControls::controls() {
 void xPlayerBluOSControls::reIndex() {
     // Stop the player.
     stop();
-    // Force the reindexing.
-    sendCommand(QUrl(bluOSUrl+"/Reindex"));
     if (!bluOSReIndexing->isActive()) {
+        // Force the reindexing.
+        sendCommand(QUrl(bluOSUrl+"/Reindex"));
         bluOSReIndexing->start(2000);
+        // Issue the first Status command immediately.
+        parseIndexing(sendCommand(QUrl(bluOSUrl+"/Status")));
     }
 }
 

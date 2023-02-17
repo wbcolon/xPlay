@@ -7,6 +7,8 @@
 - Improve queue handling for BluOS player libraries.
 - Fix bug if reply from Rotel amp ends with amp:freq command sequence.
   - Added tests for handling reply message.
+- Fix bug in update of reindexing status dialog.
+- Disable Sorting Latest for BluOS player libraries. Not file date/time for available.
 
 
 ## 0.14.3 - 2023-02-04
