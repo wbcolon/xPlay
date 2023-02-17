@@ -13,6 +13,7 @@
  */
 
 #include "xPlayerMusicArtistSelectorWidget.h"
+#include "xPlayerConfiguration.h"
 #include "xPlayerUI.h"
 
 #include <QApplication>
@@ -38,6 +39,21 @@ xPlayerMusicArtistSelectorWidget::xPlayerMusicArtistSelectorWidget(QWidget* pare
     connect(selectorList, &QListWidget::itemEntered, this, &xPlayerMusicArtistSelectorWidget::ctrlHoveredArtistSelector);
     connect(selectorList, &QListWidget::itemDoubleClicked, this, &xPlayerMusicArtistSelectorWidget::doubleClickedArtistSelector);
     connect(sortingLatestBox, &QCheckBox::clicked, this, &xPlayerMusicArtistSelectorWidget::sortingLatest);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS,
+            this, &xPlayerMusicArtistSelectorWidget::updateSortingLatestBox);
+
+    updateSortingLatestBox();
+}
+
+void xPlayerMusicArtistSelectorWidget::updateSortingLatestBox() {
+    if (xPlayerConfiguration::configuration()->useMusicLibraryBluOS()) {
+        sortingLatestBox->setChecked(false);
+        sortingLatestBox->setEnabled(false);
+        sortingLatestBox->setVisible(false);
+    } else {
+        sortingLatestBox->setEnabled(true);
+        sortingLatestBox->setVisible(true);
+    }
 }
 
 void xPlayerMusicArtistSelectorWidget::updateSelectors(const std::set<QString>& selectors) {

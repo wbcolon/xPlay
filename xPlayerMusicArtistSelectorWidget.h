@@ -94,6 +94,13 @@ private slots:
      * @param selectorItem pointer to the list widget item that we hover over.
      */
     void ctrlHoveredArtistSelector(QListWidgetItem* selectorItem);
+    /**
+     * Triggered if music library changes for between local or BluOS.
+     *
+     * Function will disable sorting latest box since file date/time information is
+     * unavailable for BluOS libraries.
+     */
+    void updateSortingLatestBox();
 
 private:
     QListWidget* selectorList;
