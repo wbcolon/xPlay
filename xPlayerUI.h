@@ -23,7 +23,7 @@ namespace xPlayer {
  * UI configuration values
  */
 const bool UseFlatGroupBox = true;
-const double SelectorHeightFontFactor = 1.6;
+const double SelectorHeightFontFactor = 1.2;
 const int SliderWidgetSliderOffset = 32;
 const int VolumeWidgetWidth = 188;
 const int VolumeWidgetHeight = 132;

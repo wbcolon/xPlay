@@ -29,6 +29,7 @@ auto xMainMovieWidget::addGroupBox(const QString& boxLabel, bool displayTime, QW
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, parent);
     groupBox->setFlat(xPlayer::UseFlatGroupBox);
+    groupBox->setAlignment(Qt::AlignHCenter);
     auto list = new xPlayerListWidget(groupBox, displayTime);
     auto boxLayout = new QHBoxLayout();
     boxLayout->addWidget(list);
@@ -86,6 +87,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     // Add filter for movies
     movieFilterBox = new QGroupBox(tr("Filter Movies"), mainWidget);
     movieFilterBox->setFlat(xPlayer::UseFlatGroupBox);
+    movieFilterBox->setAlignment(Qt::AlignHCenter);
     movieFilter = new QLineEdit(movieFilterBox);
     auto movieFilterBoxLayout = new QVBoxLayout();
     movieFilterBoxLayout->addWidget(movieFilter);

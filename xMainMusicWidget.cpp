@@ -45,6 +45,7 @@ auto xMainMusicWidget::addListWidgetGroupBox(const QString& boxLabel, bool displ
     // a QListWidget.
     auto groupBox = new QGroupBox(boxLabel, parent);
     groupBox->setFlat(xPlayer::UseFlatGroupBox);
+    groupBox->setAlignment(Qt::AlignHCenter);
     auto list = new xPlayerListWidget(groupBox, displayTime);
     list->setContextMenuPolicy(Qt::CustomContextMenu);
     auto boxLayout = new QVBoxLayout(groupBox);
@@ -56,6 +57,7 @@ auto xMainMusicWidget::addLineEditGroupBox(const QString& boxLabel, QWidget* par
     // Create a QGroupBox with the given label and embed a QLineEdit.
     auto groupBox = new QGroupBox(boxLabel, parent);
     groupBox->setFlat(xPlayer::UseFlatGroupBox);
+    groupBox->setAlignment(Qt::AlignHCenter);
     auto lineEdit = new QLineEdit(groupBox);
     auto boxLayout = new QVBoxLayout(groupBox);
     boxLayout->addWidget(lineEdit);
@@ -177,6 +179,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Queue list.
     queueBox = new QGroupBox(tr("Queue"), mainWidgetSplitter);
     queueBox->setFlat(xPlayer::UseFlatGroupBox);
+    queueBox->setAlignment(Qt::AlignHCenter);
     auto queueBoxLayout = new xPlayerLayout(queueBox);
     queueList = new xPlayerListWidget(queueBox, true);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -618,6 +621,7 @@ void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
         } else {
             QMenu artistMenu;
             // Add section for artist info website.
+            artistMenu.setSeparatorsCollapsible(false);
             artistMenu.addSection(tr("Artist Info"));
             artistMenu.addAction(tr("Link To Website"), this, [=] () {
                 musicStacked->setCurrentWidget(musicInfoView);
