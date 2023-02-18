@@ -328,7 +328,8 @@ and the KDE 5.x breeze icons.
 
 ## Requirements
 
-* Qt 5.x (https://www.qt.io/)
+* Qt 6.x (https://www.qt.io/)
+* PlastikStyle (https://github.com/MartinF99/PlastikStyle)
 * Phonon (https://github.com/KDE/phonon)
 * SQLite3 - The Database Access Library (https://sqlite.org/)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
@@ -348,6 +349,7 @@ and the KDE 5.x breeze icons.
     * The GStreamer backend crashed on Ubuntu 20.04 for some movies. Replacing the library
       */usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgsta52dec.so* from *streamer1.0-plugins-ugly* with the
       corresponding library for Ubuntu 20.10 may solve the issue.
+    * Patch for GStreamer backend for Qt6 included. Only audio tested.
 * VLC audio issues
     * Using VLC on Ubuntu 22.04 can lead to audio stutter after seeking within the movie itself.
     * A workaround switching audio channels back and forth has been implemented.

@@ -71,6 +71,13 @@ add_definitions(${PROJECTM_CFLAGS})
 add_definitions(${VLCLIB_CFLAGS})
 add_definitions(${PALIB_CFLAGS})
 
+# Borrowed from https://github.com/MartinF99/PlastikStyle. Minor modifications.
+set(PlastikStyle_sources
+        plastikstyle/qt6/plastikstyle.cpp
+        plastikstyle/qt6/qstylehelper.cpp
+        plastikstyle/qt6/plugin.cpp
+        )
+
 set(xPlay_sources
         xMusicLibraryEntry.cpp
         xMusicLibraryArtistEntry.cpp
@@ -124,7 +131,8 @@ set(xPlay_libraries
         curl
         ${PUGIXML_LIBRARIES}
         ${PALIB_LIBRARIES}
-        ${VLCLIB_LIBRARIES})
+        ${VLCLIB_LIBRARIES}
+        )
 
 if (USE_TESTS)
     add_executable(test_xPlay
@@ -139,6 +147,7 @@ if (USE_TESTS)
 else()
     add_executable(xPlay
             ${xPlay_sources}
+            ${PlastikStyle_sources}
             xPlay.cpp
             xPlay.qrc)
     target_link_libraries(xPlay ${xPlay_libraries})

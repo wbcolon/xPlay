@@ -14,7 +14,10 @@
 
 #include <QApplication>
 #include <QWebEngineView>
+#include <QStyleFactory>
 #include "xApplication.h"
+#include "plastikstyle/qt6/plastikstyle.h"
+
 
 bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser) {
     // Commandline handling.
@@ -153,7 +156,15 @@ int main(int argc, char* argv[])
     QApplication playApp(argc, argv);
     QApplication::setApplicationName("xPlay");
     QApplication::setApplicationVersion("0.14.3");
+    QApplication::setStyle(new PlastikStyle);
     QCommandLineParser playAppParser;
+    // Increase default font-size if less than 14.
+    auto defaultFont = QApplication::font();
+    if (defaultFont.pointSize() < 14) {
+        defaultFont.setPointSize(14);
+    }
+    QApplication::setFont(defaultFont);
+    // Handle command line.
     if (handleCommandLine(playApp, playAppParser)) {
         // Exit if the command line was handled.
         return 0;

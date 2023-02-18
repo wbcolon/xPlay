@@ -11,6 +11,7 @@
 - Disable Sorting Latest for BluOS player libraries. Not file date/time for available.
 - Port to Qt6. Requires phonon and phonon-gstreamer backend for Qt6.
   * Qt6 currently not officially supported phonon-gstreamer. Upstream my patches after some cleanup.
+  * Included PlastikStyle from https://github.com/MartinF99/PlastikStyle
 
 
 ## 0.14.3 - 2023-02-04
