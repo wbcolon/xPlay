@@ -9,6 +9,8 @@
   - Added tests for handling reply message.
 - Fix bug in update of reindexing status dialog.
 - Disable Sorting Latest for BluOS player libraries. Not file date/time for available.
+- Fix audio volume bug when seeking within movie file.
+- Use compressed audio plugin for movie player.
 
 
 ## 0.14.3 - 2023-02-04

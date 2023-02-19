@@ -37,7 +37,6 @@ std::list<std::pair<QString,QString>> xMoviePlayer::supportedAspectRatio() {
 const std::list<int> VLC_MediaPlayer_Events {  // NOLINT
         libvlc_MediaPlayerPlaying,
         libvlc_MediaPlayerEndReached,
-        libvlc_MediaPlayerAudioVolume,
         libvlc_MediaPlayerPositionChanged,
         libvlc_MediaPlayerLengthChanged,
         libvlc_MediaPlayerBuffering,
@@ -107,7 +106,7 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         movieMediaLength(0),
         movieMediaChapter(0),
         movieMediaDeinterlaceMode(false),
-        movieMediaAudioCompressionMode(false),
+        movieMediaAudioCompressionMode(true),
         movieMediaCropAspectRatio(),
         movieDefaultAudioLanguageIndex(-1),
         movieDefaultSubtitleLanguageIndex(-1) {
@@ -355,10 +354,6 @@ void xMoviePlayer::handleVLCMediaPlayerEvents(const libvlc_event_t *event, void 
     // Reconvert data to this (as self).
     auto self = reinterpret_cast<xMoviePlayer*>(data);
     switch (event->type) {
-        case libvlc_MediaPlayerAudioVolume: {
-            auto volume =  static_cast<int>(event->u.media_player_audio_volume.volume*100);
-            emit self->currentVolume(volume);
-        } break;
         case libvlc_MediaPlayerPositionChanged: {
             auto movieMediaPos = static_cast<qint64>(event->u.media_player_position_changed.new_position*self->movieMediaLength); // NOLINT
             emit self->currentMoviePlayed(movieMediaPos);
