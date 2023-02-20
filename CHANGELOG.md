@@ -4,6 +4,7 @@
 ## Unreleased
 
 - Fix crashes when switching libraries without properly configured music libraries.
+- Improve switch times in movie view when scanning movie files.
 
 
 ## 0.14.4 - 2023-02-20

@@ -99,6 +99,14 @@ void xMovieLibraryEntry::scan() const {
     for (auto vlcStatusLoop = 0; (vlcStatus != libvlc_media_parsed_status_done) &&
                                  (vlcStatus != libvlc_media_parsed_status_failed) &&
                                  (vlcStatusLoop < 50); ++vlcStatusLoop) {
+        // Break out of loop if requested.
+        if (QThread::currentThread()->isInterruptionRequested()) {
+            // Release media and vlc instance.
+            libvlc_media_release(vlcMedia);
+            // Reset entrySize to allow scan.
+            entrySize = -1;
+            return;
+        }
         // Wait for 200ms.
         QThread::msleep(200);
         vlcStatus = libvlc_media_get_parsed_status(vlcMedia);
