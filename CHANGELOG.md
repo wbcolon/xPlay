@@ -1,6 +1,11 @@
 # Changelog
 
 
+## Unreleased
+
+- Fix crashes when switching libraries without properly configured music libraries.
+
+
 ## 0.14.4 - 2023-02-20
 
 - Add BluOS icon when playing from BluOS player library.

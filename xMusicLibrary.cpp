@@ -46,6 +46,9 @@ void xMusicLibrary::setUrl(const QUrl& base, bool force) {
         clear();
         // clear url.
         entryUrl.clear();
+        // Emulate empty scan.
+        emit scanningInitialized();
+        emit scannedArtists({});
     } else {
         // Update only if the given path is a directory
         if (base.isLocalFile()) {
@@ -56,6 +59,11 @@ void xMusicLibrary::setUrl(const QUrl& base, bool force) {
                 entryUrl = base;
                 scan();
             } else {
+                clear();
+                // Emulate emply scan.
+                emit scanningInitialized();
+                emit scannedArtists({});
+                // Emit error.
                 emit scanningError();
             }
         } else {
@@ -65,8 +73,8 @@ void xMusicLibrary::setUrl(const QUrl& base, bool force) {
             xPlayerBluOSControls::controls()->clearQueue();
             scan();
         }
+        emit scanningInitialized();
     }
-    emit scanningInitialized();
 }
 
 [[nodiscard]] std::vector<xMusicLibraryArtistEntry*> xMusicLibrary::getArtists() {
@@ -427,6 +435,8 @@ void xMusicLibrary::scanThread() {
             }
         }
     } else {
+        // No artists found. Update UI.
+        emit scannedArtists({});
         // No artists found. Emit error.
         emit scanningError();
     }
