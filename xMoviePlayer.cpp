@@ -106,10 +106,11 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         movieMediaLength(0),
         movieMediaChapter(0),
         movieMediaDeinterlaceMode(false),
-        movieMediaAudioCompressionMode(true),
         movieMediaCropAspectRatio(),
         movieDefaultAudioLanguageIndex(-1),
         movieDefaultSubtitleLanguageIndex(-1) {
+    // Do we use audio compression.
+    movieMediaAudioCompressionMode = xPlayerConfiguration::configuration()->getMovieAudioCompression();
     // Set up the media player.
     vlcStartMediaPlayer(movieMediaAudioCompressionMode);
     pulseAudioControls = xPlayerPulseAudioControls::controls();
@@ -263,9 +264,11 @@ void xMoviePlayer::clearMovieQueue() {
 void xMoviePlayer::setAudioCompressionMode(bool mode) {
     if (mode != movieMediaAudioCompressionMode) {
         movieMediaAudioCompressionMode = mode;
+        // Reset the vlc player.
         vlcStopMediaPlayer();
         vlcStartMediaPlayer(movieMediaAudioCompressionMode);
         emit currentState(State::ResetState);
+        // Do not update the configuration. Configuration is default behavior.
     }
 }
 

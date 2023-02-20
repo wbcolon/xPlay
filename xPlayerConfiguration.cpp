@@ -40,6 +40,7 @@ const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDi
 const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" }; // NOLINT
 const QString xPlayerConfiguration_MovieDefaultAudioLanguage { "xPlay/MovieDefaultAudioLanguage" }; // NOLINT
 const QString xPlayerConfiguration_MovieDefaultSubtitleLanguage { "xPlay/MovieSubtitleAudioLanguage" }; // NOLINT
+const QString xPlayerConfiguration_MovieAudioCompression { "xPlay/MovieAudioCompression" }; // NOLINT
 const QString xPlayerConfiguration_MovieViewFilters { "xPlay/MovieViewFilters" }; // NOLINT
 const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" }; // NOLINT
 const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSitesDefault" }; // NOLINT
@@ -64,6 +65,7 @@ const bool xPlayerConfiguration_MusicViewSelectors_Default = true; // NOLINT
 const bool xPlayerConfiguration_MusicViewFilters_Default = false; // NOLINT
 const bool xPlayerConfiguration_MusicViewVisualization_Default = false; // NOLINT
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
+const bool xPlayerConfiguration_MovieAudioCompression_Default = true; // NOLINT
 const bool xPlayerConfiguration_MovieViewFilters_Default = true; // NOLINT
 const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = { // NOLINT
         { "qobuz", QUrl("https://play.qobuz.com/login") },
@@ -244,6 +246,14 @@ void xPlayerConfiguration::setMovieDefaultSubtitleLanguage(const QString& langua
         settings->setValue(xPlayerConfiguration_MovieDefaultSubtitleLanguage, language);
         settings->sync();
         emit updatedMovieDefaultSubtitleLanguage();
+    }
+}
+
+void xPlayerConfiguration::setMovieAudioCompression(bool enabled) {
+    if (enabled != getMovieAudioCompression()) {
+        settings->setValue(xPlayerConfiguration_MovieAudioCompression, enabled);
+        settings->sync();
+        emit updatedMovieAudioCompression();
     }
 }
 
@@ -463,6 +473,10 @@ QStringList xPlayerConfiguration::getMovieLibraryTagAndDirectory() {
     }
 }
 
+bool xPlayerConfiguration::getMovieAudioCompression() {
+    return settings->value(xPlayerConfiguration_MovieAudioCompression, xPlayerConfiguration_MovieAudioCompression_Default).toBool();
+}
+
 bool xPlayerConfiguration::getMovieViewFilters() {
     return settings->value(xPlayerConfiguration_MovieViewFilters, xPlayerConfiguration_MovieViewFilters_Default).toBool();
 }
@@ -623,6 +637,7 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMovieLibraryExtensions();
     emit updatedMovieDefaultAudioLanguage();
     emit updatedMovieDefaultSubtitleLanguage();
+    emit updatedMovieAudioCompression();
     emit updatedMovieViewFilters();
     emit updatedStreamingSites();
     emit updatedStreamingSitesDefault();

@@ -123,6 +123,7 @@ private:
     QComboBox* chapterBox;
     QLabel* movieLabel;
     QPushButton* optionsMenuButton;
+    QAction* optionsAudioCompression;
     xPlayerSliderWidget* sliderWidget;
     xMoviePlayer* moviePlayer;
     xMoviePlayer::State moviePlayerState;

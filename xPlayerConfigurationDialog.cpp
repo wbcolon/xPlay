@@ -76,6 +76,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     movieDefaultSubtitleLanguageWidget = new QComboBox(movieLibraryTab);
     movieDefaultSubtitleLanguageWidget->addItem(tr("disable"));
     movieDefaultSubtitleLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
+    movieAudioCompressionWidget = new QCheckBox(tr("Use Audio Compression"), movieLibraryTab);
     movieLibraryLayout->addWidget(movieLibraryTagLabel, 0, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryTagWidget, 1, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryDirectoryLabel, 2, 0, 1, 5);
@@ -90,7 +91,10 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     movieLibraryLayout->addWidget(movieDefaultAudioLanguageWidget, 12, 0, 1, 2);
     movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageLabel, 11, 3, 1, 2);
     movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
-    movieLibraryLayout->addRowStretcher(13);
+    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
+    movieLibraryLayout->addRowSpacer(13, xPlayerLayout::SmallSpace);
+    movieLibraryLayout->addWidget(movieAudioCompressionWidget, 14, 0, 1, 2);
+    movieLibraryLayout->addRowStretcher(15);
     movieLibraryTab->setLayout(movieLibraryLayout);
     // Setup music library with directory and extensions.
     auto musicLibraryLayout = new xPlayerLayout();
@@ -265,6 +269,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto movieLibraryExtensions = xPlayerConfiguration::configuration()->getMovieLibraryExtensions();
     auto movieDefaultAudioLanguage = xPlayerConfiguration::configuration()->getMovieDefaultAudioLanguage();
     auto movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
+    auto movieAudioCompression = xPlayerConfiguration::configuration()->getMovieAudioCompression();
     auto databaseDirectory = xPlayerConfiguration::configuration()->getDatabaseDirectory();
     auto databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
     auto streamingSites = xPlayerConfiguration::configuration()->getStreamingSites();
@@ -320,6 +325,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     } else {
         movieDefaultSubtitleLanguageWidget->setCurrentText(movieDefaultSubtitleLanguage);
     }
+    movieAudioCompressionWidget->setChecked(movieAudioCompression);
     streamingSitesListWidget->clear();
     if (!streamingSites.isEmpty()) {
         for (const auto& entry : streamingSites) {
@@ -347,6 +353,7 @@ void xPlayerConfigurationDialog::saveSettings() {
             movieDefaultAudioLanguageWidget->currentIndex() ? movieDefaultAudioLanguageWidget->currentText() : "";
     auto movieDefaultSubtitleLanguage =
             movieDefaultSubtitleLanguageWidget->currentIndex() ? movieDefaultSubtitleLanguageWidget->currentText() : "";
+    auto movieAudioCompression = movieAudioCompressionWidget->isChecked();
     auto databaseDirectory = databaseDirectoryWidget->text();
     qint64 databaseCutOff = 0;
     if (databaseCutOffCheck->isChecked()) {
@@ -385,6 +392,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryExtensions: " << movieLibraryExtensions;
     qDebug() << "xPlayerConfigurationDialog: save: movieDefaultAudioLanguage: " << movieDefaultAudioLanguage;
     qDebug() << "xPlayerConfigurationDialog: save: movieDefaultSubtitleLanguage: " << movieDefaultSubtitleLanguage;
+    qDebug() << "xPlayerConfigurationDialog: save: movieAudioCompression: " << movieAudioCompression;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSites: " << streamingSites;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSitesDefault: " << streamingSitesDefault;
     qDebug() << "xPlayerConfigurationDialog: save: databaseDirectory: " << databaseDirectory;
@@ -409,6 +417,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setMovieLibraryExtensions(movieLibraryExtensions);
     xPlayerConfiguration::configuration()->setMovieDefaultAudioLanguage(movieDefaultAudioLanguage);
     xPlayerConfiguration::configuration()->setMovieDefaultSubtitleLanguage(movieDefaultSubtitleLanguage);
+    xPlayerConfiguration::configuration()->setMovieAudioCompression(movieAudioCompression);
     xPlayerConfiguration::configuration()->setStreamingSites(streamingSites);
     xPlayerConfiguration::configuration()->setStreamingSitesDefault(streamingSitesDefault);
     xPlayerConfiguration::configuration()->setDatabaseDirectory(databaseDirectory);

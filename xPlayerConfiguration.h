@@ -140,6 +140,12 @@ public:
      */
     void setMovieDefaultSubtitleLanguage(const QString& language);
     /**
+     * Set the mode of the audio compression for movies.
+     *
+     * @param enabled use audio compression plugin if true, do not use otherwise.
+     */
+    void setMovieAudioCompression(bool enabled);
+    /**
      * Set the visibility status of the movie filters widget.
      *
      * @param visible show movie filters if true, hide otherwise.
@@ -365,6 +371,12 @@ public:
      */
     [[nodiscard]] static const QStringList& getMovieDefaultLanguages();
     /**
+     * Get the mode of the audio compression for movies.
+     *
+     * @return true if audio compression for movies is used, false otherwise.
+     */
+    [[nodiscard]] bool getMovieAudioCompression();
+    /**
      * Get the visibility of the movie filters.
      *
      * @return true if the movie filters are visible, false otherwise.
@@ -528,6 +540,10 @@ signals:
      * Signal and update of the default movie subtitle language.
      */
     void updatedMovieDefaultSubtitleLanguage();
+    /**
+     * Signal an update of the audio compression mode for movies.
+     */
+    void updatedMovieAudioCompression();
     /**
      * Signal an update of the movie filters visibility.
      */
