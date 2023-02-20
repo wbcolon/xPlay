@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## 0.14.4 - 2023-02-20
 
 - Add BluOS icon when playing from BluOS player library.
 - Improve queue handling for BluOS player libraries.
