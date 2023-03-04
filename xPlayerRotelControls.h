@@ -15,6 +15,7 @@
 #define __XPLAYERROTELCONTROLS_H__
 
 #include <QTcpSocket>
+#include <QTimer>
 #include <QWidget>
 #include <QString>
 
@@ -81,6 +82,10 @@ public:
      * @param wait if true then wait until the socket is connected.
      */
     void connect(const QString& address, int port, bool wait=false);
+    /**
+     * Disconnect controls.
+     */
+    void disconnect();
     /**
      * Send get volume command to the Rotel amp and return retrieved volume.
      *
@@ -253,6 +258,7 @@ private:
      */
     QString sendCommand(const QString& command);
 
+    QTimer* rotelNetworkReconnect;
     QTcpSocket* rotelSocket;
     int rotelNetworkPort;
     QString rotelNetworkAddress;

@@ -4,7 +4,9 @@
 ## Unreleased
 
 - Fix crashes when switching libraries without properly configured music libraries.
+- Enable reindex menu entry only if BluOS player library is used.
 - Improve switch times in movie view when scanning movie files.
+- Disconnect Rotel amp controls when closing.
 
 
 ## 0.14.4 - 2023-02-20

@@ -158,6 +158,8 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
 void xApplication::closeEvent(QCloseEvent* event) {
     // Do some local cleanup before closing.
     musicLibrary->clear();
+    // Disconnect rotel controls.
+    xPlayerRotelControls::controls()->disconnect();
     QMainWindow::closeEvent(event);
 }
 
@@ -352,6 +354,7 @@ void xApplication::scanningErrorMusicLibrary() {
 
 void xApplication::setRotelNetworkAddress() {
     if (mainDbusMutex.try_lock()) {
+        xPlayerRotelControls::controls()->disconnect();
         auto [rotelAddress,rotelPort] = xPlayerConfiguration::configuration()->getRotelNetworkAddress();
         xPlayerRotelControls::controls()->connect(rotelAddress, rotelPort);
         mainDbusMutex.unlock();
@@ -458,17 +461,22 @@ void xApplication::createMenus() {
     viewMenu->addAction(viewMenuSelectMobileSync);
     viewMenu->addSeparator();
     auto musicViewMenu = viewMenu->addMenu("Music View");
+    // Get current music library configuration.
+    auto useMusicLibraryBluOS = xPlayerConfiguration::configuration()->useMusicLibraryBluOS();
     // Create actions for music view submenu.
     auto musicViewUseBluOSPlayer = new QAction("Use BluOS Player", this);
     musicViewUseBluOSPlayer->setCheckable(true);
     musicViewUseBluOSPlayer->setShortcut(QKeySequence("Ctrl+Alt+B"));
-    musicViewUseBluOSPlayer->setChecked(xPlayerConfiguration::configuration()->useMusicLibraryBluOS());
+    musicViewUseBluOSPlayer->setChecked(useMusicLibraryBluOS);
+    auto musicViewReIndexBluOSPlayer = new QAction("ReIndex BluOS Player", this);
+    musicViewReIndexBluOSPlayer->setEnabled(useMusicLibraryBluOS);
     connect(musicViewUseBluOSPlayer, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->useMusicLibraryBluOS(checked);
-        // Disable menu entry if BluOS is enabled.
+        // Disable visualization menu entry if BluOS is enabled.
         musicViewVisualization->setEnabled(!checked);
+        // Enable reindex menu entry if BluOS is enabled.
+        musicViewReIndexBluOSPlayer->setEnabled(checked);
     });
-    auto musicViewReIndexBluOSPlayer = new QAction("ReIndex BluOS Player", this);
     connect(musicViewReIndexBluOSPlayer, &QAction::triggered, this, &xApplication::reIndexMusicLibraryBluOS);
     auto musicViewSelectors = new QAction("Selectors", this);
     musicViewSelectors->setCheckable(true);

@@ -23,6 +23,10 @@ xPlayerRotelControls::xPlayerRotelControls():
         QObject(),
         rotelNetworkPort(0),
         rotelNetworkAddress() {
+    // Setup timer for reconnect
+    rotelNetworkReconnect = new QTimer(this);
+    rotelNetworkReconnect->setSingleShot(true);
+    QObject::connect(rotelNetworkReconnect, &QTimer::timeout, this, &xPlayerRotelControls::controlsCheckConnection);
     // Create a socket to communicate with the amp.
     rotelSocket = new QTcpSocket(this);
     rotelSocket->setSocketOption(QTcpSocket::LowDelayOption, true);
@@ -58,8 +62,13 @@ void xPlayerRotelControls::connect(const QString& address, int port, bool wait) 
         rotelSocket->waitForConnected();
     } else {
         // Check after 60 seconds if the Rotel amp is online.
-        QTimer::singleShot(60000, this, &xPlayerRotelControls::controlsCheckConnection);
+        rotelNetworkReconnect->start(60000);
     }
+}
+
+void xPlayerRotelControls::disconnect() {
+    rotelNetworkReconnect->stop();
+    rotelSocket->disconnectFromHost();
 }
 
 void xPlayerRotelControls::setVolume(int vol) {
@@ -241,7 +250,7 @@ void xPlayerRotelControls::controlsCheckConnection() {
     rotelSocket->connectToHost(rotelNetworkAddress, rotelNetworkPort);
     if (!rotelSocket->waitForConnected(1000)) {
         // Still not connected? Then try again in 60 seconds.
-        QTimer::singleShot(60000, this, &xPlayerRotelControls::controlsCheckConnection);
+        rotelNetworkReconnect->start(60000);
     }
 }
 
