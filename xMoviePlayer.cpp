@@ -52,11 +52,19 @@ void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
     // Create a new libvlc instance. Use "--verbose=2" for additional libvlc output.
     const char* const movieVLCArgs[] = {
             "--vout=xcb_xv",
+            "--file-caching=60000",
+            "--live-caching=60000",
+            "--disc-caching=60000",
+            "--network-caching=60000",
             "--quiet",
             // "--verbose=2"
     };
     const char* const movieVLCArgsCompressor[] = {
             "--vout=xcb_xv",
+            "--file-caching=60000",
+            "--live-caching=60000",
+            "--disc-caching=60000",
+            "--network-caching=60000",
             "--audio-filter=compressor",
             "--compressor-rms-peak=0.2",
             "--compressor-attack=25",
@@ -74,6 +82,7 @@ void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
         movieInstance = libvlc_new(sizeof(movieVLCArgs)/sizeof(movieVLCArgs[0]), movieVLCArgs);
     }
     movieMediaPlayer = libvlc_media_player_new(movieInstance);
+    libvlc_media_player_set_role(movieMediaPlayer, libvlc_role_Video);
     movieMediaPlayerEventManager = libvlc_media_player_event_manager(movieMediaPlayer);
     for (auto event : VLC_MediaPlayer_Events) {
         libvlc_event_attach(movieMediaPlayerEventManager, event, handleVLCMediaPlayerEvents, this);
