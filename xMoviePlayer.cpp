@@ -85,14 +85,14 @@ void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
     libvlc_media_player_set_role(movieMediaPlayer, libvlc_role_Video);
     movieMediaPlayerEventManager = libvlc_media_player_event_manager(movieMediaPlayer);
     for (auto event : VLC_MediaPlayer_Events) {
-        libvlc_event_attach(movieMediaPlayerEventManager, event, handleVLCMediaPlayerEvents, this);
+        libvlc_event_attach(movieMediaPlayerEventManager, event, handleVLCMediaEvents, this);
     }
 }
 
 void xMoviePlayer::vlcStopMediaPlayer() {
     // Detach events
     for (auto event : VLC_MediaPlayer_Events) {
-        libvlc_event_detach(movieMediaPlayerEventManager, event, handleVLCMediaPlayerEvents, this);
+        libvlc_event_detach(movieMediaPlayerEventManager, event, handleVLCMediaEvents, this);
     }
     // Stop playing
     libvlc_media_player_stop(movieMediaPlayer);
@@ -246,15 +246,14 @@ void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& na
     movieMediaPlaying = false;
     // Create a media player playing environment.
     libvlc_media_player_set_media(movieMediaPlayer, movieMedia);
-    // Start parsing the file. Allow up to 1 second for preparsing.
-    libvlc_media_parse_with_options(movieMedia, libvlc_media_parse_network, 1000);
+    // Start parsing the file. Allow up to 10 second for preparsing.
+    libvlc_media_parse_with_options(movieMedia, libvlc_media_parse_network, 10000);
     // Update display.
     emit currentMovie(path, name, tag, directory);
 }
 
 void xMoviePlayer::parseFinished() {
     movieMediaInitialPlay = true;
-    movieMediaPlaying = true;
     libvlc_media_player_set_xwindow(movieMediaPlayer, winId());
     libvlc_media_player_play(movieMediaPlayer);
     emit currentState(xMoviePlayer::PlayingState);
@@ -332,20 +331,34 @@ void xMoviePlayer::handleVLCMediaEvents(const libvlc_event_t *event, void *data)
     auto self = reinterpret_cast<xMoviePlayer*>(data);
     switch (event->type) {
         case libvlc_MediaParsedChanged: {
-            if (libvlc_media_get_parsed_status(self->movieMedia) == libvlc_media_parsed_status_done) {
-                // Determine length.
-                self->movieMediaLength = libvlc_media_get_duration(self->movieMedia);
-                emit self->currentMovieLength(self->movieMediaLength);
-                // Scan for audio channels and subtitles.
-                self->scanForAudioAndSubtitles();
-                // Scan for chapters.
-                self->scanForChapters();
-                // Scanning successful. No need for movieMedia pointer any more.
-                libvlc_event_detach(self->movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCMediaEvents, self);
-                libvlc_media_release(self->movieMedia);
-                self->movieMedia = nullptr;
-                self->movieMediaParsed = true;
-                emit self->eventHandler_parseFinished();
+            auto parsedStatus = libvlc_media_get_parsed_status(self->movieMedia);
+            switch (parsedStatus) {
+                case libvlc_media_parsed_status_done: {
+                    // Determine length.
+                    self->movieMediaLength = libvlc_media_get_duration(self->movieMedia);
+                    emit self->currentMovieLength(self->movieMediaLength);
+                    // Scan for audio channels and subtitles.
+                    self->scanForAudioAndSubtitles();
+                    // Scan for chapters.
+                    self->scanForChapters();
+                    // Scanning successful. No need for movieMedia pointer any more.
+                    libvlc_event_detach(self->movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCMediaEvents, self);
+                    libvlc_media_release(self->movieMedia);
+                    if (!self->movieMediaPlaying) {
+                        self->movieMedia = nullptr;
+                        self->movieMediaParsed = true;
+                        emit self->eventHandler_parseFinished();
+                    }
+                    qDebug() << "PARSING FINISHED...";
+                } break;
+                case libvlc_media_parsed_status_timeout: {
+                    // Start playing.
+                    emit self->eventHandler_parseFinished();
+                } break;
+                default: {
+                    qCritical() << "[libvlc] parsing failed with: " << parsedStatus << ". Stopping movie";
+                    emit self->eventHandler_stop();
+                }
             }
         } break;
         case libvlc_MediaDurationChanged: {
@@ -356,23 +369,10 @@ void xMoviePlayer::handleVLCMediaEvents(const libvlc_event_t *event, void *data)
                 emit self->currentMovieLength(self->movieMediaLength);
             }
         } break;
-        case libvlc_MediaStateChanged: {
-            qDebug() << "[libvlc_MediaStateChanged] new state: " << event->u.media_state_changed.new_state;
-        } break;
-    }
-}
-
-void xMoviePlayer::handleVLCMediaPlayerEvents(const libvlc_event_t *event, void *data) {
-    // Reconvert data to this (as self).
-    auto self = reinterpret_cast<xMoviePlayer*>(data);
-    switch (event->type) {
         case libvlc_MediaPlayerPositionChanged: {
             auto movieMediaPos = static_cast<qint64>(event->u.media_player_position_changed.new_position*self->movieMediaLength); // NOLINT
             emit self->currentMoviePlayed(movieMediaPos);
             self->updateCurrentChapter();
-        } break;
-        case libvlc_MediaPlayerPlaying: {
-            self->movieMediaPlaying = true;
         } break;
         case libvlc_MediaPlayerLengthChanged: {
             if (event->u.media_player_length_changed.new_length != self->movieMediaLength) {
@@ -400,6 +400,12 @@ void xMoviePlayer::handleVLCMediaPlayerEvents(const libvlc_event_t *event, void 
                 auto nextMovie = self->movieQueue.takeFirst();
                 emit self->eventHandler_setMovie(nextMovie.first, nextMovie.second, self->movieQueueTag,
                                                  self->movieQueueDirectory);
+            }
+        } break;
+        case libvlc_MediaStateChanged: {
+            qDebug() << "[libvlc_MediaStateChanged] new state: " << event->u.media_state_changed.new_state;
+            if (event->u.media_state_changed.new_state == libvlc_Playing) {
+                self->movieMediaPlaying = true;
             }
         } break;
     }

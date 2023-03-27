@@ -318,10 +318,6 @@ private:
      */
     static void handleVLCMediaEvents(const libvlc_event_t*  event, void* data);
     /**
-     * VLC handler for MediaPlayer events.
-     */
-    static void handleVLCMediaPlayerEvents(const libvlc_event_t*  event, void* data);
-    /**
      * Scan the media file for audio and subtitle tracks.
      */
     void scanForAudioAndSubtitles();

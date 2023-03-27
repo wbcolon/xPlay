@@ -3,6 +3,7 @@
 
 ## Unreleased
 
+- Fix default audio/subtitle setting for movie files.
 - Fix crashes when switching libraries without properly configured music libraries.
 - Enable reindex menu entry only if BluOS player library is used.
 - Improve switch times in movie view when scanning movie files.
