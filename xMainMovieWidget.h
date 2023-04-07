@@ -145,10 +145,6 @@ private slots:
      */
     void setFullWindow(bool mode);
     /**
-     * Toggle between enable/disable of the full window mode.
-     */
-    void toggleFullWindow();
-    /**
      * Select an entry in the tag list widget.
      *
      * @param index the listIndex of the selected tag.
@@ -259,7 +255,6 @@ private:
     QStackedWidget* movieStack;
     xPlayerMovieWidget* moviePlayerWidget;
     QWidget* mainWidget;
-    bool fullWindow;
     bool autoPlayNextMovie;
     bool useDatabaseMovieOverlay;
     qint64 databaseCutOff;

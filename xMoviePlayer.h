@@ -41,6 +41,18 @@ public:
     explicit xMoviePlayer(QWidget* parent=nullptr);
     ~xMoviePlayer() noexcept override;
     /**
+     * Set the full window mode.
+     *
+     * @param enabled enable full window mode if true, disable otherwise.
+     */
+    void setFullWindowMode(bool enabled);
+    /**
+     * Return the state of the full window mode.
+     *
+     * @return true if full window mode is enabled, false otherwise.
+     */
+    [[nodiscard]] bool getFullWindowMode() const;
+    /**
      * Return the volume for the movie player
      *
      * @return integer value in between 0 and 100.
@@ -112,7 +124,7 @@ signals:
     /**
      * Signal a toggle in between enable/disable of the full screen mode.
      */
-    void toggleFullWindow();
+    void fullWindowMode(bool enabled);
     /**
      * Signal the name of the currently played movie.
      *
@@ -364,6 +376,7 @@ private:
     bool movieMediaDeinterlaceMode;
     bool movieMediaAudioCompressionMode;
     QString movieMediaCropAspectRatio;
+    bool movieMediaFullWindow;
 
     QList<std::pair<int,QString>> currentSubtitleDescriptions;
     QList<std::pair<int,QString>> currentAudioChannelDescriptions;

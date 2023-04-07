@@ -116,6 +116,7 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         movieMediaChapter(0),
         movieMediaDeinterlaceMode(false),
         movieMediaCropAspectRatio(),
+        movieMediaFullWindow(false),
         movieDefaultAudioLanguageIndex(-1),
         movieDefaultSubtitleLanguageIndex(-1) {
     // Do we use audio compression.
@@ -138,6 +139,17 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
 
 xMoviePlayer::~xMoviePlayer() noexcept {
     vlcStopMediaPlayer();
+}
+
+void xMoviePlayer::setFullWindowMode(bool enabled) {
+    if (movieMediaFullWindow != enabled) {
+        movieMediaFullWindow = enabled;
+        emit fullWindowMode(movieMediaFullWindow);
+    }
+}
+
+bool xMoviePlayer::getFullWindowMode() const {
+    return movieMediaFullWindow;
 }
 
 void xMoviePlayer::setMuted(bool mute) {
@@ -557,7 +569,7 @@ void xMoviePlayer::updatedDefaultSubtitleLanguage() {
 void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
     switch (keyEvent->key()) {
         case Qt::Key_Escape: {
-            toggleFullWindow();
+            setFullWindowMode(false);
         } break;
         case Qt::Key_Right: {
             if (keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
@@ -607,7 +619,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
 }
 
 void xMoviePlayer::mouseDoubleClickEvent(QMouseEvent* mouseEvent) {
-    emit toggleFullWindow();
+    setFullWindowMode(!movieMediaFullWindow);
     mouseEvent->accept();
 }
 

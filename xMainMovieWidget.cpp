@@ -43,7 +43,6 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
         currentMovieTag(),
         currentMovieDirectory(),
         moviePlayer(player),
-        fullWindow(false),
         autoPlayNextMovie(false),
         useDatabaseMovieOverlay(true),
         databaseCutOff(0) {
@@ -140,8 +139,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     // Update stack widget based on player state.
     connect(moviePlayer, &xMoviePlayer::currentState, this, &xMainMovieWidget::currentState);
     // Connect full window.
-    connect(moviePlayerWidget, &xPlayerMovieWidget::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
-    connect(moviePlayer, &xMoviePlayer::toggleFullWindow, this, &xMainMovieWidget::toggleFullWindow);
+    connect(moviePlayer, &xMoviePlayer::fullWindowMode, this, &xMainMovieWidget::setFullWindow);
     connect(moviePlayerWidget, &xPlayerMovieWidget::autoPlayNextMovie, this, &xMainMovieWidget::setAutoPlayNextMovie);
     // Connect database.
     connect(moviePlayer, &xMoviePlayer::currentMovie, this, &xMainMovieWidget::currentMovie);
@@ -163,11 +161,11 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
 
 void xMainMovieWidget::initializeView() {
     updateWindowTitle(std::filesystem::path(), currentMovieName, currentMovieTag, currentMovieDirectory);
-    emit showMenuBar(!fullWindow);
+    emit showMenuBar(!moviePlayer->getFullWindowMode());
 }
 
 void xMainMovieWidget::clear() {
-    setFullWindow(false);
+    moviePlayer->setFullWindowMode(false);
     // Clear queue.
     moviePlayer->stop();
     moviePlayerWidget->clear();
@@ -177,18 +175,8 @@ void xMainMovieWidget::clear() {
     scannedMovies(std::vector<xMovieLibraryEntry*>());
 }
 
-void xMainMovieWidget::toggleFullWindow() {
-    // Toggle the mode.
-    setFullWindow(!fullWindow);
-}
-
 void xMainMovieWidget::setFullWindow(bool mode) {
     qDebug() << "xMainMovieWidget: setFullWindow: " << mode;
-    // If mode is already correct then do nothing.
-    if (fullWindow == mode) {
-        return;
-    }
-    fullWindow = mode;
     if (mode) {
         movieStack->removeWidget(moviePlayer);
         moviePlayer->setParent(this);
@@ -204,7 +192,7 @@ void xMainMovieWidget::setFullWindow(bool mode) {
         QApplication::restoreOverrideCursor();
     }
     emit showWindowTitle(createWindowTitle());
-    emit showMenuBar(!fullWindow);
+    emit showMenuBar(!mode);
 }
 
 void xMainMovieWidget::scannedTags(const QStringList& tags) {
@@ -478,13 +466,13 @@ void xMainMovieWidget::updateWindowTitle(const std::filesystem::path& path, cons
     currentMovieName = name;
     currentMovieTag = tag;
     currentMovieDirectory = directory;
-    if (fullWindow) {
+    if (moviePlayer->getFullWindowMode()) {
         emit showWindowTitle(createWindowTitle());
     }
 }
 
 void xMainMovieWidget::updateWindowTitlePlayBack(qint64 timeStamp) {
-    if (fullWindow) {
+    if (moviePlayer->getFullWindowMode()) {
         emit showWindowTitle(QString("%1 - %2:%3:%4").
                 arg(createWindowTitle()).
                 arg(timeStamp/3600000).
@@ -495,7 +483,7 @@ void xMainMovieWidget::updateWindowTitlePlayBack(qint64 timeStamp) {
 
 
 QString xMainMovieWidget::createWindowTitle() {
-    if (fullWindow) {
+    if (moviePlayer->getFullWindowMode()) {
         if (currentMovieDirectory == ".") {
             return QString("%1 - (%2) - %3").arg(QApplication::applicationName(), currentMovieTag, currentMovieName);
         } else {
@@ -514,15 +502,15 @@ void xMainMovieWidget::currentState(xMoviePlayer::State state) {
             movieStack->setCurrentIndex(1);
         } break;
         case xMoviePlayer::StoppingState: {
-            setFullWindow(false);
+            moviePlayer->setFullWindowMode(false);
         } break;
         case xMoviePlayer::StopState: {
-            setFullWindow(false);
+            moviePlayer->setFullWindowMode(false);
             movieStack->setCurrentIndex(0);
         } break;
         case xMoviePlayer::ResetState: {
             // The libvlc media player has been restarted.
-            setFullWindow(false);
+            moviePlayer->setFullWindowMode(false);
             movieStack->setCurrentIndex(0);
             // Clear movie player widget.
             moviePlayerWidget->clear();

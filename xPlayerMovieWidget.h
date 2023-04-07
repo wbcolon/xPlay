@@ -33,10 +33,6 @@ public:
 
 signals:
     /**
-     * Signal a toggle for enable/disable the full window mode.
-     */
-    void toggleFullWindow();
-    /**
      * Signal a change in the autoplay next setting.
      *
      * @param mode the current state of autoplay.

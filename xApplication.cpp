@@ -204,7 +204,8 @@ void xApplication::dbus_jump(qint64 delta) {
 
 void xApplication::dbus_fullWindow() {
     if (mainView->currentWidget() == mainMovieWidget) {
-        emit moviePlayer->toggleFullWindow();
+        // Implement toggle.
+        moviePlayer->setFullWindowMode(!moviePlayer->getFullWindowMode());
     }
 }
 

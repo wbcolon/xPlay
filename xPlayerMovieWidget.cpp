@@ -126,8 +126,8 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     connect(audioChannelBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectAudioChannel(int)));
     connect(subtitleBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectSubtitle(int)));
     connect(chapterBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(playChapter(int)));
-    // Following change in combobox will also trigger a select of the audio channel, subtitle of chapter.
-    // Disconnect the corresponding signals before setting and connect afterwards.
+    // Following change in combobox will also trigger a selection of the audio channel, subtitle of chapter.
+    // Disconnect the corresponding signals before setting and connect afterward.
     connect(moviePlayer, &xMoviePlayer::currentAudioChannel, [=](int index) {
         disconnect(audioChannelBox, SIGNAL(currentIndexChanged(int)), moviePlayer, SLOT(selectAudioChannel(int)));
         audioChannelBox->setCurrentIndex(index);
@@ -274,7 +274,7 @@ void xPlayerMovieWidget::currentState(xMoviePlayer::State state) {
 void xPlayerMovieWidget::fullWindowPressed() {
     if ((moviePlayerState == xMoviePlayer::PlayingState) ||
         (moviePlayerState == xMoviePlayer::PauseState)) {
-        emit toggleFullWindow();
+        moviePlayer->setFullWindowMode(true);
     }
 }
 
