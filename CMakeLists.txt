@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.10)
 
 project(xPlay)
 
+# Default build is Release
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+endif()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -11,9 +17,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
-#set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -Wno-deprecated-declarations -ggdb -fno-omit-frame-pointer -fsanitize=address -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
-set(CMAKE_CXX_FLAGS_RELEASE "-Wall -pedantic -pthread -Wno-deprecated-declarations -O3 -DQT_NO_DEBUG_OUTPUT -ggdb -DXPLAY_APP_NAME=\\\"xPlay\\\"")
+# Default flags for all builds.
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations")
+# Additional flags for 'Debug' build.
+set(CMAKE_CXX_FLAGS_DEBUG "-ggdb -fno-omit-frame-pointer -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
+# Additional flags for 'Release' build.
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DQT_NO_DEBUG_OUTPUT -DXPLAY_APP_NAME=\\\"xPlay\\\"")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 option(USE_STREAMING "Enable the streaming view in xPlay" ON)
@@ -37,8 +46,8 @@ pkg_check_modules(PUGIXML pugixml REQUIRED)
 set(CMAKE_REQUIRED_INCLUDES "${PUGIXML_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_CFLAGS "${PUGIXML_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${PUGIXML_LIBRARIES}")
-
 pkg_check_modules(TAGLIB taglib REQUIRED)
+
 set(CMAKE_REQUIRED_INCLUDES "${TAGLIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_CFLAGS "${TAGLIB_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${TAGLIB_LIBRARIES}")
@@ -110,8 +119,7 @@ set(xPlay_sources
         xMainStreamingWidget.cpp
         xMainMobileSyncWidget.cpp
         xApplication.cpp
-        xPlayerDBus.cpp
-        )
+        xPlayerDBus.cpp)
 
 set(xPlay_libraries
         Qt5::WebEngineWidgets Qt5::Widgets Qt5::Multimedia Qt5::MultimediaWidgets Qt5::DBus
@@ -142,5 +150,6 @@ else()
             xPlay.qrc)
     target_link_libraries(xPlay ${xPlay_libraries})
     target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
+    install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
