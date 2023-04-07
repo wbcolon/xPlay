@@ -17,14 +17,26 @@
 namespace xPlayer {
 
 QString millisecondsToTimeFormat(qint64 ms, bool showHours) {
+    auto hours = ms/3600000;
+    auto minutes = (ms/60000)%60;
+    auto seconds = (ms/1000)%60;
+    auto hseconds = (ms%1000)/10;
     if (showHours) {
-        return QString("%1:%2:%3").arg(ms/3600000).
-                arg((ms/60000)%60, 2, 10, QChar('0')).
-                arg((ms/1000)%60, 2, 10, QChar('0'));
+        return QString("%1:%2:%3").arg(hours).arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
     } else {
-        return QString("%1:%2.%3").arg(ms/60000).
-                arg((ms/1000)%60, 2, 10, QChar('0')).
-                arg((ms%1000)/10, 2, 10, QChar('0'));
+        return QString("%1:%2.%3").arg(hours).arg(seconds, 2, 10, QChar('0')).arg(hseconds, 2, 10, QChar('0'));
+    }
+}
+
+QString millisecondsToShortTimeFormat(qint64 ms) {
+    auto hours = ms/3600000;
+    auto minutes = (ms/60000)%60;
+    auto seconds = (ms/1000)%60;
+    // More than one hour
+    if (hours > 0) {
+        return QString("%1:%2:%3").arg(hours).arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
+    } else {
+        return QString("%1:%2").arg(minutes).arg(seconds, 2, 10, QChar('0'));
     }
 }
 

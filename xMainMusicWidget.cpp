@@ -66,6 +66,7 @@ auto xMainMusicWidget::addLineEditGroupBox(const QString& boxLabel, QWidget* par
 xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         musicVisualizationEnabled(false),
+        musicVisualizationFullWindow(false),
         musicPlayer(player),
         musicLibrary(library),
         playedTrack(0),
@@ -73,6 +74,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         databaseCutOff(0),
         currentArtist(),
         currentAlbum(),
+        currentTrackName(),
         currentArtistSelector(),
         useSortingLatest(false) {
 
@@ -166,7 +168,12 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         // Connect music visualization view
         connect(musicPlayer, &xMusicPlayer::visualizationStereo,
                 musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
+        connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, this, &xMainMusicWidget::updateWindowTitle);
         connect(playerWidget, &xPlayerMusicWidget::mouseDoubleClicked, this, &xMainMusicWidget::visualizationToggle);
+        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationFullWindow,
+                this, &xMainMusicWidget::updateMusicViewVisualizationFullWindow);
+        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationExiting,
+                this, &xMainMusicWidget::visualizationExiting);
         connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationError,
                 this, &xMainMusicWidget::visualizationError);
         musicStacked->addWidget(musicVisualizationWidget);
@@ -849,6 +856,7 @@ void xMainMusicWidget::currentTrack(int index, const QString& artist, const QStr
     }
     currentArtist = artist;
     currentAlbum = album;
+    currentTrackName = track;
     // Update visualization title.
     if (musicPlayer->getVisualization()) {
         musicVisualizationWidget->showTitle(QString("%1 - %2 - %3").arg(track, artist, album));
@@ -958,7 +966,30 @@ void xMainMusicWidget::updatedMusicViewVisualization() {
                 musicStacked->setCurrentWidget(musicListView);
             }
         }
+        updateMusicViewVisualizationFullWindow(musicVisualizationFullWindow);
     }
+}
+
+void xMainMusicWidget::updateMusicViewVisualizationFullWindow(bool enabled) {
+    if (musicVisualizationEnabled) {
+        // Toggle mode.
+        musicVisualizationFullWindow = enabled;
+        // Hide/show queue box and player widget if full window mode is enabled/disabled
+        if (musicVisualizationFullWindow) {
+            queueBox->setVisible(false);
+            playerWidget->setVisible(false);
+            // Hide menu bar.
+            emit showMenuBar(false);
+            emit showWindowTitle(QString("%1 - %2 - %3").arg(currentTrackName, currentArtist, currentAlbum));
+            return;
+        }
+    }
+    // Disabled music visualization or disabled full window mode.
+    queueBox->setVisible(true);
+    playerWidget->setVisible(true);
+    // Show menu bar and reset window title.
+    emit showWindowTitle(QApplication::applicationName());
+    emit showMenuBar(true);
 }
 
 void xMainMusicWidget::updatedDatabaseMusicOverlay() {
@@ -1046,22 +1077,9 @@ void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
     }
 }
 
-// Little helper function.
-auto msToTimeString = [](qint64 total) {
-    auto hours = total/3600000;
-    auto minutes = (total/60000)%60;
-    auto seconds = (total/1000)%60;
-    // More than one hour
-    if (hours > 0) {
-        return QString("%1:%2:%3").arg(hours).arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
-    } else {
-        return QString("%1:%2").arg(minutes).arg(seconds, 2, 10, QChar('0'));
-    }
-};
-
 void xMainMusicWidget::updateTracksTotalTime(qint64 total) {
     if (total > 0) {
-        trackBox->setTitle(QString("Tracks - %1").arg(msToTimeString(total)));
+        trackBox->setTitle(QString("Tracks - %1").arg(xPlayer::millisecondsToShortTimeFormat(total)));
     } else {
         trackBox->setTitle("Tracks");
     }
@@ -1069,7 +1087,8 @@ void xMainMusicWidget::updateTracksTotalTime(qint64 total) {
 
 void xMainMusicWidget::updateQueueTotalTime(qint64 total) {
     if (total > 0) {
-        queueBox->setTitle(QString("Queue - %1 Songs - %2").arg(queueList->count()).arg(msToTimeString(total)));
+        queueBox->setTitle(QString("Queue - %1 Songs - %2").arg(queueList->count()).
+                arg(xPlayer::millisecondsToShortTimeFormat(total)));
     } else {
         queueBox->setTitle("Queue");
     }
@@ -1087,6 +1106,13 @@ void xMainMusicWidget::updateVisualizationView(bool playing) {
                 musicStacked->setCurrentWidget(musicListView);
             }
         }
+    }
+}
+
+void xMainMusicWidget::updateWindowTitle(qint64 time) {
+    if ((musicPlayer->getVisualization()) && (musicVisualizationFullWindow)) {
+        emit showWindowTitle(QString("%1 - %2 - %3 (%4)").arg(currentTrackName, currentArtist, currentAlbum,
+                                                              xPlayer::millisecondsToTimeFormat(time, false)));
     }
 }
 

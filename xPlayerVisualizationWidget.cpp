@@ -34,7 +34,8 @@ xPlayerVisualizationWidget::xPlayerVisualizationWidget(QWidget *parent):
         visualizationPresetIndex(0),
         visualizationPresetMenu(nullptr),
         visualizationPresetMap(),
-        visualizationEnabled(true) {
+        visualizationEnabled(true),
+        visualizationFullWindowMode(false) {
 }
 
 xPlayerVisualizationWidget::~xPlayerVisualizationWidget() {
@@ -160,33 +161,42 @@ bool xPlayerVisualizationWidget::event(QEvent* e) {
         switch (e->type()) {
             case QEvent::Show: {
                 makeCurrent();
-            }
-                break;
+                emit visualizationFullWindow(visualizationFullWindowMode);
+            } break;
             case QEvent::Hide: {
                 doneCurrent();
-            }
-                break;
+            } break;
+            case QEvent::KeyRelease: {
+                auto keyEvent = reinterpret_cast<QKeyEvent *>(e);
+                if (keyEvent->key() == Qt::Key_Escape) {
+                    qDebug() << "ESC pressed. Exiting visualization.";
+                    emit visualizationExiting();
+                }
+            } break;
             case QEvent::MouseButtonRelease: {
                 auto mouseEvent = reinterpret_cast<QMouseEvent *>(e);
                 if ((mouseEvent->button() == Qt::RightButton) && (visualizationPresetMenu)) {
                     visualizationPresetMenu->exec(mapToGlobal(mouseEvent->pos()));
                 }
-            }
-                break;
+                if (mouseEvent->button() == Qt::LeftButton) {
+                    if (mouseEvent->modifiers() & Qt::ControlModifier) {
+                        if (mouseEvent->modifiers() & Qt::ShiftModifier) {
+                            visualizationPresetIndex = (visualizationPresetIndex + 1) % visualization->getPlaylistSize();
+                            visualization->selectPreset(visualizationPresetIndex);
+                        }
+                        showTitle(QString());
+                        showTitle(QString::fromStdString(visualization->getPresetName(visualizationPresetIndex)));
+                    }
+                }
+            } break;
             case QEvent::MouseButtonDblClick: {
                 auto mouseEvent = reinterpret_cast<QMouseEvent *>(e);
                 if (mouseEvent->button() == Qt::LeftButton) {
-                    if (mouseEvent->modifiers() & Qt::ControlModifier) {
-                        visualizationPresetIndex = (visualizationPresetIndex + 1) % visualization->getPlaylistSize();
-                        visualization->selectPreset(visualizationPresetIndex);
-                    }
-                    showTitle(QString());
-                    showTitle(QString::fromStdString(visualization->getPresetName(visualizationPresetIndex)));
+                    visualizationFullWindowMode = !visualizationFullWindowMode;
+                    emit visualizationFullWindow(visualizationFullWindowMode);
                 }
-            }
-                break;
-            default:
-                break;
+            } break;
+            default: break;
         }
     }
     return QOpenGLWidget::event(e);

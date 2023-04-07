@@ -74,6 +74,10 @@ signals:
      */
     void visualizationToggle();
     /**
+     * Signal emitted if the visualization is ending.
+     */
+    void visualizationExiting();
+    /**
      * Signal emitted if there is an issue with projectM visualization.
      */
     void visualizationError();
@@ -426,6 +430,10 @@ private slots:
      */
     void updatedMusicViewVisualization();
     /**
+     * Update full window mode for the music visualization.
+     */
+    void updateMusicViewVisualizationFullWindow(bool enable);
+    /**
      * Update the music database overlay on configuration changes.
      */
     void updatedDatabaseMusicOverlay();
@@ -451,6 +459,11 @@ private slots:
      * @param playing the playing state of the music player.
      */
     void updateVisualizationView(bool playing);
+    /**
+     * DDDD
+     * @param time
+     */
+    void updateWindowTitle(qint64 time);
     /**
      * Worker function that inserts a chunk of tracks into queue.
      *
@@ -580,6 +593,7 @@ private:
     xPlayerArtistInfo* musicInfoView;
     xPlayerVisualizationWidget* musicVisualizationWidget;
     bool musicVisualizationEnabled;
+    bool musicVisualizationFullWindow;
     xMusicPlayer* musicPlayer;
     xMusicLibrary* musicLibrary;
     xMusicLibraryFilter musicLibraryFilter;
@@ -615,6 +629,7 @@ private:
      */
     QString currentArtist;
     QString currentAlbum;
+    QString currentTrackName;
     /**
      * Save current artist selector and sorting mode.
      */

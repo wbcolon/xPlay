@@ -44,6 +44,14 @@ public slots:
 
 signals:
     /**
+     * Signal for enable/disable the full window mode.
+     */
+    void visualizationFullWindow(bool enabled);
+    /**
+     * Signal for exiting visualization.
+     */
+    void visualizationExiting();
+    /**
      * Emitted if we are unable to create a projectM instance.
      */
     void visualizationError();
@@ -90,6 +98,7 @@ private:
     QMenu* visualizationPresetMenu;
     std::map<QString, std::list<std::pair<int, QString>>> visualizationPresetMap;
     bool visualizationEnabled;
+    bool visualizationFullWindowMode;
 };
 
 #endif

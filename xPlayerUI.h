@@ -52,6 +52,13 @@ const int LargeIconSize = 32;
  * @return the human readable time (hour:min:sec) or (min:sec.ms)as string.
  */
 QString millisecondsToTimeFormat(qint64 ms, bool showHours);
+/**
+ * Convert the time given to short human readable time stamp.
+ *
+ * @param ms the given time in ms.
+ * @return the human readable time (hour:min:sec) or (min:sec) as string.
+ */
+QString millisecondsToShortTimeFormat(qint64 ms);
 
 }
 

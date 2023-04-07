@@ -506,6 +506,11 @@ void xApplication::createMenus() {
         musicViewVisualization->setChecked(toggleChecked);
         xPlayerConfiguration::configuration()->setMusicViewVisualization(toggleChecked);
     });
+    // Disable music visualization if ESC is pressed.
+    connect(mainMusicWidget, &xMainMusicWidget::visualizationExiting, [=]() {
+        musicViewVisualization->setChecked(false);
+        xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
+    });
     // Disable the visualization view in case of an error.
     connect(mainMusicWidget, &xMainMusicWidget::visualizationError, [=]() {
         musicViewVisualization->setChecked(false);
