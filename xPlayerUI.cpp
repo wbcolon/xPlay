@@ -24,7 +24,7 @@ QString millisecondsToTimeFormat(qint64 ms, bool showHours) {
     if (showHours) {
         return QString("%1:%2:%3").arg(hours).arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
     } else {
-        return QString("%1:%2.%3").arg(hours).arg(seconds, 2, 10, QChar('0')).arg(hseconds, 2, 10, QChar('0'));
+        return QString("%1:%2.%3").arg(minutes).arg(seconds, 2, 10, QChar('0')).arg(hseconds, 2, 10, QChar('0'));
     }
 }
 
