@@ -73,6 +73,12 @@ public:
 
 signals:
     /**
+     * Signal any error in the movie player.
+     *
+     * @param msg the error message to be shown.
+     */
+    void moviePlayerError(QString msg);
+    /**
      * Signal the audio channel for the current movie.
      *
      * @param audioChannel the index of audio channel.

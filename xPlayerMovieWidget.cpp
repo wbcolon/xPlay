@@ -146,8 +146,8 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     });
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieAudioCompression, [=]() {
         bool enabled = xPlayerConfiguration::configuration()->getMovieAudioCompression();
-        optionsAudioCompression->setChecked(enabled);
         moviePlayer->setAudioCompressionMode(enabled);
+        optionsAudioCompression->setChecked(moviePlayer->audioCompressionMode());
     });
     // Seek.
     connect(sliderWidget, &xPlayerSliderWidget::seek, moviePlayer, &xMoviePlayer::seek);
@@ -168,7 +168,10 @@ void xPlayerMovieWidget::createOptionsMenu() {
     optionsAudioCompression = new QAction(tr("Audio Compression"), optionsMenu);
     optionsAudioCompression->setCheckable(true);
     optionsAudioCompression->setChecked(xPlayerConfiguration::configuration()->getMovieAudioCompression());
-    connect(optionsAudioCompression, &QAction::triggered, moviePlayer, &xMoviePlayer::setAudioCompressionMode);
+    connect(optionsAudioCompression, &QAction::triggered, [=](bool enabled) {
+        moviePlayer->setAudioCompressionMode(enabled);
+        optionsAudioCompression->setChecked(moviePlayer->audioCompressionMode());
+    });
     // Deinterlace.
     auto optionsDeinterlace = new QAction(tr("Deinterlace"), optionsMenu);
     optionsDeinterlace->setCheckable(true);

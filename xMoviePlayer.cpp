@@ -76,10 +76,21 @@ void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
             "--quiet",
             // "--verbose=2"
     };
-    if (compressAudio) {
+    movieMediaAudioCompressionMode = compressAudio;
+    if (movieMediaAudioCompressionMode) {
         movieInstance = libvlc_new(sizeof(movieVLCArgsCompressor)/sizeof(movieVLCArgsCompressor[0]), movieVLCArgsCompressor);
-    } else {
+        if (!movieInstance) {
+            movieMediaAudioCompressionMode = false;
+            qCritical() << "Unable to enable the VLC compressor plugin. Disabling audio compression.";
+            emit moviePlayerError(tr("Unable to enable the VLC compressor plugin. Disabling audio compression."));
+        }
+    }
+    if (!movieMediaAudioCompressionMode) {
         movieInstance = libvlc_new(sizeof(movieVLCArgs)/sizeof(movieVLCArgs[0]), movieVLCArgs);
+    }
+    if (!movieInstance) {
+        qCritical() << "Unable to start vlc. Critical error. Abort.";
+        abort();
     }
     movieMediaPlayer = libvlc_media_player_new(movieInstance);
     libvlc_media_player_set_role(movieMediaPlayer, libvlc_role_Video);
@@ -283,10 +294,9 @@ void xMoviePlayer::clearMovieQueue() {
 
 void xMoviePlayer::setAudioCompressionMode(bool mode) {
     if (mode != movieMediaAudioCompressionMode) {
-        movieMediaAudioCompressionMode = mode;
         // Reset the vlc player.
         vlcStopMediaPlayer();
-        vlcStartMediaPlayer(movieMediaAudioCompressionMode);
+        vlcStartMediaPlayer(mode);
         emit currentState(State::ResetState);
         // Do not update the configuration. Configuration is default behavior.
     }
