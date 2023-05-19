@@ -19,6 +19,7 @@
 #include <QUrl>
 #include <QRegularExpression>
 
+#include <memory>
 #include <pugixml.hpp>
 #include <curl/curl.h>
 
@@ -314,7 +315,7 @@ private:
     QString bluOSBasePath;
     CURL* bluOSRequests;
     pugi::xml_document bluOSResponse;
-    QRegularExpression* bluOSTrackInfoRegExpr;
+    std::vector<std::unique_ptr<QRegularExpression>> bluOSTrackInfoRegExpr;
     static xPlayerBluOSControls* bluOSControls;
     QMutex bluOSMutex;
     QTimer* bluOSStatus;

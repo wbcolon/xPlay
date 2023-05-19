@@ -19,6 +19,7 @@
 #include <QDebug>
 
 #include <iostream>
+#include <memory>
 
 
 xPlayerBluOSControls* xPlayerBluOSControls::bluOSControls = nullptr;
@@ -34,7 +35,10 @@ xPlayerBluOSControls::xPlayerBluOSControls():
     QObject::connect(bluOSReIndexing, &QTimer::timeout, [=]() {
         parseIndexing(sendCommand(QUrl(bluOSUrl+"/Status")));
     });
-    bluOSTrackInfoRegExpr = new QRegularExpression("sample.*rate.*>(?<samplerate>\\d+).*\n.*sample.*size.*>(?<bitspersample>\\d+)");
+    // The English language variant for parsing the track info.
+    bluOSTrackInfoRegExpr.push_back(std::make_unique<QRegularExpression>("sample.*rate.*>(?<samplerate>\\d+).*\n.*sample.*size.*>(?<bitspersample>\\d+)"));
+    // The German language variant for parsing the track info.
+    bluOSTrackInfoRegExpr.push_back(std::make_unique<QRegularExpression>("abtastrate.*>(?<samplerate>\\d+).*\n.*bit-tiefe.*>(?<bitspersample>\\d+)"));
 }
 
 xPlayerBluOSControls::~xPlayerBluOSControls() {
@@ -42,7 +46,6 @@ xPlayerBluOSControls::~xPlayerBluOSControls() {
     if (bluOSStatus) {
         bluOSStatus->stop();
     }
-    delete bluOSTrackInfoRegExpr;
 }
 
 xPlayerBluOSControls* xPlayerBluOSControls::controls() {
@@ -358,12 +361,14 @@ std::vector<std::tuple<QString,qint64,QString>> xPlayerBluOSControls::parseTrack
 std::tuple<int,int> xPlayerBluOSControls::parseTrackInfo(const QString& commandResult) {
     // The result is a mini HTTP page. Use simple regular expression for parsing.
     QRegularExpressionMatch match;
-    match = bluOSTrackInfoRegExpr->match(commandResult.toLower());
-    if (match.hasMatch()) {
-        return std::make_tuple(match.captured("samplerate").toInt(), match.captured("bitspersample").toInt());
-    } else {
-        return std::make_tuple(-1, -1);
+    for (auto& infoRegExpr : bluOSTrackInfoRegExpr) {
+        match = infoRegExpr->match(commandResult.toLower());
+        if (match.hasMatch()) {
+            return std::make_tuple(match.captured("samplerate").toInt(), match.captured("bitspersample").toInt());
+        }
     }
+    qCritical() << "Unable to parse track info result: " << commandResult;
+    return std::make_tuple(-1, -1);
 }
 
 QStringList xPlayerBluOSControls::parsePlaylist(const QString& commandResult) {
