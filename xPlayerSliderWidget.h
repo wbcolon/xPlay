@@ -133,6 +133,7 @@ private:
     QSlider* slider;
     xPlayerSliderScaleWidget* scale;
     qint64 lengthValue;
+    bool seekInProgress;
     QLCDNumber* lengthLabel;
     QLCDNumber* playedLabel;
 };

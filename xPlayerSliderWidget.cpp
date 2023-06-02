@@ -19,6 +19,7 @@
 #include <QResizeEvent>
 #include <QSpacerItem>
 #include <QStyle>
+#include <QDebug>
 
 xPlayerSliderScaleWidget::xPlayerSliderScaleWidget(int offset, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
@@ -162,8 +163,18 @@ xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags)
                                           QSizePolicy::Fixed, QSizePolicy::Minimum), 0, 6, 1, 1);
     sliderLayout->addWidget(slider, 0, 2, 1, 4);
     sliderLayout->addWidget(scale, 1, 1, 1, 6);
-    // Connect the track slider to the music player. Do proper conversion using lambdas.
-    connect(slider, &QSlider::sliderMoved, [=](int position) { emit seek(static_cast<qint64>(position)); } );
+    // Connect the track slider to the music player. Seek only after the slider move is completed.
+    connect(slider, &QSlider::sliderPressed, [=]() {
+        seekInProgress = true;
+    } );
+    connect(slider, &QSlider::sliderMoved, [=](qint64 position) {
+        // Show currently selected seek time instead of the played time.
+        playedLabel->display(xPlayer::millisecondsToTimeFormat(position, showHours));
+    } );
+    connect(slider, &QSlider::sliderReleased, [=]() {
+        seekInProgress = false;
+        emit seek(slider->sliderPosition());
+    } );
     // Clear played and length LCD display.
     clear();
 }
@@ -210,7 +221,8 @@ void xPlayerSliderWidget::setLength(qint64 length) {
 
 void xPlayerSliderWidget::setPlayed(qint64 played) {
     // Only update the played slider if the length has been set.
-    if (lengthValue > 0) {
+    // Do not update if a slider seek is in progress.
+    if ((lengthValue > 0) && (!seekInProgress)){
         // Update the time played for the current track.
         playedLabel->display(xPlayer::millisecondsToTimeFormat(played, showHours));
         // Update the slider position.
