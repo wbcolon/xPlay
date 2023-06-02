@@ -261,6 +261,7 @@ void xMusicPlayer::clearQueue() {
     // Stop the music player and clear its state (including queue).
     emit currentState(musicPlayerState = State::StopState);
     if (musicLibrary->isLocal()) {
+        musicPlayer->clearQueue();
         musicPlayer->stop();
         musicPlayer->clear();
         emit allowShuffleMode(true);
@@ -619,6 +620,8 @@ bool xMusicPlayer::getVisualization() const {
 void xMusicPlayer::currentTrackDuration(qint64 duration) {
     emit currentTrackLength(duration);
     musicPlayerForTime->stop();
+    // Reset media to avoid open files.
+    musicPlayerForTime->setMedia(QMediaContent());
 }
 
 void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {

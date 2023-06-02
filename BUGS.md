@@ -3,7 +3,6 @@
 - mute volume directly after startup (possibly before playback) does not work.
 - update Problems when switching views while playing (e.g. movie view, heavy load).
 - changing font sizes while running causes UI layout issues.
-- cannot rename album or artist if song of album/arstist was played before.
 
 
 # Fixed
