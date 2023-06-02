@@ -236,6 +236,9 @@ xMusicLibraryEntry* xMusicLibraryTrackEntry::child(size_t index) {
 }
 
 void xMusicLibraryTrackEntry::update() {
+    if (entryUrl.isLocalFile()) {
+        trackPath = entryUrl.toLocalFile();
+    }
     updateTags();
 }
 

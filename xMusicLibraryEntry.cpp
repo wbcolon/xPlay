@@ -102,11 +102,12 @@ bool xMusicLibraryEntry::rename(const QString& newEntryName) {
         // Update the entry name, path and last time written
         entryName = newEntryName;
         entryPath = newEntryPath;
+        entryUrl = QUrl::fromLocalFile(QString::fromStdString(entryPath));
         update();
         updateLastTimeWritten();
         // Update the child using the new entry path as the childs new parent path.
         for (size_t index = 0; child(index) != nullptr; ++index) {
-            child(index)->updateChild(QUrl::fromLocalFile(QString::fromStdString(entryPath)));
+            child(index)->updateChild(entryUrl);
         }
         // Update the parent.
         entryParent->updateParent(this);
@@ -123,7 +124,7 @@ void xMusicLibraryEntry::updateChild(const QUrl& newParentUrl) {
     if (!newParentUrl.isLocalFile()) {
         return;
     }
-    entryUrl = newParentUrl.toLocalFile() + "/" + entryName;
+    entryUrl = QUrl::fromLocalFile(newParentUrl.toLocalFile() + "/" + entryName);
     // Update the child using the new entry path as the childs new parent path.
     for (size_t index = 0; child(index) != nullptr; ++index) {
         child(index)->updateChild(entryUrl);
