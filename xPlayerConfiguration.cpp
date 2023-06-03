@@ -33,6 +33,7 @@ const QString xPlayerConfiguration_LLTag {"xPlay/LLTag" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewSelectors { "xPlay/MusicViewSelectors" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewFilters { "xPlay/MusicViewFilters" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewVisualization { "xPlay/MusicViewVisualization" }; // NOLINT
+const QString xPlayerConfiguration_MusicViewVisualizationMode { "xPlay/MusicViewVisualizationMode" }; // NOLINT
 const QString xPlayerConfiguration_RotelWidget { "xPlay/RotelWidget" }; // NOLINT
 const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddress" }; // NOLINT
 const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" }; // NOLINT
@@ -64,6 +65,7 @@ const QString xPlayerConfiguration_LLTag_Default {"/usr/bin/lltag" }; // NOLINT
 const bool xPlayerConfiguration_MusicViewSelectors_Default = true; // NOLINT
 const bool xPlayerConfiguration_MusicViewFilters_Default = false; // NOLINT
 const bool xPlayerConfiguration_MusicViewVisualization_Default = false; // NOLINT
+const int xPlayerConfiguration_MusicViewVisualizationMode_Default = 0; // NOLINT
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
 const bool xPlayerConfiguration_MovieAudioCompression_Default = true; // NOLINT
 const bool xPlayerConfiguration_MovieViewFilters_Default = true; // NOLINT
@@ -192,6 +194,14 @@ void xPlayerConfiguration::setMusicViewVisualization(bool visible) {
         settings->setValue(xPlayerConfiguration_MusicViewVisualization, visible);
         settings->sync();
         emit updatedMusicViewVisualization();
+    }
+}
+
+void xPlayerConfiguration::setMusicViewVisualizationMode(int mode) {
+    if (mode != getMusicViewVisualizationMode()) {
+        settings->setValue(xPlayerConfiguration_MusicViewVisualizationMode, mode);
+        settings->sync();
+        emit updatedMusicViewVisualizationMode();
     }
 }
 
@@ -454,6 +464,10 @@ bool xPlayerConfiguration::getMusicViewVisualization() {
     return settings->value(xPlayerConfiguration_MusicViewVisualization, xPlayerConfiguration_MusicViewVisualization_Default).toBool();
 }
 
+int xPlayerConfiguration::getMusicViewVisualizationMode() {
+    return settings->value(xPlayerConfiguration_MusicViewVisualizationMode, xPlayerConfiguration_MusicViewVisualizationMode_Default).toInt();
+}
+
 bool xPlayerConfiguration::rotelWidget() {
     return settings->value(xPlayerConfiguration_RotelWidget, true).toBool();
 }
@@ -632,6 +646,7 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMusicViewSelectors();
     emit updatedMusicViewFilters();
     emit updatedMusicViewVisualization();
+    emit updatedMusicViewVisualizationMode();
     emit updatedRotelNetworkAddress();
     emit updatedMovieLibraryTagsAndDirectories();
     emit updatedMovieLibraryExtensions();

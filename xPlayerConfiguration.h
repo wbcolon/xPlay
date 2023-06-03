@@ -103,6 +103,14 @@ public:
      */
     void setMusicViewVisualization(bool visible);
     /**
+     * Set the music visualization mode.
+     * - 0: small window
+     * - 1: central window
+     *
+     * @param mode the music visualization mode as integer.
+     */
+    void setMusicViewVisualizationMode(int mode);
+    /**
      * Set availability of the Rotel amp widget.
      *
      * @param enabled show Rotel widget after restart if true, disable otherwise.
@@ -317,6 +325,14 @@ public:
      */
     [[nodiscard]] bool getMusicViewVisualization();
     /**
+     * Get the music visualization mode.
+     * - 0: small window
+     * - 1: central window
+     *
+     * @param mode the music visualization mode as integer.
+     */
+    int getMusicViewVisualizationMode();
+    /**
      * Return the availability of the Rotel amp widget.
      *
      * @return true if the Rotel amp widget is displayed, false otherwise.
@@ -521,9 +537,13 @@ signals:
      */
     void updatedMusicViewFilters();
     /**
-     * Signal an update of the filters visibility.
+     * Signal an update of the visualization visibility.
      */
     void updatedMusicViewVisualization();
+    /**
+     * Signal an update of the visualization mode.
+     */
+    void updatedMusicViewVisualizationMode();
     /**
      * Signal an update of the movie library directory.
      */

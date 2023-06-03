@@ -593,6 +593,7 @@ private:
     xPlayerArtistInfo* musicInfoView;
     xPlayerVisualizationWidget* musicVisualizationWidget;
     bool musicVisualizationEnabled;
+    int musicVisualizationMode;
     bool musicVisualizationFullWindow;
     xMusicPlayer* musicPlayer;
     xMusicLibrary* musicLibrary;
@@ -615,6 +616,7 @@ private:
     xPlayerMusicSearchWidget* searchSelector;
     xPlayerListWidget* queueList;
     QProgressBar* queueProgress;
+    xPlayerLayout* queueBoxLayout;
     QGroupBox* queueBox;
     int playedTrack;
     bool useDatabaseMusicOverlay;

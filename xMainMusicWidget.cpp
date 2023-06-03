@@ -66,6 +66,7 @@ auto xMainMusicWidget::addLineEditGroupBox(const QString& boxLabel, QWidget* par
 xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         musicVisualizationEnabled(false),
+        musicVisualizationMode(0),
         musicVisualizationFullWindow(false),
         musicPlayer(player),
         musicLibrary(library),
@@ -162,29 +163,13 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicInfoView = new xPlayerArtistInfo(musicStacked);
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
-    // Does the music player support visualization.
-    if (xMusicPlayer::supportsVisualization()) {
-        musicVisualizationWidget = new xPlayerVisualizationWidget(musicStacked);
-        // Connect music visualization view
-        connect(musicPlayer, &xMusicPlayer::visualizationStereo,
-                musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
-        connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, this, &xMainMusicWidget::updateWindowTitle);
-        connect(playerWidget, &xPlayerMusicWidget::mouseDoubleClicked, this, &xMainMusicWidget::visualizationToggle);
-        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationFullWindow,
-                this, &xMainMusicWidget::updateMusicViewVisualizationFullWindow);
-        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationExiting,
-                this, &xMainMusicWidget::visualizationExiting);
-        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationError,
-                this, &xMainMusicWidget::visualizationError);
-        musicStacked->addWidget(musicVisualizationWidget);
-    }
     musicStacked->setCurrentWidget(musicListView);
     musicPlayerStackedLayout->addWidget(playerWidget);
     musicPlayerStackedLayout->addWidget(musicStacked);
     // Queue list.
     queueBox = new QGroupBox(tr("Queue"), mainWidgetSplitter);
     queueBox->setFlat(xPlayer::UseFlatGroupBox);
-    auto queueBoxLayout = new xPlayerLayout(queueBox);
+    queueBoxLayout = new xPlayerLayout(queueBox);
     queueList = new xPlayerListWidget(queueBox, true);
     queueList->setContextMenuPolicy(Qt::CustomContextMenu);
     queueList->setDragDropMode(QTreeWidget::InternalMove);
@@ -204,6 +189,23 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
     queueBoxLayout->addWidget(queueTagsButton, 9, 2);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 3);
+    // Does the music player support visualization.
+    if (xMusicPlayer::supportsVisualization()) {
+        musicVisualizationWidget = new xPlayerVisualizationWidget(queueBox);
+        // Connect music visualization view
+        connect(musicPlayer, &xMusicPlayer::visualizationStereo,
+                musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
+        connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, this, &xMainMusicWidget::updateWindowTitle);
+        connect(playerWidget, &xPlayerMusicWidget::mouseDoubleClicked, this, &xMainMusicWidget::visualizationToggle);
+        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationFullWindow,
+                this, &xMainMusicWidget::updateMusicViewVisualizationFullWindow);
+        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationExiting,
+                this, &xMainMusicWidget::visualizationExiting);
+        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationError,
+                this, &xMainMusicWidget::visualizationError);
+        // Add it initially to the stacked widget.
+        musicStacked->addWidget(musicVisualizationWidget);
+    }
     queueBoxLayout->setColumnStretch(1, 3);
     // Setup splitter, queue should stretch a little more than the rest.
     mainWidgetSplitter->addWidget(musicPlayerStackedWidget);
@@ -295,6 +297,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             this, &xMainMusicWidget::updatedMusicViewFilters);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewVisualization,
             this, &xMainMusicWidget::updatedMusicViewVisualization);
+//    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewVisualizationMode,
+//            this, &xMainMusicWidget::updatedMusicViewVisualization);
 }
 
 void xMainMusicWidget::initializeView() {
@@ -955,15 +959,36 @@ void xMainMusicWidget::updatedMusicViewSelectors() {
 void xMainMusicWidget::updatedMusicViewVisualization() {
     if (xMusicPlayer::supportsVisualization()) {
         musicVisualizationEnabled = xPlayerConfiguration::configuration()->getMusicViewVisualization();
+        musicVisualizationMode = xPlayerConfiguration::configuration()->getMusicViewVisualizationMode();
         musicPlayer->setVisualization(musicVisualizationEnabled);
         if (musicVisualizationEnabled) {
-            // Switch over to the visualization if in a playing state and currently on the list view.
-            if ((musicStacked->currentWidget() == musicListView) && (musicPlayer->isPlaying())) {
-                musicStacked->setCurrentWidget(musicVisualizationWidget);
+            if (musicVisualizationMode == 0) {
+                musicStacked->removeWidget(musicVisualizationWidget);
+                // Attach to queue box parent
+                musicVisualizationWidget->setParent(queueBox);
+                musicVisualizationWidget->setVisible(true);
+                // Integrate into queue box layout.
+                queueBoxLayout->addRowSpacer(10, xPlayerLayout::SmallSpace);
+                queueBoxLayout->addWidget(musicVisualizationWidget, 11, 0, 2, 4);
+            } else {
+                // Attach to stacked widget parent
+                musicVisualizationWidget->setParent(musicStacked);
+                musicStacked->addWidget(musicVisualizationWidget);
+                // Switch over to the visualization if in a playing state and currently on the list view.
+                if ((musicStacked->currentWidget() == musicListView) && (musicPlayer->isPlaying())) {
+                    musicStacked->setCurrentWidget(musicVisualizationWidget);
+                }
             }
         } else {
-            if (musicStacked->currentWidget() != musicInfoView) {
-                musicStacked->setCurrentWidget(musicListView);
+            if (musicVisualizationMode == 0) {
+                musicVisualizationWidget->setVisible(false);
+                // Remove from queue box layout.
+                queueBoxLayout->addRowSpacer(10, xPlayerLayout::NoSpace);
+                queueBoxLayout->removeWidget(musicVisualizationWidget);
+            } else {
+                if (musicStacked->currentWidget() != musicInfoView) {
+                    musicStacked->setCurrentWidget(musicListView);
+                }
             }
         }
         updateMusicViewVisualizationFullWindow(musicVisualizationFullWindow);
@@ -971,9 +996,14 @@ void xMainMusicWidget::updatedMusicViewVisualization() {
 }
 
 void xMainMusicWidget::updateMusicViewVisualizationFullWindow(bool enabled) {
+    // Only full window mode for central window mode.
     if (musicVisualizationEnabled) {
-        // Toggle mode.
-        musicVisualizationFullWindow = enabled;
+        // Toggle mode only for central window.
+        if (musicVisualizationMode == 1) {
+            musicVisualizationFullWindow = enabled;
+        } else {
+            musicVisualizationFullWindow = false;
+        }
         // Hide/show queue box and player widget if full window mode is enabled/disabled
         if (musicVisualizationFullWindow) {
             queueBox->setVisible(false);

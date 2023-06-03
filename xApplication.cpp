@@ -499,37 +499,70 @@ void xApplication::createMenus() {
     connect(musicViewFilters, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewFilters(checked);
     });
+
     musicViewVisualization = new QAction("Visualization", this);
     musicViewVisualization->setCheckable(true);
     musicViewVisualization->setShortcut(QKeySequence("Ctrl+Alt+V"));
     musicViewVisualization->setChecked(xPlayerConfiguration::configuration()->getMusicViewVisualization());
     musicViewVisualization->setDisabled(xPlayerConfiguration::configuration()->useMusicLibraryBluOS());
-    connect(musicViewVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
-        xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
-    });
-    // Toggle the visualization view.
-    connect(mainMusicWidget, &xMainMusicWidget::visualizationToggle, [=]() {
-        auto toggleChecked = !musicViewVisualization->isChecked();
-        musicViewVisualization->setChecked(toggleChecked);
-        xPlayerConfiguration::configuration()->setMusicViewVisualization(toggleChecked);
-    });
-    // Disable music visualization if ESC is pressed.
-    connect(mainMusicWidget, &xMainMusicWidget::visualizationExiting, [=]() {
-        musicViewVisualization->setChecked(false);
-        xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
-    });
-    // Disable the visualization view in case of an error.
-    connect(mainMusicWidget, &xMainMusicWidget::visualizationError, [=]() {
-        musicViewVisualization->setChecked(false);
-        musicViewVisualization->setEnabled(false);
-        xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
-    });
+    // Action group for visualization mode
+    auto musicViewVisualizationMode = new QActionGroup(this);
+    musicViewVisualizationMode->setExclusive(true);
+    auto musicViewVisualizationSmall = new QAction("Small Window", musicViewVisualizationMode);
+    musicViewVisualizationSmall->setCheckable(true);
+    musicViewVisualizationSmall->setChecked(true);
+    auto musicViewVisualizationCentral = new QAction("Central Window", musicViewVisualizationMode);
+    musicViewVisualizationCentral->setCheckable(true);
+
     // Create music view submenu.
     musicViewMenu->addAction(musicViewUseBluOSPlayer);
     musicViewMenu->addAction(musicViewReIndexBluOSPlayer);
     musicViewMenu->addAction(musicViewSelectors);
     musicViewMenu->addAction(musicViewFilters);
     musicViewMenu->addAction(musicViewVisualization);
+    auto musicViewVisualizationMenu = musicViewMenu->addMenu("Visualization Mode");
+    musicViewVisualizationMenu->addAction(musicViewVisualizationSmall);
+    musicViewVisualizationMenu->addAction(musicViewVisualizationCentral);
+    // Select the proper visualization mode.
+    if (xPlayerConfiguration::configuration()->getMusicViewVisualizationMode() == 0) {
+        musicViewVisualizationSmall->setChecked(true);
+    } else {
+        musicViewVisualizationCentral->setChecked(true);
+    }
+    musicViewVisualizationMenu->setDisabled(xPlayerConfiguration::configuration()->getMusicViewVisualization());
+    // Connect visualization signals.
+    connect(musicViewVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
+        // Mode can only be changed when visualization disabled.
+        musicViewVisualizationMenu->setEnabled(!checked);
+    });
+    connect(musicViewVisualizationMode, &QActionGroup::triggered, [=](QAction* action) {
+        if (action == musicViewVisualizationSmall) {
+            xPlayerConfiguration::configuration()->setMusicViewVisualizationMode(0);
+        } else {
+            xPlayerConfiguration::configuration()->setMusicViewVisualizationMode(1);
+        }
+    });
+    // Toggle the visualization view.
+    connect(mainMusicWidget, &xMainMusicWidget::visualizationToggle, [=]() {
+        auto toggleChecked = !musicViewVisualization->isChecked();
+        musicViewVisualization->setChecked(toggleChecked);
+        musicViewVisualizationMenu->setEnabled(!toggleChecked);
+        xPlayerConfiguration::configuration()->setMusicViewVisualization(toggleChecked);
+    });
+    // Disable music visualization if ESC is pressed.
+    connect(mainMusicWidget, &xMainMusicWidget::visualizationExiting, [=]() {
+        musicViewVisualization->setChecked(false);
+        musicViewVisualizationMenu->setEnabled(true);
+        xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
+    });
+    // Disable the visualization view in case of an error.
+    connect(mainMusicWidget, &xMainMusicWidget::visualizationError, [=]() {
+        musicViewVisualization->setChecked(false);
+        musicViewVisualization->setEnabled(false);
+        musicViewVisualizationMenu->setEnabled(false);
+        xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
+    });
 
     auto movieViewMenu = viewMenu->addMenu("Movie View");
     // Create actions for movie view submenu.
