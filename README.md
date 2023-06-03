@@ -104,7 +104,6 @@ xPlay has a music view, a movie view, a streaming view and a mobile sync view.
 ![Screenshot Music View (tag popup)](screenshots/xplay_screenshot_music_view_06.png)
 ![Screenshot Music View (artistinfo popup)](screenshots/xplay_screenshot_music_view_07.png)
 ![Screenshot Music View (artistinfo)](screenshots/xplay_screenshot_music_view_08.png)
-![Screenshot Music View (visualization)](screenshots/xplay_screenshot_music_view_09.png)
 ![Screenshot Music View (rename)](screenshots/xplay_screenshot_music_view_10.png)
 ![Screenshot Music View (bluos)](screenshots/xplay_screenshot_music_view_11.png)
 
@@ -159,13 +158,20 @@ as well as the balance (from -5 to +5).
 
 #### Visualization
 
+![Screenshot Music View (visualization)(1)](screenshots/xplay_screenshot_music_view_09.png)
+![Screenshot Music View (visualization)(2)](screenshots/xplay_screenshot_music_view_091.png)
+![Screenshot Music View (visualization)(3)](screenshots/xplay_screenshot_music_view_092.png)
+
 A music visualization based on projectM is available and can be activated via the *Visualization* entry of the 
-*Music View* sub menu. The visualization (when activated) is displayed whenever the music player is playing and
-the artist info view is currently not activated. The visualization (when displayed) reverts to the artist, album and
-track view whenever the music player pauses or stops. A right-click on the visualization opens a popup menu that allows
-selecting a projectM preset. A double-click will display the name of the currently selected preset. A double-click on
-the player widget itself will toggle the music visualization. The music visualization is not supported for the
-BluOS player music library.
+*Music View* sub menu. The *Visualization Mode* sub menu allows you to select the central window or a small window mode.
+The visualization (when activated) is displayed whenever the music player is playing and the artist info view is
+currently not activated. The visualization (when displayed) reverts to the artist, album and track view whenever the 
+music player pauses or stops. A right-click on the visualization opens a popup menu that allows selecting a projectM 
+preset. A double-click within the visualization will toggle a full window mode. This feature is only available for if 
+the central window visualization mode is selected. A ctrl-left-click will display the name of the currently selected 
+preset. A double-click on the player widget itself will toggle the music visualization. 
+
+**Note:** The music visualization is not supported for the BluOS player music library.
 
 #### Selectors and Filters
 
