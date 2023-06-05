@@ -127,7 +127,8 @@ QString xPlayerSliderScaleWidget::scaleLabel(qint64 value) const {
 xPlayerSliderWidget::xPlayerSliderWidget(QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
         showHours(false),
-        lengthValue(0) {
+        lengthValue(0),
+        seekInProgress(false) {
     auto sliderLayout = new xPlayerLayout(this);
     sliderLayout->setContentsMargins(0, 0, 0, 0);
     sliderLayout->setSpacing(0);
