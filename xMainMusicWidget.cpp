@@ -297,8 +297,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             this, &xMainMusicWidget::updatedMusicViewFilters);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewVisualization,
             this, &xMainMusicWidget::updatedMusicViewVisualization);
-//    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewVisualizationMode,
-//            this, &xMainMusicWidget::updatedMusicViewVisualization);
+    // No need to connect to updatedMusicViewVisualizationMode since mode can only be changed if visualization if off.
 }
 
 void xMainMusicWidget::initializeView() {
@@ -979,6 +978,8 @@ void xMainMusicWidget::updatedMusicViewVisualization() {
                     musicStacked->setCurrentWidget(musicVisualizationWidget);
                 }
             }
+            // Adjust visual part if necessary.
+            updateVisualizationView(musicPlayer->isPlaying());
         } else {
             if (musicVisualizationMode == 0) {
                 musicVisualizationWidget->setVisible(false);
@@ -1128,12 +1129,26 @@ void xMainMusicWidget::updateVisualizationView(bool playing) {
     if (musicVisualizationEnabled) {
         // Switch back-and-forth between visualization and list view only if either of the views is selected.
         if (playing) {
-            if (musicStacked->currentWidget() == musicListView) {
-                musicStacked->setCurrentWidget(musicVisualizationWidget);
+            if (musicVisualizationMode == 0) {
+                musicVisualizationWidget->setVisible(true);
+                // Integrate into queue box layout.
+                queueBoxLayout->addRowSpacer(10, xPlayerLayout::SmallSpace);
+                queueBoxLayout->addWidget(musicVisualizationWidget, 11, 0, 2, 4);
+            } else {
+                if (musicStacked->currentWidget() == musicListView) {
+                    musicStacked->setCurrentWidget(musicVisualizationWidget);
+                }
             }
         } else {
-            if (musicStacked->currentWidget() == musicVisualizationWidget) {
-                musicStacked->setCurrentWidget(musicListView);
+            if (musicVisualizationMode == 0) {
+                musicVisualizationWidget->setVisible(false);
+                // Remove from queue box layout.
+                queueBoxLayout->addRowSpacer(10, xPlayerLayout::NoSpace);
+                queueBoxLayout->removeWidget(musicVisualizationWidget);
+            } else {
+                if (musicStacked->currentWidget() == musicVisualizationWidget) {
+                    musicStacked->setCurrentWidget(musicListView);
+                }
             }
         }
     }
