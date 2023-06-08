@@ -246,6 +246,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Connect artist info view
     connect(musicInfoView, &xPlayerArtistInfo::close, this, [=]() {
         musicStacked->setCurrentWidget(musicListView);
+        // Reset reduced framerate mode for visualization.
+        musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationNoDrop);
         updateVisualizationView(musicPlayer->isPlaying());
     });
     // Connect main widget to music player
@@ -297,7 +299,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             this, &xMainMusicWidget::updatedMusicViewFilters);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewVisualization,
             this, &xMainMusicWidget::updatedMusicViewVisualization);
-    // No need to connect to updatedMusicViewVisualizationMode since mode can only be changed if visualization if off.
+    // No need to connect to updatedMusicViewVisualizationMode since mode can only be changed if visualization is off.
 }
 
 void xMainMusicWidget::initializeView() {
@@ -632,6 +634,9 @@ void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
             artistMenu.addAction(tr("Link To Website"), this, [=] () {
                 musicStacked->setCurrentWidget(musicInfoView);
                 musicInfoView->show(artistItem->text());
+                // Enable the reduced framerate mode for visualization.
+                // Required for usable website browsing.
+                musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationDropRate);
             });
             // Add section for artist transitions.
             auto artistTransitions = xPlayerDatabase::database()->getArtistTransitions(artistItem->text());

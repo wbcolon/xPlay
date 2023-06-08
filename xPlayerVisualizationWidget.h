@@ -41,6 +41,14 @@ public slots:
      * @param right the data for the right channel.
      */
     void visualizationStereo(const QVector<qint16>& left, const QVector<qint16>& right);
+    /**
+     * Configure or disable the reduced framerate mode
+     *
+     * The reduced framerate mode is necessary if displayed together with QWebEngineView widget.
+     *
+     * @param rate drop every paint event at the given rate. Disable drop if <= 1.
+     */
+    void setReducedFrameRate(int rate);
 
 signals:
     /**
@@ -93,6 +101,7 @@ private:
     bool checkVisualizationConfigFile();
 
     projectM* visualization;
+    int visualizationRate;
     QString visualizationConfigPath;
     unsigned visualizationPresetIndex;
     QMenu* visualizationPresetMenu;

@@ -44,6 +44,9 @@ const int QueueCriticalNumberEntries = 50000;
 const int IconSize = 24;
 const int LargeIconSize = 32;
 
+const int VisualizationNoDrop = 0;
+const int VisualizationDropRate = 3;
+
 /**
  * Convert the time given to human readable time stamp.
  *

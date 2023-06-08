@@ -31,6 +31,7 @@
 xPlayerVisualizationWidget::xPlayerVisualizationWidget(QWidget *parent):
         QOpenGLWidget(parent),
         visualization(nullptr),
+        visualizationRate(0),
         visualizationPresetIndex(0),
         visualizationPresetMenu(nullptr),
         visualizationPresetMap(),
@@ -157,6 +158,9 @@ void xPlayerVisualizationWidget::paintGL() {
 }
 
 bool xPlayerVisualizationWidget::event(QEvent* e) {
+    // counter for incoming paint events.
+    static int paintEventCounter = 0;
+
     if (visualizationEnabled) {
         switch (e->type()) {
             case QEvent::Show: {
@@ -199,6 +203,12 @@ bool xPlayerVisualizationWidget::event(QEvent* e) {
             default: break;
         }
     }
+    if ((e->type() == QEvent::Paint) && (visualizationRate > 1)) {
+        if ((++paintEventCounter % visualizationRate) == 0) {
+            return true;
+        }
+    }
+
     return QOpenGLWidget::event(e);
 }
 
@@ -206,6 +216,10 @@ void xPlayerVisualizationWidget::showTitle(const QString& title) {
     if (visualizationEnabled) {
         visualization->projectM_setTitle(title.toStdString());
     }
+}
+
+void xPlayerVisualizationWidget::setReducedFrameRate(int rate) {
+    visualizationRate = rate;
 }
 
 void xPlayerVisualizationWidget::visualizationStereo(const QVector<qint16>& left, const QVector<qint16>& right) {
