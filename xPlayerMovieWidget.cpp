@@ -267,7 +267,8 @@ void xPlayerMovieWidget::currentState(xMoviePlayer::State state) {
             controlButtonWidget->setPlayPauseState(false);
         } break;
         case xMoviePlayer::PauseState:
-        case xMoviePlayer::StopState: {
+        case xMoviePlayer::StopState:
+        case xMoviePlayer::ResetState: {
             controlButtonWidget->setPlayPauseState(true);
         } break;
         default: break;

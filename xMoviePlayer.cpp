@@ -240,13 +240,19 @@ void xMoviePlayer::jump(qint64 delta) {
 }
 
 void xMoviePlayer::stop() {
-    // Stop (pause and reset to position 0) the media player.
-    libvlc_media_player_set_pause(movieMediaPlayer, 1);
-    libvlc_media_player_set_position(movieMediaPlayer, 0);
-    vlcFixAudio();
-    updateCurrentChapter();
-    emit currentState(State::StopState);
-    emit currentMoviePlayed(0);
+    // Reset the movie player if current movie has ended.
+    auto state = libvlc_media_player_get_state(movieMediaPlayer);
+    if (state == libvlc_Ended) {
+        emit currentState(State::ResetState);
+    } else {
+        // Stop (pause and reset to position 0) the media player.
+        libvlc_media_player_set_pause(movieMediaPlayer, 1);
+        libvlc_media_player_set_position(movieMediaPlayer, 0);
+        vlcFixAudio();
+        updateCurrentChapter();
+        emit currentState(State::StopState);
+        emit currentMoviePlayed(0);
+    }
 }
 
 void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory) {
