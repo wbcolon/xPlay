@@ -16,7 +16,6 @@
 
 #include <QPainter>
 #include <QPaintEvent>
-#include <QResizeEvent>
 #include <QSpacerItem>
 #include <QStyle>
 #include <QDebug>
@@ -69,7 +68,6 @@ void xPlayerSliderScaleWidget::resizeEvent(QResizeEvent* event) {
 }
 
 void xPlayerSliderScaleWidget::paintEvent(QPaintEvent* event) {
-    QWidget::paintEvent(event);
     if ((event) && (lengthValue > 0)) {
         QRect region = event->rect();
         QPainter scale(this);
@@ -103,6 +101,7 @@ void xPlayerSliderScaleWidget::paintEvent(QPaintEvent* event) {
             currentSection += scaleSectionLength;
         }
     }
+    QWidget::paintEvent(event);
 }
 
 qint64 xPlayerSliderScaleWidget::determineScaleDivider(qint64 length) const {
@@ -211,12 +210,15 @@ void xPlayerSliderWidget::setLength(qint64 length) {
     // Update the length of the current track.
     lengthValue = length;
     if (lengthValue > 0) {
+        // Reset slider value.
+        slider->setValue(0);
+        // Setup new values.
         scale->setLength(length);
         lengthLabel->display(xPlayer::millisecondsToTimeFormat(length, showHours));
-        // Set maximum of slider to the length of the track. Reset the slider position-
+        // Set maximum of slider to the length of the track.
         slider->setMinimum(0);
         slider->setMaximum(static_cast<int>(length));
-        slider->setValue(0);
+        slider->repaint();
     }
 }
 
@@ -228,6 +230,7 @@ void xPlayerSliderWidget::setPlayed(qint64 played) {
         playedLabel->display(xPlayer::millisecondsToTimeFormat(played, showHours));
         // Update the slider position.
         slider->setValue(static_cast<int>(played));
+        slider->repaint();
     }
 }
 
