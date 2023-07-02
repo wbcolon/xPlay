@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## 0.15.0 - 2023-07-02
 
 - Add full window mode for music visualization.
 - Fix default audio/subtitle setting for movie files.
@@ -10,6 +10,7 @@
 - Improve switch times in movie view when scanning movie files.
 - Improve error handling for movie player.
 - Disconnect Rotel amp controls when closing.
+- Various small bug fixes.
 
 
 ## 0.14.4 - 2023-02-20
