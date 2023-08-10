@@ -31,7 +31,12 @@
 
 xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags),
-        musicViewVisualization(nullptr) {
+        optionsMenuBars(nullptr),
+        musicOptionsMenuBar(nullptr),
+        musicOptionsVisualization(nullptr),
+        movieOptionsMenuBar(nullptr),
+        streamingOptionsMenuBar(nullptr),
+        mobileSyncOptionsMenuBar(nullptr) {
     // Register Type
     qRegisterMetaType<xMusicLibraryTrackEntry>();
     qRegisterMetaType<xMusicLibraryTrackEntry*>();
@@ -402,142 +407,167 @@ void xApplication::reIndexMusicLibraryBluOS() {
 }
 
 void xApplication::createMenus() {
-    // Create actions for file menu.
-    auto fileMenuConfigure = new QAction("&Configure", this);
-    auto fileMenuRescanMusicLibrary = new QAction("Rescan M&usic Library", this);
-    auto fileMenuRescanMovieLibrary = new QAction("Rescan M&ovie Library", this);
-    auto fileMenuCheckMusicDatabase = new QAction("Check Mu&sic Database", this);
-    auto fileMenuCheckMovieDatabase = new QAction("Check Mo&vie Database", this);
-    auto fileMenuExitAction = new QAction(tr("&Exit"), this);
-    // Connect menu entries to enable/disable them.
-    connect(mainMobileSyncWidget, &xMainMobileSyncWidget::enableMusicLibraryScanning,
-            fileMenuRescanMusicLibrary, &QAction::setEnabled);
-    // Connect actions from file menu.
-    connect(fileMenuConfigure, &QAction::triggered, this, &xApplication::configure);
-    connect(fileMenuRescanMusicLibrary, &QAction::triggered, [=]() {
-        setMusicLibrary(true);
-    });
-    connect(fileMenuRescanMovieLibrary, &QAction::triggered, this, &xApplication::setMovieLibraryTagsAndDirectories);
-    connect(fileMenuCheckMusicDatabase, &QAction::triggered, this, &xApplication::checkMusicDatabase);
-    connect(fileMenuCheckMovieDatabase, &QAction::triggered, this, &xApplication::checkMovieDatabase);
-    connect(fileMenuExitAction, &QAction::triggered, this, &xApplication::close);
-    // Create file menu.
-    auto fileMenu = menuBar()->addMenu(tr("&File"));
-    fileMenu->addAction(fileMenuConfigure);
-    fileMenu->addSeparator();
-    fileMenu->addAction(fileMenuRescanMusicLibrary);
-    fileMenu->addAction(fileMenuRescanMovieLibrary);
-    fileMenu->addSeparator();
-    fileMenu->addAction(fileMenuCheckMusicDatabase);
-    fileMenu->addAction(fileMenuCheckMovieDatabase);
-    fileMenu->addSeparator();
-    fileMenu->addAction(fileMenuExitAction);
+    // Create main menu with hamburger icon.
+    auto mainMenu = menuBar()->addMenu(QIcon(":images/xplay-menu.svg") ,"");
     // Create actions for view menu.
-    auto viewMenuSelectMusic = new QAction("Select M&usic View", this);
-    auto viewMenuSelectMovie = new QAction("Select M&ovie View", this);
+    auto mainMenuConfigure = new QAction("&Configure", this);
+    auto mainMenuMusic = new QAction("Select M&usic View", this);
+    auto mainMenuMovie = new QAction("Select M&ovie View", this);
 #ifdef USE_STREAMING
-    auto viewMenuSelectStreaming = new QAction("Select Str&eaming View", this);
+    auto mainMenuStreaming = new QAction("Select Str&eaming View", this);
 #endif
-    auto viewMenuSelectMobileSync = new QAction("Select Mobile S&ync View", this);
-    // Connect actions from view menu.
-    connect(viewMenuSelectMusic, &QAction::triggered, [=]() {
+    auto mainMenuMobileSync = new QAction("Select Mobile S&ync View", this);
+    auto mainMenuAboutQt = new QAction("About Qt", this);
+    auto mainMenuExit = new QAction(tr("&Exit"), this);
+
+    // Add menu entries.
+    mainMenu->addAction(mainMenuConfigure);
+    mainMenu->addSeparator();
+    mainMenu->addAction(mainMenuMusic);
+    mainMenu->addAction(mainMenuMovie);
+#ifdef USE_STREAMING
+    mainMenu->addAction(mainMenuStreaming);
+#endif
+    mainMenu->addAction(mainMenuMobileSync);
+    mainMenu->addSeparator();
+    mainMenu->addAction(mainMenuAboutQt);
+    mainMenu->addSeparator();
+    mainMenu->addAction(mainMenuExit);
+
+    // Connect actions to main menu.
+    connect(mainMenuMusic, &QAction::triggered, [=]() {
         mainView->setCurrentWidget(mainMusicWidget);
         mainMusicWidget->initializeView();
+        optionsMenuBars->setCurrentWidget(musicOptionsMenuBar);
     });
-    connect(viewMenuSelectMovie, &QAction::triggered, [=]() {
+    connect(mainMenuMovie, &QAction::triggered, [=]() {
         mainView->setCurrentWidget(mainMovieWidget);
         mainMovieWidget->initializeView();
+        optionsMenuBars->setCurrentWidget(movieOptionsMenuBar);
     });
 #ifdef USE_STREAMING
-    connect(viewMenuSelectStreaming, &QAction::triggered, [=]() {
+    connect(mainMenuStreaming, &QAction::triggered, [=]() {
         mainView->setCurrentWidget(mainStreamingWidget);
         mainStreamingWidget->initializeView();
+        optionsMenuBars->setCurrentWidget(streamingOptionsMenuBar);
     });
 #endif
-    connect(viewMenuSelectMobileSync, &QAction::triggered, [=]() {
+    connect(mainMenuMobileSync, &QAction::triggered, [=]() {
         mainView->setCurrentWidget(mainMobileSyncWidget);
         mainMobileSyncWidget->initializeView();
+        optionsMenuBars->setCurrentWidget(mobileSyncOptionsMenuBar);
     });
-    // Create view menu.
-    auto viewMenu = menuBar()->addMenu(tr("&View"));
-    viewMenu->addAction(viewMenuSelectMusic);
-    viewMenu->addAction(viewMenuSelectMovie);
+    connect(mainMenuConfigure, &QAction::triggered, this, &xApplication::configure);
+    connect(mainMenuExit, &QAction::triggered, this, &xApplication::close);
+    connect(mainMenuAboutQt, &QAction::triggered, [=]() { QMessageBox::aboutQt(this, "About Qt"); });
+
+    // Create stacked options menu bars.
+    optionsMenuBars = new QStackedWidget(this);
+    // Hack: Add one pixel on the right side to avoid issues with dual (or more) head setup.
+    optionsMenuBars->setContentsMargins(0, 0, 1, 0);
+    menuBar()->setCornerWidget(optionsMenuBars, Qt::TopRightCorner);
+    musicOptionsMenuBar = new QMenuBar(optionsMenuBars);
+    movieOptionsMenuBar = new QMenuBar(optionsMenuBars);
+    streamingOptionsMenuBar = new QMenuBar(optionsMenuBars);
+    mobileSyncOptionsMenuBar = new QMenuBar(optionsMenuBars);
+    optionsMenuBars->addWidget(musicOptionsMenuBar);
+    optionsMenuBars->addWidget(movieOptionsMenuBar);
+    optionsMenuBars->addWidget(streamingOptionsMenuBar);
+    optionsMenuBars->addWidget(mobileSyncOptionsMenuBar);
+    // Create options menus.
+    createMusicOptionsMenus();
+    createMovieOptionsMenus();
 #ifdef USE_STREAMING
-    viewMenu->addAction(viewMenuSelectStreaming);
+    createStreamingOptionsMenus();
 #endif
-    viewMenu->addAction(viewMenuSelectMobileSync);
-    viewMenu->addSeparator();
-    auto musicViewMenu = viewMenu->addMenu("Music View");
+    createMobileSyncOptionsMenus();
+}
+
+void xApplication::createMusicOptionsMenus() {
+    // Options Menu for Music View
+    musicOptionsMenuBar->setLayoutDirection(Qt::RightToLeft);
+    auto musicOptionsMenu = musicOptionsMenuBar->addMenu(QIcon(":images/xplay-options.svg") ,"");
+    auto musicOptionsRescanMusicLibrary = new QAction("Rescan Library", this);
+    auto musicOptionsCheckDatabase = new QAction("Check Database", this);
     // Get current music library configuration.
     auto useMusicLibraryBluOS = xPlayerConfiguration::configuration()->useMusicLibraryBluOS();
     // Create actions for music view submenu.
-    auto musicViewUseBluOSPlayer = new QAction("Use BluOS Player", this);
-    musicViewUseBluOSPlayer->setCheckable(true);
-    musicViewUseBluOSPlayer->setShortcut(QKeySequence("Ctrl+Alt+B"));
-    musicViewUseBluOSPlayer->setChecked(useMusicLibraryBluOS);
-    auto musicViewReIndexBluOSPlayer = new QAction("ReIndex BluOS Player", this);
-    musicViewReIndexBluOSPlayer->setEnabled(useMusicLibraryBluOS);
-    connect(musicViewUseBluOSPlayer, &QAction::triggered, mainMusicWidget, [=](bool checked) {
-        xPlayerConfiguration::configuration()->useMusicLibraryBluOS(checked);
-        // Disable visualization menu entry if BluOS is enabled.
-        musicViewVisualization->setEnabled(!checked);
-        // Enable reindex menu entry if BluOS is enabled.
-        musicViewReIndexBluOSPlayer->setEnabled(checked);
-    });
-    connect(musicViewReIndexBluOSPlayer, &QAction::triggered, this, &xApplication::reIndexMusicLibraryBluOS);
-    auto musicViewSelectors = new QAction("Selectors", this);
-    musicViewSelectors->setCheckable(true);
-    musicViewSelectors->setShortcut(QKeySequence("Ctrl+Alt+S"));
-    musicViewSelectors->setChecked(xPlayerConfiguration::configuration()->getMusicViewSelectors());
-    connect(musicViewSelectors, &QAction::triggered, mainMusicWidget, [=](bool checked) {
-        xPlayerConfiguration::configuration()->setMusicViewSelectors(checked);
-    });
-    auto musicViewFilters = new QAction("Filters", this);
-    musicViewFilters->setCheckable(true);
-    musicViewFilters->setShortcut(QKeySequence("Ctrl+Alt+F"));
-    musicViewFilters->setChecked(xPlayerConfiguration::configuration()->getMusicViewFilters());
-    connect(musicViewFilters, &QAction::triggered, mainMusicWidget, [=](bool checked) {
-        xPlayerConfiguration::configuration()->setMusicViewFilters(checked);
-    });
-
-    musicViewVisualization = new QAction("Visualization", this);
-    musicViewVisualization->setCheckable(true);
-    musicViewVisualization->setShortcut(QKeySequence("Ctrl+Alt+V"));
-    musicViewVisualization->setChecked(xPlayerConfiguration::configuration()->getMusicViewVisualization());
-    musicViewVisualization->setDisabled(xPlayerConfiguration::configuration()->useMusicLibraryBluOS());
+    auto musicOptionsUseBluOSPlayer = new QAction("Use BluOS Player", this);
+    musicOptionsUseBluOSPlayer->setCheckable(true);
+    //musicOptionsUseBluOSPlayer->setShortcut(QKeySequence("Ctrl+Alt+B"));
+    musicOptionsUseBluOSPlayer->setChecked(useMusicLibraryBluOS);
+    auto musicOptionsReIndexBluOSPlayer = new QAction("ReIndex BluOS Player", this);
+    musicOptionsReIndexBluOSPlayer->setEnabled(useMusicLibraryBluOS);
+    auto musicOptionsSelectors = new QAction("Selectors", this);
+    musicOptionsSelectors->setCheckable(true);
+    //musicOptionsSelectors->setShortcut(QKeySequence("Ctrl+Alt+S"));
+    musicOptionsSelectors->setChecked(xPlayerConfiguration::configuration()->getMusicViewSelectors());
+    auto musicOptionsFilters = new QAction("Filters", this);
+    musicOptionsFilters->setCheckable(true);
+    //musicOptionsFilters->setShortcut(QKeySequence("Ctrl+Alt+F"));
+    musicOptionsFilters->setChecked(xPlayerConfiguration::configuration()->getMusicViewFilters());
+    musicOptionsVisualization = new QAction("Visualization", this);
+    musicOptionsVisualization->setCheckable(true);
+    //musicOptionsVisualization->setShortcut(QKeySequence("Ctrl+Alt+V"));
+    musicOptionsVisualization->setChecked(xPlayerConfiguration::configuration()->getMusicViewVisualization());
+    musicOptionsVisualization->setDisabled(xPlayerConfiguration::configuration()->useMusicLibraryBluOS());
     // Action group for visualization mode
-    auto musicViewVisualizationMode = new QActionGroup(this);
-    musicViewVisualizationMode->setExclusive(true);
-    auto musicViewVisualizationSmall = new QAction("Small Window", musicViewVisualizationMode);
-    musicViewVisualizationSmall->setCheckable(true);
-    musicViewVisualizationSmall->setChecked(true);
-    auto musicViewVisualizationCentral = new QAction("Central Window", musicViewVisualizationMode);
-    musicViewVisualizationCentral->setCheckable(true);
+    auto musicOptionsVisualizationMode = new QActionGroup(this);
+    musicOptionsVisualizationMode->setExclusive(true);
+    auto musicOptionsVisualizationSmall = new QAction("Small Window", musicOptionsVisualizationMode);
+    musicOptionsVisualizationSmall->setCheckable(true);
+    musicOptionsVisualizationSmall->setChecked(true);
+    auto musicOptionsVisualizationCentral = new QAction("Central Window", musicOptionsVisualizationMode);
+    musicOptionsVisualizationCentral->setCheckable(true);
 
-    // Create music view submenu.
-    musicViewMenu->addAction(musicViewUseBluOSPlayer);
-    musicViewMenu->addAction(musicViewReIndexBluOSPlayer);
-    musicViewMenu->addAction(musicViewSelectors);
-    musicViewMenu->addAction(musicViewFilters);
-    musicViewMenu->addAction(musicViewVisualization);
-    auto musicViewVisualizationMenu = musicViewMenu->addMenu("Visualization Mode");
-    musicViewVisualizationMenu->addAction(musicViewVisualizationSmall);
-    musicViewVisualizationMenu->addAction(musicViewVisualizationCentral);
+    // Create music options menu.
+    musicOptionsMenu->addAction(musicOptionsRescanMusicLibrary);
+    musicOptionsMenu->addAction(musicOptionsCheckDatabase);
+    musicOptionsMenu->addSeparator();
+    musicOptionsMenu->addAction(musicOptionsUseBluOSPlayer);
+    musicOptionsMenu->addAction(musicOptionsReIndexBluOSPlayer);
+    musicOptionsMenu->addSeparator();
+    musicOptionsMenu->addAction(musicOptionsSelectors);
+    musicOptionsMenu->addAction(musicOptionsFilters);
+    musicOptionsMenu->addAction(musicOptionsVisualization);
+    auto musicOptionsVisualizationMenu = musicOptionsMenu->addMenu("Visualization Mode");
+    musicOptionsVisualizationMenu->addAction(musicOptionsVisualizationSmall);
+    musicOptionsVisualizationMenu->addAction(musicOptionsVisualizationCentral);
     // Select the proper visualization mode.
     if (xPlayerConfiguration::configuration()->getMusicViewVisualizationMode() == 0) {
-        musicViewVisualizationSmall->setChecked(true);
+        musicOptionsVisualizationSmall->setChecked(true);
     } else {
-        musicViewVisualizationCentral->setChecked(true);
+        musicOptionsVisualizationCentral->setChecked(true);
     }
-    musicViewVisualizationMenu->setDisabled(xPlayerConfiguration::configuration()->getMusicViewVisualization());
+    musicOptionsVisualizationMenu->setDisabled(xPlayerConfiguration::configuration()->getMusicViewVisualization());
+
+    // Create connections.
+    connect(musicOptionsRescanMusicLibrary, &QAction::triggered, [=]() {
+        setMusicLibrary(true);
+    });
+    connect(musicOptionsCheckDatabase, &QAction::triggered, this, &xApplication::checkMusicDatabase);
+    connect(musicOptionsUseBluOSPlayer, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->useMusicLibraryBluOS(checked);
+        // Disable visualization menu entry if BluOS is enabled.
+        musicOptionsVisualization->setEnabled(!checked);
+        // Enable reindex menu entry if BluOS is enabled.
+        musicOptionsReIndexBluOSPlayer->setEnabled(checked);
+    });
+    connect(musicOptionsReIndexBluOSPlayer, &QAction::triggered, this, &xApplication::reIndexMusicLibraryBluOS);
+    connect(musicOptionsSelectors, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setMusicViewSelectors(checked);
+    });
+    connect(musicOptionsFilters, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+        xPlayerConfiguration::configuration()->setMusicViewFilters(checked);
+    });
     // Connect visualization signals.
-    connect(musicViewVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+    connect(musicOptionsVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
         // Mode can only be changed when visualization disabled.
-        musicViewVisualizationMenu->setEnabled(!checked);
+        musicOptionsVisualizationMenu->setEnabled(!checked);
     });
-    connect(musicViewVisualizationMode, &QActionGroup::triggered, [=](QAction* action) {
-        if (action == musicViewVisualizationSmall) {
+    connect(musicOptionsVisualizationMode, &QActionGroup::triggered, [=](QAction* action) {
+        if (action == musicOptionsVisualizationSmall) {
             xPlayerConfiguration::configuration()->setMusicViewVisualizationMode(0);
         } else {
             xPlayerConfiguration::configuration()->setMusicViewVisualizationMode(1);
@@ -545,66 +575,84 @@ void xApplication::createMenus() {
     });
     // Toggle the visualization view.
     connect(mainMusicWidget, &xMainMusicWidget::visualizationToggle, [=]() {
-        auto toggleChecked = !musicViewVisualization->isChecked();
-        musicViewVisualization->setChecked(toggleChecked);
-        musicViewVisualizationMenu->setEnabled(!toggleChecked);
+        auto toggleChecked = !musicOptionsVisualization->isChecked();
+        musicOptionsVisualization->setChecked(toggleChecked);
+        musicOptionsVisualizationMenu->setEnabled(!toggleChecked);
         xPlayerConfiguration::configuration()->setMusicViewVisualization(toggleChecked);
     });
     // Disable music visualization if ESC is pressed.
     connect(mainMusicWidget, &xMainMusicWidget::visualizationExiting, [=]() {
-        musicViewVisualization->setChecked(false);
-        musicViewVisualizationMenu->setEnabled(true);
+        musicOptionsVisualization->setChecked(false);
+        musicOptionsVisualizationMenu->setEnabled(true);
         xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
     });
     // Disable the visualization view in case of an error.
     connect(mainMusicWidget, &xMainMusicWidget::visualizationError, [=]() {
-        musicViewVisualization->setChecked(false);
-        musicViewVisualization->setEnabled(false);
-        musicViewVisualizationMenu->setEnabled(false);
+        musicOptionsVisualization->setChecked(false);
+        musicOptionsVisualization->setEnabled(false);
+        musicOptionsVisualizationMenu->setEnabled(false);
         xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
     });
+    // Connect menu entries to enable/disable them.
+    connect(mainMobileSyncWidget, &xMainMobileSyncWidget::enableMusicLibraryScanning,
+            musicOptionsRescanMusicLibrary, &QAction::setEnabled);
+}
 
-    auto movieViewMenu = viewMenu->addMenu("Movie View");
-    // Create actions for movie view submenu.
-    auto movieViewFilters = new QAction("Filters", this);
-    movieViewFilters->setCheckable(true);
-    movieViewFilters->setShortcut(QKeySequence("Ctrl+Alt+M"));
-    movieViewFilters->setChecked(xPlayerConfiguration::configuration()->getMovieViewFilters());
-    connect(movieViewFilters, &QAction::triggered, mainMovieWidget, [=](bool checked) {
+void xApplication::createMovieOptionsMenus() {
+    // Options Menu for Movie View
+    movieOptionsMenuBar->setLayoutDirection(Qt::RightToLeft);
+    auto movieOptionsMenu = movieOptionsMenuBar->addMenu(QIcon(":images/xplay-options.svg") ,"");
+    auto movieOptionsRescanLibrary = new QAction("Rescan Library", this);
+    auto movieOptionsCheckDatabase = new QAction("Check Database", this);
+    auto movieOptionsFilters = new QAction("Filters", this);
+    movieOptionsFilters->setCheckable(true);
+    //movieOptionsFilters->setShortcut(QKeySequence("Ctrl+Alt+M"));
+    movieOptionsFilters->setChecked(xPlayerConfiguration::configuration()->getMovieViewFilters());
+
+    // Create movie options menu.
+    movieOptionsMenu->addAction(movieOptionsRescanLibrary);
+    movieOptionsMenu->addAction(movieOptionsCheckDatabase);
+    movieOptionsMenu->addSeparator();
+    movieOptionsMenu->addAction(movieOptionsFilters);
+
+    // Create connections.
+    connect(movieOptionsRescanLibrary, &QAction::triggered, this, &xApplication::setMovieLibraryTagsAndDirectories);
+    connect(movieOptionsCheckDatabase, &QAction::triggered, this, &xApplication::checkMovieDatabase);
+    connect(movieOptionsFilters, &QAction::triggered, mainMovieWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMovieViewFilters(checked);
     });
-    // Create movie view submenu.
-    movieViewMenu->addAction(movieViewFilters);
+}
 
+void xApplication::createStreamingOptionsMenus() {
 #ifdef USE_STREAMING
-    auto streamingViewMenu = viewMenu->addMenu("Streaming View");
-    // Create actions for streaming view submenu.
-    auto streamingViewSidebar = new QAction("Sidebar", this);
-    streamingViewSidebar->setCheckable(true);
-    streamingViewSidebar->setShortcut(QKeySequence("Ctrl+Alt+B"));
-    streamingViewSidebar->setChecked(xPlayerConfiguration::configuration()->getStreamingViewSidebar());
-    connect(streamingViewSidebar, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+    // Options Menu for Streaming View
+    streamingOptionsMenuBar->setLayoutDirection(Qt::RightToLeft);
+    auto streamingOptionsMenu = streamingOptionsMenuBar->addMenu(QIcon(":images/xplay-options.svg") ,"");
+    auto streamingOptionsSidebar = new QAction("Sidebar", this);
+    streamingOptionsSidebar->setCheckable(true);
+    //streamingOptionsSidebar->setShortcut(QKeySequence("Ctrl+Alt+B"));
+    streamingOptionsSidebar->setChecked(xPlayerConfiguration::configuration()->getStreamingViewSidebar());
+    auto streamingOptionsNavigation = new QAction("Navigation", this);
+    streamingOptionsNavigation->setCheckable(true);
+    //streamingOptionsNavigation->setShortcut(QKeySequence("Ctrl+Alt+N"));
+    streamingOptionsNavigation->setChecked(xPlayerConfiguration::configuration()->getStreamingViewNavigation());
+
+    // Create movie options menu.
+    streamingOptionsMenu->addAction(streamingOptionsSidebar);
+    streamingOptionsMenu->addAction(streamingOptionsNavigation);
+
+    // Create connections.
+    connect(streamingOptionsSidebar, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setStreamingViewSidebar(checked);
     });
-    auto streamingViewNavigation = new QAction("Navigation", this);
-    streamingViewNavigation->setCheckable(true);
-    streamingViewNavigation->setShortcut(QKeySequence("Ctrl+Alt+N"));
-    streamingViewNavigation->setChecked(xPlayerConfiguration::configuration()->getStreamingViewNavigation());
-    connect(streamingViewNavigation, &QAction::triggered, mainMusicWidget, [=](bool checked) {
+    connect(streamingOptionsNavigation, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setStreamingViewNavigation(checked);
     });
-    // Create movie view submenu.
-    streamingViewMenu->addAction(streamingViewSidebar);
-    streamingViewMenu->addAction(streamingViewNavigation);
 #endif
+}
 
-    // Create actions for help menu
-    auto helpMenuAboutQt = new QAction("About Qt", this);
-    // Connect actions from view menu.
-    connect(helpMenuAboutQt, &QAction::triggered, [=]() { QMessageBox::aboutQt(this, "About Qt"); });
-    // Create help menu.
-    auto helpMenu = menuBar()->addMenu(tr("&Help"));
-    helpMenu->addAction(helpMenuAboutQt);
+void xApplication::createMobileSyncOptionsMenus() {
+    // Currently no options menu for mobile sync view.
 }
 
 void xApplication::configure() {

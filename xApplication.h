@@ -170,9 +170,13 @@ protected:
 
 private:
     /**
-     * Generate the File and View menus and connect actions.
+     * Generate the main and context sensitives options menus.
      */
     void createMenus();
+    void createMusicOptionsMenus();
+    void createMovieOptionsMenus();
+    void createStreamingOptionsMenus();
+    void createMobileSyncOptionsMenus();
     /**
      * Create a generic dialog for unknown database entries (tracks or movies)
      *
@@ -185,7 +189,6 @@ private:
     xMusicLibrary* musicLibrary;
     xMusicPlayer* musicPlayer;
     xMainMusicWidget* mainMusicWidget;
-    QAction* musicViewVisualization;
     xMovieLibrary* movieLibrary;
     xMoviePlayer* moviePlayer;
     xMainMovieWidget* mainMovieWidget;
@@ -194,6 +197,12 @@ private:
     xPlayerDBus* mainDbus;
     std::mutex mainDbusMutex;
     QStackedWidget* mainView;
+    QStackedWidget* optionsMenuBars;
+    QMenuBar* musicOptionsMenuBar;
+    QAction* musicOptionsVisualization;
+    QMenuBar* movieOptionsMenuBar;
+    QMenuBar* streamingOptionsMenuBar;
+    QMenuBar* mobileSyncOptionsMenuBar;
 };
 
 #endif
