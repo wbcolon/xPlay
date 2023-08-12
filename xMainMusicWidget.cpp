@@ -277,6 +277,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
     // Connect update for current track. Update queue, database and database overlay.
     connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xMainMusicWidget::currentTrack);
+    connect(musicPlayer, &xMusicPlayer::updatePlayedTrack, this, &xMainMusicWidget::updatePlayedTrack);
     // Connect update of playlist.
     connect(musicPlayer, &xMusicPlayer::playlist, this, &xMainMusicWidget::playlist);
     // Connect to shuffe mode.
@@ -844,24 +845,13 @@ void xMainMusicWidget::currentState(xMusicPlayer::State state) {
 
 void xMainMusicWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track,
                                     int bitrate, int sampleRate, int bitsPerSample, const QString& quality) {
+    // Some parameters are currently unused.
+    Q_UNUSED(sampleRate)
+    Q_UNUSED(bitsPerSample)
     Q_UNUSED(bitrate)
     Q_UNUSED(quality)
     // Update queue
     currentQueueTrack(index);
-    // Update database.
-    auto result = xPlayerDatabase::database()->updateMusicFile(artist, album, track, sampleRate, bitsPerSample);
-    if (result.second > 0) {
-        // Update database overlay.
-        updatePlayedTrack(artist, album, track, result.first, result.second);
-    }
-    // Update transitions
-    if (((!currentArtist.isEmpty()) && (!currentAlbum.isEmpty())) &&
-        ((currentArtist != artist) || (currentAlbum != album))) {
-        auto transition = xPlayerDatabase::database()->updateTransition(currentArtist, currentAlbum, artist, album,
-                                                                        musicPlayer->getShuffleMode());
-        // Currently unused.
-        Q_UNUSED(transition)
-    }
     currentArtist = artist;
     currentAlbum = album;
     currentTrackName = track;

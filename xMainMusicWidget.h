@@ -374,6 +374,16 @@ private slots:
     void currentTrack(int index, const QString& artist, const QString& album, const QString& track,
                       int bitrate, int sampleRate, int bitsPerSample, const QString& quality);
     /**
+     * Update the database overlay for currently played track and add tooltips.
+     *
+     * @param artist the artist for the currently played track.
+     * @param album the album for the currently played track.
+     * @param track the track number and name for the currently played track.
+     * @param playCount the play count for the currently played track.
+     * @param timeStamp the last played time stamp in milli seconds for the currently played track.
+     */
+    void updatePlayedTrack(const QString& artist, const QString& album, const QString& track, int playCount, qint64 timeStamp);
+    /**
      * Select the current track in the playlist (queue).
      *
      * @param trackItem pointer to the double-clicked listItem.
@@ -497,16 +507,6 @@ private:
      * Clear track list and stop a running track list updater thread.
      */
     void clearTrackList();
-    /**
-     * Update the database overlay for currently played track and add tooltips.
-     *
-     * @param artist the artist for the currently played track.
-     * @param album the album for the currently played track.
-     * @param track the track number and name for the currently played track.
-     * @param playCount the play count for the currently played track.
-     * @param timeStamp the last played time stamp in milli seconds for the currently played track.
-     */
-    void updatePlayedTrack(const QString& artist, const QString& album, const QString& track, int playCount, qint64 timeStamp);
     /**
      * Update the list of artists.
      *

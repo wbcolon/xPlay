@@ -97,6 +97,16 @@ signals:
     void currentTrack(int index, const QString& artist, const QString& album, const QString& track,
                       int bitrate, int sampleRate, int bitsPerSample, const QString& quality);
     /**
+     * Update the database overlay for currently played track and add tooltips.
+     *
+     * @param artist the artist for the currently played track.
+     * @param album the album for the currently played track.
+     * @param track the track number and name for the currently played track.
+     * @param playCount the play count for the currently played track.
+     * @param timeStamp the last played time stamp in milli seconds for the currently played track.
+     */
+    void updatePlayedTrack(const QString& artist, const QString& album, const QString& track, int playCount, qint64 timeStamp);
+    /**
      * Signal the amount played for the current track.
      *
      * @param played the amount played in milliseconds.
@@ -281,6 +291,18 @@ private slots:
      */
     void currentTrackDuration(qint64 duration);
     /**
+     * Update the actual time played.
+     *
+     * @param pos the current position in milliseconds.
+     */
+    void updatePlayed(qint64 pos);
+    /**
+     * Update the database.
+     *
+     * @param index the position of the current track in the playlist.
+     */
+    void updateDatabase(int index);
+    /**
      * Track state changes in phonon media player. Try to recover from errors.
      *
      * @param newState the current state of the phonon media player.
@@ -312,6 +334,7 @@ private slots:
     void reInitialize();
 
 private:
+    void resetPlayed();
     /**
      * Compute a permutation for 0...elements-1. Allow for a fixed starting index.
      *
@@ -343,10 +366,19 @@ private:
     int musicVisualizationSampleRate;
     xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;
+    // Keep track of the time played.
+    qint64 musicCurrentPosition;
+    qint64 musicCurrentPlayed;
+    qint64 musicCurrentDuration;
+    int musicCurrentIndex;
+    // Keep track only of played artist and album for transition.
+    QString musicPlayedArtist;
+    QString musicPlayedAlbum;
+    int musicPlayedIndex;
+    qint64 musicPlayed;
+    bool musicPlayedRecorded;
     // We need to track the current remote track played to avoid duplicate database entries.
     QString musicCurrentRemote;
-    int musicCurrentRemoteIndex;
-    qint64 musicCurrentRemotePosition;
     bool musicRemoteAutoNext;
     // We need to track if the current track played to work around some phonon issues.
     bool musicCurrentFinished;

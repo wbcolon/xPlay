@@ -14,6 +14,7 @@
 #include "xMusicPlayer.h"
 #include "xMusicLibrary.h"
 #include "xMusicLibraryTrackEntry.h"
+#include "xPlayerConfiguration.h"
 #include "xPlayerDatabase.h"
 #include "xPlayerBluOSControl.h"
 
@@ -31,9 +32,16 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         musicVisualizationSampleRate(44100 / xMusicPlayer_MusicVisualizationSamplesFactor),
         musicPlayerState(State::StopState),
         useShuffleMode(false),
+        musicCurrentPosition(-1),
+        musicCurrentPlayed(0),
+        musicCurrentDuration(-1),
+        musicCurrentIndex(-1),
+        musicPlayedArtist(),
+        musicPlayedAlbum(),
+        musicPlayedIndex(-1),
+        musicPlayed(-1),
+        musicPlayedRecorded(false),
         musicCurrentRemote(),
-        musicCurrentRemoteIndex(-1),
-        musicCurrentRemotePosition(-1),
         musicRemoteAutoNext(false),
         musicCurrentFinished(false) {
     pulseAudioControls = xPlayerPulseAudioControls::controls();
@@ -54,10 +62,15 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     // Set up the play list.
     // Connect QMediaPlayer signals to out music player signals.
     connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayer::currentTrackPlayed);
+    connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayer::updatePlayed);
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayer::currentTrackSource);
     connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayer::stateChanged);
     connect(musicPlayer, &Phonon::MediaObject::aboutToFinish, this, &xMusicPlayer::aboutToFinish);
     connect(musicLibrary, &xMusicLibrary::scanningInitialized, this, &xMusicPlayer::reInitialize);
+    // Connect configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicPlayed, [=]() {
+        musicPlayed = xPlayerConfiguration::configuration()->getDatabaseMusicPlayed();
+    });
     // Connect status update from BluOS player.
     connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStatus, this, &xMusicPlayer::playerStatus);
     connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStopped, this, &xMusicPlayer::stop);
@@ -71,7 +84,6 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
 }
 
 void xMusicPlayer::queueTracks(const QString& artist, const QString& album, const std::vector<xMusicLibraryTrackEntry*>& tracks) {
-
     if (musicLibrary->isLocal()) {
         // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
         for (const auto& track : tracks) {
@@ -210,6 +222,8 @@ void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
     auto entryObject = std::get<2>(musicPlaylistEntries[currentIndex]);
     emit currentTrack(currentIndex, entryObject->getArtistName(), entryObject->getAlbumName(), entryObject->getTrackName(),
                       entryObject->getBitrate(), entryObject->getSampleRate(), entryObject->getBitsPerSample(), {});
+    // Update current index.
+    musicCurrentIndex = currentIndex;
 }
 
 void xMusicPlayer::dequeTrack(int index) {
@@ -275,6 +289,8 @@ void xMusicPlayer::clearQueue() {
     musicPlaylistRemote.clear();
     musicPlaylist.clear();
     musicCurrentRemote.clear();
+    // Reset played.
+    resetPlayed();
 }
 
 void xMusicPlayer::loadQueueFromPlaylist(const QString& name) {
@@ -402,6 +418,8 @@ void xMusicPlayer::play(int index) {
     if (useShuffleMode) {
         return;
     }
+    // Reset played.
+    resetPlayed();
     if (musicLibrary->isLocal()) {
         // Check if the index is valid.
         if ((index >= 0) && (index < musicPlaylist.size())) {
@@ -425,6 +443,8 @@ void xMusicPlayer::play(int index) {
 }
 
 void xMusicPlayer::seek(qint64 position) {
+    // Update current position.
+    musicCurrentPosition = position;
     // Jump to position (in milliseconds) in the current track.
     if (musicLibrary->isLocal()) {
         musicPlayer->seek(position);
@@ -436,12 +456,13 @@ void xMusicPlayer::seek(qint64 position) {
 }
 
 void xMusicPlayer::jump(qint64 delta) {
+    // Update current position.
+    musicCurrentPosition = std::clamp(musicCurrentPosition+delta,static_cast<qint64>(0), musicCurrentDuration);
     // Jump to the current position plus delta (in milliseconds) in the current track.
     if (musicLibrary->isLocal()) {
-        auto jumpPosition = musicPlayer->currentTime()+delta;
-        musicPlayer->seek(std::clamp(jumpPosition, static_cast<qint64>(0), musicPlayer->totalTime()));
+        musicPlayer->seek(musicCurrentPosition);
     } else {
-        xPlayerBluOSControls::controls()->seek(musicCurrentRemotePosition+delta);
+        xPlayerBluOSControls::controls()->seek(musicCurrentPosition);
         // Seeking will start the BluOS player.
         emit currentState(musicPlayerState = State::PlayingState);
     }
@@ -450,17 +471,19 @@ void xMusicPlayer::jump(qint64 delta) {
 void xMusicPlayer::stop() {
     // Stop the media player.
     emit currentState(musicPlayerState = State::StopState);
+    // Update current position.
+    musicCurrentPosition = 0;
     if (musicLibrary->isLocal()) {
         musicPlayer->stop();
     } else {
         xPlayerBluOSControls::controls()->stop();
-        // Update current position.
-        musicCurrentRemotePosition = 0;
-        emit currentTrackPlayed(musicCurrentRemotePosition);
+        emit currentTrackPlayed(musicCurrentPosition);
     }
 }
 
 void xMusicPlayer::prev() {
+    // Reset played. We skip to the previous track.
+    resetPlayed();
     if (musicLibrary->isLocal()) {
         // Jump to the previous element in the playlist if it exists.
         auto position = musicPlaylist.indexOf(musicPlayer->currentSource());
@@ -492,6 +515,8 @@ void xMusicPlayer::prev() {
 }
 
 void xMusicPlayer::next() {
+    // Reset played. We skip to the next track.
+    resetPlayed();
     if (musicLibrary->isLocal()) {
         // Jump to the next element in the playlist if it exists.
         auto position = musicPlaylist.indexOf(musicPlayer->currentSource());
@@ -622,6 +647,70 @@ void xMusicPlayer::currentTrackDuration(qint64 duration) {
     musicPlayerForTime->stop();
     // Reset media to avoid open files.
     musicPlayerForTime->setMedia(QMediaContent());
+    // Update current duration.
+    musicCurrentDuration = duration;
+}
+
+void xMusicPlayer::updatePlayed(qint64 pos) {
+    qDebug() << "xMusicPlayer::updatePlayed: pos:" << pos << ", currentPos: " << musicCurrentPosition
+        << ", currentPlayed: " << musicCurrentPlayed << ", currentDuration: " << musicCurrentDuration
+        << ", playedIndex: " << musicPlayedIndex << ", played: " << musicPlayed;
+    if (pos < musicCurrentPosition) {
+        qCritical() << "xMusicPlayer::updatePlayed: illegal positions: " << pos << "," << musicCurrentPosition;
+        musicCurrentPosition = pos; // correct position.
+    }
+    musicCurrentPlayed += (pos - musicCurrentPosition);
+    musicCurrentPosition = pos;
+    // Have we recorded the track already.
+    if ((!musicPlayedRecorded) && (musicCurrentDuration >= 0)) {
+        // Need to keep track of the played index. The current source may change earlier due to gapless playback.
+        if (musicPlayedIndex < 0) {
+            musicPlayedIndex = musicCurrentIndex;
+        }
+        // Determine if we need to update the database.
+        auto update = false;
+        if ((musicCurrentDuration - 2000) <= musicPlayed) {
+            // Update if we are close to the end (within 2 seconds towards the end)
+            update = (musicCurrentPosition >= musicCurrentDuration - 2000) && (musicCurrentPosition <= musicCurrentPlayed);
+        } else {
+            // Update if we played enough of the song.
+            update = (musicCurrentPlayed >= musicPlayed);
+        }
+        if (update) {
+            updateDatabase(musicPlayedIndex);
+            musicPlayedRecorded = true;
+            musicPlayedIndex = -1;
+        }
+    }
+}
+
+void xMusicPlayer::updateDatabase(int index) {
+    // Retrieve info for the currently played track and emit the information.
+    if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
+        auto entry = musicPlaylistEntries[index];
+        auto entryObject = std::get<2>(entry);
+        auto artist = std::get<0>(entry);
+        auto album = std::get<1>(entry);
+        auto trackName = entryObject->getTrackName();
+
+        // Update database.
+        auto result = xPlayerDatabase::database()->updateMusicFile(artist, album, trackName,
+                                                                   entryObject->getSampleRate(),
+                                                                   entryObject->getBitsPerSample());
+        if (result.second > 0) {
+            // Update database overlay.
+            emit updatePlayedTrack(artist, album, trackName, result.first, result.second);
+        }
+        // Update transitions
+        if (((!musicPlayedArtist.isEmpty()) && (!musicPlayedAlbum.isEmpty())) &&
+            ((musicPlayedArtist != artist) || (musicPlayedAlbum != album))) {
+            auto transition = xPlayerDatabase::database()->updateTransition(musicPlayedArtist, musicPlayedAlbum,
+                                                                            artist, album, useShuffleMode);
+            // Currently unused.
+            Q_UNUSED(transition)
+        }
+    }
+
 }
 
 void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {
@@ -642,6 +731,10 @@ void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {
         musicPlayerForTime->setMedia(QUrl::fromLocalFile(current.fileName()));
         musicPlayerForTime->play();
         musicCurrentFinished = false;
+        // Update current index.
+        musicCurrentIndex = index;
+        // Reset played. We have a new track.
+        resetPlayed();
     }
 }
 
@@ -717,23 +810,36 @@ void xMusicPlayer::playerStatus(const QString& path, int index, qint64 position,
         index = musicPlaylistRemote.indexOf(path);
     }
     if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
-        if ((musicCurrentRemote != path) || (musicCurrentRemoteIndex != index)) {
+        if ((musicCurrentRemote != path) || (musicCurrentIndex != index)) {
             // Update currently played remote track.
             musicCurrentRemote = path;
-            // Update current index.
-            musicCurrentRemoteIndex = index;
             auto entry = musicPlaylistEntries[index];
             auto entryObject = std::get<2>(entry);
-            emit currentTrackLength(entryObject->getLength());
+            // Reset played. We have a new track.
+            resetPlayed();
+            musicCurrentDuration = entryObject->getLength();
+            emit currentTrackLength(musicCurrentDuration);
             emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
                               entryObject->getTrackName(), entryObject->getBitrate(),
                               entryObject->getSampleRate(), entryObject->getBitsPerSample(),
                               quality);
+            // Update current index.
+            musicCurrentIndex = index;
         }
-        // Update current position.
-        musicCurrentRemotePosition = position;
-        emit currentTrackPlayed(musicCurrentRemotePosition);
+        if (!musicPlayedRecorded) {
+            // Update played.
+            updatePlayed(position);
+        }
+        emit currentTrackPlayed(position);
     }
+}
+
+void xMusicPlayer::resetPlayed() {
+    musicCurrentPosition = 0;
+    musicCurrentPlayed = 0;
+    musicCurrentDuration = -1;
+    musicPlayedRecorded = false;
+    musicPlayedIndex = -1;
 }
 
 QVector<int> xMusicPlayer::computePermutation(int elements, int startIndex) {
