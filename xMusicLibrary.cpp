@@ -331,10 +331,13 @@ void xMusicLibrary::scanForUnknownEntries(const std::list<std::tuple<QString, QS
         if ((currentArtist != std::get<0>(entry)) || (currentAlbum != std::get<1>(entry))) {
             currentArtist = std::get<0>(entry);
             currentAlbum = std::get<1>(entry);
+            // Remove current tracks in case artist/album is not found.
+            currentTracks.clear();
             auto artist = musicLibraryArtistsMap.find(currentArtist);
             if (artist != musicLibraryArtistsMap.end()) {
                 auto album = artist->second->getAlbum(currentAlbum);
                 if (album) {
+                    album->scan(); // Force scan of album tracks.
                     currentTracks = album->getTracks();
                 }
             }
@@ -343,7 +346,7 @@ void xMusicLibrary::scanForUnknownEntries(const std::list<std::tuple<QString, QS
         auto entryTrack = std::get<2>(entry);
         auto currentTracksPos = std::find_if(currentTracks.begin(), currentTracks.end(),
                                              [&entryTrack](xMusicLibraryTrackEntry* trackObject) {
-                                                 return (trackObject->getUrl().toLocalFile() == entryTrack);
+                                                 return (trackObject->getTrackName() == entryTrack);
                                              });
         // If we do not find the track then we append the entry to the unknown list.
         if (currentTracksPos == currentTracks.end()) {
