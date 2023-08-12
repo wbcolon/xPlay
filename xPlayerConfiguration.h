@@ -202,11 +202,23 @@ public:
      */
     void setDatabaseMusicOverlay(bool enabled);
     /**
+     * Set the amount of time when music is considered played.
+     *
+     * @param played the amount of time in ms.
+     */
+    void setDatabaseMusicPlayed(qint64 played);
+    /**
      * Set the mode for the database overlay for the movie view.
      *
      * @param enabled if true then enable overlay, disable otherwise.
      */
     void setDatabaseMovieOverlay(bool enabled);
+    /**
+     * Set the amount of time when movie is considered played.
+     *
+     * @param played the amount of time in ms.
+     */
+    void setDatabaseMoviePlayed(qint64 played);
     /**
      * Set the mode for handling database update errors.
      *
@@ -447,11 +459,23 @@ public:
      */
     [[nodiscard]] bool getDatabaseMusicOverlay();
     /**
+     * Get the time when music is considered played.
+     *
+     * @return amount of time in ms.
+     */
+    [[nodiscard]] qint64 getDatabaseMusicPlayed();
+    /**
      * Get the mode for the database overlay for the movie view.
      *
      * @return true, if the overlay is enabled, false otherwise.
      */
     [[nodiscard]] bool getDatabaseMovieOverlay();
+    /**
+     * Get the time when movie is considered played.
+     *
+     * @return amount of time in ms.
+     */
+    [[nodiscard]] qint64 getDatabaseMoviePlayed();
     /**
      * Get the mode for handling database update errors.
      *
@@ -601,9 +625,17 @@ signals:
      */
     void updatedDatabaseMusicOverlay();
     /**
+     * Signal an update of the time the music is played.
+     */
+    void updatedDatabaseMusicPlayed();
+    /**
      * Signal an update of the database overlay for the movie view.
      */
     void updatedDatabaseMovieOverlay();
+    /**
+     * Signal an update of the time the movie is played.
+     */
+    void updatedDatabaseMoviePlayed();
     /**
      * Signal an update of the projectM visualization config path.
      */

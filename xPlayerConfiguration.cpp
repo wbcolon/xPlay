@@ -50,7 +50,9 @@ const QString xPlayerConfiguration_StreamingViewNavigation { "xPlay/StreamingVie
 const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" }; // NOLINT
+const QString xPlayerConfiguration_DatabaseMusicPlayed { "xPlay/DatabaseMusicPlayed" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOverlay" }; // NOLINT
+const QString xPlayerConfiguration_DatabaseMoviePlayed { "xPlay/DatabaseMoviePlayed" }; // NOLINT
 const QString xPlayerConfiguration_VisualizationConfigPath { "xPlay/VisualizationConfigPath" }; // NOLINT
 const QString xPlayerConfiguration_VisualizationPreset { "xPlay/VisualizationPreset" }; // NOLINT
 const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor" }; // NOLINT
@@ -337,11 +339,27 @@ void xPlayerConfiguration::setDatabaseMusicOverlay(bool enabled) {
     }
 }
 
+void xPlayerConfiguration::setDatabaseMusicPlayed(qint64 played) {
+    if (played != getDatabaseMusicPlayed()) {
+        settings->setValue(xPlayerConfiguration_DatabaseMusicPlayed, played);
+        settings->sync();
+        emit updatedDatabaseMusicPlayed();
+    }
+}
+
 void xPlayerConfiguration::setDatabaseMovieOverlay(bool enabled) {
     if (enabled != getDatabaseMovieOverlay()) {
        settings->setValue(xPlayerConfiguration_DatabaseMovieOverlay, enabled);
        settings->sync();
        emit updatedDatabaseMovieOverlay();
+    }
+}
+
+void xPlayerConfiguration::setDatabaseMoviePlayed(qint64 played) {
+    if (played != getDatabaseMoviePlayed()) {
+        settings->setValue(xPlayerConfiguration_DatabaseMoviePlayed, played);
+        settings->sync();
+        emit updatedDatabaseMoviePlayed();
     }
 }
 
@@ -548,8 +566,16 @@ bool xPlayerConfiguration::getDatabaseMusicOverlay() {
     return settings->value(xPlayerConfiguration_DatabaseMusicOverlay, true).toBool();
 }
 
+qint64 xPlayerConfiguration::getDatabaseMusicPlayed() {
+    return settings->value(xPlayerConfiguration_DatabaseMusicPlayed, 0).toLongLong();
+}
+
 bool xPlayerConfiguration::getDatabaseMovieOverlay() {
     return settings->value(xPlayerConfiguration_DatabaseMovieOverlay, true).toBool();
+}
+
+qint64 xPlayerConfiguration::getDatabaseMoviePlayed() {
+    return settings->value(xPlayerConfiguration_DatabaseMoviePlayed, 0).toLongLong();
 }
 
 bool xPlayerConfiguration::getDatabaseIgnoreUpdateErrors() const {
@@ -659,7 +685,9 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedStreamingViewSidebar();
     emit updatedStreamingViewNavigation();
     emit updatedDatabaseMusicOverlay();
+    emit updatedDatabaseMusicPlayed();
     emit updatedDatabaseMovieOverlay();
+    emit updatedDatabaseMoviePlayed();
     emit updatedVisualizationConfigPath();
     emit updatedWebsiteZoomFactor();
     emit updatedWebsiteUserAgent();

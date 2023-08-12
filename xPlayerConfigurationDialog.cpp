@@ -35,67 +35,39 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryTab->setFlat(xPlayer::UseFlatGroupBox);
     auto movieLibraryTab = new QGroupBox(tr("Movie Library Configuration"), configurationTab);
     movieLibraryTab->setFlat(xPlayer::UseFlatGroupBox);
-    auto streamingSitesTab = new QGroupBox(tr("Streaming Sites Configuration"), configurationTab);
-    streamingSitesTab->setFlat(xPlayer::UseFlatGroupBox);
+    auto streamingTab = new QGroupBox(tr("Streaming Sites Configuration"), configurationTab);
+    streamingTab->setFlat(xPlayer::UseFlatGroupBox);
     auto additionalTab = new QWidget(configurationTab);
-    auto additionalLayout = new xPlayerLayout();
-    auto databaseBox = new QGroupBox(tr("Database Configuration"), additionalTab);
-    databaseBox->setFlat(xPlayer::UseFlatGroupBox);
-    auto rotelBox = new QGroupBox(tr("Rotel Configuration"), additionalTab);
-    rotelBox->setFlat(xPlayer::UseFlatGroupBox);
-    auto websiteBox = new QGroupBox(tr("Website Configuration"), additionalTab);
-    websiteBox->setFlat(xPlayer::UseFlatGroupBox);
     configurationTab->addTab(musicLibraryTab, tr("Music Library"));
     configurationTab->addTab(movieLibraryTab, tr("Movie Library"));
-    configurationTab->addTab(streamingSitesTab, tr("Streaming Sites"));
+    configurationTab->addTab(streamingTab, tr("Streaming Sites"));
     configurationTab->addTab(additionalTab, tr("Additional"));
     auto configurationButtons = new QDialogButtonBox(Qt::Horizontal, this);
     configurationButtons->addButton(QDialogButtonBox::Save);
     configurationButtons->addButton(QDialogButtonBox::Reset);
     configurationButtons->addButton(QDialogButtonBox::Cancel);
     configurationButtons->setFocusPolicy(Qt::NoFocus);
-    // Setup movie library setup, with tags, directories and extensions.
-    auto movieLibraryLayout = new xPlayerLayout();
-    auto movieLibraryTagLabel = new QLabel(tr("Tag"), movieLibraryTab);
-    movieLibraryTagWidget = new QLineEdit(movieLibraryTab);
-    auto movieLibraryDirectoryLabel = new QLabel(tr("Directory"), movieLibraryTab);
-    movieLibraryDirectoryWidget = new QLineEdit(movieLibraryTab);
-    auto movieLibraryDirectoryOpenButton = new QPushButton(tr("..."), movieLibraryTab);
-    auto movieLibraryButtons = new QDialogButtonBox(Qt::Horizontal, movieLibraryTab);
-    movieLibraryButtons->addButton(QDialogButtonBox::Apply);
-    movieLibraryButtons->addButton(QDialogButtonBox::Discard);
-    movieLibraryListWidget = new QListWidget(movieLibraryTab);
-    movieLibraryListWidget->setSortingEnabled(true);
-    auto movieLibraryExtensionsLabel = new QLabel(tr("Extensions"), movieLibraryTab);
-    movieLibraryExtensionsWidget = new QLineEdit(movieLibraryTab);
-    auto movieDefaultAudioLanguageLabel = new QLabel(tr("Default Audio Channel Language"), movieLibraryTab);
-    movieDefaultAudioLanguageWidget = new QComboBox(movieLibraryTab);
-    movieDefaultAudioLanguageWidget->addItem(tr("movie default"));
-    movieDefaultAudioLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
-    auto movieDefaultSubtitleLanguageLabel = new QLabel(tr("Default Subtitle Language"), movieLibraryTab);
-    movieDefaultSubtitleLanguageWidget = new QComboBox(movieLibraryTab);
-    movieDefaultSubtitleLanguageWidget->addItem(tr("disable"));
-    movieDefaultSubtitleLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
-    movieAudioCompressionWidget = new QCheckBox(tr("Use Audio Compression"), movieLibraryTab);
-    movieLibraryLayout->addWidget(movieLibraryTagLabel, 0, 0, 1, 5);
-    movieLibraryLayout->addWidget(movieLibraryTagWidget, 1, 0, 1, 5);
-    movieLibraryLayout->addWidget(movieLibraryDirectoryLabel, 2, 0, 1, 5);
-    movieLibraryLayout->addWidget(movieLibraryDirectoryWidget, 3, 0, 1, 4);
-    movieLibraryLayout->addWidget(movieLibraryDirectoryOpenButton, 3, 4);
-    movieLibraryLayout->addWidget(movieLibraryListWidget, 4, 0, 3, 5);
-    movieLibraryLayout->addWidget(movieLibraryButtons, 7, 0, 1, 5);
-    movieLibraryLayout->addWidget(movieLibraryExtensionsLabel, 8, 0, 1, 5);
-    movieLibraryLayout->addWidget(movieLibraryExtensionsWidget, 9, 0, 1, 5);
-    movieLibraryLayout->addRowSpacer(10, xPlayerLayout::LargeSpace);
-    movieLibraryLayout->addWidget(movieDefaultAudioLanguageLabel, 11, 0, 1, 2);
-    movieLibraryLayout->addWidget(movieDefaultAudioLanguageWidget, 12, 0, 1, 2);
-    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageLabel, 11, 3, 1, 2);
-    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
-    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
-    movieLibraryLayout->addRowSpacer(13, xPlayerLayout::SmallSpace);
-    movieLibraryLayout->addWidget(movieAudioCompressionWidget, 14, 0, 1, 2);
-    movieLibraryLayout->addRowStretcher(15);
-    movieLibraryTab->setLayout(movieLibraryLayout);
+    // Create individual configuration tabs.
+    createMusicConfigurationTab(musicLibraryTab);
+    createMovieConfigurationTab(movieLibraryTab);
+    createStreamingConfigurationTab(streamingTab);
+    createAdditionalConfigurationTab(additionalTab);
+    // Configuration layout.
+    configurationLayout->addWidget(configurationTab, 0, 0, 4, 4);
+    configurationLayout->addRowSpacer(4, xPlayerLayout::HugeSpace);
+    configurationLayout->addWidget(configurationButtons, 5, 0, 1, 4);
+    setLayout(configurationLayout);
+    // Connect dialog buttons.
+    connect(configurationButtons->button(QDialogButtonBox::Save), &QPushButton::pressed, this, &xPlayerConfigurationDialog::saveSettings);
+    connect(configurationButtons->button(QDialogButtonBox::Reset), &QPushButton::pressed, this, &xPlayerConfigurationDialog::loadSettings);
+    connect(configurationButtons->button(QDialogButtonBox::Cancel), &QPushButton::pressed, this, &QDialog::reject);
+    // Load and resize.
+    loadSettings();
+    setMinimumWidth(static_cast<int>(sizeHint().height()*1.5)); // NOLINT
+    setMinimumHeight(sizeHint().height()); // NOLINT
+}
+
+void xPlayerConfigurationDialog::createMusicConfigurationTab(QWidget* musicLibraryTab) {
     // Setup music library with directory and extensions.
     auto musicLibraryLayout = new xPlayerLayout();
     auto musicLibraryDirectoryLabel = new QLabel(tr("Directory"), musicLibraryTab);
@@ -140,27 +112,97 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     musicLibraryLayout->addWidget(musicVisualizationConfigOpenButton, 16, 4);
     musicLibraryLayout->addRowStretcher(17);
     musicLibraryTab->setLayout(musicLibraryLayout);
+    // Connect dialog buttons.
+    connect(musicLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMusicLibraryDirectory);
+    connect(musicLibraryTaggingLLTagOpenButton, &QPushButton::pressed, this,
+            &xPlayerConfigurationDialog::openTaggingLLTag);
+    connect(musicLibraryTaggingModeWidget, SIGNAL(activated(int)), this, SLOT(taggingMode(int)));
+    connect(musicVisualizationConfigOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMusicVisualizationConfig);
+}
+
+void xPlayerConfigurationDialog::createMovieConfigurationTab(QWidget* movieLibraryTab) {
+    // Setup movie library setup, with tags, directories and extensions.
+    auto movieLibraryLayout = new xPlayerLayout();
+    auto movieLibraryTagLabel = new QLabel(tr("Tag"), movieLibraryTab);
+    movieLibraryTagWidget = new QLineEdit(movieLibraryTab);
+    auto movieLibraryDirectoryLabel = new QLabel(tr("Directory"), movieLibraryTab);
+    movieLibraryDirectoryWidget = new QLineEdit(movieLibraryTab);
+    auto movieLibraryDirectoryOpenButton = new QPushButton(tr("..."), movieLibraryTab);
+    auto movieLibraryButtons = new QDialogButtonBox(Qt::Horizontal, movieLibraryTab);
+    movieLibraryButtons->addButton(QDialogButtonBox::Apply);
+    movieLibraryButtons->addButton(QDialogButtonBox::Discard);
+    movieLibraryListWidget = new QListWidget(movieLibraryTab);
+    movieLibraryListWidget->setSortingEnabled(true);
+    auto movieLibraryExtensionsLabel = new QLabel(tr("Extensions"), movieLibraryTab);
+    movieLibraryExtensionsWidget = new QLineEdit(movieLibraryTab);
+    auto movieDefaultAudioLanguageLabel = new QLabel(tr("Default Audio Channel Language"), movieLibraryTab);
+    movieDefaultAudioLanguageWidget = new QComboBox(movieLibraryTab);
+    movieDefaultAudioLanguageWidget->addItem(tr("movie default"));
+    movieDefaultAudioLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
+    auto movieDefaultSubtitleLanguageLabel = new QLabel(tr("Default Subtitle Language"), movieLibraryTab);
+    movieDefaultSubtitleLanguageWidget = new QComboBox(movieLibraryTab);
+    movieDefaultSubtitleLanguageWidget->addItem(tr("disable"));
+    movieDefaultSubtitleLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
+    movieAudioCompressionWidget = new QCheckBox(tr("Use Audio Compression"), movieLibraryTab);
+    movieLibraryLayout->addWidget(movieLibraryTagLabel, 0, 0, 1, 5);
+    movieLibraryLayout->addWidget(movieLibraryTagWidget, 1, 0, 1, 5);
+    movieLibraryLayout->addWidget(movieLibraryDirectoryLabel, 2, 0, 1, 5);
+    movieLibraryLayout->addWidget(movieLibraryDirectoryWidget, 3, 0, 1, 4);
+    movieLibraryLayout->addWidget(movieLibraryDirectoryOpenButton, 3, 4);
+    movieLibraryLayout->addWidget(movieLibraryListWidget, 4, 0, 3, 5);
+    movieLibraryLayout->addWidget(movieLibraryButtons, 7, 0, 1, 5);
+    movieLibraryLayout->addWidget(movieLibraryExtensionsLabel, 8, 0, 1, 5);
+    movieLibraryLayout->addWidget(movieLibraryExtensionsWidget, 9, 0, 1, 5);
+    movieLibraryLayout->addRowSpacer(10, xPlayerLayout::LargeSpace);
+    movieLibraryLayout->addWidget(movieDefaultAudioLanguageLabel, 11, 0, 1, 2);
+    movieLibraryLayout->addWidget(movieDefaultAudioLanguageWidget, 12, 0, 1, 2);
+    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageLabel, 11, 3, 1, 2);
+    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
+    movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
+    movieLibraryLayout->addRowSpacer(13, xPlayerLayout::SmallSpace);
+    movieLibraryLayout->addWidget(movieAudioCompressionWidget, 14, 0, 1, 2);
+    movieLibraryLayout->addRowStretcher(15);
+    movieLibraryTab->setLayout(movieLibraryLayout);
+    // Connect movie library.
+    connect(movieLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMovieLibraryDirectory);
+    connect(movieLibraryButtons->button(QDialogButtonBox::Apply), &QPushButton::pressed, this, &xPlayerConfigurationDialog::movieLibraryAdd);
+    connect(movieLibraryButtons->button(QDialogButtonBox::Discard), &QPushButton::pressed, this, &xPlayerConfigurationDialog::movieLibraryRemove);
+    connect(movieLibraryListWidget, &QListWidget::currentItemChanged, this, &xPlayerConfigurationDialog::selectMovieLibrary);
+}
+
+void xPlayerConfigurationDialog::createStreamingConfigurationTab(QWidget *streamingTab) {
     // Setup streaming sites with URL and short name.
-    auto streamingSitesLayout = new xPlayerLayout();
-    auto streamingNameLabel = new QLabel(tr("Name"), streamingSitesTab);
-    streamingNameWidget = new QLineEdit(streamingSitesTab);
-    auto streamingUrlLabel = new QLabel(tr("Url"), streamingSitesTab);
-    streamingUrlWidget = new QLineEdit(streamingSitesTab);
-    auto streamingSitesButtons = new QDialogButtonBox(Qt::Horizontal, streamingSitesTab);
-    streamingSitesButtons->addButton(QDialogButtonBox::Apply);
-    streamingSitesButtons->addButton(QDialogButtonBox::Discard);
-    auto streamingSitesDefaultButton = streamingSitesButtons->addButton(tr("Default"), QDialogButtonBox::ResetRole);
-    streamingSitesListWidget = new QListWidget(streamingSitesTab);
+    auto streamingLayout = new xPlayerLayout();
+    auto streamingNameLabel = new QLabel(tr("Name"), streamingTab);
+    streamingNameWidget = new QLineEdit(streamingTab);
+    auto streamingUrlLabel = new QLabel(tr("Url"), streamingTab);
+    streamingUrlWidget = new QLineEdit(streamingTab);
+    auto streamingButtons = new QDialogButtonBox(Qt::Horizontal, streamingTab);
+    streamingButtons->addButton(QDialogButtonBox::Apply);
+    streamingButtons->addButton(QDialogButtonBox::Discard);
+    auto streamingDefaultButton = streamingButtons->addButton(tr("Default"), QDialogButtonBox::ResetRole);
+    streamingSitesListWidget = new QListWidget(streamingTab);
     streamingSitesListWidget->setSortingEnabled(true);
-    streamingSitesLayout->addWidget(streamingNameLabel, 0, 0, 1, 2);
-    streamingSitesLayout->addWidget(streamingNameWidget, 1, 0, 1, 2);
-    streamingSitesLayout->addWidget(streamingUrlLabel, 1, 2, 1, 3);
-    streamingSitesLayout->addWidget(streamingUrlWidget, 1, 2, 1, 3);
-    streamingSitesLayout->addWidget(streamingSitesListWidget, 2, 0, 3, 5);
-    streamingSitesLayout->addWidget(streamingSitesButtons, 5, 0, 1, 5);
-    streamingSitesLayout->setRowStretch(2, 2);
-    streamingSitesTab->setLayout(streamingSitesLayout);
+    streamingLayout->addWidget(streamingNameLabel, 0, 0, 1, 2);
+    streamingLayout->addWidget(streamingNameWidget, 1, 0, 1, 2);
+    streamingLayout->addWidget(streamingUrlLabel, 1, 2, 1, 3);
+    streamingLayout->addWidget(streamingUrlWidget, 1, 2, 1, 3);
+    streamingLayout->addWidget(streamingSitesListWidget, 2, 0, 3, 5);
+    streamingLayout->addWidget(streamingButtons, 5, 0, 1, 5);
+    streamingLayout->setRowStretch(2, 2);
+    streamingTab->setLayout(streamingLayout);
+    // Connect streaming sites.
+    connect(streamingButtons->button(QDialogButtonBox::Apply), &QPushButton::pressed, this, &xPlayerConfigurationDialog::streamingSiteAdd);
+    connect(streamingButtons->button(QDialogButtonBox::Discard), &QPushButton::pressed, this, &xPlayerConfigurationDialog::streamingSiteRemove);
+    connect(streamingDefaultButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::streamingSiteDefault);
+    connect(streamingSitesListWidget, &QListWidget::currentItemChanged, this, &xPlayerConfigurationDialog::selectStreamingSite);
+}
+
+void xPlayerConfigurationDialog::createAdditionalConfigurationTab(QWidget *additionalTab) {
+    auto additionalLayout = new xPlayerLayout();
     // Setup rotel amp with network address and port.
+    auto rotelBox = new QGroupBox(tr("Rotel Configuration"), additionalTab);
+    rotelBox->setFlat(xPlayer::UseFlatGroupBox);
     auto rotelLayout = new xPlayerLayout();
     auto rotelNetworkAddressLabel = new QLabel(tr("Network Address"), rotelBox);
     auto rotelNetworkPortLabel = new QLabel(tr("Port"), rotelBox);
@@ -175,6 +217,8 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     rotelLayout->addWidget(rotelEnableWidget, 1, 4, 1, 1);
     rotelBox->setLayout(rotelLayout);
     // Setup database configuration.
+    auto databaseBox = new QGroupBox(tr("Database Configuration"), additionalTab);
+    databaseBox->setFlat(xPlayer::UseFlatGroupBox);
     auto databaseLayout = new xPlayerLayout();
     auto databaseDirectoryLabel = new QLabel(tr("Directory"), databaseBox);
     databaseDirectoryWidget = new QLineEdit(databaseBox);
@@ -186,17 +230,35 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     databaseCutOffDate->setDisplayFormat("dd MMMM yyyy");
     databaseCutOffCheck = new QCheckBox(tr("Use cut-off date"), databaseBox);
     databaseIgnoreUpdateErrorsCheck = new QCheckBox(tr("Ignore database update errors"), databaseBox);
+    auto databaseMusicPlayedLabel = new QLabel(tr("Music is played after"));
+    databaseMusicPlayed = new QSpinBox(databaseBox);
+    databaseMusicPlayed->setSuffix(tr(" sec"));
+    databaseMusicPlayed->setMinimum(0);
+    databaseMusicPlayed->setSingleStep(5);
+
+    auto databaseMoviePlayedLabel = new QLabel(tr("Movie is played after"));
+    databaseMoviePlayed = new QSpinBox(databaseBox);
+    databaseMoviePlayed->setSuffix(tr(" min"));
+    databaseMoviePlayed->setMinimum(0);
+    databaseMoviePlayed->setSingleStep(1);
+
     databaseLayout->addWidget(databaseDirectoryLabel, 0, 0, 1, 5);
     databaseLayout->addWidget(databaseDirectoryWidget, 1, 0, 1, 4);
     databaseLayout->addWidget(databaseDirectoryButton, 1, 4, 1, 1);
     databaseLayout->addRowSpacer(2, xPlayerLayout::MediumSpace);
-    databaseLayout->addWidget(databaseMusicOverlayCheck, 3, 0, 1, 5);
-    databaseLayout->addWidget(databaseMovieOverlayCheck, 4, 0, 1, 5);
+    databaseLayout->addWidget(databaseMusicOverlayCheck, 3, 0, 1, 3);
+    databaseLayout->addWidget(databaseMusicPlayedLabel, 3, 3, 1, 1);
+    databaseLayout->addWidget(databaseMusicPlayed, 3, 4, 1, 1);
+    databaseLayout->addWidget(databaseMovieOverlayCheck, 4, 0, 1, 3);
+    databaseLayout->addWidget(databaseMoviePlayedLabel, 4, 3, 1, 1);
+    databaseLayout->addWidget(databaseMoviePlayed, 4, 4, 1, 1);
     databaseLayout->addWidget(databaseCutOffCheck, 5, 0, 1, 3);
     databaseLayout->addWidget(databaseCutOffDate, 5, 3, 1, 2);
     databaseLayout->addWidget(databaseIgnoreUpdateErrorsCheck, 6, 0, 1, 5);
     databaseBox->setLayout(databaseLayout);
     // Setup website default zoom factor.
+    auto websiteBox = new QGroupBox(tr("Website Configuration"), additionalTab);
+    websiteBox->setFlat(xPlayer::UseFlatGroupBox);
     auto websiteLayout = new xPlayerLayout();
     auto websiteZoomFactorLabel = new QLabel(tr("Zoom Factor"), websiteBox);
     websiteZoomFactors = new QComboBox(websiteBox);
@@ -218,41 +280,15 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     additionalLayout->addWidget(websiteBox, 5, 0, 1, 4);
     additionalLayout->addRowStretcher(6);
     additionalTab->setLayout(additionalLayout);
-    // Configuration layout.
-    configurationLayout->addWidget(configurationTab, 0, 0, 4, 4);
-    configurationLayout->addRowSpacer(4, xPlayerLayout::HugeSpace);
-    configurationLayout->addWidget(configurationButtons, 5, 0, 1, 4);
-    setLayout(configurationLayout);
+
     // Connect rotel button
     connect(rotelEnableWidget, &QPushButton::pressed, this, &xPlayerConfigurationDialog::toggleRotelWidget);
-    // Connect dialog buttons.
-    connect(musicLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMusicLibraryDirectory);
-    connect(musicLibraryTaggingLLTagOpenButton, &QPushButton::pressed, this,
-            &xPlayerConfigurationDialog::openTaggingLLTag);
-    connect(musicLibraryTaggingModeWidget, SIGNAL(activated(int)), this, SLOT(taggingMode(int)));
-    connect(musicVisualizationConfigOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMusicVisualizationConfig);
-    // Connect movie library.
-    connect(movieLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMovieLibraryDirectory);
-    connect(movieLibraryButtons->button(QDialogButtonBox::Apply), &QPushButton::pressed, this, &xPlayerConfigurationDialog::movieLibraryAdd);
-    connect(movieLibraryButtons->button(QDialogButtonBox::Discard), &QPushButton::pressed, this, &xPlayerConfigurationDialog::movieLibraryRemove);
-    connect(movieLibraryListWidget, &QListWidget::currentItemChanged, this, &xPlayerConfigurationDialog::selectMovieLibrary);
-    // Connect streaming sites.
-    connect(streamingSitesButtons->button(QDialogButtonBox::Apply), &QPushButton::pressed, this, &xPlayerConfigurationDialog::streamingSiteAdd);
-    connect(streamingSitesButtons->button(QDialogButtonBox::Discard), &QPushButton::pressed, this, &xPlayerConfigurationDialog::streamingSiteRemove);
-    connect(streamingSitesDefaultButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::streamingSiteDefault);
-    connect(streamingSitesListWidget, &QListWidget::currentItemChanged, this, &xPlayerConfigurationDialog::selectStreamingSite);
     // Connect database button and check box.
     connect(databaseDirectoryButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openDatabaseDirectory);
     connect(databaseCutOffCheck, &QCheckBox::clicked, databaseCutOffDate, &QDateEdit::setEnabled);
-    // Connect dialog buttons.
-    connect(configurationButtons->button(QDialogButtonBox::Save), &QPushButton::pressed, this, &xPlayerConfigurationDialog::saveSettings);
-    connect(configurationButtons->button(QDialogButtonBox::Reset), &QPushButton::pressed, this, &xPlayerConfigurationDialog::loadSettings);
-    connect(configurationButtons->button(QDialogButtonBox::Cancel), &QPushButton::pressed, this, &QDialog::reject);
-    // Load and resize.
-    loadSettings();
-    setMinimumWidth(static_cast<int>(sizeHint().height()*1.5)); // NOLINT
-    setMinimumHeight(sizeHint().height()); // NOLINT
 }
+
+
 
 void xPlayerConfigurationDialog::loadSettings() {
     auto musicLibraryDirectory = xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
@@ -275,6 +311,8 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto streamingSites = xPlayerConfiguration::configuration()->getStreamingSites();
     streamingSitesDefault = xPlayerConfiguration::configuration()->getStreamingSitesDefault();
     auto zoomFactorIndex = xPlayerConfiguration::configuration()->getWebsiteZoomFactorIndex();
+    auto musicPlayed = static_cast<int>(xPlayerConfiguration::configuration()->getDatabaseMusicPlayed()/1000); // ms to seconds.
+    auto moviePlayed = static_cast<int>(xPlayerConfiguration::configuration()->getDatabaseMoviePlayed()/1000/60); // ms to minutes.
     auto userAgent = xPlayerConfiguration::configuration()->getWebsiteUserAgent();
     // Update the configuration dialog UI.
     musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
@@ -298,7 +336,9 @@ void xPlayerConfigurationDialog::loadSettings() {
     }
     databaseDirectoryWidget->setText(databaseDirectory);
     databaseMusicOverlayCheck->setChecked(xPlayerConfiguration::configuration()->getDatabaseMusicOverlay());
+    databaseMusicPlayed->setValue(musicPlayed);
     databaseMovieOverlayCheck->setChecked(xPlayerConfiguration::configuration()->getDatabaseMovieOverlay());
+    databaseMoviePlayed->setValue(moviePlayed);
     if (databaseCutOff) {
         databaseCutOffCheck->setChecked(true);
         databaseCutOffDate->setDate(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(databaseCutOff)).date());
@@ -375,6 +415,9 @@ void xPlayerConfigurationDialog::saveSettings() {
             }
         }
     }
+    qint64 musicPlayed = static_cast<qint64>(databaseMusicPlayed->value())*1000; // seconds to ms.
+    qint64 moviePlayed = static_cast<qint64>(databaseMoviePlayed->value())*1000*60; // minutes to ms.
+
     auto userAgent = websiteUserAgent->text();
     // Debug output
     qDebug() << "xPlayerConfigurationDialog: save: musicLibraryDirectory: " << musicLibraryDirectory;
@@ -398,7 +441,9 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: databaseDirectory: " << databaseDirectory;
     qDebug() << "xPlayerConfigurationDialog: save: databaseCutOff: " << databaseCutOff;
     qDebug() << "xPlayerConfigurationDialog: save: databaseMusicOverlay: " << databaseMusicOverlayCheck->isChecked();
+    qDebug() << "xPlayerConfigurationDialog: save: databaseMusicPlayed: " << musicPlayed;
     qDebug() << "xPlayerConfigurationDialog: save: databaseMovieOverlay: " << databaseMovieOverlayCheck->isChecked();
+    qDebug() << "xPlayerConfigurationDialog: save: databaseMoviePlayed: " << moviePlayed;
     qDebug() << "xPlayerConfigurationDialog: save: databaseIgnoreUpdateErrors: " << databaseIgnoreUpdateErrorsCheck->isChecked();
     qDebug() << "xPlayerConfigurationDialog: save: websiteZoomFactor: " << websiteZoomFactors->currentIndex();
     qDebug() << "xPlayerConfigurationDialog: save: websiteUserAgent: " << userAgent;
@@ -423,7 +468,9 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setDatabaseDirectory(databaseDirectory);
     xPlayerConfiguration::configuration()->setDatabaseCutOff(databaseCutOff);
     xPlayerConfiguration::configuration()->setDatabaseMusicOverlay(databaseMusicOverlayCheck->isChecked());
+    xPlayerConfiguration::configuration()->setDatabaseMusicPlayed(musicPlayed);
     xPlayerConfiguration::configuration()->setDatabaseMovieOverlay(databaseMovieOverlayCheck->isChecked());
+    xPlayerConfiguration::configuration()->setDatabaseMoviePlayed(moviePlayed);
     xPlayerConfiguration::configuration()->setDatabaseIgnoreUpdateErrors(databaseIgnoreUpdateErrorsCheck->isChecked());
     xPlayerConfiguration::configuration()->setWebsiteZoomFactorIndex(websiteZoomFactors->currentIndex());
     xPlayerConfiguration::configuration()->setWebsiteUserAgent(userAgent);

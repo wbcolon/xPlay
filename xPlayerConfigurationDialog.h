@@ -109,6 +109,10 @@ private slots:
     void openDatabaseDirectory();
 
 private:
+    void createMusicConfigurationTab(QWidget* musicLibraryTab);
+    void createMovieConfigurationTab(QWidget* movieLibraryTab);
+    void createStreamingConfigurationTab(QWidget* streamingTab);
+    void createAdditionalConfigurationTab(QWidget* additionalTab);
     /**
      * Split an entry from the movie library list into tag and directory.
      *
@@ -152,9 +156,9 @@ private:
     QComboBox* movieDefaultAudioLanguageWidget;
     QComboBox* movieDefaultSubtitleLanguageWidget;
     QCheckBox* movieAudioCompressionWidget;
+    QListWidget* movieLibraryListWidget;
     QLineEdit* streamingNameWidget;
     QLineEdit* streamingUrlWidget;
-    QListWidget* movieLibraryListWidget;
     QListWidget* streamingSitesListWidget;
     QPushButton* rotelEnableWidget;
     QLineEdit* rotelNetworkAddressWidget;
@@ -165,6 +169,8 @@ private:
     QCheckBox* databaseCutOffCheck;
     QDateEdit* databaseCutOffDate;
     QCheckBox* databaseIgnoreUpdateErrorsCheck;
+    QSpinBox* databaseMusicPlayed;
+    QSpinBox* databaseMoviePlayed;
     QComboBox* websiteZoomFactors;
     QLineEdit* websiteUserAgent;
     std::pair<QString,QUrl> streamingSitesDefault;
