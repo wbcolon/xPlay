@@ -159,6 +159,16 @@ signals:
      */
     void currentState(xMoviePlayer::State state);
     /**
+     * Update the database overlay for currently played movie and add tooltips.
+     *
+     * @param tag the tag for the currently played movie.
+     * @param directory the directory for the currently played movie.
+     * @param movie the name of the currently played movie.
+     * @param playCount the play count for the currently played movie.
+     * @param timeStamp the last played time stamp in milli seconds for the currently played movie.
+     */
+    void updatePlayedMovie(const QString& tag, const QString& directory, const QString& movie, int playCount, qint64 timeStamp);
+    /**
      * Helper signal to call stop from event handler callback.
      */
     void eventHandler_stop();
@@ -239,10 +249,8 @@ public slots:
      * Setup the queue of movies to be played after the current one.
      *
      * @param queue list of pairs of path and name to be displayed.
-     * @param tag the tag for the movies in the queue.
-     * @param directory the directory for the movies in the queue.
      */
-    void setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue, const QString& tag, const QString& directory);
+    void setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue);
     /**
      * Clear the queue of movies.
      */
@@ -348,6 +356,10 @@ private:
      */
     void updateCurrentChapter();
     /**
+     * Update the current position for play time recording.
+     */
+    void updateCurrentPosition();
+    /**
      * Start the libvlc media player.
      *
      * @param compressAudio use dynamic compression effect for audio if true, do not if otherwise.
@@ -383,13 +395,19 @@ private:
     bool movieMediaAudioCompressionMode;
     QString movieMediaCropAspectRatio;
     bool movieMediaFullWindow;
+    qint64 movieCurrentPosition;
+    qint64 movieCurrentPlayed;
+    qint64 moviePlayed;
+    bool movieCurrentSkip;
+    bool moviePlayedRecorded;
 
     QList<std::pair<int,QString>> currentSubtitleDescriptions;
     QList<std::pair<int,QString>> currentAudioChannelDescriptions;
     QList<std::pair<qint64,QString>> currentChapterDescriptions;
     QList<std::pair<std::filesystem::path,QString>> movieQueue;
-    QString movieQueueTag;
-    QString movieQueueDirectory;
+    std::pair<std::filesystem::path,QString> movieCurrent;
+    QString movieCurrentTag;
+    QString movieCurrentDirectory;
     QString movieDefaultAudioLanguage;
     QString movieDefaultSubtitleLanguage;
     int movieDefaultAudioLanguageIndex;

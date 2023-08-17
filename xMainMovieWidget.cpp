@@ -142,7 +142,7 @@ xMainMovieWidget::xMainMovieWidget(xMoviePlayer* player, QWidget* parent):
     connect(moviePlayer, &xMoviePlayer::fullWindowMode, this, &xMainMovieWidget::setFullWindow);
     connect(moviePlayerWidget, &xPlayerMovieWidget::autoPlayNextMovie, this, &xMainMovieWidget::setAutoPlayNextMovie);
     // Connect database.
-    connect(moviePlayer, &xMoviePlayer::currentMovie, this, &xMainMovieWidget::currentMovie);
+    connect(moviePlayer, &xMoviePlayer::updatePlayedMovie, this, &xMainMovieWidget::updatePlayedMovie);
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMovieOverlay,
             this, &xMainMovieWidget::updatedDatabaseMovieOverlay);
@@ -309,12 +309,7 @@ void xMainMovieWidget::updateMovieQueue(int index) {
                 qDebug() << "updateMovieQueue: " << movieList->listItem(i)->text();
                 queue.push_back(std::make_pair(currentMovies[i]->getPath(), currentMovies[i]->getMovieName()));
             }
-            QString tag = tagList->currentItem()->text();
-            QString directory { "." };
-            if (directoryList->count() > 0) {
-                directory = directoryList->currentItem()->text();
-            }
-            emit setMovieQueue(queue, tag, directory);
+            emit setMovieQueue(queue);
         } else {
             emit clearMovieQueue();
         }
@@ -515,16 +510,5 @@ void xMainMovieWidget::currentState(xMoviePlayer::State state) {
             // Clear movie player widget.
             moviePlayerWidget->clear();
         }
-    }
-}
-
-void xMainMovieWidget::currentMovie(const std::filesystem::path& path, const QString& name,
-                                    const QString& tag, const QString& directory) {
-    Q_UNUSED(path)
-    // Update database.
-    auto result = xPlayerDatabase::database()->updateMovieFile(name, tag, directory);
-    if (result.second > 0) {
-        // Update database overlay.
-        updatePlayedMovie(tag, directory, name, result.first, result.second);
     }
 }

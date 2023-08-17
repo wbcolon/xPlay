@@ -89,10 +89,8 @@ signals:
      * Signal emitted in order to set the movie queue.
      *
      * @param queue list of pairs of path and name to be displayed.
-     * @param tag the tag for the movies in the queue.
-     * @param directory the directory for the movies in the queue.
      */
-    void setMovieQueue(const QList<std::pair<std::filesystem::path, QString>>& queue, const QString& tag, const QString& directory);
+    void setMovieQueue(const QList<std::pair<std::filesystem::path, QString>>& queue);
     /**
      * Signal emitted in order to clear the movie queue;
      */
@@ -125,15 +123,6 @@ private slots:
      * @param state current state of the movie player.
      */
     void currentState(xMoviePlayer::State state);
-    /**
-     * Update the database, database overlay and queue based on the currently played movie.
-     *
-     * @param path the absolute path of the currently played movie.
-     * @param name the name of the currently played movie.
-     * @param tag the tag for the currently played movie.
-     * @param directory the directory for the currently played movie.
-     */
-    void currentMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /**
      * Enable/disable the full window mode.
      *
@@ -182,6 +171,16 @@ private slots:
      */
     void updatedDatabaseMovieOverlay();
     /**
+     * Update the database overlay for currently played movie and add tooltips.
+     *
+     * @param tag the tag for the currently played movie.
+     * @param directory the directory for the currently played movie.
+     * @param movie the name of the currently played movie.
+     * @param playCount the play count for the currently played movie.
+     * @param timeStamp the last played time stamp in milli seconds for the currently played movie.
+     */
+    void updatePlayedMovie(const QString& tag, const QString& directory, const QString& movie, int playCount, qint64 timeStamp);
+    /**
      * Update the playback time in the window title.
      *
      * @param timeStamp the playback time in ms.
@@ -207,16 +206,6 @@ private:
      * Update the database overlay for played movies and add tooltips.
      */
     void updatePlayedMovies();
-    /**
-     * Update the database overlay for currently played movie and add tooltips.
-     *
-     * @param tag the tag for the currently played movie.
-     * @param directory the directory for the currently played movie.
-     * @param movie the name of the currently played movie.
-     * @param playCount the play count for the currently played movie.
-     * @param timeStamp the last played time stamp in milli seconds for the currently played movie.
-     */
-    void updatePlayedMovie(const QString& tag, const QString& directory, const QString& movie, int playCount, qint64 timeStamp);
     /**
      * Emit signal to initiate update of window title with new currently playing movie.
      *
