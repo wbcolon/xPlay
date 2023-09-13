@@ -18,7 +18,6 @@
 #include <QGroupBox>
 #include <QComboBox>
 #include <QFileDialog>
-#include <QDialogButtonBox>
 #include <QLabel>
 #include <QRegularExpression>
 #include <QTabWidget>
@@ -42,7 +41,7 @@ xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::Wind
     configurationTab->addTab(movieLibraryTab, tr("Movie Library"));
     configurationTab->addTab(streamingTab, tr("Streaming Sites"));
     configurationTab->addTab(additionalTab, tr("Additional"));
-    auto configurationButtons = new QDialogButtonBox(Qt::Horizontal, this);
+    configurationButtons = new QDialogButtonBox(Qt::Horizontal, this);
     configurationButtons->addButton(QDialogButtonBox::Save);
     configurationButtons->addButton(QDialogButtonBox::Reset);
     configurationButtons->addButton(QDialogButtonBox::Cancel);
@@ -255,6 +254,26 @@ void xPlayerConfigurationDialog::createAdditionalConfigurationTab(QWidget *addit
     databaseLayout->addWidget(databaseCutOffCheck, 5, 0, 1, 3);
     databaseLayout->addWidget(databaseCutOffDate, 5, 3, 1, 2);
     databaseLayout->addWidget(databaseIgnoreUpdateErrorsCheck, 6, 0, 1, 5);
+
+    databaseUsePlayedCheck = new QCheckBox(tr("Show played levels"), databaseBox);
+    databaseUsePlayedCheck->setChecked(true); // Set checked to force toggle when loading disabled setting.
+    auto databasePlayedBronzeLabel = new QLabel(tr("Bronze"));
+    databasePlayedBronze = new QSpinBox(databaseBox);
+    databasePlayedBronze->setMinimum(1);
+    auto databasePlayedSilverLabel = new QLabel(tr("Silver"));
+    databasePlayedSilver = new QSpinBox(databaseBox);
+    databasePlayedSilver->setMinimum(1);
+    auto databasePlayedGoldLabel = new QLabel(tr("Gold"));
+    databasePlayedGold = new QSpinBox(databaseBox);
+    databasePlayedGold->setMinimum(1);
+    databaseLayout->addWidget(databaseUsePlayedCheck, 8, 0, 1, 2);
+    databaseLayout->addWidget(databasePlayedBronzeLabel, 7, 2);
+    databaseLayout->addWidget(databasePlayedSilverLabel, 7, 3);
+    databaseLayout->addWidget(databasePlayedGoldLabel, 7, 4);
+    databaseLayout->addWidget(databasePlayedBronze, 8, 2);
+    databaseLayout->addWidget(databasePlayedSilver, 8, 3);
+    databaseLayout->addWidget(databasePlayedGold, 8, 4);
+
     databaseBox->setLayout(databaseLayout);
     // Setup website default zoom factor.
     auto websiteBox = new QGroupBox(tr("Website Configuration"), additionalTab);
@@ -286,9 +305,27 @@ void xPlayerConfigurationDialog::createAdditionalConfigurationTab(QWidget *addit
     // Connect database button and check box.
     connect(databaseDirectoryButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openDatabaseDirectory);
     connect(databaseCutOffCheck, &QCheckBox::clicked, databaseCutOffDate, &QDateEdit::setEnabled);
+
+    connect(databaseUsePlayedCheck, &QCheckBox::toggled, [=](bool enabled) {
+        databasePlayedBronzeLabel->setEnabled(enabled);
+        databasePlayedBronze->setEnabled(enabled);
+        databasePlayedSilverLabel->setEnabled(enabled);
+        databasePlayedSilver->setEnabled(enabled);
+        databasePlayedGoldLabel->setEnabled(enabled);
+        databasePlayedGold->setEnabled(enabled);
+    });
+    connect(databasePlayedBronze, QOverload<int>::of(&QSpinBox::valueChanged), [=](int) { checkConfiguration(); });
+    connect(databasePlayedSilver, QOverload<int>::of(&QSpinBox::valueChanged), [=](int) { checkConfiguration(); });
+    connect(databasePlayedGold, QOverload<int>::of(&QSpinBox::valueChanged), [=](int) { checkConfiguration(); });
 }
 
-
+void xPlayerConfigurationDialog::checkConfiguration() {
+    // Enforce bronze <= silver <= gold
+    configurationButtons->button(QDialogButtonBox::Save)->setEnabled(
+            (databasePlayedBronze->value() <= databasePlayedSilver->value()) &&
+            (databasePlayedSilver->value() <= databasePlayedGold->value())
+    );
+}
 
 void xPlayerConfigurationDialog::loadSettings() {
     auto musicLibraryDirectory = xPlayerConfiguration::configuration()->getMusicLibraryDirectory();
@@ -313,6 +350,8 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto zoomFactorIndex = xPlayerConfiguration::configuration()->getWebsiteZoomFactorIndex();
     auto musicPlayed = static_cast<int>(xPlayerConfiguration::configuration()->getDatabaseMusicPlayed()/1000); // ms to seconds.
     auto moviePlayed = static_cast<int>(xPlayerConfiguration::configuration()->getDatabaseMoviePlayed()/1000/60); // ms to minutes.
+    auto databaseUsePlayed = xPlayerConfiguration::configuration()->useDatabasePlayedLevels();
+    auto [playedBronze, playedSilver, playedGold] = xPlayerConfiguration::configuration()->getDatabasePlayedLevels();
     auto userAgent = xPlayerConfiguration::configuration()->getWebsiteUserAgent();
     // Update the configuration dialog UI.
     musicLibraryDirectoryWidget->setText(musicLibraryDirectory);
@@ -337,6 +376,10 @@ void xPlayerConfigurationDialog::loadSettings() {
     databaseDirectoryWidget->setText(databaseDirectory);
     databaseMusicOverlayCheck->setChecked(xPlayerConfiguration::configuration()->getDatabaseMusicOverlay());
     databaseMusicPlayed->setValue(musicPlayed);
+    databaseUsePlayedCheck->setChecked(databaseUsePlayed);
+    databasePlayedBronze->setValue(playedBronze);
+    databasePlayedSilver->setValue(playedSilver);
+    databasePlayedGold->setValue(playedGold);
     databaseMovieOverlayCheck->setChecked(xPlayerConfiguration::configuration()->getDatabaseMovieOverlay());
     databaseMoviePlayed->setValue(moviePlayed);
     if (databaseCutOff) {
@@ -415,8 +458,12 @@ void xPlayerConfigurationDialog::saveSettings() {
             }
         }
     }
+    auto databaseUsePlayed = databaseUsePlayedCheck->isChecked();
     qint64 musicPlayed = static_cast<qint64>(databaseMusicPlayed->value())*1000; // seconds to ms.
     qint64 moviePlayed = static_cast<qint64>(databaseMoviePlayed->value())*1000*60; // minutes to ms.
+    int playedBronze = databasePlayedBronze->value();
+    int playedSilver = databasePlayedSilver->value();
+    int playedGold = databasePlayedGold->value();
 
     auto userAgent = websiteUserAgent->text();
     // Debug output
@@ -444,6 +491,8 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: databaseMusicPlayed: " << musicPlayed;
     qDebug() << "xPlayerConfigurationDialog: save: databaseMovieOverlay: " << databaseMovieOverlayCheck->isChecked();
     qDebug() << "xPlayerConfigurationDialog: save: databaseMoviePlayed: " << moviePlayed;
+    qDebug() << "xPlayerConfigurationDialog: save: use played: " << databaseUsePlayed;
+    qDebug() << "xPlayerConfigurationDialog: save: played: " << playedBronze << "," << playedSilver << "," << playedGold;
     qDebug() << "xPlayerConfigurationDialog: save: databaseIgnoreUpdateErrors: " << databaseIgnoreUpdateErrorsCheck->isChecked();
     qDebug() << "xPlayerConfigurationDialog: save: websiteZoomFactor: " << websiteZoomFactors->currentIndex();
     qDebug() << "xPlayerConfigurationDialog: save: websiteUserAgent: " << userAgent;
@@ -469,6 +518,8 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setDatabaseCutOff(databaseCutOff);
     xPlayerConfiguration::configuration()->setDatabaseMusicOverlay(databaseMusicOverlayCheck->isChecked());
     xPlayerConfiguration::configuration()->setDatabaseMusicPlayed(musicPlayed);
+    xPlayerConfiguration::configuration()->useDatabasePlayedLevels(databaseUsePlayed);
+    xPlayerConfiguration::configuration()->setDatabasePlayedLevels(playedBronze, playedSilver, playedGold);
     xPlayerConfiguration::configuration()->setDatabaseMovieOverlay(databaseMovieOverlayCheck->isChecked());
     xPlayerConfiguration::configuration()->setDatabaseMoviePlayed(moviePlayed);
     xPlayerConfiguration::configuration()->setDatabaseIgnoreUpdateErrors(databaseIgnoreUpdateErrorsCheck->isChecked());

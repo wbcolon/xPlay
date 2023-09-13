@@ -330,10 +330,10 @@ void xMainMovieWidget::updatePlayedTags() {
         // Clear icon and tooltip.
         tagItem->removeIcon();
         tagItem->removeToolTip();
-        for (const auto& playedTag : playedTags) {
+        for (const auto& [playedTag, playCount] : playedTags) {
             // Update icon and tooltip if movie already played.
             if (playedTag == tag) {
-                tagItem->setIcon(":images/xplay-star.svg");
+                tagItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
                 break;
             }
         }
@@ -357,10 +357,10 @@ void xMainMovieWidget::updatePlayedDirectories() {
         // Clear icon and tooltip.
         directoryItem->removeIcon();
         directoryItem->removeToolTip();
-        for (const auto& playedDirectory : playedDirectories) {
+        for (const auto& [playedDirectory, playCount] : playedDirectories) {
             // Update icon and tooltip if movie already played.
             if (playedDirectory == directory) {
-                directoryItem->setIcon(":images/xplay-star.svg");
+                directoryItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
                 break;
             }
         }
@@ -389,9 +389,9 @@ void xMainMovieWidget::updatePlayedMovies() {
         for (auto playedMovie = playedMovies.begin(); playedMovie != playedMovies.end(); ++playedMovie) {
             // Update icon and tooltip if movie already played.
             if (std::get<0>(*playedMovie) == movie) {
-                movieItem->setIcon(":images/xplay-star.svg");
-                // Adjust tooltip to play count "once" vs "x times".
                 auto playCount = std::get<1>(*playedMovie);
+                movieItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
+                // Adjust tooltip to play count "once" vs "x times".
                 if (playCount > 1) {
                     movieItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
                             arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::DefaultLocaleLongDate)));
@@ -421,8 +421,9 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
     auto tagItem = tagList->currentItem();
     // Update the tags.
     auto tagPlayedItems = tagList->findListItems(tag);
+    auto tagPlayCount = xPlayerDatabase::database()->getMaxViewCount(tag, QString(), QString(), databaseCutOff);
     for (auto& tagPlayedItem : tagPlayedItems) {
-        tagPlayedItem->setIcon(":images/xplay-star.svg");
+        tagPlayedItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(tagPlayCount));
     }
     // If no tag selected or the tag does not match the selected
     // tags then we do not need to update the albums.
@@ -434,8 +435,9 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
         auto directoryItem = directoryList->currentItem();
         // Update the directorys.
         auto directoryPlayedItems = directoryList->findListItems(directory);
+        auto directoryPlayCount = xPlayerDatabase::database()->getMaxPlayCount(tag, directory, QString(), databaseCutOff);
         for (auto& directoryPlayedItem : directoryPlayedItems) {
-            directoryPlayedItem->setIcon(":images/xplay-star.svg");
+            directoryPlayedItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(directoryPlayCount));
         }
         // If no directory selected or the directory does not match the selected
         // directory then we do not need to update the tracks.
@@ -445,7 +447,7 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
     }
     auto moviePlayedItems = movieList->findListItems(movie);
     for (auto& moviePlayedItem : moviePlayedItems) {
-        moviePlayedItem->setIcon(":images/xplay-star.svg");
+        moviePlayedItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
         if (playCount > 1) {
             moviePlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
                     arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));

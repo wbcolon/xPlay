@@ -18,6 +18,7 @@
 #include "xPlayerConfiguration.h"
 
 #include <QDialog>
+#include <QDialogButtonBox>
 #include <QDateEdit>
 #include <QSpinBox>
 #include <QCheckBox>
@@ -113,6 +114,7 @@ private:
     void createMovieConfigurationTab(QWidget* movieLibraryTab);
     void createStreamingConfigurationTab(QWidget* streamingTab);
     void createAdditionalConfigurationTab(QWidget* additionalTab);
+    void checkConfiguration();
     /**
      * Split an entry from the movie library list into tag and directory.
      *
@@ -141,6 +143,7 @@ private:
      */
     void updateStreamingSitesDefault();
 
+    QDialogButtonBox* configurationButtons;
     QLineEdit* musicLibraryDirectoryWidget;
     QLineEdit* musicLibraryBluOSWidget;
     QLineEdit* musicLibraryExtensionsWidget;
@@ -171,6 +174,10 @@ private:
     QCheckBox* databaseIgnoreUpdateErrorsCheck;
     QSpinBox* databaseMusicPlayed;
     QSpinBox* databaseMoviePlayed;
+    QCheckBox* databaseUsePlayedCheck;
+    QSpinBox* databasePlayedBronze;
+    QSpinBox* databasePlayedSilver;
+    QSpinBox* databasePlayedGold;
     QComboBox* websiteZoomFactors;
     QLineEdit* websiteUserAgent;
     std::pair<QString,QUrl> streamingSitesDefault;

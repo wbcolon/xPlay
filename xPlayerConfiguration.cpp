@@ -48,6 +48,8 @@ const QString xPlayerConfiguration_StreamingSitesDefault { "xPlay/StreamingSites
 const QString xPlayerConfiguration_StreamingViewSidebar { "xPlay/StreamingViewSidebar" }; // NOLINT
 const QString xPlayerConfiguration_StreamingViewNavigation { "xPlay/StreamingViewNavigation" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseDirectory { "xPlay/DatabaseDirectory" }; // NOLINT
+const QString xPlayerConfiguration_DatabaseUsePlayedLevels { "xPlay/DatabaseUsePlayedLevels" }; // NOLINT
+const QString xPlayerConfiguration_DatabasePlayedLevels { "xPlay/DatabasePlayedLevels" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseCutOff { "xPlay/DatabaseCutOff" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOverlay" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMusicPlayed { "xPlay/DatabaseMusicPlayed" }; // NOLINT
@@ -71,6 +73,8 @@ const int xPlayerConfiguration_MusicViewVisualizationMode_Default = 0; // NOLINT
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
 const bool xPlayerConfiguration_MovieAudioCompression_Default = true; // NOLINT
 const bool xPlayerConfiguration_MovieViewFilters_Default = true; // NOLINT
+const bool xPlayerConfiguration_DatabaseUsePlayedLevels_Default = false; // NOLINT
+const std::tuple<int,int,int> xPlayerConfiguration_DatabasePlayedLevels_Default { 5, 10, 15 }; // NOLINT
 const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites = { // NOLINT
         { "qobuz", QUrl("https://play.qobuz.com/login") },
         { "youtube", QUrl("https://www.youtube.com") },
@@ -91,7 +95,13 @@ xPlayerConfiguration::xPlayerConfiguration():
         databaseIgnoreUpdateErrors(false) {
     // Settings.
     settings = new QSettings(xPlayerConfiguration::OrganisationName, xPlayerConfiguration::ApplicationName, this);
-    dataBaseFile = QString("%1.db").arg(xPlayerConfiguration::ApplicationName);
+    databaseFile = QString("%1.db").arg(xPlayerConfiguration::ApplicationName);
+    // Cache the played levels and the used played mode.
+    auto [_bronze, _silver, _gold] = getDatabasePlayedLevels();
+    databasePlayedBronze = _bronze;
+    databasePlayedSilver = _silver;
+    databasePlayedGold = _gold;
+    databaseUsePlayed = useDatabasePlayedLevels();
 }
 
 xPlayerConfiguration* xPlayerConfiguration::configuration() {
@@ -331,6 +341,32 @@ void xPlayerConfiguration::setDatabaseCutOff(qint64 cutOff) {
     }
 }
 
+void xPlayerConfiguration::useDatabasePlayedLevels(bool enabled) {
+    if (enabled != useDatabasePlayedLevels()) {
+        databaseUsePlayed = enabled;
+        settings->setValue(xPlayerConfiguration_DatabaseUsePlayedLevels, enabled);
+        settings->sync();
+        emit updatedDatabaseMusicOverlay();
+        emit updatedDatabaseMovieOverlay();
+    }
+}
+
+void xPlayerConfiguration::setDatabasePlayedLevels(int bronze, int silver, int gold) {
+    auto playedLevels = std::make_tuple(bronze, silver, gold);
+    if (playedLevels != getDatabasePlayedLevels()) {
+        // Cache the played levels
+        databasePlayedBronze = bronze;
+        databasePlayedSilver = silver;
+        databasePlayedGold = gold;
+        settings->setValue(xPlayerConfiguration_DatabasePlayedLevels+"/Bronze", bronze);
+        settings->setValue(xPlayerConfiguration_DatabasePlayedLevels+"/Silver", silver);
+        settings->setValue(xPlayerConfiguration_DatabasePlayedLevels+"/Gold", gold);
+        settings->sync();
+        emit updatedDatabaseMusicOverlay();
+        emit updatedDatabaseMovieOverlay();
+    }
+}
+
 void xPlayerConfiguration::setDatabaseMusicOverlay(bool enabled) {
     if (enabled != getDatabaseMusicOverlay()) {
         settings->setValue(xPlayerConfiguration_DatabaseMusicOverlay, enabled);
@@ -555,7 +591,41 @@ QString xPlayerConfiguration::getDatabaseDirectory() {
 }
 
 QString xPlayerConfiguration::getDatabasePath() {
-    return getDatabaseDirectory()+dataBaseFile;
+    return getDatabaseDirectory()+databaseFile;
+}
+
+bool xPlayerConfiguration::useDatabasePlayedLevels() {
+    return settings->value(xPlayerConfiguration_DatabaseUsePlayedLevels,
+                           xPlayerConfiguration_DatabaseUsePlayedLevels_Default).toBool();
+}
+
+std::tuple<int,int,int> xPlayerConfiguration::getDatabasePlayedLevels() {
+    auto playedBronze = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Bronze",
+                                        std::get<0>(xPlayerConfiguration_DatabasePlayedLevels_Default)).toInt();
+    auto playedSilver = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Silver",
+                                        std::get<1>(xPlayerConfiguration_DatabasePlayedLevels_Default)).toInt();
+    auto playedGold = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Gold",
+                                        std::get<2>(xPlayerConfiguration_DatabasePlayedLevels_Default)).toInt();
+    return std::make_tuple(playedBronze, playedSilver, playedGold);
+}
+
+QString xPlayerConfiguration::getPlayedLevelIcon(int playCount) {
+    // Use cached values to improve performance.
+    if (databaseUsePlayed) {
+        // We assume that bronze < silver < gold.
+        if (playCount < databasePlayedBronze) {
+            return ":images/xplay-star.svg";
+        }
+        if (playCount < databasePlayedSilver) {
+            return ":images/xplay-star-bronze.svg";
+        }
+        if (playCount < databasePlayedGold) {
+            return ":images/xplay-star-silver.svg";
+        }
+        return ":images/xplay-star-gold.svg";
+    } else {
+        return ":images/xplay-star.svg";
+    }
 }
 
 qint64 xPlayerConfiguration::getDatabaseCutOff() {

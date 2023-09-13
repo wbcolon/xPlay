@@ -1167,10 +1167,10 @@ void xMainMusicWidget::updatePlayedArtists() {
         auto artist = artistItem->text();
         // Clear icon.
         artistItem->removeIcon();
-        for (const auto& playedArtist : playedArtists) {
+        for (const auto& [playedArtist, playCount] : playedArtists) {
             // Update icon and tooltip if movie already played.
             if (playedArtist == artist) {
-                artistItem->setIcon(":images/xplay-star.svg");
+                artistItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
                 break;
             }
         }
@@ -1193,10 +1193,10 @@ void xMainMusicWidget::updatePlayedAlbums() {
         auto album = albumItem->text();
         // Clear icon and tooltip.
         albumItem->removeIcon();
-        for (const auto& playedAlbum : playedAlbums) {
+        for (const auto& [playedAlbum, playCount] : playedAlbums) {
             // Update icon and tooltip if movie already played.
             if (playedAlbum == album) {
-                albumItem->setIcon(":images/xplay-star.svg");
+                albumItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
                 break;
             }
         }
@@ -1223,9 +1223,10 @@ void xMainMusicWidget::updatePlayedTracks() {
         auto trackItem = trackList->listItem(i);
         auto track = trackItem->text();
         if (std::get<0>(*playedMusicTrack) == track) {
-            trackItem->setIcon(":images/xplay-star.svg");
-            // Adjust tooltip to play count "once" vs "x times".
             auto playCount = std::get<1>(*playedMusicTrack);
+            // Use the proper icon for the given play count.
+            trackItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
+            // Adjust tooltip to play count "once" vs "x times".
             if (playCount > 1) {
                 trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
                         arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(
@@ -1254,8 +1255,9 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     auto artistItem = artistList->currentItem();
     // Update the artists.
     auto artistPlayedItems = artistList->findListItems(artist);
+    auto artistPlayCount = xPlayerDatabase::database()->getMaxPlayCount(artist, QString(), QString(), databaseCutOff);
     for (auto& artistPlayedItem : artistPlayedItems) {
-        artistPlayedItem->setIcon(":images/xplay-star.svg");
+        artistPlayedItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(artistPlayCount));
     }
     // If no artist selected or the artist does not match the selected
     // artists then we do not need to update the albums.
@@ -1263,10 +1265,11 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
         return;
     }
     auto albumItem = albumList->currentItem();
+    auto albumPlayCount = xPlayerDatabase::database()->getMaxPlayCount(artist, album, QString(), databaseCutOff);
     // Update the albums.
     auto albumPlayedItems = albumList->findListItems(album);
     for (auto& albumPlayedItem : albumPlayedItems) {
-        albumPlayedItem->setIcon(":images/xplay-star.svg");
+        albumPlayedItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(albumPlayCount));
     }
     // If no album selected or the album does not match the selected
     // album then we do not need to update the tracks.
@@ -1275,7 +1278,7 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
     }
     auto trackPlayedItems = trackList->findListItems(track);
     for (auto& trackPlayedItem : trackPlayedItems) {
-        trackPlayedItem->setIcon(":images/xplay-star.svg");
+        trackPlayedItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
         if (playCount > 1) {
             trackPlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
                     arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));

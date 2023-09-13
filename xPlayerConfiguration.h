@@ -196,6 +196,20 @@ public:
      */
     void setDatabaseCutOff(qint64 cutOff);
     /**
+     * Enable or disable the use played levels for stars.
+     *
+     * @param enabled if true enable different levels, disable otherwise.
+     */
+    void useDatabasePlayedLevels(bool enabled);
+    /**
+     * Set the levels used for the corresponding star colors.
+     *
+     * @param bronze level where a bronze star is shown.
+     * @param silver level where a silver star is shown.
+     * @param gold level where a gold star is shown.
+     */
+    void setDatabasePlayedLevels(int bronze, int silver, int gold);
+    /**
      * Set the mode for the database overlay for the music view.
      *
      * @param enabled if true then enable overlay, disable otherwise.
@@ -453,6 +467,25 @@ public:
      */
     [[nodiscard]] qint64 getDatabaseCutOff();
     /**
+     * Get the mode of the played levels state.
+     *
+     * @return true if different levels are enabled, disable otherwise.
+     */
+    [[nodiscard]] bool useDatabasePlayedLevels();
+    /**
+     * Get the levels used for the corresponding star colors.
+     *
+     * @return a tuple of the bronze, silver and gold played levels.
+     */
+    std::tuple<int,int,int> getDatabasePlayedLevels();
+    /**
+     * Get the icon used for the current play count.
+     *
+     * @param playCount the play count as integer.
+     * @return the name of the icon to be used.
+     */
+    QString getPlayedLevelIcon(int playCount);
+    /**
      * Get the mode for the database overlay for the music view.
      *
      * @return true, if the overlay is enabled, false otherwise.
@@ -673,7 +706,11 @@ private:
 
     static xPlayerConfiguration* playerConfiguration;
     QSettings* settings;
-    QString dataBaseFile;
+    QString databaseFile;
+    int databasePlayedBronze;
+    int databasePlayedSilver;
+    int databasePlayedGold;
+    bool databaseUsePlayed;
     bool databaseIgnoreUpdateErrors;
 };
 
