@@ -49,20 +49,30 @@ public:
      */
     int getPlayCount(const QString& artist, const QString& album, qint64 after=0);
     /**
+     * Return the max of the play count based on artist, album and track name.
+     *
+     * @param artist specified artist. Cannot be empty.
+     * @param album specified album or empty string as wildcard.
+     * @param track specified track name or empty string as wildcard.
+     * @param after the time stamp after which played files are considered.
+     * @return the max of the play count as integer.
+     */
+    int getMaxPlayCount(const QString& artist, const QString& album, const QString& track, qint64 after=0);
+    /**
      * Return a list of played artists.
      *
      * @param after the time stamp used in the query the played tracks.
      * @return a list of artists played.
      */
-    QStringList getPlayedArtists(qint64 after);
+    QList<std::pair<QString,int>> getPlayedArtists(qint64 after);
     /**
      * Return a list of played albums.
      *
      * @param artist the artist used the query of played tracks must match.
      * @param after the time stamp used in the query the played tracks.
-     * @return a list of albums played.
+     * @return a list of pairs of albums played with max play count.
      */
-    QStringList getPlayedAlbums(const QString& artist, qint64 after);
+    QList<std::pair<QString,int>> getPlayedAlbums(const QString& artist, qint64 after);
     /**
      * Return a list of played tracks, their play count and the last time played.
      *
@@ -73,12 +83,22 @@ public:
      */
     QList<std::tuple<QString,int,qint64>> getPlayedTracks(const QString& artist, const QString& album, qint64 after);
     /**
+     * Return the max of the play count based on artist, album and track name.
+     *
+     * @param tag the tag used the query of played movies must match.
+     * @param directory the directory the query of played movies must match.
+     * @param movie the movie the query of played movies must match.
+     * @param after the time stamp used in the query the played movies.
+     * @return the max of the play (view) count as integer.
+     */
+    int getMaxViewCount(const QString& tag, const QString& directory, const QString& movie, qint64 after=0);
+    /**
      * Return a list of played tags.
      *
      * @param after the time stamp used in the query the played movies.
      * @return a list of tags played.
      */
-    QStringList getPlayedTags(qint64 after);
+    QList<std::pair<QString,int>> getPlayedTags(qint64 after);
     /**
      * Return a list of played directories.
      *
@@ -86,7 +106,7 @@ public:
      * @param after the time stamp used in the query the played movies.
      * @return a list of directories played.
      */
-    QStringList getPlayedDirectories(const QString& tag, qint64 after);
+    QList<std::pair<QString,int>> getPlayedDirectories(const QString& tag, qint64 after);
     /**
      * Return a list of played movies, their play count and the last time played.
      *
