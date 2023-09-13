@@ -119,7 +119,16 @@ QString xPlayerBluOSControls::state() {
 }
 
 void xPlayerBluOSControls::addQueue(const QString& path) {
-    sendCommand(QUrl(bluOSUrl+"/Add?file="+path));
+    // Some character only seem to cause issues if one tries to add them to the BlueOS Player queue.
+    // Replace them usually with their ASCII code representation in the path URL.
+    static const std::vector<std::tuple<QString,QString>> problemCharacters {
+            {"=", "%3D"}
+    };
+    auto correctedPath(path);
+    for (const auto& [problemCharacter, replaceCharacter] : problemCharacters) {
+        correctedPath.replace(problemCharacter, replaceCharacter);
+    }
+    sendCommand(QUrl(bluOSUrl+"/Add?file="+correctedPath));
 }
 
 void xPlayerBluOSControls::removeQueue(int index) {
@@ -349,8 +358,9 @@ std::vector<std::tuple<QString,qint64,QString>> xPlayerBluOSControls::parseTrack
         // Parse through all subfolders.
         for (auto song : bluOSResponse.child("folders").child("songs").children()) {
             QString songTime(song.child("time").child_value());
-            QFileInfo songInfo(song.child("fn").child_value());
-            tracks.emplace_back(songInfo.fileName(), songTime.toInt()*1000, song.child("fn").child_value());
+            QString songPath(song.child("fn").child_value());
+            QFileInfo songInfo(songPath);
+            tracks.emplace_back(songInfo.fileName(), songTime.toInt()*1000, songPath);
         }
     } else {
         qCritical() << "Unable to parse result for tracks: " << result.description();
