@@ -164,8 +164,8 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     musicStacked->addWidget(musicListView);
     musicStacked->addWidget(musicInfoView);
     musicStacked->setCurrentWidget(musicListView);
-    musicPlayerStackedLayout->addWidget(playerWidget);
-    musicPlayerStackedLayout->addWidget(musicStacked);
+    musicPlayerStackedLayout->addWidget(playerWidget, 1);
+    musicPlayerStackedLayout->addWidget(musicStacked, 5);
     // Queue list.
     queueBox = new QGroupBox(tr("Queue"), mainWidgetSplitter);
     queueBox->setFlat(xPlayer::UseFlatGroupBox);

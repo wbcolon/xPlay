@@ -26,31 +26,44 @@
 xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt::WindowFlags flags):
     QWidget(parent, flags),
     musicPlayer(player) {
+
+    infoStacked = new QStackedWidget(this);
+    infoPlayer = new QWidget(infoStacked);
+
     // Create labels for artist, album and track
-    auto artistLabel = new QLabel(tr("Artist"), this);
-    artistName = new QLabel(this);
+    auto artistLabel = new QLabel(tr("Artist"), infoPlayer);
+    artistName = new QLabel(infoPlayer);
     artistName->setWordWrap(true);
     artistName->setStyleSheet("font-weight: bold");
-    auto albumLabel = new QLabel(tr("Album"), this);
-    albumName = new QLabel(this);
+    auto albumLabel = new QLabel(tr("Album"), infoPlayer);
+    albumName = new QLabel(infoPlayer);
     albumName->setWordWrap(true);
     albumName->setStyleSheet("font-weight: bold");
-    auto trackLabel = new QLabel(tr("Track"), this);
-    trackName = new QLabel(this);
+    auto trackLabel = new QLabel(tr("Track"), infoPlayer);
+    trackName = new QLabel(infoPlayer);
     trackName->setWordWrap(true);
     trackName->setStyleSheet("font-weight: bold");
-    trackSampleRate = new QLabel(this);
+    trackSampleRate = new QLabel(infoPlayer);
     trackSampleRate->setAlignment(Qt::AlignRight);
     trackSampleRate->setStyleSheet("font-weight: bold");
-    trackBitsPerSample = new QLabel(this);
+    trackBitsPerSample = new QLabel(infoPlayer);
     trackBitsPerSample->setAlignment(Qt::AlignRight|Qt::AlignTop);
     trackBitsPerSample->setStyleSheet("font-weight: bold");
-    trackBitrate = new QLabel(this);
+    trackBitrate = new QLabel(infoPlayer);
     trackBitrate->setAlignment(Qt::AlignRight);
     trackBitrate->setStyleSheet("font-weight: bold");
     // Add track slider and the volume knob for Qwt.
-    sliderWidget = new xPlayerSliderWidget(this);
+    sliderWidget = new xPlayerSliderWidget(infoPlayer);
     connect(sliderWidget, &xPlayerSliderWidget::seek, musicPlayer, &xMusicPlayer::seek);
+    // Create label for info mode.
+    infoMode = new QLabel(infoStacked);
+    infoMode->setAlignment(Qt::AlignCenter);
+    //infoMode->setPixmap(QPixmap(":images/xplay-bluesound.png").scaledToHeight(6*xPlayer::LargeIconSize, Qt::SmoothTransformation));
+    infoMode->setPixmap(QPixmap(":images/xplay-music-folder.png").scaledToHeight(4*xPlayer::LargeIconSize, Qt::SmoothTransformation));
+    // Add player and mode info to stacked widget.
+    infoStacked->addWidget(infoMode);
+    infoStacked->addWidget(infoPlayer);
+    infoStacked->setCurrentWidget(infoMode);
     // Add a control tab for player and rotel amp controls
     auto controlTab = new QTabWidget(this);
     auto controlTabPlayer = new QWidget(this);
@@ -70,24 +83,30 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt
     connect(musicPlayer, &xMusicPlayer::currentTrackLength, sliderWidget, &xPlayerSliderWidget::setLength);
     // Create the basic player widget layout.
     // Add labels, buttons and the slider.
-    auto playerLayout = new xPlayerLayout(this);
-    playerLayout->setSpacing(xPlayerLayout::NoSpace);
-    playerLayout->addWidget(artistLabel, 0, 0);
-    playerLayout->addWidget(artistName, 0, 1, 1, 4);
-    playerLayout->addWidget(albumLabel, 1, 0);
-    playerLayout->addWidget(albumName, 1, 1, 1, 4);
-    playerLayout->addWidget(trackLabel, 2, 0);
-    playerLayout->addWidget(trackName, 2, 1, 1, 4);
-    trackSampleRateLabel = new QLabel(this);
+    auto infoLayout = new xPlayerLayout(infoPlayer);
+    infoLayout->setSpacing(xPlayerLayout::NoSpace);
+    infoLayout->addWidget(artistLabel, 0, 0);
+    infoLayout->addWidget(artistName, 0, 1, 1, 4);
+    infoLayout->addWidget(albumLabel, 1, 0);
+    infoLayout->addWidget(albumName, 1, 1, 1, 4);
+    infoLayout->addWidget(trackLabel, 2, 0);
+    infoLayout->addWidget(trackName, 2, 1, 1, 4);
+    trackSampleRateLabel = new QLabel(infoPlayer);
     trackSampleRateLabel->setAlignment(Qt::AlignRight);
-    trackBitrateLabel = new QLabel(this);
+    trackBitrateLabel = new QLabel(infoPlayer);
     trackBitrateLabel->setAlignment(Qt::AlignRight);
-    playerLayout->addWidget(trackSampleRateLabel, 0, 5);
-    playerLayout->addWidget(trackSampleRate, 0, 6);
-    playerLayout->addWidget(trackBitrateLabel, 2, 5);
-    playerLayout->addWidget(trackBitsPerSample, 1, 6);
-    playerLayout->addWidget(trackBitrate, 2, 6);
-    playerLayout->addWidget(sliderWidget, 4, 0, 1, 7);
+    infoLayout->addWidget(trackSampleRateLabel, 0, 5);
+    infoLayout->addWidget(trackSampleRate, 0, 6);
+    infoLayout->addWidget(trackBitrateLabel, 2, 5);
+    infoLayout->addWidget(trackBitsPerSample, 1, 6);
+    infoLayout->addWidget(trackBitrate, 2, 6);
+    infoLayout->addRowSpacer(3, xPlayerLayout::SeparatorSpace);
+    infoLayout->addWidget(sliderWidget, 4, 0, 1, 7);
+    infoLayout->addColumnSpacer(7, xPlayerLayout::SeparatorSpace);
+
+    auto playerLayout = new xPlayerLayout(this);
+    playerLayout->addWidget(infoStacked, 0, 0, 5, 8);
+
     // Create a layout for the music player and playlist control buttons.
     auto controlLayout = new xPlayerLayout(controlTabPlayer);
     controlLayout->setSpacing(xPlayerLayout::NoSpace);
@@ -99,7 +118,6 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt
     controlTabRotel->setFixedWidth(controlTabPlayer->sizeHint().width());
     controlTab->setFixedWidth(controlTab->sizeHint().width());
     // Add the control tab to the player layout.
-    playerLayout->addColumnSpacer(7, xPlayerLayout::SeparatorSpace);
     playerLayout->addWidget(controlTab, 0, 8, 5, 1);
     // Connect the buttons to player widget and/or to the music player.
     connect(controlButtonWidget, &xPlayerControlButtonWidget::playPausePressed, musicPlayer, &xMusicPlayer::playPause);
@@ -125,13 +143,17 @@ xPlayerMusicWidget::xPlayerMusicWidget(xMusicPlayer* player, QWidget* parent, Qt
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS, [=]() {
         volumeWidget->setVolume(musicPlayer->getVolume());
     });
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS,
+            this, &xPlayerMusicWidget::updateInfoMode);
     // Assign BluOS Pixmax. Resize to proper size.
     trackBluOS = QPixmap(":images/xplay-bluos.png").scaledToHeight(xPlayer::LargeIconSize, Qt::SmoothTransformation);
     // Do not resize the player widget vertically
-    //setFixedHeight(sizeHint().height());
+    setFixedHeight(sizeHint().height());
 }
 
 void xPlayerMusicWidget::clear() {
+    // Switch to info mode.
+    infoStacked->setCurrentWidget(infoMode);
     // Reset the play/pause button and clear all track info.
     artistName->clear();
     albumName->clear();
@@ -149,6 +171,14 @@ void xPlayerMusicWidget::mouseDoubleClickEvent(QMouseEvent* event) {
         emit mouseDoubleClicked();
     }
     QWidget::mouseDoubleClickEvent(event);
+}
+
+void xPlayerMusicWidget::updateInfoMode() {
+    if (xPlayerConfiguration::configuration()->useMusicLibraryBluOS()) {
+        infoMode->setPixmap(QPixmap(":images/xplay-bluesound.png").scaledToHeight(5*xPlayer::LargeIconSize, Qt::SmoothTransformation));
+    } else {
+        infoMode->setPixmap(QPixmap(":images/xplay-music-folder.png").scaledToHeight(4*xPlayer::LargeIconSize, Qt::SmoothTransformation));
+    }
 }
 
 void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QString& album, const QString& track,
@@ -188,6 +218,10 @@ void xPlayerMusicWidget::currentTrack(int index, const QString& artist, const QS
 }
 
 void xPlayerMusicWidget::currentState(xMusicPlayer::State state) {
+    // Change to player info if queue is not empty.
+    if (!musicPlayer->isQueueEmpty()) {
+        infoStacked->setCurrentWidget(infoPlayer);
+    }
     // Update the play/pause state based on the state of the music player.
     switch (state) {
         case xMusicPlayer::PlayingState: {

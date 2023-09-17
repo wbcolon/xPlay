@@ -21,6 +21,7 @@
 
 #include <QLabel>
 #include <QPushButton>
+#include <QStackedWidget>
 
 class xPlayerMusicWidget: public QWidget {
     Q_OBJECT
@@ -50,6 +51,10 @@ protected:
 
 private slots:
     /**
+     * Update the info mode label.
+     */
+    void updateInfoMode();
+    /**
      * Update the player widget with the provided information.
      *
      * @param index the position of the current track in the playlist.
@@ -74,6 +79,8 @@ private:
     /**
      * Labels to display information about the current track.
      */
+    QStackedWidget* infoStacked;
+    QWidget* infoPlayer;
     QLabel* artistName;
     QLabel* albumName;
     QLabel* trackName;
@@ -83,6 +90,7 @@ private:
     QLabel* trackBitrate;
     QLabel* trackBitsPerSample;
     QPixmap trackBluOS;
+    QLabel* infoMode;
     /**
      * Play/pause button alternates between "Play" and "Pause" depending on the music players state.
      */
