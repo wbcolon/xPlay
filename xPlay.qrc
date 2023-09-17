@@ -21,6 +21,8 @@
     <file>images/xplay-empty-star.svg</file>
     <file>images/xplay-close-window.svg</file>
     <file>images/xplay-bluos.png</file>
+    <file>images/xplay-bluesound.png</file>
+    <file>images/xplay-music-folder.png</file>
     <file>images/xplay-menu.svg</file>
     <file>images/xplay-options.svg</file>
 </qresource>
