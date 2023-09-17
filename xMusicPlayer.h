@@ -76,6 +76,12 @@ public:
      */
     [[nodiscard]] bool getShuffleMode() const;
     /**
+     * Return the state of the queue.
+     *
+     * @return true if the queue is empty, false otherwise.
+     */
+    [[nodiscard]] bool isQueueEmpty() const;
+    /**
      * Return if queue tracks is allowed.
      *
      * @return true if queue track is allowed, false if no tracks should be queued.

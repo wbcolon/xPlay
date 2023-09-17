@@ -600,6 +600,10 @@ bool xMusicPlayer::getShuffleMode() const {
     return useShuffleMode;
 }
 
+bool xMusicPlayer::isQueueEmpty() const {
+    return musicPlaylistEntries.empty();
+}
+
 bool xMusicPlayer::isQueueTracksAllowed() const {
     return (!useShuffleMode) || musicLibrary->isLocal();
 }
