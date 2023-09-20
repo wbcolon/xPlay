@@ -95,7 +95,8 @@ xPlay has a music view, a movie view, a streaming view and a mobile sync view.
 
 ### Music View
 
-![Screenshot Music View](screenshots/xplay_screenshot_music_view_00.png)
+![Screenshot Music View (empty queue)](screenshots/xplay_screenshot_music_view_00.png)
+![Screenshot Music View (full queue)](screenshots/xplay_screenshot_music_view_001.png)
 ![Screenshot Music View (shuffle)](screenshots/xplay_screenshot_music_view_01.png)
 ![Screenshot Music View (database)](screenshots/xplay_screenshot_music_view_02.png)
 ![Screenshot Music View (search)](screenshots/xplay_screenshot_music_view_03.png)
@@ -105,7 +106,8 @@ xPlay has a music view, a movie view, a streaming view and a mobile sync view.
 ![Screenshot Music View (artistinfo popup)](screenshots/xplay_screenshot_music_view_07.png)
 ![Screenshot Music View (artistinfo)](screenshots/xplay_screenshot_music_view_08.png)
 ![Screenshot Music View (rename)](screenshots/xplay_screenshot_music_view_10.png)
-![Screenshot Music View (bluos)](screenshots/xplay_screenshot_music_view_11.png)
+![Screenshot Music View (bluos - empty queue)](screenshots/xplay_screenshot_music_view_11.png)
+![Screenshot Music View (bluos - full queue)](screenshots/xplay_screenshot_music_view_111.png)
 
 The main screen of the music view has four vertical list for the artists, album, tracks and the queue. The
 album list is updated if you click (or select) on an artist and the track list is updated if you click (or select)
@@ -163,7 +165,7 @@ as well as the balance (from -5 to +5).
 ![Screenshot Music View (visualization)(3)](screenshots/xplay_screenshot_music_view_092.png)
 
 A music visualization based on projectM is available and can be activated via the *Visualization* entry of the 
-*Music View* sub menu. The *Visualization Mode* sub menu allows you to select the central window or a small window mode.
+settings menu on the right side. The *Visualization Mode* allows you to select the central window or a small window mode.
 The visualization (when activated) is displayed whenever the music player is playing and the artist info view is
 currently not activated. The visualization (when displayed) reverts to the artist, album and track view whenever the 
 music player pauses or stops. A right-click on the visualization opens a popup menu that allows selecting a projectM 
@@ -177,7 +179,7 @@ preset. A double-click on the player widget itself will toggle the music visuali
 
 The selectors are located at the bottom of the music view and include an artist selector, an album selector and
 an a search bar. A filter is available that can be applied to the artist, album or track list. 
-The selectors as well as the filters can be made accessible through the *View* menu and the *Music View* sub menu.
+The selectors as well as the filters can be made accessible through the settings menu.
 
 
 ##### Artist Selector
@@ -229,6 +231,7 @@ is shown if it matches the given filter string.
 ### Movie View
 
 ![Screenshot Movie View](screenshots/xplay_screenshot_movie_view_00.png)
+![Screenshot Movie View](screenshots/xplay_screenshot_movie_view_001.png)
 ![Screenshot Movie View (fullwindow)](screenshots/xplay_screenshot_movie_view_01.png)
 ![Screenshot Movie View (database overlay)](screenshots/xplay_screenshot_movie_view_02.png)
 
@@ -257,7 +260,7 @@ finished.
 
 The movie filter is similar to the filters for the artist, album or track filter in the music view.
 The filter is applied on the movie list widget itself. A list widget item is shown if it matches the given 
-filter string. All entries will appear if the movie filter is disabled in the movie view sub menu entry.
+filter string. All entries will appear if the movie filter is disabled in the settings menu.
 
 
 ### Streaming View
@@ -303,13 +306,15 @@ the removal/copy operations. The re-scanning of the music library is disabled du
 
 ### Menu
 
-The menu has three entries *File*, *View* and *Help*. The *File* menu has four entries. The *Configure* entry
-will open configuration dialog (see below). The entries *Rescan Music Library* and *Rescan Movie Library* trigger
-a rescan of the currently configured music or movie library. The *Check Music Database* and *Check Movie Database*
-will verify the database entries against the database. Any unknown entries will displayed in a dialog box and can be
-removed. The entries *View* menu allows to switch between the *Music View*, *Movie View*, *Streaming View* or
-*Mobile Sync View*.
-The *Help* menu has a single entry displaying copyright information about the used Qt library.
+The menu has two entries, a main menu on the left side and a view dependent settings menu on the right side. 
+The main menu hase seven entries. A *Configure* entry will open configuration dialog (see below).
+The entries *Select Music View*, *Select Movie View*, *Select Streaming View* or *Select Mobile Sync View* allow 
+to switch between the different views. The entry *About Qt* displays copyright information about the used 
+Qt library and *Exit* ends xPlay.
+The settings menus contains view dependent entries that include entries such as *Rescan Library* and 
+*Check Database*. Checking the database will verify the database entries against the music or movie library and display
+any unknown entries in a dialog box. These entries can be removed.
+
 
 #### Configuration Dialog
 
@@ -319,7 +324,9 @@ movies, the default audio and subtitle language can be selected. The Rotel widge
 network connection can be configured. The database overlay for the music and movie view can be configured using
 individual check boxes. A cut-off date can be set for each database query. If it is specified then entries with a time
 stamp before the cut-off date are ignored. This features enables the user to e.g. display which movies he has seen 
-the last month.
+the last month. A play level indicator allows to customize the color of the indicator star dependent on the play count.
+The *save* button will be disabled if the following contraint *bronze <= silver <= gold* is not satisfied by the
+configured played levels.
 
 ![Screenshot Configuration Dialog (Music)](screenshots/xplay_screenshot_configuration_dialog_00.png)
 ![Screenshot Configuration Dialog (Movie)](screenshots/xplay_screenshot_configuration_dialog_01.png)

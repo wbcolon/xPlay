@@ -1,6 +1,18 @@
 # Changelog
 
 
+## 0.16.0 - unreleased
+
+- Replaced classic menu entries with main and view dependent settings menu.
+- Add info mode (local or remote music library) for music player.
+- Add support for played level indicators bronze, silver and gold.
+- Add support for actual played time in music and movie player.
+- Update database only if music or movie is considered played.
+- Update configuration dialog to support new functionality.
+- Fix unknown entries function.
+- Fix BluOS player issue with certain paths.
+
+
 ## 0.15.0 - 2023-07-02
 
 - Add full window mode for music visualization.
