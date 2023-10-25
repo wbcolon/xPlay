@@ -143,6 +143,12 @@ void xPlayerConfigurationDialog::createMovieConfigurationTab(QWidget* movieLibra
     movieDefaultSubtitleLanguageWidget->addItem(tr("disable"));
     movieDefaultSubtitleLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
     movieAudioCompressionWidget = new QCheckBox(tr("Use Audio Compression"), movieLibraryTab);
+    auto movieVLCVideoOutLabel = new QLabel(tr("VLC video output"), movieLibraryTab);
+    movieVLCVideoOutWidget = new QComboBox(movieLibraryTab);
+    movieVLCVideoOutWidget->addItems(xPlayerConfiguration::configuration()->getMovieVLCVideoOutputs());
+    auto movieVLCAdditionalLabel = new QLabel(tr("Additional VLC cmdline"), movieLibraryTab);
+    movieVLCAdditionalWidget = new QLineEdit(movieLibraryTab);
+
     movieLibraryLayout->addWidget(movieLibraryTagLabel, 0, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryTagWidget, 1, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryDirectoryLabel, 2, 0, 1, 5);
@@ -160,7 +166,12 @@ void xPlayerConfigurationDialog::createMovieConfigurationTab(QWidget* movieLibra
     movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
     movieLibraryLayout->addRowSpacer(13, xPlayerLayout::SmallSpace);
     movieLibraryLayout->addWidget(movieAudioCompressionWidget, 14, 0, 1, 2);
-    movieLibraryLayout->addRowStretcher(15);
+    movieLibraryLayout->addRowSpacer(15, xPlayerLayout::LargeSpace);
+    movieLibraryLayout->addWidget(movieVLCVideoOutLabel, 16, 0, 1, 2);
+    movieLibraryLayout->addWidget(movieVLCVideoOutWidget, 17, 0, 1, 2);
+    movieLibraryLayout->addWidget(movieVLCAdditionalLabel, 16, 3, 1, 2);
+    movieLibraryLayout->addWidget(movieVLCAdditionalWidget, 17, 3, 1, 2);
+    movieLibraryLayout->addRowStretcher(18);
     movieLibraryTab->setLayout(movieLibraryLayout);
     // Connect movie library.
     connect(movieLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMovieLibraryDirectory);
@@ -343,6 +354,8 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto movieDefaultAudioLanguage = xPlayerConfiguration::configuration()->getMovieDefaultAudioLanguage();
     auto movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
     auto movieAudioCompression = xPlayerConfiguration::configuration()->getMovieAudioCompression();
+    auto movieVLCVideoOut = xPlayerConfiguration::configuration()->getMovieVLCVideoOutput();
+    auto movieVLCAdditional = xPlayerConfiguration::configuration()->getMovieVLCAdditionalCommandline();
     auto databaseDirectory = xPlayerConfiguration::configuration()->getDatabaseDirectory();
     auto databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
     auto streamingSites = xPlayerConfiguration::configuration()->getStreamingSites();
@@ -409,6 +422,8 @@ void xPlayerConfigurationDialog::loadSettings() {
         movieDefaultSubtitleLanguageWidget->setCurrentText(movieDefaultSubtitleLanguage);
     }
     movieAudioCompressionWidget->setChecked(movieAudioCompression);
+    movieVLCVideoOutWidget->setCurrentText(movieVLCVideoOut);
+    movieVLCAdditionalWidget->setText(movieVLCAdditional);
     streamingSitesListWidget->clear();
     if (!streamingSites.isEmpty()) {
         for (const auto& entry : streamingSites) {
@@ -436,6 +451,8 @@ void xPlayerConfigurationDialog::saveSettings() {
             movieDefaultAudioLanguageWidget->currentIndex() ? movieDefaultAudioLanguageWidget->currentText() : "";
     auto movieDefaultSubtitleLanguage =
             movieDefaultSubtitleLanguageWidget->currentIndex() ? movieDefaultSubtitleLanguageWidget->currentText() : "";
+    auto movieVLCVideoOut = movieVLCVideoOutWidget->currentText();
+    auto movieVLCAdditional = movieVLCAdditionalWidget->text();
     auto movieAudioCompression = movieAudioCompressionWidget->isChecked();
     auto databaseDirectory = databaseDirectoryWidget->text();
     qint64 databaseCutOff = 0;
@@ -482,6 +499,8 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryExtensions: " << movieLibraryExtensions;
     qDebug() << "xPlayerConfigurationDialog: save: movieDefaultAudioLanguage: " << movieDefaultAudioLanguage;
     qDebug() << "xPlayerConfigurationDialog: save: movieDefaultSubtitleLanguage: " << movieDefaultSubtitleLanguage;
+    qDebug() << "xPlayerConfigurationDialog: save: movieVLCVideoOut: " << movieVLCVideoOut;
+    qDebug() << "xPlayerConfigurationDialog: save: movieVLCAdditional: " << movieVLCAdditional;
     qDebug() << "xPlayerConfigurationDialog: save: movieAudioCompression: " << movieAudioCompression;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSites: " << streamingSites;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSitesDefault: " << streamingSitesDefault;
@@ -512,6 +531,8 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setMovieDefaultAudioLanguage(movieDefaultAudioLanguage);
     xPlayerConfiguration::configuration()->setMovieDefaultSubtitleLanguage(movieDefaultSubtitleLanguage);
     xPlayerConfiguration::configuration()->setMovieAudioCompression(movieAudioCompression);
+    xPlayerConfiguration::configuration()->setMovieVLCVideoOutput(movieVLCVideoOut);
+    xPlayerConfiguration::configuration()->setMovieVLCAdditionalCommandLine(movieVLCAdditional);
     xPlayerConfiguration::configuration()->setStreamingSites(streamingSites);
     xPlayerConfiguration::configuration()->setStreamingSitesDefault(streamingSitesDefault);
     xPlayerConfiguration::configuration()->setDatabaseDirectory(databaseDirectory);

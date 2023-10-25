@@ -50,48 +50,60 @@ const std::list<int> VLC_Media_Events {  // NOLINT
 };
 
 void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
-    // Create a new libvlc instance. Use "--verbose=2" for additional libvlc output.
-    const char* const movieVLCArgs[] = {
-            "--vout=xcb_xv",
-            "--file-caching=60000",
-            "--live-caching=60000",
-            "--disc-caching=60000",
-            "--network-caching=60000",
-            "--quiet",
-            // "--verbose=2"
-    };
-    const char* const movieVLCArgsCompressor[] = {
-            "--vout=xcb_xv",
-            "--file-caching=60000",
-            "--live-caching=60000",
-            "--disc-caching=60000",
-            "--network-caching=60000",
-            "--audio-filter=compressor",
-            "--compressor-rms-peak=0.2",
-            "--compressor-attack=25",
-            "--compressor-release=100",
-            "--compressor-threshold=-11",
-            "--compressor-ratio=4",
-            "--compressor-knee=5",
-            "--compressor-makeup-gain=7",
-            "--quiet",
-            // "--verbose=2"
-    };
-    movieMediaAudioCompressionMode = compressAudio;
-    if (movieMediaAudioCompressionMode) {
-        movieInstance = libvlc_new(sizeof(movieVLCArgsCompressor)/sizeof(movieVLCArgsCompressor[0]), movieVLCArgsCompressor);
-        if (!movieInstance) {
-            movieMediaAudioCompressionMode = false;
-            qCritical() << "Unable to enable the VLC compressor plugin. Disabling audio compression.";
-            emit moviePlayerError(tr("Unable to enable the VLC compressor plugin. Disabling audio compression."));
+    // Determine VLC video out plugin to be used.
+    std::string vlcVOut = QString("--vout=%1").arg(xPlayerConfiguration::configuration()->getMovieVLCVideoOutput()).toStdString();
+    // Determine additiona commands and split them. Convert to std::string.
+    QString vlcAdditional = xPlayerConfiguration::configuration()->getMovieVLCAdditionalCommandline();
+    std::vector<std::string> vlcAdditionalSplit { };
+    if (!vlcAdditional.isEmpty()) {
+        for (auto &vlcParam: vlcAdditional.split(" ")) {
+            vlcAdditionalSplit.emplace_back(vlcParam.toStdString());
         }
     }
-    if (!movieMediaAudioCompressionMode) {
-        movieInstance = libvlc_new(sizeof(movieVLCArgs)/sizeof(movieVLCArgs[0]), movieVLCArgs);
+    auto noVLCAddional = vlcAdditionalSplit.size();
+    // Convert to VLC argument format.
+    auto noVLCArgs = 5 + noVLCAddional + (static_cast<int>(compressAudio) * 8);
+    const char** movieVLCArgs = new const char*[noVLCArgs];
+    // Default arguments
+    movieVLCArgs[0] = vlcVOut.c_str();
+    movieVLCArgs[1] = "--file-caching=60000";
+    movieVLCArgs[2] = "--live-caching=60000";
+    movieVLCArgs[3] = "--disc-caching=60000";
+    movieVLCArgs[4] = "--network-caching=60000";
+    // Additional arguments
+    for (size_t i = 0; i < noVLCAddional; ++i) {
+        movieVLCArgs[5+i] = vlcAdditionalSplit[i].c_str();
     }
+    if (compressAudio) {
+        // Add audio compressor arguments
+        movieVLCArgs[5+noVLCAddional] = "--audio-filter=compressor";
+        movieVLCArgs[6+noVLCAddional] = "--compressor-rms-peak=0.2";
+        movieVLCArgs[7+noVLCAddional] = "--compressor-attack=25";
+        movieVLCArgs[8+noVLCAddional] = "--compressor-release=100";
+        movieVLCArgs[9+noVLCAddional] = "--compressor-threshold=-11";
+        movieVLCArgs[10+noVLCAddional] = "--compressor-ratio=4";
+        movieVLCArgs[11+noVLCAddional] = "--compressor-knee=5";
+        movieVLCArgs[12+noVLCAddional] = "--compressor-makeup-gain=7";
+    }
+
+    /*
+     * Output all vlc arguments.
+    for (size_t i = 0; i < noVLCArgs; ++i) {
+        qDebug() << "VLC Argument[" << i << "]: " << movieVLCArgs[i];
+    }
+    */
+
+    movieMediaAudioCompressionMode = compressAudio;
+    movieInstance = libvlc_new(static_cast<int>(noVLCArgs), movieVLCArgs);
     if (!movieInstance) {
-        qCritical() << "Unable to start vlc. Critical error. Abort.";
-        abort();
+        if (movieMediaAudioCompressionMode) {
+            qCritical() << "Unable to enable the VLC compressor plugin. Disabling audio compression.";
+            emit moviePlayerError(tr("Unable to enable the VLC compressor plugin. Disabling audio compression."));
+            vlcStartMediaPlayer(false);
+        } else {
+            qCritical() << "Unable to start vlc. Critical error. Abort.";
+            abort();
+        }
     }
     movieMediaPlayer = libvlc_media_player_new(movieInstance);
     libvlc_media_player_set_role(movieMediaPlayer, libvlc_role_Video);
@@ -154,6 +166,12 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
             this, &xMoviePlayer::updatedDefaultSubtitleLanguage);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMoviePlayed, [=]() {
         moviePlayed = xPlayerConfiguration::configuration()->getDatabaseMoviePlayed();
+    });
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieVLCParameters, [=]() {
+        // Reset the vlc player.
+        vlcStopMediaPlayer();
+        vlcStartMediaPlayer(movieMediaAudioCompressionMode);
+        emit currentState(State::ResetState);
     });
 }
 

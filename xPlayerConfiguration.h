@@ -154,6 +154,18 @@ public:
      */
     void setMovieAudioCompression(bool enabled);
     /**
+     * Set the VLC video output for movies.
+     *
+     * @param vout video output as string. Use any if empty.
+     */
+    void setMovieVLCVideoOutput(const QString& vout);
+    /**
+     * Set the additional commandline for VLC.
+     *
+     * @param cmdline additional commandline as string.
+     */
+    void setMovieVLCAdditionalCommandLine(const QString& cmdline);
+    /**
      * Set the visibility status of the movie filters widget.
      *
      * @param visible show movie filters if true, hide otherwise.
@@ -409,7 +421,7 @@ public:
     /**
      * Get the list of languages used for default audio channel and subtitles.
      *
-     * @return the languages as string.
+     * @return the languages as string list.
      */
     [[nodiscard]] static const QStringList& getMovieDefaultLanguages();
     /**
@@ -418,6 +430,24 @@ public:
      * @return true if audio compression for movies is used, false otherwise.
      */
     [[nodiscard]] bool getMovieAudioCompression();
+    /**
+     * Get the VLC video output plugin for movies.
+     *
+     * @return the video output as string.
+     */
+    [[nodiscard]] QString getMovieVLCVideoOutput();
+    /**
+     * Get the list of all VLC video output plugins for movies.
+     *
+     * @return the video outputs as string list.
+     */
+    [[nodiscard]] const QStringList& getMovieVLCVideoOutputs();
+    /**
+     * Get the additional VLC commandline for movies.
+     *
+     * @return the additional commandline as string.
+     */
+    [[nodiscard]] QString getMovieVLCAdditionalCommandline();
     /**
      * Get the visibility of the movie filters.
      *
@@ -484,7 +514,7 @@ public:
      * @param playCount the play count as integer.
      * @return the name of the icon to be used.
      */
-    QString getPlayedLevelIcon(int playCount);
+    QString getPlayedLevelIcon(int playCount) const;
     /**
      * Get the mode for the database overlay for the music view.
      *
@@ -621,6 +651,10 @@ signals:
      * Signal an update of the audio compression mode for movies.
      */
     void updatedMovieAudioCompression();
+    /**
+     * Signal an update of the VLC parameters for movies.
+     */
+    void updatedMovieVLCParameters();
     /**
      * Signal an update of the movie filters visibility.
      */

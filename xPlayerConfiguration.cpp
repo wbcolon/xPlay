@@ -41,6 +41,8 @@ const QString xPlayerConfiguration_MovieLibraryDirectory { "xPlay/MovieLibraryDi
 const QString xPlayerConfiguration_MovieLibraryExtensions { "xPlay/MovieLibraryExtensions" }; // NOLINT
 const QString xPlayerConfiguration_MovieDefaultAudioLanguage { "xPlay/MovieDefaultAudioLanguage" }; // NOLINT
 const QString xPlayerConfiguration_MovieDefaultSubtitleLanguage { "xPlay/MovieSubtitleAudioLanguage" }; // NOLINT
+const QString xPlayerConfiguration_MovieVLCVideoOutput { "xPlay/MovieVLCVideoOutput" }; // NOLINT
+const QString xPlayerConfiguration_MovieVLCAdditional { "xPlay/MovieVLCAdditional" }; // NOLINT
 const QString xPlayerConfiguration_MovieAudioCompression { "xPlay/MovieAudioCompression" }; // NOLINT
 const QString xPlayerConfiguration_MovieViewFilters { "xPlay/MovieViewFilters" }; // NOLINT
 const QString xPlayerConfiguration_StreamingSites { "xPlay/StreamingSites" }; // NOLINT
@@ -72,6 +74,8 @@ const bool xPlayerConfiguration_MusicViewVisualization_Default = false; // NOLIN
 const int xPlayerConfiguration_MusicViewVisualizationMode_Default = 0; // NOLINT
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
 const bool xPlayerConfiguration_MovieAudioCompression_Default = true; // NOLINT
+const QString xPlayerConfiguration_MovieVLCVideoOutput_Default { "gles2" }; // NOLINT
+const QString xPlayerConfiguration_MovieVLCAdditional_Default { "--quiet" }; // NOLINT
 const bool xPlayerConfiguration_MovieViewFilters_Default = true; // NOLINT
 const bool xPlayerConfiguration_DatabaseUsePlayedLevels_Default = false; // NOLINT
 const std::tuple<int,int,int> xPlayerConfiguration_DatabasePlayedLevels_Default { 5, 10, 15 }; // NOLINT
@@ -82,6 +86,7 @@ const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites 
 const bool xPlayerConfiguration_StreamingViewSidebar_Default = true; // NOLINT
 const bool xPlayerConfiguration_StreamingViewNavigation_Default = true; // NOLINT
 const QStringList xPlayerConfiguration_MovieDefaultLanguages { "english", "german" }; // NOLINT
+const QStringList xPlayerConfiguration_MovieVLCVideoOutputs { "any", "gl", "gles2", "xcb_xv","xcb_x11" }; // NOLINT
 const QString xPlayerConfiguration_VisualizationConfigPathDefault { "/usr/share/projectM/config.inp" }; // NOLINT
 const QList<int> xPlayerConfiguration_WebsiteZoomFactors { 50, 75, 100, 125, 150, 175, 200 }; // NOLINT
 const QString xPlayerConfiguration_WebsiteUserAgent_Default { "Mozilla/5.0 (X11; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0" }; // NOLINT
@@ -276,6 +281,22 @@ void xPlayerConfiguration::setMovieAudioCompression(bool enabled) {
         settings->setValue(xPlayerConfiguration_MovieAudioCompression, enabled);
         settings->sync();
         emit updatedMovieAudioCompression();
+    }
+}
+
+void xPlayerConfiguration::setMovieVLCVideoOutput(const QString& vout) {
+    if (vout != getMovieVLCVideoOutput()) {
+        settings->setValue(xPlayerConfiguration_MovieVLCVideoOutput, vout);
+        settings->sync();
+        emit updatedMovieVLCParameters();
+    }
+}
+
+void xPlayerConfiguration::setMovieVLCAdditionalCommandLine(const QString& cmdline) {
+    if (cmdline != getMovieVLCVideoOutput()) {
+        settings->setValue(xPlayerConfiguration_MovieVLCAdditional, cmdline);
+        settings->sync();
+        emit updatedMovieVLCParameters();
     }
 }
 
@@ -545,6 +566,18 @@ bool xPlayerConfiguration::getMovieAudioCompression() {
     return settings->value(xPlayerConfiguration_MovieAudioCompression, xPlayerConfiguration_MovieAudioCompression_Default).toBool();
 }
 
+QString xPlayerConfiguration::getMovieVLCVideoOutput() {
+    return settings->value(xPlayerConfiguration_MovieVLCVideoOutput, xPlayerConfiguration_MovieVLCVideoOutput_Default).toString();
+}
+
+const QStringList& xPlayerConfiguration::getMovieVLCVideoOutputs() {
+    return xPlayerConfiguration_MovieVLCVideoOutputs;
+}
+
+QString xPlayerConfiguration::getMovieVLCAdditionalCommandline() {
+    return settings->value(xPlayerConfiguration_MovieVLCAdditional, xPlayerConfiguration_MovieVLCAdditional_Default).toString();
+}
+
 bool xPlayerConfiguration::getMovieViewFilters() {
     return settings->value(xPlayerConfiguration_MovieViewFilters, xPlayerConfiguration_MovieViewFilters_Default).toBool();
 }
@@ -609,7 +642,7 @@ std::tuple<int,int,int> xPlayerConfiguration::getDatabasePlayedLevels() {
     return std::make_tuple(playedBronze, playedSilver, playedGold);
 }
 
-QString xPlayerConfiguration::getPlayedLevelIcon(int playCount) {
+QString xPlayerConfiguration::getPlayedLevelIcon(int playCount) const {
     // Use cached values to improve performance.
     if (databaseUsePlayed) {
         // We assume that bronze < silver < gold.
