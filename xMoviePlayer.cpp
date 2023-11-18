@@ -77,13 +77,13 @@ void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
     if (compressAudio) {
         // Add audio compressor arguments
         movieVLCArgs[5+noVLCAddional] = "--audio-filter=compressor";
-        movieVLCArgs[6+noVLCAddional] = "--compressor-rms-peak=0.2";
-        movieVLCArgs[7+noVLCAddional] = "--compressor-attack=25";
-        movieVLCArgs[8+noVLCAddional] = "--compressor-release=100";
-        movieVLCArgs[9+noVLCAddional] = "--compressor-threshold=-11";
-        movieVLCArgs[10+noVLCAddional] = "--compressor-ratio=4";
-        movieVLCArgs[11+noVLCAddional] = "--compressor-knee=5";
-        movieVLCArgs[12+noVLCAddional] = "--compressor-makeup-gain=7";
+        movieVLCArgs[6+noVLCAddional] = "--compressor-rms-peak=0.0";
+        movieVLCArgs[7+noVLCAddional] = "--compressor-attack=52";
+        movieVLCArgs[8+noVLCAddional] = "--compressor-release=285";
+        movieVLCArgs[9+noVLCAddional] = "--compressor-threshold=-13";
+        movieVLCArgs[10+noVLCAddional] = "--compressor-ratio=13";
+        movieVLCArgs[11+noVLCAddional] = "--compressor-knee=3";
+        movieVLCArgs[12+noVLCAddional] = "--compressor-makeup-gain=3.6";
     }
 
     /*
