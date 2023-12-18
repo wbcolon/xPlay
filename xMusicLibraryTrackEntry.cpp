@@ -38,18 +38,6 @@ xMusicLibraryTrackEntry::xMusicLibraryTrackEntry():
     trackSampleRate(-1) {
 }
 
-xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, xMusicLibraryEntry* album):
-        xMusicLibraryEntry(track, trackUrl, album),
-        trackPath(),
-        trackLength(-1),
-        trackBitsPerSample(-1),
-        trackBitrate(-1),
-        trackSampleRate(-1) {
-    trackPath = trackUrl.toLocalFile();
-    QFileInfo fileInfo(trackPath);
-    fileSize = fileInfo.exists() ? fileInfo.size() : -1;
-}
-
 xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, const QString& path,
                                                  qint64 length, xMusicLibraryEntry* album):
         xMusicLibraryEntry(track, trackUrl, album),
@@ -59,6 +47,12 @@ xMusicLibraryTrackEntry::xMusicLibraryTrackEntry(const QString& track, const QUr
         trackBitsPerSample(-1),
         trackBitrate(-1),
         trackSampleRate(-1) {
+    // Compute file size if file is local.
+    // Size does not matter for remote files.
+    if (trackUrl.isLocalFile()) {
+        QFileInfo fileInfo(trackPath);
+        fileSize = fileInfo.exists() ? fileInfo.size() : -1;
+    }
 }
 
 [[nodiscard]] xMusicLibraryAlbumEntry* xMusicLibraryTrackEntry::getAlbum() const {
@@ -195,10 +189,8 @@ void xMusicLibraryTrackEntry::scanTags() const {
         trackSampleRate = currentTrackProperties->sampleRate();
         trackLength = currentTrackProperties->lengthInMilliseconds();
     } else {
-        auto trackInfo = xPlayerBluOSControls::controls()->getTrackInfo(trackPath);
-        trackSampleRate = std::get<0>(trackInfo);
-        trackBitsPerSample = std::get<1>(trackInfo);
-        qDebug() << "SAMPLE: " << trackPath << " : " << trackSampleRate  << "," << trackBitsPerSample;
+        std::tie(trackSampleRate, trackBitsPerSample) = xPlayerBluOSControls::controls()->getTrackInfo(trackPath);
+        qDebug() << "scanTags() [remote]: " << trackPath << " : " << trackSampleRate  << "," << trackBitsPerSample;
     }
 }
 

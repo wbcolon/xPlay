@@ -21,7 +21,6 @@ class xMusicLibraryTrackEntry:public xMusicLibraryEntry {
 
 public:
     xMusicLibraryTrackEntry();
-    xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, xMusicLibraryEntry* album);
     xMusicLibraryTrackEntry(const QString& track, const QUrl& trackUrl, const QString& path,
                             qint64 length, xMusicLibraryEntry* album);
     xMusicLibraryTrackEntry(const xMusicLibraryTrackEntry& file) = default;
@@ -115,11 +114,6 @@ public:
      * @return the bitrate as integer.
      */
     [[nodiscard]] int getBitrate() const;
-    /**
-     * Update the unique ID for the given track.
-     * @param id the new ID.
-     */
-    void updateTrackId(int id);
     /**
      * Compare music files based on artist, album, track name and size.
      *

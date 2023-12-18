@@ -65,8 +65,8 @@ bool xMusicLibraryEntry::operator < (const xMusicLibraryEntry& entry) const {
     return (entryName.compare(entry.entryName, Qt::CaseInsensitive) < 0);
 }
 
-std::vector<std::tuple<QUrl,QString>> xMusicLibraryEntry::scanDirectory() {
-    std::vector<std::tuple<QUrl,QString>> validDirEntries;
+std::vector<xDirectoryEntry> xMusicLibraryEntry::scanDirectory() {
+    std::vector<xDirectoryEntry> validDirEntries;
     if (entryUrl.isLocalFile()) {
         QFileInfo entryPath(entryUrl.toLocalFile());
         if (entryPath.isDir()) {
@@ -74,7 +74,7 @@ std::vector<std::tuple<QUrl,QString>> xMusicLibraryEntry::scanDirectory() {
             for (const auto& dirEntry : dirEntries) {
                 auto dirEntryUrl = QUrl::fromLocalFile(dirEntry.filePath());
                 if (isDirectoryEntryValid(dirEntryUrl)) {
-                    validDirEntries.emplace_back(dirEntryUrl, dirEntry.fileName());
+                    validDirEntries.emplace_back(dirEntryUrl, dirEntryUrl.toLocalFile(), dirEntry.fileName(), -1);
                 }
             }
         }

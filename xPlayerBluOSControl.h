@@ -14,6 +14,8 @@
 #ifndef __XPLAYERBLUOSCONTROL_H__
 #define __XPLAYERBLUOSCONTROL_H__
 
+#include "xPlayerTypes.h"
+
 #include <QTimer>
 #include <QMutex>
 #include <QUrl>
@@ -149,22 +151,22 @@ public:
      *
      * @return vector of tuples of url and artist name.
      */
-    std::vector<std::tuple<QUrl,QString>> getArtists();
+    std::vector<xDirectoryEntry> getArtists();
     /**
      * Return the albums for a given artist for the BluOS player.
      *
      * @param artist the given artist as string.
      * @return vector of tuples of url and album name.
      */
-    std::vector<std::tuple<QUrl,QString>> getAlbums(const QString& artist);
+    std::vector<xDirectoryEntry> getAlbums(const QString& artist);
     /**
      * Return the tracks for a given artist and album for the BluOS player.
      *
      * @param artist the given artist as string.
      * @param album the given album as string.
-     * @return vector of tuples of url, track name, length and path.
+     * @return vector of tuples of url, path, track name and length.
      */
-    std::vector<std::tuple<QUrl,QString,qint64,QString>> getTracks(const QString& artist, const QString& album);
+    std::vector<xDirectoryEntry> getTracks(const QString& artist, const QString& album);
     /**
      * Return the info for the given track ID.
      *
@@ -283,9 +285,9 @@ private:
      * Parse the result of a track query.
      *
      * @param commandResult the result of the query as string.
-     * @return a vector of tuples of track names, length and path.
+     * @return a vector of tuples of path, track name and length.
      */
-    std::vector<std::tuple<QString,qint64,QString>> parseTracks(const QString& commandResult);
+    std::vector<std::tuple<QString,QString,qint64>> parseTracks(const QString& commandResult);
     /**
      * Parse the result of the track info query.
      *

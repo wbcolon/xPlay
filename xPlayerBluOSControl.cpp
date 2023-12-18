@@ -169,36 +169,38 @@ bool xPlayerBluOSControls::isShuffle() {
     return parseShuffle(sendCommand(QUrl(bluOSUrl+QString("/Status"))));
 }
 
-std::vector<std::tuple<QUrl,QString>> xPlayerBluOSControls::getArtists() {
-    std::vector<std::tuple<QUrl,QString>> artists;
+std::vector<xDirectoryEntry> xPlayerBluOSControls::getArtists() {
+    std::vector<xDirectoryEntry> artists;
     auto artistsPath = bluOSUrl+"/Folders?&service=LocalMusic&path="+bluOSBasePath;
     qDebug() << "xPlayerBluOSControls::getArtists: " << artistsPath;
     auto artistNames = parseFolders(sendCommand(artistsPath));
+    artists.reserve(artistNames.size());
     for (const auto& artistName : artistNames) {
-        artists.emplace_back(QUrl(artistsPath+"/"+artistName), artistName);
+        artists.emplace_back(QUrl(artistsPath+"/"+artistName), QString(), artistName, -1);
     }
     return artists;
 }
 
-std::vector<std::tuple<QUrl,QString>> xPlayerBluOSControls::getAlbums(const QString& artist) {
-    std::vector<std::tuple<QUrl,QString>> albums;
+std::vector<xDirectoryEntry> xPlayerBluOSControls::getAlbums(const QString& artist) {
+    std::vector<xDirectoryEntry> albums;
     auto albumsPath = bluOSUrl+"/Folders?&service=LocalMusic&path="+bluOSBasePath+"/"+artist;
     qDebug() << "xPlayerBluOSControls::getAlbums: " << albumsPath;
     auto albumNames = parseFolders(sendCommand(albumsPath));
+    albums.reserve(albumNames.size());
     for (const auto& albumName : albumNames) {
-        albums.emplace_back(QUrl(albumsPath+"/"+albumName), albumName);
+        albums.emplace_back(QUrl(albumsPath+"/"+albumName), QString(), albumName, -1);
     }
     return albums;
 }
 
-std::vector<std::tuple<QUrl,QString,qint64,QString>> xPlayerBluOSControls::getTracks(const QString& artist, const QString& album) {
-    std::vector<std::tuple<QUrl,QString,qint64,QString>> tracks;
+std::vector<xDirectoryEntry> xPlayerBluOSControls::getTracks(const QString& artist, const QString& album) {
+    std::vector<xDirectoryEntry> tracks;
     auto tracksPath = bluOSUrl+"/Folders?&service=LocalMusic&path="+bluOSBasePath+"/"+artist+"/"+album;
     qDebug() << "xPlayerBluOSControls::getTracks: " << tracksPath;
     auto trackInfos = parseTracks(sendCommand(tracksPath));
-    for (const auto& trackInfo : trackInfos) {
-        auto trackName = std::get<0>(trackInfo);
-        tracks.emplace_back(QUrl(tracksPath+"/"+trackName), trackName, std::get<1>(trackInfo), std::get<2>(trackInfo));
+    tracks.reserve(trackInfos.size());
+    for (const auto& [trackPath, trackName, trackLength] : trackInfos) {
+        tracks.emplace_back(QUrl(tracksPath+"/"+trackName), trackPath, trackName, trackLength);
     }
     return tracks;
 }
@@ -351,8 +353,8 @@ std::vector<QString> xPlayerBluOSControls::parseFolders(const QString& commandRe
     return folders;
 }
 
-std::vector<std::tuple<QString,qint64,QString>> xPlayerBluOSControls::parseTracks(const QString& commandResult) {
-    std::vector<std::tuple<QString,qint64,QString>> tracks;
+std::vector<std::tuple<QString,QString,qint64>> xPlayerBluOSControls::parseTracks(const QString& commandResult) {
+    std::vector<std::tuple<QString,QString,qint64>> tracks;
     pugi::xml_parse_result result = bluOSResponse.load_string(commandResult.toStdString().c_str());
     if (result) {
         // Parse through all subfolders.
@@ -360,7 +362,7 @@ std::vector<std::tuple<QString,qint64,QString>> xPlayerBluOSControls::parseTrack
             QString songTime(song.child("time").child_value());
             QString songPath(song.child("fn").child_value());
             QFileInfo songInfo(songPath);
-            tracks.emplace_back(songInfo.fileName(), songTime.toInt()*1000, songPath);
+            tracks.emplace_back(songPath, songInfo.fileName(), songTime.toInt()*1000);
         }
     } else {
         qCritical() << "Unable to parse result for tracks: " << result.description();

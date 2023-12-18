@@ -66,7 +66,7 @@ xMusicLibraryArtistEntry::~xMusicLibraryArtistEntry() {
 }
 
 void xMusicLibraryArtistEntry::scan() {
-    std::vector<std::tuple<QUrl,QString>> albumEntries;
+    std::vector<xDirectoryEntry> albumEntries;
     if (entryUrl.isLocalFile()) {
         albumEntries = scanDirectory();
     } else {
@@ -77,9 +77,8 @@ void xMusicLibraryArtistEntry::scan() {
     artistAlbums.clear();
     artistAlbumsMap.clear();
     // Fill vector and map
-    for (const auto& albumEntry : albumEntries) {
-        auto albumName = std::get<1>(albumEntry);
-        auto album = new xMusicLibraryAlbumEntry(albumName, std::get<0>(albumEntry), this);
+    for (const auto& [albumUrl, albumPath, albumName, length] : albumEntries) {
+        auto album = new xMusicLibraryAlbumEntry(albumName, albumUrl, this);
         artistAlbums.emplace_back(album);
         artistAlbumsMap[albumName] = album;
     }

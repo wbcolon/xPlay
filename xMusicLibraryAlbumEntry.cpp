@@ -80,32 +80,22 @@ void xMusicLibraryAlbumEntry::scan() {
     if (isScanned()) {
         return;
     }
+
+    // Get the track entries.
+    std::vector<xDirectoryEntry> trackEntries;
     if (entryUrl.isLocalFile()) {
-        // Scan for tracks in album directory.
-        auto trackEntries = scanDirectory();
-        // Sort the entries according to their name.
-        std::sort(trackEntries.begin(), trackEntries.end());
-        // Clear vector and map
-        albumTracks.clear();
-        // Fill vector and map
-        for (const auto& trackEntry : trackEntries) {
-            auto trackName = std::get<1>(trackEntry);
-            auto track = new xMusicLibraryTrackEntry(trackName, std::get<0>(trackEntry), this);
-            albumTracks.emplace_back(track);
-        }
+        trackEntries = scanDirectory();
     } else {
-        auto trackEntries = xPlayerBluOSControls::controls()->getTracks(getArtistName(), getAlbumName());
-        // Sort the entries according to their name.
-        std::sort(trackEntries.begin(), trackEntries.end());
-        // Clear vector and map
-        albumTracks.clear();
-        // Fill vector and map
-        for (const auto& trackEntry : trackEntries) {
-            auto trackName = std::get<1>(trackEntry);
-            auto track = new xMusicLibraryTrackEntry(trackName, std::get<0>(trackEntry), std::get<3>(trackEntry),
-                    std::get<2>(trackEntry), this);
-            albumTracks.emplace_back(track);
-        }
+        trackEntries = xPlayerBluOSControls::controls()->getTracks(getArtistName(), getAlbumName());
+    }
+    // Sort the entries according to their name.
+    std::sort(trackEntries.begin(), trackEntries.end());
+    // Clear vector and map
+    albumTracks.clear();
+    // Fill vector and map
+    for (const auto& [trackUrl, trackPath, trackName, trackLength] : trackEntries) {
+        auto track = new xMusicLibraryTrackEntry(trackName, trackUrl, trackPath, trackLength, this);
+        albumTracks.emplace_back(track);
     }
 }
 

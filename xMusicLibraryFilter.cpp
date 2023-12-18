@@ -83,9 +83,7 @@ void xMusicLibraryFilter::setAlbumMatch(const QStringList& match, const QStringL
 }
 
 void xMusicLibraryFilter::setSearchMatch(const std::tuple<QString,QString,QString>& match) {
-    artistSearchMatch = std::get<0>(match);
-    albumSearchMatch = std::get<1>(match);
-    trackNameSearchMatch = std::get<2>(match);
+    std::tie(artistSearchMatch, albumSearchMatch, trackNameSearchMatch) = match;
 }
 
 void xMusicLibraryFilter::setDatabaseMatch(const std::map<QString,std::set<QString>>& databaseMatch, bool databaseNotMatch) {

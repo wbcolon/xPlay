@@ -15,10 +15,13 @@
 #ifndef __XMUSICLIBRARYENTRY_H__
 #define __XMUSICLIBRARYENTRY_H__
 
+#include "xPlayerTypes.h"
+
 #include <QObject>
 #include <QString>
 #include <QUrl>
 #include <QDateTime>
+
 
 class xMusicLibraryEntry:public QObject {
 
@@ -78,9 +81,9 @@ protected:
     /**
      * Scan the entry path (if it is a directory) for valid entries.
      *
-     * @return a vector of valid tuple of url and file name.
+     * @return a vector of valid tuple of url, path, file name and length.
      */
-    std::vector<std::tuple<QUrl,QString>> scanDirectory();
+    std::vector<xDirectoryEntry> scanDirectory();
     /**
      * Determine status of the given directory entry.
      *
