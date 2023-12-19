@@ -360,6 +360,12 @@ private:
      */
     void updateCurrentPosition();
     /**
+     * Create argument list compatible with vlc.
+     *
+     * @param compressAudio
+     */
+    QStringList vlcCreateMediaPlayerArguments(bool compressAudio);
+    /**
      * Start the libvlc media player.
      *
      * @param compressAudio use dynamic compression effect for audio if true, do not if otherwise.
