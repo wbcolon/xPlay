@@ -387,17 +387,17 @@ void xMainMovieWidget::updatePlayedMovies() {
         movieItem->removeIcon();
         movieItem->removeToolTip();
         for (auto playedMovie = playedMovies.begin(); playedMovie != playedMovies.end(); ++playedMovie) {
+            auto [currentMovie, playCount, timeStamp] = *playedMovie;
             // Update icon and tooltip if movie already played.
-            if (std::get<0>(*playedMovie) == movie) {
-                auto playCount = std::get<1>(*playedMovie);
+            if (currentMovie == movie) {
                 movieItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
                 // Adjust tooltip to play count "once" vs "x times".
                 if (playCount > 1) {
                     movieItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
                 } else {
                     movieItem->addToolTip(QString(tr("played once, last time on %1")).
-                            arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMovie)).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
                 }
                 // Remove element to speed up search in the next iteration.
                 playedMovies.erase(playedMovie);

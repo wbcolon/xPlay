@@ -558,17 +558,12 @@ void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& alb
             auto sampleRate = sqlite3_column_int(sqlStatement, 4);
             auto bitsPerSample = sqlite3_column_int(sqlStatement, 5);
             // Store entries to be renamed.
-            renameEntries.emplace_back(std::make_tuple(hash, playCount, timeStamp, track, sampleRate, bitsPerSample));
+            renameEntries.emplace_back(hash, playCount, timeStamp, track, sampleRate, bitsPerSample);
         }
         dbCheck(sqlite3_finalize(sqlStatement));
         // Create insert strings and delete strings.
         std::string addRenameEntries, removeOldEntries;
-        for (const auto& renameEntry : renameEntries) {
-            auto playCount = std::get<1>(renameEntry);
-            qint64 timeStamp = std::get<2>(renameEntry);
-            auto track = std::get<3>(renameEntry);
-            auto sampleRate = std::get<4>(renameEntry);
-            auto bitsPerSample = std::get<5>(renameEntry);
+        for (const auto& [oldHash, playCount, timeStamp, track, sampleRate, bitsPerSample] : renameEntries) {
             auto hash = QCryptographicHash::hash(
                     (artist + "/" + newAlbum + "/" + QString::fromStdString(track)).toUtf8(),
                     QCryptographicHash::Sha256).toBase64().toStdString();
@@ -582,7 +577,7 @@ void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& alb
             addRenameEntries += QString(R"(("%1", %2, %3, "%4", "%5", "%6", %7, %8))").  // clazy:exclude=qstring-arg
                     arg(QString::fromStdString(hash)).arg(playCount).arg(timeStamp).arg(artist).arg(newAlbum).  // clazy:exclude=qstring-arg
                     arg(QString::fromStdString(track)).arg(sampleRate).arg(bitsPerSample).toStdString();
-            removeOldEntries += "hash = \"" + std::get<0>(renameEntry) +"\"";
+            removeOldEntries += "hash = \"" + oldHash +"\"";
         }
         // Insert new entries.
         if (!addRenameEntries.empty()) {
@@ -623,18 +618,12 @@ void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& new
             auto sampleRate = sqlite3_column_int(sqlStatement, 5);
             auto bitsPerSample = sqlite3_column_int(sqlStatement, 6);
             // Store entries to be renamed.
-            renameEntries.emplace_back(std::make_tuple(hash, playCount, timeStamp, album, track, sampleRate, bitsPerSample));
+            renameEntries.emplace_back(hash, playCount, timeStamp, album, track, sampleRate, bitsPerSample);
         }
         dbCheck(sqlite3_finalize(sqlStatement));
         // Create insert strings and delete strings.
         std::string addRenameEntries, removeOldEntries;
-        for (const auto& renameEntry : renameEntries) {
-            auto playCount = std::get<1>(renameEntry);
-            qint64 timeStamp = std::get<2>(renameEntry);
-            auto album = std::get<3>(renameEntry);
-            auto track = std::get<4>(renameEntry);
-            auto sampleRate = std::get<5>(renameEntry);
-            auto bitsPerSample = std::get<6>(renameEntry);
+        for (const auto& [oldHash, playCount, timeStamp, album, track, sampleRate, bitsPerSample] : renameEntries) {
             auto hash = QCryptographicHash::hash(
                     (newArtist + "/" + QString::fromStdString(album) + "/" + QString::fromStdString(track)).toUtf8(),
                     QCryptographicHash::Sha256).toBase64().toStdString();
@@ -649,7 +638,7 @@ void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& new
                     arg(QString::fromStdString(hash)).arg(playCount).arg(timeStamp).arg(newArtist).  // clazy:exclude=qstring-arg
                     arg(QString::fromStdString(album)).arg(QString::fromStdString(track)).  // clazy:exclude=qstring-arg
                     arg(sampleRate).arg(bitsPerSample).toStdString();
-            removeOldEntries += "hash = \"" + std::get<0>(renameEntry) +"\"";
+            removeOldEntries += "hash = \"" + oldHash +"\"";
         }
         // Insert new entries.
         if (!addRenameEntries.empty()) {
@@ -657,7 +646,6 @@ void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& new
             qDebug() << "xPlayerDatabase::renameMusicFiles: add entries: " << QString::fromStdString(sqlAddRenameEntries);
             dbCheck(sqlite3_exec(sqlDatabase, sqlAddRenameEntries.c_str(), nullptr, nullptr, nullptr));
         }
-        qCritical() << "REMOVE";
         // Delete old entries.
         if (!removeOldEntries.empty()) {
             auto sqlRemoveOldEntries = "DELETE FROM music WHERE " + removeOldEntries;
@@ -869,12 +857,8 @@ bool xPlayerDatabase::updateMusicPlaylist(const QString& name, const std::vector
     std::vector<std::string> hashEntries(entries.size());
     std::string addMusicEntries;
     std::string addPlaylistEntries;
-    for (const auto& entry : entries) {
-        auto artist = std::get<0>(entry);
-        auto album = std::get<1>(entry);
-        auto track = std::get<2>(entry);
+    for (const auto& [artist, album, track] : entries) {
         auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
-
         if (!std::binary_search(hashExisting.begin(), hashExisting.end(), hash)) {
             if (!addMusicEntries.empty()) {
                 addMusicEntries += ", ";
@@ -990,8 +974,8 @@ std::list<std::string> xPlayerDatabase::convertEntriesToWhereArguments(const std
     std::list<std::string> whereArguments;
     std::string entryHash, whereArgument;
     int removeHashesCount = 0;
-    for (const auto& entry : entries) {
-        entryHash = QCryptographicHash::hash((std::get<0>(entry)+"/"+std::get<1>(entry)+"/"+std::get<2>(entry)).toUtf8(),
+    for (const auto& [level0, level1, level2] : entries) {
+        entryHash = QCryptographicHash::hash((level0+"/"+level1+"/"+level2).toUtf8(),
                                              QCryptographicHash::Sha256).toBase64().toStdString();
         whereArgument += " OR hash == \"" + entryHash + "\"";
         // We need to split the commands if we have too many entries.

@@ -1222,19 +1222,17 @@ void xMainMusicWidget::updatePlayedTracks() {
     for (auto i = 0; (i < trackList->count()) && (playedMusicTrack != playedMusicTracks.end()); ++i) {
         auto trackItem = trackList->listItem(i);
         auto track = trackItem->text();
-        if (std::get<0>(*playedMusicTrack) == track) {
-            auto playCount = std::get<1>(*playedMusicTrack);
+        auto [currentTrack, playCount, timeStamp] = *playedMusicTrack;
+        if (currentTrack == track) {
             // Use the proper icon for the given play count.
             trackItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
             // Adjust tooltip to play count "once" vs "x times".
             if (playCount > 1) {
                 trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                        arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(
-                        Qt::DefaultLocaleLongDate)));
+                        arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
             } else {
                 trackItem->addToolTip(QString(tr("played once, last time on %1")).
-                        arg(QDateTime::fromMSecsSinceEpoch(std::get<2>(*playedMusicTrack)).toString(
-                        Qt::DefaultLocaleLongDate)));
+                        arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
             }
             // Move to the next element in the list.
             ++playedMusicTrack;
@@ -1299,11 +1297,11 @@ void xMainMusicWidget::playlist(const std::vector<std::tuple<QString,QString,QSt
     playerWidget->clear();
     // Clear queue.
     queueList->clearItems();
-    for (const auto& entry : entries) {
+    for (const auto& [artist, album, trackName] : entries) {
         // Add to the playlist (queue)
-        auto trackObject = musicLibrary->getTrackEntry(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
+        auto trackObject = musicLibrary->getTrackEntry(artist, album, trackName);
         if (trackObject) {
-            queueList->addListItem(trackObject, QString("%1 - %2").arg(std::get<0>(entry), std::get<1>(entry)));
+            queueList->addListItem(trackObject, QString("%1 - %2").arg(artist, album));
         }
     }
     // Update items.
@@ -1376,9 +1374,9 @@ void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point
     // Track info.
     auto artist = item->trackEntry()->getArtistName();
     auto album = item->trackEntry()->getAlbumName();
-    auto trackname = item->trackEntry()->getTrackName();
+    auto trackName = item->trackEntry()->getTrackName();
     // Read current tags for track.
-    auto tags = xPlayerDatabase::database()->getTags(artist, album, trackname);
+    auto tags = xPlayerDatabase::database()->getTags(artist, album, trackName);
     // Get all available tags.
     // Create menu.
     QMenu menu;
@@ -1391,16 +1389,16 @@ void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point
         // Add the tag if the menu entry is selected, remove it otherwise.
         connect(action, &QAction::triggered, [=](bool checked) {
             if (checked) {
-                xPlayerDatabase::database()->addTag(artist, album, trackname, menuTag);
+                xPlayerDatabase::database()->addTag(artist, album, trackName, menuTag);
             } else {
-                xPlayerDatabase::database()->removeTag(artist, album, trackname, menuTag);
+                xPlayerDatabase::database()->removeTag(artist, album, trackName, menuTag);
             }
         });
         menu.addAction(action);
     }
     menu.addSeparator();
     menu.addAction(tr("Remove All Tags"), [=]() {
-        xPlayerDatabase::database()->removeAllTags(artist, album, trackname);
+        xPlayerDatabase::database()->removeAllTags(artist, album, trackName);
     });
     menu.exec(list->mapToGlobal(point));
 }

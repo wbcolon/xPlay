@@ -633,12 +633,10 @@ bool xPlayerConfiguration::useDatabasePlayedLevels() {
 }
 
 std::tuple<int,int,int> xPlayerConfiguration::getDatabasePlayedLevels() {
-    auto playedBronze = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Bronze",
-                                        std::get<0>(xPlayerConfiguration_DatabasePlayedLevels_Default)).toInt();
-    auto playedSilver = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Silver",
-                                        std::get<1>(xPlayerConfiguration_DatabasePlayedLevels_Default)).toInt();
-    auto playedGold = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Gold",
-                                        std::get<2>(xPlayerConfiguration_DatabasePlayedLevels_Default)).toInt();
+    auto [bronzeDefault, silverDefault, goldDefault] = xPlayerConfiguration_DatabasePlayedLevels_Default;
+    auto playedBronze = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Bronze", bronzeDefault).toInt();
+    auto playedSilver = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Silver", silverDefault).toInt();
+    auto playedGold = settings->value(xPlayerConfiguration_DatabasePlayedLevels+"/Gold", goldDefault).toInt();
     return std::make_tuple(playedBronze, playedSilver, playedGold);
 }
 

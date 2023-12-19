@@ -373,9 +373,8 @@ void xMusicPlayer::saveQueueToPlaylist(const QString& name) {
     // Store the current queue to the database.
     // First convert to database format.
     std::vector<std::tuple<QString,QString,QString>> databasePlaylistEntries;
-    for (const auto& entry : musicPlaylistEntries) {
-        databasePlaylistEntries.emplace_back(std::get<0>(entry),
-                std::get<1>(entry), std::get<2>(entry)->getTrackName());
+    for (const auto& [artist, album, trackEntry] : musicPlaylistEntries) {
+        databasePlaylistEntries.emplace_back(artist, album, trackEntry->getTrackName());
     }
     auto saved = xPlayerDatabase::database()->updateMusicPlaylist(name, databasePlaylistEntries);
     emit playlistState(name, saved);
@@ -691,12 +690,8 @@ void xMusicPlayer::updatePlayed(qint64 pos) {
 void xMusicPlayer::updateDatabase(int index) {
     // Retrieve info for the currently played track and emit the information.
     if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
-        auto entry = musicPlaylistEntries[index];
-        auto entryObject = std::get<2>(entry);
-        auto artist = std::get<0>(entry);
-        auto album = std::get<1>(entry);
+        auto [artist, album, entryObject] = musicPlaylistEntries[index];
         auto trackName = entryObject->getTrackName();
-
         // Update database.
         auto result = xPlayerDatabase::database()->updateMusicFile(artist, album, trackName,
                                                                    entryObject->getSampleRate(),
@@ -722,10 +717,9 @@ void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {
     auto index = musicPlaylist.indexOf(current);
     if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
         // Retrieve info for the currently played track and emit the information.
-        auto entry = musicPlaylistEntries[index];
-        auto entryObject = std::get<2>(entry);
-        emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
-                          entryObject->getTrackName(), entryObject->getBitrate(),
+        auto [artist, album, entryObject] = musicPlaylistEntries[index];
+
+        emit currentTrack(index, artist, album, entryObject->getTrackName(), entryObject->getBitrate(),
                           entryObject->getSampleRate(), entryObject->getBitsPerSample(), {});
         // Save sample rate for music visualization scaling
         musicVisualizationSampleRate = entryObject->getSampleRate() / xMusicPlayer_MusicVisualizationSamplesFactor;
@@ -817,16 +811,13 @@ void xMusicPlayer::playerStatus(const QString& path, int index, qint64 position,
         if ((musicCurrentRemote != path) || (musicCurrentIndex != index)) {
             // Update currently played remote track.
             musicCurrentRemote = path;
-            auto entry = musicPlaylistEntries[index];
-            auto entryObject = std::get<2>(entry);
+            auto [artist, album, entryObject] = musicPlaylistEntries[index];
             // Reset played. We have a new track.
             resetPlayed();
             musicCurrentDuration = entryObject->getLength();
             emit currentTrackLength(musicCurrentDuration);
-            emit currentTrack(index, std::get<0>(entry), std::get<1>(entry),
-                              entryObject->getTrackName(), entryObject->getBitrate(),
-                              entryObject->getSampleRate(), entryObject->getBitsPerSample(),
-                              quality);
+            emit currentTrack(index, artist, album, entryObject->getTrackName(), entryObject->getBitrate(),
+                              entryObject->getSampleRate(), entryObject->getBitsPerSample(), quality);
             // Update current index.
             musicCurrentIndex = index;
         }

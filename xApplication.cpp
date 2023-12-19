@@ -325,8 +325,8 @@ int xApplication::unknownEntriesDialog(const QString& dialogTitle, const std::li
     auto unknownDialogLayout = new xPlayerLayout();
     auto unknownEntriesList = new QListWidget(unknownDialog);
     // Fill list widget.
-    for (const auto& entry : entries) {
-        unknownEntriesList->addItem(QString("%1/%2/%3").arg(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry)));
+    for (const auto& [level0, level1, level2] : entries) {
+        unknownEntriesList->addItem(QString("%1/%2/%3").arg(level0, level1, level2));
     }
     auto unknownDialogButtons = new QDialogButtonBox(unknownDialog);
     unknownDialogButtons->addButton(QDialogButtonBox::Discard);
@@ -338,7 +338,7 @@ int xApplication::unknownEntriesDialog(const QString& dialogTitle, const std::li
     unknownDialogLayout->addRowSpacer(5, xPlayerLayout::LargeSpace);
     unknownDialogLayout->addWidget(unknownDialogButtons, 6, 0, 4, 4);
     unknownDialog->setLayout(unknownDialogLayout);
-    // Connect buttons to playlist actions and close afterwards.
+    // Connect buttons to playlist actions and close afterward.
     connect(unknownDialogButtons->button(QDialogButtonBox::Discard), &QPushButton::pressed, unknownDialog, &QDialog::accept);
     connect(unknownDialogButtons->button(QDialogButtonBox::Cancel), &QPushButton::pressed, unknownDialog, &QDialog::reject);
     unknownDialog->resize(unknownDialog->sizeHint());
