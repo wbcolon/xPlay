@@ -15,107 +15,15 @@
 #ifndef __XPLAYERLISTWIDGET_H__
 #define __XPLAYERLISTWIDGET_H__
 
+#include "xPlayerListWidgetItem.h"
 #include "xPlayerUI.h"
-#include "xMusicLibraryEntry.h"
-#include "xMovieLibraryEntry.h"
 
 #include <QTreeWidget>
-#include <QTreeWidgetItem>
 #include <QThread>
 #include <QLabel>
 #include <QString>
 
 #include <map>
-
-// Qt does not support templates with signals and slots mechanism.
-class xPlayerListWidgetItem:public QTreeWidgetItem {
-public:
-    explicit xPlayerListWidgetItem(const QString& text, QTreeWidget* parent);
-    explicit xPlayerListWidgetItem(xMusicLibraryArtistEntry* artist, QTreeWidget* parent);
-    explicit xPlayerListWidgetItem(xMusicLibraryAlbumEntry* album, QTreeWidget* parent);
-    explicit xPlayerListWidgetItem(xMusicLibraryTrackEntry* track, QTreeWidget* parent);
-    explicit xPlayerListWidgetItem(xMovieLibraryEntry* movie, QTreeWidget* parent);
-    ~xPlayerListWidgetItem() override = default;
-    /**
-     * Set an icon for the list item.
-     *
-     * @param iconPath path to the icon/pixmap file as string.
-     */
-    void setIcon(const QString& iconPath);
-    /**
-     * Remove the icon from the list item.
-     */
-    void removeIcon();
-    /**
-     * Add a tooltip to the list item.
-     *
-     * The tooltip is added to a possibly shortened track name
-     * separated by a newline.
-     *
-     * @param tooltip the added tooltip as string.
-     */
-    void addToolTip(const QString& tooltip);
-    /**
-     * Update the tooltip to the list item.
-     *
-     * The tooltip is added to a possibly shortened track name
-     * separated by a newline.
-     */
-    void updateToolTip();
-    /**
-     * Remove the added tooltip from the list item.
-     *
-     * The tooltip used for a shortened track name will still be
-     * visible.
-     */
-    void removeToolTip();
-    /**
-     * Return the text of the list item.
-     *
-     * @return the text of the name label as string.
-     */
-    [[nodiscard]] const QString& text() const;
-    /**
-     * Return the width of the list item text.
-     *
-     * @return the width as int.
-     */
-    [[nodiscard]] int textWidth() const;
-    /**
-     * Update the text of the list item.
-     *
-     * The text is updated from a connected artist, album and track entry object.
-     */
-    void updateText();
-    /**
-     * Return the entry object associated with the list item.
-     *
-     * @return a pointer to the artist, album or track object, nullptr if no attached.
-     */
-    [[nodiscard]] xMusicLibraryArtistEntry* artistEntry() const;
-    [[nodiscard]] xMusicLibraryAlbumEntry* albumEntry() const;
-    [[nodiscard]] xMusicLibraryTrackEntry* trackEntry() const;
-    [[nodiscard]] xMovieLibraryEntry* movieEntry() const;
-    /**
-     * Determine the time for the list item. No UI update.
-     */
-    qint64 updateTime();
-    /**
-     * Update the displayed time in the list item.
-     */
-    void updateTimeDisplay();
-
-private:
-    bool itemTimeUpdated;
-    qint64 itemTime;
-    QString itemText;
-    int itemTextWidth;
-    QString itemTooltip;
-    xMusicLibraryArtistEntry* itemArtistEntry;
-    xMusicLibraryAlbumEntry* itemAlbumEntry;
-    xMusicLibraryTrackEntry* itemTrackEntry;
-    xMovieLibraryEntry* itemMovieEntry;
-};
 
 
 class xPlayerListWidget:public QTreeWidget {
@@ -320,7 +228,7 @@ signals:
      */
     void updateTime(xPlayerListWidgetItem* item);
     /**
-     * Sinal emitted if an element was moved via drag and drop.
+     * Signal emitted if an element was moved via drag and drop.
      *
      * @param fromIndex the initial index of the element moved.
      * @param toIndex the index the element is inserted before.

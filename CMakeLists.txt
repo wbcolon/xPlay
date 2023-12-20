@@ -98,6 +98,7 @@ set(xPlay_sources
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp
         xPlayerTagsDialog.cpp
+        xPlayerListWidgetItem.cpp
         xPlayerListWidget.cpp
         xPlayerMusicSearchWidget.cpp
         xPlayerMusicWidget.cpp
