@@ -22,17 +22,18 @@
 void test_xMusicLibraryTrackEntry::testAccessFunctions() {
     xMusicLibraryArtistEntry artistEntry("artist", QUrl::fromLocalFile("/tmp/artist"), nullptr);
     xMusicLibraryArtistEntry albumEntry("album", QUrl::fromLocalFile("/tmp/artist/album"), &artistEntry);
-    xMusicLibraryTrackEntry trackEntry("01 track.flac", QUrl::fromLocalFile("/tmp/artist/album/01 track.flac"), &albumEntry);
+    xMusicLibraryTrackEntry trackEntry("01 track.flac", QUrl::fromLocalFile("/tmp/artist/album/01 track.flac"),
+                                       "/tmp/artist/album/01 track.flac", 1, &albumEntry);
     QVERIFY(trackEntry.getArtistName() == QString("artist"));
     QVERIFY(trackEntry.getAlbumName() == QString("album"));
     QVERIFY(trackEntry.getTrackName() == QString("01 track.flac"));
     // track does not exist, therefore -1
-    qDebug() << "XXX: " << trackEntry.getFileSize();
     QVERIFY(trackEntry.getFileSize() == static_cast<std::uintmax_t>(-1));
 }
 
 void test_xMusicLibraryTrackEntry::testScanInvalidFile() {
-    xMusicLibraryTrackEntry trackEntry("01 track.flac", QUrl::fromLocalFile("/tmp/artist/album/01 track.flac"), nullptr);
+    xMusicLibraryTrackEntry trackEntry("01 track.flac", QUrl::fromLocalFile("/tmp/artist/album/01 track.flac"),
+                                       "/tmp/artist/album/01 track.flac", 1, nullptr);
     QVERIFY(!trackEntry.isScanned());
     QVERIFY(trackEntry.getLength() <= 0);
     QVERIFY(trackEntry.getBitrate() <= 0);
@@ -42,7 +43,8 @@ void test_xMusicLibraryTrackEntry::testScanInvalidFile() {
 }
 
 void test_xMusicLibraryTrackEntry::testScanFlacFile() {
-    xMusicLibraryTrackEntry trackEntry("test_file.flac", QUrl::fromLocalFile("../tests/input/test_file.flac"), nullptr);
+    xMusicLibraryTrackEntry trackEntry("test_file.flac", QUrl::fromLocalFile("../tests/input/test_file.flac"),
+                                       "../tests/input/test_file.flac", -1, nullptr);
     QVERIFY(trackEntry.getFileSize() != static_cast<std::uintmax_t>(-1));
     QVERIFY(trackEntry.getLength() > 0);
     QVERIFY(trackEntry.getBitrate() > 0);
@@ -52,7 +54,8 @@ void test_xMusicLibraryTrackEntry::testScanFlacFile() {
 }
 
 void test_xMusicLibraryTrackEntry::testScanHDFlacFile() {
-    xMusicLibraryTrackEntry trackEntry("test_file_hd.flac", QUrl::fromLocalFile("../tests/input/test_file_hd.flac"), nullptr);
+    xMusicLibraryTrackEntry trackEntry("test_file_hd.flac", QUrl::fromLocalFile("../tests/input/test_file_hd.flac"),
+                                       "../tests/input/test_file_hd.flac", -1, nullptr);
     QVERIFY(trackEntry.getFileSize() != static_cast<std::uintmax_t>(-1));
     QVERIFY(trackEntry.getLength() > 0);
     QVERIFY(trackEntry.getBitrate() > 0);
@@ -62,7 +65,8 @@ void test_xMusicLibraryTrackEntry::testScanHDFlacFile() {
 }
 
 void test_xMusicLibraryTrackEntry::testScanWavpackFile() {
-    xMusicLibraryTrackEntry trackEntry("test_file.wv", QUrl::fromLocalFile("../tests/input/test_file.wv"), nullptr);
+    xMusicLibraryTrackEntry trackEntry("test_file.wv", QUrl::fromLocalFile("../tests/input/test_file.wv"),
+                                       "../tests/input/test_file.wv", -1, nullptr);
     QVERIFY(trackEntry.getFileSize() != static_cast<std::uintmax_t>(-1));
     QVERIFY(trackEntry.getLength() > 0);
     QVERIFY(trackEntry.getBitrate() > 0);
@@ -72,7 +76,8 @@ void test_xMusicLibraryTrackEntry::testScanWavpackFile() {
 }
 
 void test_xMusicLibraryTrackEntry::testScanMP3File() {
-    xMusicLibraryTrackEntry trackEntry("test_file.mp3", QUrl::fromLocalFile("../tests/input/test_file.mp3"), nullptr);
+    xMusicLibraryTrackEntry trackEntry("test_file.mp3", QUrl::fromLocalFile("../tests/input/test_file.mp3"),
+                                       "../tests/input/test_file.mp3", -1, nullptr);
     QVERIFY(trackEntry.getFileSize() != static_cast<std::uintmax_t>(-1));
     QVERIFY(trackEntry.getLength() > 0);
     QVERIFY(trackEntry.getBitrate() > 0);
