@@ -226,7 +226,7 @@ void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
     musicCurrentIndex = currentIndex;
 }
 
-void xMusicPlayer::dequeTrack(int index) {
+void xMusicPlayer::dequeueTrack(int index) {
     // We do not allow deque tracks if in shuffle mode.
     if (useShuffleMode) {
         return;

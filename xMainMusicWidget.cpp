@@ -220,10 +220,13 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     mainWidgetLayout->addWidget(mainWidgetSplitter);
     // Connect artist, album, track and selector widgets
     connect(artistList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMusicWidget::selectArtist);
-    connect(artistList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::queueArtist);
+    connect(artistList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::queueArtistItem);
     connect(albumList, &xPlayerListWidget::currentListIndexChanged, this, &xMainMusicWidget::selectAlbum);
-    connect(albumList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::queueAlbum);
-    connect(trackList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::selectTrack);
+    connect(albumList, &xPlayerListWidget::listItemDoubleClicked, this, &xMainMusicWidget::queueAlbumItem);
+    connect(trackList, &xPlayerListWidget::listItemDoubleClicked, [=](xPlayerListWidgetItem* trackItem) {
+        // Double click adds current and remaining to queue.
+        queueTrackItem(trackItem, true);
+    });
     connect(trackList, &xPlayerListWidget::totalTime, this, &xMainMusicWidget::updateTracksTotalTime);
     connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selector, this, &xMainMusicWidget::selectArtistSelector);
     connect(artistSelectorList, &xPlayerMusicArtistSelectorWidget::selectorCtrlHovered, this, &xMainMusicWidget::jumpArtistSelector);
@@ -253,7 +256,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
     connect(this, &xMainMusicWidget::finishedQueueTracks, musicPlayer, &xMusicPlayer::finishedQueueTracks);
-    connect(this, &xMainMusicWidget::dequeueTrack, musicPlayer, &xMusicPlayer::dequeTrack);
+    connect(this, &xMainMusicWidget::dequeueTrack, musicPlayer, &xMusicPlayer::dequeueTrack);
     // Connect player widget to main widget
     connect(playerWidget, &xPlayerMusicWidget::clearQueue, this, &xMainMusicWidget::clearQueue);
     // Connect queue to main widget
@@ -591,7 +594,7 @@ void xMainMusicWidget::selectArtist(int index) {
     }
 }
 
-void xMainMusicWidget::queueArtist(xPlayerListWidgetItem* artistItem) {
+void xMainMusicWidget::queueArtistItem(xPlayerListWidgetItem* artistItem) {
     // Do we allow queue tracks.
     if (!musicPlayer->isQueueTracksAllowed()) {
         return;
@@ -608,45 +611,42 @@ void xMainMusicWidget::queueArtist(xPlayerListWidgetItem* artistItem) {
 void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
     auto artistItem = artistList->itemAt(point);
     if (artistItem) {
+        auto renamingAllowed = isRenamingAllowed();
+        auto queueTracksAllowed = musicPlayer->isQueueTracksAllowed();
         if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
             // Are we allowed to rename?
-            if (!isRenamingAllowed()) {
-                return;
-            }
-            auto artistName = artistItem->artistEntry()->getArtistName();
-            auto newArtistName = showRenameDialog("Artist", artistName);
-            // Do we need to rename the artist?
-            if (artistName != newArtistName) {
-                QApplication::setOverrideCursor(Qt::WaitCursor);
-                if (artistItem->artistEntry()->rename(newArtistName)) {
-                    // Refresh artist list and selector list.
-                    scannedArtists(unfilteredArtists);
-                    // Update database.
-                    xPlayerDatabase::database()->renameMusicFiles(artistName, newArtistName);
-                } else {
-                    qCritical() << "Unable to rename artist entry: " << newArtistName;
-                }
-                QApplication::restoreOverrideCursor();
+            if (renamingAllowed) {
+                renameArtist(artistItem);
             }
         } else {
             QMenu artistMenu;
             // Add section for artist info website.
-            artistMenu.addSection(tr("Artist Info"));
-            artistMenu.addAction(tr("Link To Website"), this, [=] () {
+            artistMenu.addSection(tr("Info"));
+            artistMenu.addAction(tr("Artist Website"), this, [=] () {
                 musicStacked->setCurrentWidget(musicInfoView);
                 musicInfoView->show(artistItem->text());
                 // Enable the reduced framerate mode for visualization.
                 // Required for usable website browsing.
                 musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationDropRate);
             });
-            // Add section for artist transitions.
+            // Add section for similar artist based on recorded transitions.
             auto artistTransitions = xPlayerDatabase::database()->getArtistTransitions(artistItem->text());
             if (!artistTransitions.empty()) {
-                artistMenu.addSection(tr("Other Artists"));
+                artistMenu.addSection(tr("Similar Artists"));
                 for (size_t i = 0; (i < artistTransitions.size()) && (i < 10); ++i) {
                     artistMenu.addAction(artistTransitions[i].first, [=]() {
                         artistList->setCurrentItem(artistTransitions[i].first);
                     });
+                }
+            }
+            if ((renamingAllowed) || (queueTracksAllowed)) {
+                // Add section for operations only if at least one of them is applicable.
+                artistMenu.addSection(tr("Operations"));
+                if (queueTracksAllowed) {
+                    artistMenu.addAction(tr("Queue Artist"), this, [=] () { queueArtistItem(artistItem); });
+                }
+                if (renamingAllowed) {
+                    artistMenu.addAction(tr("Rename"), this, [=] () { renameArtist(artistItem); });
                 }
             }
             artistMenu.exec(artistList->mapToGlobal(point));
@@ -665,15 +665,15 @@ void xMainMusicWidget::selectAlbum(int index) {
     }
 }
 
-void xMainMusicWidget::queueAlbum(xPlayerListWidgetItem* albumItem) {
-    // Do we allow queue tracks.
+void xMainMusicWidget::queueAlbumItem(xPlayerListWidgetItem* albumItem) {
+    // Do we allow queue tracks?
     if (!musicPlayer->isQueueTracksAllowed()) {
         return;
     }
     // Emulate behavior of selecting album and clicking on the first track.
     if (albumItem == albumList->currentItem()) {
         if (trackList->count() > 0) {
-            selectTrack(trackList->listItem(0));
+            queueTrackItem(trackList->listItem(0), true);
         }
     }
 }
@@ -681,39 +681,63 @@ void xMainMusicWidget::queueAlbum(xPlayerListWidgetItem* albumItem) {
 void xMainMusicWidget::currentAlbumRightClicked(const QPoint& point) {
     auto albumItem = albumList->itemAt(point);
     if (albumItem) {
+        auto renamingAllowed = isRenamingAllowed();
+        auto queueTracksAllowed = musicPlayer->isQueueTracksAllowed();
         if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
             // Are we allowed to rename?
-            if (!isRenamingAllowed()) {
-                return;
+            if (isRenamingAllowed()) {
+                renameAlbum(albumItem);
             }
-            auto albumName = albumItem->albumEntry()->getAlbumName();
-            auto newAlbumName = showRenameDialog("Album", albumName);
-            // Do we need to rename the album?
-            if (albumName != newAlbumName) {
-                QApplication::setOverrideCursor(Qt::WaitCursor);
-                if (albumItem->albumEntry()->rename(newAlbumName)) {
-                    albumItem->updateText();
-                    albumList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
-                    // Update database entry.
-                    xPlayerDatabase::database()->renameMusicFiles(albumItem->albumEntry()->getArtistName(),
-                                                                  albumName, newAlbumName);
-                } else {
-                    qCritical() << "Unable to rename album entry: " << newAlbumName;
+        } else {
+            if ((renamingAllowed) || (queueTracksAllowed)) {
+                // Add section for operations only if at least one of them is applicable.
+                QMenu albumMenu;
+                albumMenu.addSection(tr("Operations"));
+                if (queueTracksAllowed) {
+                    albumMenu.addAction(tr("Queue Album"), this, [=]() { queueAlbumItem(albumItem); });
                 }
-                QApplication::restoreOverrideCursor();
+                if (renamingAllowed) {
+                    albumMenu.addAction(tr("Rename"), this, [=]() { renameAlbum(albumItem); });
+                }
+                albumMenu.exec(albumList->mapToGlobal(point));
             }
         }
     }
 }
 
-void xMainMusicWidget::selectTrack(xPlayerListWidgetItem* trackItem) {
-    // Do we allow queue tracks.
+void xMainMusicWidget::dequeueTrackItem(xPlayerListWidgetItem* trackItem, bool removeRemaining) {
+    Q_ASSERT(trackItem != nullptr);
+    // Do we allow dequeue tracks?
+    if (!musicPlayer->isQueueTracksAllowed()) {
+        return;
+    }
+    // Retrieve currently selected element
+    auto trackIndex = queueList->listIndex(trackItem);
+    if ((trackIndex >= 0) && (trackIndex < queueList->count())) {
+        auto trackCount = (removeRemaining) ? queueList->count()-1 : trackIndex;
+        for (auto i = trackCount; i >= trackIndex; --i) {
+            queueList->takeListItem(i);
+            // Did we remove the last queued track?
+            if (queueList->count() > 0) {
+                emit dequeueTrack(i);
+            } else {
+                musicPlayer->clearQueue();
+                playerWidget->clear();
+                break;
+            }
+        }
+    }
+}
+
+void xMainMusicWidget::queueTrackItem(xPlayerListWidgetItem* trackItem, bool addRemaining) {
+    Q_ASSERT(trackItem != nullptr);
+    // Do we allow queue tracks?
     if (!musicPlayer->isQueueTracksAllowed()) {
         return;
     }
     // Retrieve listIndex for the selected listItem and check if it's valid.
-    auto track = trackList->listIndex(trackItem);
-    if ((track >= 0) && (track< trackList->count())) {
+    auto trackIndex = trackList->listIndex(trackItem);
+    if ((trackIndex >= 0) && (trackIndex < trackList->count())) {
         // Retrieve selected artist and album name.
         auto artistName = artistList->currentItem()->text();
         auto albumName = albumList->currentItem()->text();
@@ -721,7 +745,8 @@ void xMainMusicWidget::selectTrack(xPlayerListWidgetItem* trackItem) {
         // the end of the album.
         std::vector<xMusicLibraryTrackEntry*> trackObjects;
         QString trackName;
-        for (auto i = track; i < trackList->count(); ++i) {
+        auto trackCount = (addRemaining) ? trackList->count() : trackIndex+1;
+        for (auto i = trackIndex; i < trackCount; ++i) {
             trackName = trackList->listItem(i)->text();
             auto trackObject = musicLibrary->getTrackEntry(artistName, albumName, trackName);
             if (trackObject != nullptr) {
@@ -901,21 +926,16 @@ void xMainMusicWidget::currentQueueTrackDoubleClicked(xPlayerListWidgetItem* tra
 }
 
 void xMainMusicWidget::currentQueueTrackRightClicked(const QPoint& point) {
-    if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
-        // Retrieve currently selected element
-        auto track = queueList->currentListIndex();
-        if ((track >= 0) && (track< queueList->count())) {
-            queueList->takeListItem(track);
-            // Did we remove the last queued track?
-            if (queueList->count() > 0) {
-                emit dequeueTrack(track);
-            } else {
-                musicPlayer->clearQueue();
-                playerWidget->clear();
-            }
+    auto trackItem = queueList->itemAt(point);
+    if (trackItem) {
+        if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
+            dequeueTrackItem(trackItem, false);
+        } else {
+            QMenu menu;
+            addTrackTagMenu(trackItem, &menu);
+            addTrackDequeueMenu(trackItem, &menu);
+            menu.exec(queueList->mapToGlobal(point));
         }
-    } else {
-        tagPopupMenu(queueList, point);
     }
 }
 
@@ -1056,49 +1076,17 @@ void xMainMusicWidget::currentTrackRightClicked(const QPoint& point) {
     auto trackItem = trackList->itemAt(point);
     if (trackItem) {
         if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
-            // Retrieve selected artist and album name.
-            auto artistName = trackItem->trackEntry()->getArtistName();
-            auto albumName = trackItem->trackEntry()->getAlbumName();
-            // Retrieve only selected track
-            std::vector<xMusicLibraryTrackEntry*> trackObjects;
-            QString trackName = trackItem->trackEntry()->getTrackName();
-            auto trackObject = musicLibrary->getTrackEntry(artistName, albumName, trackName);
-            if (trackObject == nullptr) {
-                qCritical() << "xMainMusicWidget: unable to find music file object in library for "
-                            << artistName + "/" + albumName + "/" + trackName;
-                return;
-            }
-            trackObjects.push_back(trackObject);
-            // Add to the playlist (queue)
-            queueList->addListItem(trackObject, QString("%1 - %2").arg(artistName, albumName));
-            // Signal the set tracks to be queued by the music player.
-            emit queueTracks(artistName, albumName, trackObjects);
-            // Signal finish adding tracks.
-            emit finishedQueueTracks(true);
-            // Update items.
-            queueList->updateItems();
+            queueTrackItem(trackItem, false);
         } else if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
             // Are we allowed to rename?
-            if (!isRenamingAllowed()) {
-                return;
-            }
-            auto trackName = trackItem->trackEntry()->getTrackName();
-            auto newTrackName = showRenameDialog("Track Name", trackName);
-            // Do we need to rename the track name?
-            if (trackName != newTrackName) {
-                if (trackItem->trackEntry()->rename(newTrackName)) {
-                    trackItem->updateText();
-                    trackList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
-                    // Update database entry.
-                    xPlayerDatabase::database()->renameMusicFile(trackItem->trackEntry()->getArtistName(),
-                                                                 trackItem->trackEntry()->getAlbumName(),
-                                                                 trackName, newTrackName);
-                } else {
-                    qCritical() << "Unable to rename artist entry: " << newTrackName;
-                }
+            if (isRenamingAllowed()) {
+                renameTrack(trackItem);
             }
         } else {
-            tagPopupMenu(trackList, point);
+            QMenu menu;
+            addTrackTagMenu(trackItem, &menu);
+            addTrackQueueMenu(trackItem, &menu);
+            menu.exec(trackList->mapToGlobal(point));
         }
     }
 }
@@ -1360,27 +1348,49 @@ QString xMainMusicWidget::showRenameDialog(const QString& renameType, const QStr
     }
 }
 
-void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point) {
-    auto item = list->itemAt(point);
-    if (!item) {
-        // No listItem at the current position. No need for the tag menu.
-        return;
+void xMainMusicWidget::addTrackQueueMenu(xPlayerListWidgetItem* trackItem, QMenu* menu) {
+    auto renamingAllowed = isRenamingAllowed();
+    auto queueTracksAllowed = musicPlayer->isQueueTracksAllowed();
+    if ((renamingAllowed) || (queueTracksAllowed)) {
+        // Add section for operations only if at least one of them is applicable.
+        menu->addSection(tr("Operations"));
+        if (queueTracksAllowed) {
+            menu->addAction(tr("Queue Track"), this, [=]() { queueTrackItem(trackItem, false); });
+            menu->addAction(tr("Queue Remaining Tracks"), this, [=]() { queueTrackItem(trackItem, true); });
+            menu->addAction(tr("Queue All Tracks"), this, [=]() { queueTrackItem(trackList->listItem(0), true); });
+        }
+        if (renamingAllowed) {
+            menu->addAction(tr("Rename"), this, [=]() { renameTrack(trackItem); });
+        }
     }
+}
+
+void xMainMusicWidget::addTrackDequeueMenu(xPlayerListWidgetItem* trackItem, QMenu* menu) {
+    auto queueTracksAllowed = musicPlayer->isQueueTracksAllowed();
+    if (queueTracksAllowed) {
+        // Add section for operations only if at least one of them is applicable.
+        menu->addSection(tr("Operations"));
+        menu->addAction(tr("Dequeue Track"), this, [=]() { dequeueTrackItem(trackItem, false); });
+        menu->addAction(tr("Dequeue Remaining Tracks"), this, [=]() { dequeueTrackItem(trackItem, true); });
+        menu->addAction(tr("Clear Queue"), this, [=]() { emit clearQueue(); });
+    }
+}
+
+void xMainMusicWidget::addTrackTagMenu(xPlayerListWidgetItem* trackItem, QMenu* menu) {
     auto menuTags = xPlayerConfiguration::configuration()->getMusicLibraryTags();
     if (menuTags.isEmpty()) {
         // No tags defined.
         return;
     }
     // Track info.
-    auto artist = item->trackEntry()->getArtistName();
-    auto album = item->trackEntry()->getAlbumName();
-    auto trackName = item->trackEntry()->getTrackName();
+    auto artist = trackItem->trackEntry()->getArtistName();
+    auto album = trackItem->trackEntry()->getAlbumName();
+    auto trackName = trackItem->trackEntry()->getTrackName();
     // Read current tags for track.
     auto tags = xPlayerDatabase::database()->getTags(artist, album, trackName);
     // Get all available tags.
     // Create menu.
-    QMenu menu;
-    menu.addSection(tr("Tags"));
+    menu->addSection(tr("Tags"));
     for (const auto& menuTag : menuTags) {
         auto action = new QAction(menuTag);
         action->setCheckable(true);
@@ -1394,15 +1404,70 @@ void xMainMusicWidget::tagPopupMenu(xPlayerListWidget* list, const QPoint& point
                 xPlayerDatabase::database()->removeTag(artist, album, trackName, menuTag);
             }
         });
-        menu.addAction(action);
+        menu->addAction(action);
     }
-    menu.addSeparator();
-    menu.addAction(tr("Remove All Tags"), [=]() {
+    menu->addSeparator();
+    menu->addAction(tr("Remove All Tags"), [=]() {
         xPlayerDatabase::database()->removeAllTags(artist, album, trackName);
     });
-    menu.exec(list->mapToGlobal(point));
+
 }
 
 bool xMainMusicWidget::isRenamingAllowed() {
     return ((!musicPlayer->isPlaying()) && (queueList->count() == 0));
+}
+
+void xMainMusicWidget::renameArtist(xPlayerListWidgetItem* artistItem) {
+    auto artistName = artistItem->artistEntry()->getArtistName();
+    auto newArtistName = showRenameDialog("Artist", artistName);
+    // Do we need to rename the artist?
+    if (artistName != newArtistName) {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        if (artistItem->artistEntry()->rename(newArtistName)) {
+            // Refresh artist list and selector list.
+            scannedArtists(unfilteredArtists);
+            // Update database.
+            xPlayerDatabase::database()->renameMusicFiles(artistName, newArtistName);
+        } else {
+            qCritical() << "Unable to rename artist entry: " << newArtistName;
+        }
+        QApplication::restoreOverrideCursor();
+    }
+}
+
+void xMainMusicWidget::renameAlbum(xPlayerListWidgetItem *albumItem) {
+    auto albumName = albumItem->albumEntry()->getAlbumName();
+    auto newAlbumName = showRenameDialog("Album", albumName);
+    // Do we need to rename the album?
+    if (albumName != newAlbumName) {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        if (albumItem->albumEntry()->rename(newAlbumName)) {
+            albumItem->updateText();
+            albumList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
+            // Update database entry.
+            xPlayerDatabase::database()->renameMusicFiles(albumItem->albumEntry()->getArtistName(),
+                                                          albumName, newAlbumName);
+        } else {
+            qCritical() << "Unable to rename album entry: " << newAlbumName;
+        }
+        QApplication::restoreOverrideCursor();
+    }
+}
+
+void xMainMusicWidget::renameTrack(xPlayerListWidgetItem* trackItem) {
+    auto trackName = trackItem->trackEntry()->getTrackName();
+    auto newTrackName = showRenameDialog("Track Name", trackName);
+    // Do we need to rename the track name?
+    if (trackName != newTrackName) {
+        if (trackItem->trackEntry()->rename(newTrackName)) {
+            trackItem->updateText();
+            trackList->refreshItems([this](auto a, auto b) { return sortListItems(a, b); });
+            // Update database entry.
+            xPlayerDatabase::database()->renameMusicFile(trackItem->trackEntry()->getArtistName(),
+                                                         trackItem->trackEntry()->getAlbumName(),
+                                                         trackName, newTrackName);
+        } else {
+            qCritical() << "Unable to rename artist entry: " << newTrackName;
+        }
+    }
 }

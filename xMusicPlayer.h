@@ -197,7 +197,7 @@ public slots:
      *
      * @param index the position of the track in the queue.
      */
-    void dequeTrack(int index);
+    void dequeueTrack(int index);
     /**
      * Clear the playlist and stop the player.
      */

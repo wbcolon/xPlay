@@ -219,7 +219,7 @@ private slots:
      *
      * @param artistItem pointer to the currently selected listIndex.
      */
-    void queueArtist(xPlayerListWidgetItem* artistItem);
+    void queueArtistItem(xPlayerListWidgetItem* artistItem);
     /**
      * Create context menu for artist info and transitions.
      *
@@ -248,7 +248,7 @@ private slots:
      *
      * @param albumItem pointer to the currently selected listIndex.
      */
-    void queueAlbum(xPlayerListWidgetItem* albumItem);
+    void queueAlbumItem(xPlayerListWidgetItem* albumItem);
     /**
      * Create context menu for albums.
      *
@@ -264,11 +264,24 @@ private slots:
      *
      * Function is triggered by a double click to an entry in the list of
      * tracks. The position of the selected track is determined and the track
-     * and the following tracks will be added to the queue.
+     * and if addRemaining is enabled then the following tracks will be
+     * added to the queue.
      *
      * @param trackItem pointer to the currently selected listIndex.
+     * @param addRemaining add remaining tracks to queue if enabled.
      */
-    void selectTrack(xPlayerListWidgetItem* trackItem);
+    void queueTrackItem(xPlayerListWidgetItem* trackItem, bool addRemaining);
+    /**
+     * Remove tracks to the playlist (queue).
+     *
+     * The position of the selected track is determined and the track
+     * and if removeRemaining is enabled then the following tracks will be
+     * removed from the queue.
+     *
+     * @param trackItem pointer to the currently selected listIndex.
+     * @param removeRemaining remove remaining tracks from queue if enabled.
+     */
+    void dequeueTrackItem(xPlayerListWidgetItem* trackItem, bool removeRemaining);
     /**
      * Append single track to the playlist (queue)
      *
@@ -557,19 +570,55 @@ private:
      * @return true if a < b, false otherwise.
      */
     bool sortListItems(xPlayerListWidgetItem* a, xPlayerListWidgetItem* b) const;
+     /**
+      * Add queue track menu entries.
+      *
+      * The queue track and rename menu entries are added if allowed.
+      *
+      * @param trackItem pointer to the track item.
+      * @param menu pointer to the menu.
+      */
+    void addTrackQueueMenu(xPlayerListWidgetItem* trackItem, QMenu* menu);
     /**
-     * Show tag selection popup menu.
+     * Add dequeue track menu entries.
      *
-     * @param list the list widget for which the popup menu is shown.
-     * @param point the point where the popup menu is shown.
+     * The dequeue track entries are added if allowed.
+     *
+     * @param trackItem pointer to the track item.
+     * @param menu pointer to the menu.
      */
-    void tagPopupMenu(xPlayerListWidget* list, const QPoint& point);
+    void addTrackDequeueMenu(xPlayerListWidgetItem* trackItem, QMenu* menu);
+    /**
+     * Add tag menu entries.
+     *
+     * @param trackItem pointer to the track item.
+     * @param menu pointer to the menu.
+     */
+    void addTrackTagMenu(xPlayerListWidgetItem* trackItem, QMenu* menu);
     /**
      * Determine if renaming of artist, album or track is allowed.
      *
      * @return true if the player is stopped and the queue is empty, false otherwise.
      */
     [[nodiscard]] bool isRenamingAllowed();
+    /**
+     * Show renaming dialog and perform renaming if necessary.
+     *
+     * @param artistItem pointer to the artist item to be renamed.
+     */
+    void renameArtist(xPlayerListWidgetItem* artistItem);
+    /**
+     * Show renaming dialog and perform renaming if necessary.
+     *
+     * @param albumItem pointer to the album item to be renamed.
+     */
+    void renameAlbum(xPlayerListWidgetItem* albumItem);
+    /**
+     * Show renaming dialog and perform renaming if necessary.
+     *
+     * @param trackItem pointer to the album item to be renamed.
+     */
+    void renameTrack(xPlayerListWidgetItem* trackItem);
     /**
      * Helper function creating a QGroupBox with an QListWidget.
      *
