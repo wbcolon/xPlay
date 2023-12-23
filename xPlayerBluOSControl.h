@@ -322,6 +322,7 @@ private:
     QMutex bluOSMutex;
     QTimer* bluOSStatus;
     QTimer* bluOSReIndexing;
+    bool bluOSReIndexingInProgress;
     pugi::xml_document bluOSStatusResponse;
 };
 

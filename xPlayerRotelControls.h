@@ -18,6 +18,7 @@
 #include <QTimer>
 #include <QWidget>
 #include <QString>
+#include <QMutex>
 
 namespace Rotel {
 
@@ -161,6 +162,10 @@ public slots:
      */
     void setMuted(bool m);
     /**
+     * Send commands to update status of the Rotel amp.
+     */
+     void status();
+    /**
      * Send command to power off the Rotel amp.
      */
     void powerOff();
@@ -262,6 +267,7 @@ private:
     QTcpSocket* rotelSocket;
     int rotelNetworkPort;
     QString rotelNetworkAddress;
+    QMutex rotelMutex;
     static xPlayerRotelControls* rotelControls;
 };
 

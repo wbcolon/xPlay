@@ -22,7 +22,8 @@ xPlayerRotelControls* xPlayerRotelControls::rotelControls = nullptr;
 xPlayerRotelControls::xPlayerRotelControls():
         QObject(),
         rotelNetworkPort(0),
-        rotelNetworkAddress() {
+        rotelNetworkAddress(),
+        rotelMutex(QMutex::NonRecursive) {
     // Setup timer for reconnect
     rotelNetworkReconnect = new QTimer(this);
     rotelNetworkReconnect->setSingleShot(true);
@@ -138,6 +139,15 @@ void xPlayerRotelControls::setMuted(bool m) {
     qDebug() << "RotelControls: setMute: " << muteResponse;
 }
 
+void xPlayerRotelControls::status() {
+    emit volume(getVolume());
+    emit source(getSource());
+    emit muted(isMuted());
+    emit bass(getBass());
+    emit treble(getTreble());
+    emit balance(getBalance());
+}
+
 void xPlayerRotelControls::powerOff() {
     auto powerOffResponse = sendCommand(Rotel::PowerOff);
     emit disconnected();
@@ -223,12 +233,7 @@ QString xPlayerRotelControls::cleanupReplyMessage(const QString& message) {
 
 void xPlayerRotelControls::controlsConnected() {
     // Update UI if connected.
-    emit volume(getVolume());
-    emit source(getSource());
-    emit muted(isMuted());
-    emit bass(getBass());
-    emit treble(getTreble());
-    emit balance(getBalance());
+    status();
     emit connected();
 }
 
@@ -260,6 +265,7 @@ QString xPlayerRotelControls::sendCommand(const QString& command) {
         qInfo() << "xPlayerRotelControls::sendcommand: ignore command, widget disabled.";
         return {};
     }
+    QMutexLocker locker(&rotelMutex);
     char readBuffer[65] = { 0 };
     qint64 readBytes = 0;
     rotelSocket->waitForConnected(500);

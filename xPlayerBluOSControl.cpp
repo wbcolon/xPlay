@@ -25,7 +25,9 @@
 xPlayerBluOSControls* xPlayerBluOSControls::bluOSControls = nullptr;
 
 xPlayerBluOSControls::xPlayerBluOSControls():
-        QObject() {
+        QObject(),
+        bluOSMutex(QMutex::NonRecursive),
+        bluOSReIndexingInProgress(false) {
     bluOSRequests = curl_easy_init();
     bluOSStatus = new QTimer(this);
     bluOSReIndexing = new QTimer(this);
@@ -224,8 +226,8 @@ QString xPlayerBluOSControls::sendCommand(const QUrl& url) {
         qWarning() << "xPlayerBluOSControls::sendCommand: not connected, ignoring command: " << url;
         return {};
     }
+    QMutexLocker locker(&bluOSMutex);
     QString curlResponse;
-    bluOSMutex.lock();
     qDebug() << "xPlayerBluOSControls::sendCommand: url: " << url.toEncoded();
     if (bluOSRequests) {
         curl_easy_setopt(bluOSRequests, CURLOPT_URL, url.toEncoded().toStdString().c_str());
@@ -234,12 +236,10 @@ QString xPlayerBluOSControls::sendCommand(const QUrl& url) {
         /* we pass a string to the callback function */
         curl_easy_setopt(bluOSRequests, CURLOPT_WRITEDATA, (void *)&curlResponse);
         if (curl_easy_perform(bluOSRequests) != CURLE_OK) {
-            bluOSMutex.unlock();
             return {};
         }
     }
     qDebug() << "xPlayerBluOSControls::sendCommand: " << curlResponse;
-    bluOSMutex.unlock();
     return curlResponse;
 }
 
@@ -313,9 +313,11 @@ int xPlayerBluOSControls::parseIndexing(const QString &commandResult) {
     if (result) {
         auto noTracks = QString::fromStdString(bluOSResponse.child("status").child("indexing").child_value()).toInt();
         emit playerReIndexing(noTracks);
-        if (!noTracks) {
+        if ((bluOSReIndexingInProgress) && (noTracks == 0)) {
             bluOSReIndexing->stop();
+            bluOSReIndexingInProgress = false;
         }
+        bluOSReIndexingInProgress = true;
     } else {
         qCritical() << "Unable to parse result for state(shuffle): " << result.description();
     }
