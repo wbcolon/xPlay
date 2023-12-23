@@ -796,8 +796,8 @@ void xMainMusicWidget::queueArtistSelector(const QString& selector) {
     if (!musicPlayer->isQueueTracksAllowed()) {
         return;
     }
-    // Currently unused
-    if (!selector.isEmpty()) {
+    // Disable queue functionality of selectors for remote libraries.
+    if ((!selector.isEmpty()) && (musicLibrary->isLocal())) {
         currentArtistSelector = selector;
         // Call with stored list in order to update artist filtering.
         updateScannedArtists(unfilteredArtists);
@@ -1414,7 +1414,8 @@ void xMainMusicWidget::addTrackTagMenu(xPlayerListWidgetItem* trackItem, QMenu* 
 }
 
 bool xMainMusicWidget::isRenamingAllowed() {
-    return ((!musicPlayer->isPlaying()) && (queueList->count() == 0));
+    // Renaming is only allowed for local libraries if the queue is empty and nothing is playing.
+    return ((musicLibrary->isLocal()) && (!musicPlayer->isPlaying()) && (queueList->count() == 0));
 }
 
 void xMainMusicWidget::renameArtist(xPlayerListWidgetItem* artistItem) {
