@@ -32,7 +32,6 @@ class xPlayerDBus:public QDBusAbstractAdaptor {
                 "      <arg direction=\"in\" type=\"x\" name=\"delta\"/>\n"
                 "    </method>\n"
                 "    <method name=\"fullWindow\"/>\n"
-                "    <method name=\"scaleAndCrop\"/>\n"
                 "    <method name=\"mute\"/>\n"
                 "    <method name=\"changeVolume\">\n"
                 "      <arg direction=\"in\" type=\"i\" name=\"delta\"/>\n"
@@ -81,10 +80,6 @@ public Q_SLOTS:
      * Toggle the full window mode in movie view.
      */
     void fullWindow();
-    /**
-     * Toggle the scale and crop mode in the movie view.
-     */
-    void scaleAndCrop();
     /**
      * Toggle mute of the playback in the current view.
      */

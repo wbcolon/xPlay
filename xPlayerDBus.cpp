@@ -45,10 +45,6 @@ void xPlayerDBus::fullWindow() {
     emit dbus_fullWindow();
 }
 
-void xPlayerDBus::scaleAndCrop() {
-    emit dbus_scaleAndCrop();
-}
-
 void xPlayerDBus::mute() {
     emit dbus_mute();
 }
