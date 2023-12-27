@@ -13,6 +13,7 @@
  */
 
 #include "xMovieLibraryEntry.h"
+#include "xPlayerDatabase.h"
 
 #include <vlc/vlc.h>
 
@@ -77,7 +78,7 @@ const std::filesystem::path& xMovieLibraryEntry::getPath() const {
 }
 
 void xMovieLibraryEntry::scan() const {
-    if ((entrySize != static_cast<std::uintmax_t>(-1)) || (entryLength > 0)) {
+    if ((entrySize > 0) && (entryLength > 0)) {
         return;
     }
     // Determine file size.
@@ -87,6 +88,14 @@ void xMovieLibraryEntry::scan() const {
         qCritical() << "Unable to access track: "
                     << QString::fromStdString(entryPath.generic_string()) << ", error: " << error.what();
         entrySize = static_cast<std::uintmax_t>(-1);
+        entryLength = -1;
+        return;
+    }
+
+    auto [movieSize, movieLength] = xPlayerDatabase::database()->getMovieFileLength(entryTag, entryDirectory, entryMovie);
+    if ((entrySize == static_cast<std::uintmax_t>(movieSize)) && (movieLength > 0)) {
+        entryLength = movieLength;
+        return;
     }
     // Determine movie length. Use VLC without video output.
     // Only instantiate VLC once for movie file entries.
@@ -115,6 +124,10 @@ void xMovieLibraryEntry::scan() const {
     // Release media and vlc instance.
     libvlc_media_release(vlcMedia);
     qDebug() << "Scan: length: " << entryLength << ", size: " << entrySize;
+    if (entryLength > 0) {
+        // We only record non-zero length.
+        xPlayerDatabase::database()->updateMovieFileLength(entryTag, entryDirectory, entryMovie, static_cast<qint64>(entrySize), entryLength);
+    }
 }
 
 bool xMovieLibraryEntry::isScanned() const {

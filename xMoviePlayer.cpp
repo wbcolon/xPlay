@@ -472,8 +472,9 @@ void xMoviePlayer::handleVLCMediaEvents(const libvlc_event_t *event, void *data)
                     if (update) {
                         // Update database.
                         auto name = self->movieCurrent.second;
-                        auto result = xPlayerDatabase::database()->updateMovieFile(name, self->movieCurrentTag,
-                                                                                   self->movieCurrentDirectory);
+                        auto result = xPlayerDatabase::database()->updateMovieFile(self->movieCurrentTag,
+                                                                                   self->movieCurrentDirectory,
+                                                                                   name);
                         if (result.second > 0) {
                             // Update database overlay.
                             emit self->updatePlayedMovie(self->movieCurrentTag, self->movieCurrentDirectory,

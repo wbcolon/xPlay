@@ -69,6 +69,9 @@ void xPlayerDatabase::loadDatabase() {
     sqlite3_exec(sqlDatabase, "CREATE TABLE music (hash VARCHAR PRIMARY KEY, playCount INT, timeStamp BIGINT, "
                    "artist VARCHAR, album VARCHAR, track VARCHAR, sampleRate INT, bitsPerSample INT)",
                  nullptr, nullptr, nullptr);
+    // Create movie size/length table.
+    sqlite3_exec(sqlDatabase, "CREATE TABLE movieLength (ID INTEGER PRIMARY KEY AUTOINCREMENT, size BIGINT, length BIGINT, "
+                              "tag VARCHAR, directory VARCHAR, movie VARCHAR)", nullptr, nullptr, nullptr);
     // Create movie table.
     sqlite3_exec(sqlDatabase, "CREATE TABLE movie (hash VARCHAR PRIMARY KEY, playCount INT, timeStamp BIGINT, "
                    "tag VARCHAR, directory VARCHAR, movie VARCHAR)", nullptr, nullptr, nullptr);
@@ -429,6 +432,65 @@ QList<std::tuple<QString,int,qint64>> xPlayerDatabase::getPlayedMovies(const QSt
     return movies;
 }
 
+std::pair<qint64,qint64> xPlayerDatabase::getMovieLengthCacheEntry(const QString& tag, const QString& directory,
+                                                                   const QString& movie) {
+    auto tagDirectory = tag + "/" + directory;
+    auto tagDirectoryIter = movieLengthCache.find(tagDirectory);
+    // Do we already cached the entry?
+    if (tagDirectoryIter != movieLengthCache.end()) {
+        auto movieIter = movieLengthCache[tagDirectory].find(movie);
+        if (movieIter != movieLengthCache[tagDirectory].end()) {
+            qDebug() << "getMovieLengthCacheEntry: found cached entry for " << tag << "/" << directory << "/" << movie;
+            return movieIter->second;
+        }
+    }
+    return std::make_pair(-1, -1);
+}
+
+void xPlayerDatabase::updateMovieLengthCacheEntry(const QString& tag, const QString& directory, const QString& movie,
+                                                  qint64 size, qint64 length) {
+    auto tagDirectory = tag + "/" + directory;
+    auto tagDirectoryIter = movieLengthCache.find(tagDirectory);
+    // Do we already cached the entry?
+    if (tagDirectoryIter == movieLengthCache.end()) {
+        movieLengthCache[tagDirectory] = std::map<QString, std::pair<qint64, qint64>>();
+    }
+    movieLengthCache[tagDirectory][movie] = std::make_pair(size, length);
+}
+
+std::pair<qint64,qint64> xPlayerDatabase::getMovieFileLength(const QString& tag, const QString& directory,
+                                                             const QString& movie) {
+    QList<std::tuple<QString,int,qint64>> movies;
+    sqlite3_stmt *sqlStatement;
+
+    // Check movie length cache entry.
+    auto cacheEntry = getMovieLengthCacheEntry(tag, directory, movie);
+    if ((cacheEntry.first > 0) && (cacheEntry.second > 0)) {
+        return cacheEntry;
+    }
+    qDebug() << "getMovieFileLength: read database entries for " << tag << "/" << directory;
+    try {
+        dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT size, length, movie FROM movieLength WHERE tag = ? AND directory = ?",
+                                   -1, &sqlStatement, nullptr));
+        auto tagStd = tag.toStdString();
+        auto directoryStd = directory.toStdString();
+        dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 2, directoryStd.c_str(), static_cast<int>(directoryStd.size()), nullptr));
+        while (sqlite3_step(sqlStatement) != SQLITE_DONE) {
+            auto movieSize = sqlite3_column_int64(sqlStatement, 0);
+            auto movieLength = sqlite3_column_int64(sqlStatement, 1);
+            auto movieName = QString::fromUtf8(reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 2)));
+            updateMovieLengthCacheEntry(tag, directory, movieName, movieSize, movieLength);
+        }
+        dbCheck(sqlite3_finalize(sqlStatement));
+    } catch (const std::runtime_error& e) {
+        qCritical() << "Unable to query database for played movies for tag and directory, error: " << e.what();
+        sqlite3_finalize(sqlStatement);
+        movies.clear();
+    }
+    return getMovieLengthCacheEntry(tag, directory, movie);
+}
+
 std::pair<int,qint64> xPlayerDatabase::updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample) {
     auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
@@ -659,7 +721,7 @@ void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& new
     }
 }
 
-std::pair<int,qint64> xPlayerDatabase::updateMovieFile(const QString& movie, const QString& tag, const QString& directory) {
+std::pair<int,qint64> xPlayerDatabase::updateMovieFile(const QString& tag, const QString& directory, const QString& movie) {
     auto hash = QCryptographicHash::hash((tag+"/"+directory+"/"+movie).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
 
@@ -704,6 +766,48 @@ std::pair<int,qint64> xPlayerDatabase::updateMovieFile(const QString& movie, con
         sqlite3_finalize(sqlStatement);
     }
     return std::make_pair(0, 0);
+}
+
+void xPlayerDatabase::updateMovieFileLength(const QString &tag, const QString &directory, const QString &movie,
+                                            qint64 movieSize, qint64 movieLength) {
+    auto tagStd = tag.toStdString();
+    auto directoryStd = directory.toStdString();
+    auto movieStd = movie.toStdString();
+    sqlite3_stmt* sqlStatement;
+    try {
+        dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT id FROM movieLength WHERE tag=? AND directory=? AND movie=?",
+                                   -1, &sqlStatement, nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 2, directoryStd.c_str(), static_cast<int>(directoryStd.size()), nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 3, movieStd.c_str(), static_cast<int>(movieStd.size()), nullptr));
+        if (sqlite3_step(sqlStatement) != SQLITE_DONE) {
+            auto movieID = sqlite3_column_int(sqlStatement, 0);
+            dbCheck(sqlite3_finalize(sqlStatement));
+            dbCheck(sqlite3_prepare_v2(sqlDatabase, "UPDATE movieLength SET size=?,length=? WHERE ID=?",
+                                       -1, &sqlStatement, nullptr));
+            dbCheck(sqlite3_bind_int64(sqlStatement, 1, movieSize));
+            dbCheck(sqlite3_bind_int64(sqlStatement, 2, movieLength));
+            dbCheck(sqlite3_bind_int(sqlStatement, 3, movieID));
+            dbCheck(sqlite3_step(sqlStatement), SQLITE_DONE);
+            dbCheck(sqlite3_finalize(sqlStatement));
+        } else {
+            // Insert into the database if no element exists.
+            dbCheck(sqlite3_prepare_v2(sqlDatabase, "INSERT INTO movieLength (size,length,tag,directory,movie) "
+                                                    "VALUES (?,?,?,?,?)", -1, &sqlStatement, nullptr));
+            dbCheck(sqlite3_bind_int64(sqlStatement, 1, movieSize));
+            dbCheck(sqlite3_bind_int64(sqlStatement, 2, movieLength));
+            dbCheck(sqlite3_bind_text(sqlStatement, 3, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
+            dbCheck(sqlite3_bind_text(sqlStatement, 4, directoryStd.c_str(), static_cast<int>(directoryStd.size()), nullptr));
+            dbCheck(sqlite3_bind_text(sqlStatement, 5, movieStd.c_str(), static_cast<int>(movieStd.size()), nullptr));
+            dbCheck(sqlite3_step(sqlStatement), SQLITE_DONE);
+            dbCheck(sqlite3_finalize(sqlStatement));
+        }
+    } catch (const std::runtime_error& e) {
+        qCritical() << "xPlayerDatabase::updateMovieFileLength: error: " << e.what();
+        emit databaseUpdateError();
+        sqlite3_finalize(sqlStatement);
+    }
+    // Update cache.
 }
 
 bool xPlayerDatabase::removeMusicPlaylist(const QString& name) {
@@ -904,7 +1008,7 @@ std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllTracks() {
             auto album = QString::fromUtf8(reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 1)));
             auto track = QString::fromUtf8(reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 2)));
             if ((!artist.isEmpty()) && (!album.isEmpty()) && (!track.isEmpty())) {
-                tracks.emplace_back(std::make_tuple(artist, album, track));
+                tracks.emplace_back(artist, album, track);
                 qDebug() << "Entries: " << artist << "," << album << "," << track;
             }
         }
@@ -929,7 +1033,7 @@ std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllMovies() {
             auto directory = QString::fromUtf8(reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 1)));
             auto movie = QString::fromUtf8(reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 2)));
             if ((!tag.isEmpty()) && (!directory.isEmpty()) && (!movie.isEmpty())) {
-                movies.emplace_back(std::make_tuple(tag, directory, movie));
+                movies.emplace_back(tag, directory, movie);
                 qDebug() << "Entries: " << tag << "," << directory << "," << movie;
             }
         }

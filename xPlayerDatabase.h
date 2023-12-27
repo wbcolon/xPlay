@@ -117,6 +117,15 @@ public:
      */
     QList<std::tuple<QString,int,qint64>> getPlayedMovies(const QString& tag, const QString& directory, qint64 after);
     /**
+     * Return the file size and length for a movie file.
+     *
+     * @param tag the tag used the query of played movies must match.
+     * @param directory the directory the query of played movies must match.
+     * @param movie the movie the query of played movies must match.
+     * @return a pair of byte size and length in ms.
+     */
+    std::pair<qint64,qint64> getMovieFileLength(const QString& tag, const QString& directory, const QString& movie);
+    /**
      * Record the playing music file in the music table of the database.
      *
      * A hash is generated from the combination of the artist/album/track. This
@@ -175,12 +184,23 @@ public:
      * hash is used as primary key in the database. If the music file is already
      * in the database then only its play count and time stamp are updated.
      *
-     * @param movie the file name displayed for the movie file played.
      * @param tag the tag the movie file played belongs to.
      * @param directory the directory the movie file played belongs to.
+     * @param movie the file name displayed for the movie file played.
      * @return the pair of play count and time stamp for updated movie.
      */
-    std::pair<int,qint64> updateMovieFile(const QString& movie, const QString& tag, const QString& directory);
+    std::pair<int,qint64> updateMovieFile(const QString& tag, const QString& directory, const QString& movie);
+    /**
+     * Record the file size and length for a scanned movie.
+     *
+     * @param tag the tag the movie file played belongs to.
+     * @param directory the directory the movie file played belongs to.
+     * @param movie the file name displayed for the movie file played.
+     * @param movieSize the byte size of the movie.
+     * @param movieLength the length of the movie in ms.
+     */
+    void updateMovieFileLength(const QString& tag, const QString& directory, const QString& movie,
+                               qint64 movieSize, qint64 movieLength);
     /**
      * Remove the playlist and its entries from the database.
      *
@@ -282,8 +302,8 @@ public:
      * @return a pair of transition count and time stamp.
      */
     std::pair<int,qint64> updateTransition(const QString& fromArtist, const QString& fromAlbum,
-                                            const QString& toArtist, const QString& toAlbum,
-                                            bool shuffleMode);
+                                           const QString& toArtist, const QString& toAlbum,
+                                           bool shuffleMode);
     /**
      * Get the transitions from or to a given artist.
      *
@@ -380,6 +400,27 @@ private:
      */
     void dbCheck(int result, int expectedResult=SQLITE_OK);
     /**
+     * Access the movie length cache.
+     *
+     * @param tag the tag the movie file played belongs to.
+     * @param directory the directory the movie file played belongs to.
+     * @param movie the file name displayed for the movie file played.
+     * @return a pair of byte size and length in ms.
+     */
+    std::pair<qint64,qint64> getMovieLengthCacheEntry(const QString& tag, const QString& directory,
+                                                      const QString& movie);
+    /**
+     * Update the movie length cache.
+     *
+     * @param tag the tag the movie file played belongs to.
+     * @param directory the directory the movie file played belongs to.
+     * @param movie the file name displayed for the movie file played.
+     * @param movieSize the byte size of the movie.
+     * @param movieLength the length of the movie in ms.
+     */
+    void updateMovieLengthCacheEntry(const QString& tag, const QString& directory, const QString& movie,
+                                     qint64 size, qint64 length);
+    /**
      * Generic function to remove entries from a table in the database.
      *
      * @param tableName the table name the entries are removed from.
@@ -399,6 +440,7 @@ private:
 
     static xPlayerDatabase* playerDatabase;
     sqlite3* sqlDatabase;
+    std::map<QString, std::map<QString, std::pair<qint64, qint64>>> movieLengthCache;
 };
 
 #endif
