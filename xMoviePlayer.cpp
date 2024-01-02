@@ -59,10 +59,14 @@ QStringList xMoviePlayer::vlcCreateMediaPlayerArguments(bool compressAudio) {
     static const QStringList vlcCompressArguments {
         "--audio-filter=compressor",
         "--compressor-rms-peak=0.0",
-        "--compressor-attack=52",
-        "--compressor-release=285",
-        "--compressor-threshold=-13",
-        "--compressor-ratio=13",
+        "--compressor-attack=30",
+        "--compressor-release=120",
+        "--compressor-threshold=-15",
+        "--compressor-ratio=15",
+        // "--compressor-attack=52",
+        // "--compressor-release=285",
+        // "--compressor-threshold=-13",
+        // "--compressor-ratio=13",
         "--compressor-knee=3",
         "--compressor-makeup-gain=3.6",
     };
