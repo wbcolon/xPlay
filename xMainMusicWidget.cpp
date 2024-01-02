@@ -641,7 +641,7 @@ void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
             }
             if ((renamingAllowed) || (queueTracksAllowed)) {
                 // Add section for operations only if at least one of them is applicable.
-                artistMenu.addSection(tr("Operations"));
+                artistMenu.addSection(tr("Commands"));
                 if (queueTracksAllowed) {
                     artistMenu.addAction(tr("Queue Artist"), this, [=] () { queueArtistItem(artistItem); });
                 }
@@ -692,7 +692,7 @@ void xMainMusicWidget::currentAlbumRightClicked(const QPoint& point) {
             if ((renamingAllowed) || (queueTracksAllowed)) {
                 // Add section for operations only if at least one of them is applicable.
                 QMenu albumMenu;
-                albumMenu.addSection(tr("Operations"));
+                albumMenu.addSection(tr("Commands"));
                 if (queueTracksAllowed) {
                     albumMenu.addAction(tr("Queue Album"), this, [=]() { queueAlbumItem(albumItem); });
                 }
@@ -1353,7 +1353,7 @@ void xMainMusicWidget::addTrackQueueMenu(xPlayerListWidgetItem* trackItem, QMenu
     auto queueTracksAllowed = musicPlayer->isQueueTracksAllowed();
     if ((renamingAllowed) || (queueTracksAllowed)) {
         // Add section for operations only if at least one of them is applicable.
-        menu->addSection(tr("Operations"));
+        menu->addSection(tr("Commands"));
         if (queueTracksAllowed) {
             menu->addAction(tr("Queue Track"), this, [=]() { queueTrackItem(trackItem, false); });
             menu->addAction(tr("Queue Remaining Tracks"), this, [=]() { queueTrackItem(trackItem, true); });
@@ -1369,10 +1369,17 @@ void xMainMusicWidget::addTrackDequeueMenu(xPlayerListWidgetItem* trackItem, QMe
     auto queueTracksAllowed = musicPlayer->isQueueTracksAllowed();
     if (queueTracksAllowed) {
         // Add section for operations only if at least one of them is applicable.
-        menu->addSection(tr("Operations"));
+        menu->addSection(tr("Commands"));
         menu->addAction(tr("Dequeue Track"), this, [=]() { dequeueTrackItem(trackItem, false); });
         menu->addAction(tr("Dequeue Remaining Tracks"), this, [=]() { dequeueTrackItem(trackItem, true); });
-        menu->addAction(tr("Clear Queue"), this, [=]() { emit clearQueue(); });
+        menu->addAction(tr("Clear Queue"), this, [=]() {
+            // Clear queue list entries.
+            clearQueue();
+            // Clear queued entries for music player.
+            musicPlayer->clearQueue();
+            // Clear player widget.
+            playerWidget->clear();
+        });
     }
 }
 
