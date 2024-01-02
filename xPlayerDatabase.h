@@ -212,6 +212,10 @@ public:
      */
     void removeMovieFileLength(const QString& tag, const QString& directory, const QString& movie);
     /**
+     * Clear all recorded movie length entries.
+     */
+    void clearMovieFileLength();
+    /**
      * Remove the playlist and its entries from the database.
      *
      * @param name the name of the playlist to be removed.

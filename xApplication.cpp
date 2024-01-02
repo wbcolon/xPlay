@@ -386,6 +386,14 @@ void xApplication::checkMovieDatabase() {
     movieLibrary->scanForUnknownEntries(xPlayerDatabase::database()->getAllMovies());
 }
 
+void xApplication::clearMovieLength() {
+    // Clear database entries.
+    xPlayerDatabase::database()->clearMovieFileLength();
+    // Rescan movie library.
+    mainMovieWidget->clear();
+    movieLibrary->setBaseDirectories(xPlayerConfiguration::configuration()->getMovieLibraryTagAndDirectoryPath());
+}
+
 void xApplication::reIndexMusicLibraryBluOS() {
     QMessageBox reIndexBox;
     reIndexBox.setText("ReIndexing BluOS Player Library");
@@ -604,6 +612,7 @@ void xApplication::createMovieOptionsMenus() {
     auto movieOptionsMenu = movieOptionsMenuBar->addMenu(QIcon(":images/xplay-options.svg") ,"");
     auto movieOptionsRescanLibrary = new QAction("Rescan Library", this);
     auto movieOptionsCheckDatabase = new QAction("Check Database", this);
+    auto movieOptionsClearMovieLength = new QAction("Clear Movie Length", this);
     auto movieOptionsFilters = new QAction("Filters", this);
     movieOptionsFilters->setCheckable(true);
     //movieOptionsFilters->setShortcut(QKeySequence("Ctrl+Alt+M"));
@@ -612,12 +621,14 @@ void xApplication::createMovieOptionsMenus() {
     // Create movie options menu.
     movieOptionsMenu->addAction(movieOptionsRescanLibrary);
     movieOptionsMenu->addAction(movieOptionsCheckDatabase);
+    movieOptionsMenu->addAction(movieOptionsClearMovieLength);
     movieOptionsMenu->addSeparator();
     movieOptionsMenu->addAction(movieOptionsFilters);
 
     // Create connections.
     connect(movieOptionsRescanLibrary, &QAction::triggered, this, &xApplication::setMovieLibraryTagsAndDirectories);
     connect(movieOptionsCheckDatabase, &QAction::triggered, this, &xApplication::checkMovieDatabase);
+    connect(movieOptionsClearMovieLength, &QAction::triggered, this, &xApplication::clearMovieLength);
     connect(movieOptionsFilters, &QAction::triggered, mainMovieWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMovieViewFilters(checked);
     });

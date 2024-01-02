@@ -830,6 +830,19 @@ void xPlayerDatabase::removeMovieFileLength(const QString &tag, const QString &d
     }
 }
 
+void xPlayerDatabase::clearMovieFileLength() {
+    sqlite3_stmt* sqlStatement = nullptr;
+    try {
+        dbCheck(sqlite3_prepare_v2(sqlDatabase, "DELETE FROM movieLength", -1, &sqlStatement, nullptr));
+        dbCheck(sqlite3_step(sqlStatement), SQLITE_DONE);
+        dbCheck(sqlite3_finalize(sqlStatement));
+    } catch (const std::runtime_error& e) {
+        qCritical() << "xPlayerDatabase::clearMovieFileLength: error: " << e.what();
+        emit databaseUpdateError();
+        sqlite3_finalize(sqlStatement);
+    }
+}
+
 bool xPlayerDatabase::removeMusicPlaylist(const QString& name) {
     auto nameStd = name.toStdString();
     sqlite3_stmt* sqlStatement = nullptr;

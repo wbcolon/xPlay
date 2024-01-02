@@ -70,9 +70,13 @@ private slots:
      */
     void checkMusicDatabase();
     /**
-     * Check the music database entries against the music library for unknown entries.
+     * Check the movie database entries against the movie library for unknown entries.
      */
     void checkMovieDatabase();
+    /**
+     * Clear the cached movie length from the database.
+     */
+    void clearMovieLength();
     /**
      * Reindex the BluOS player library.
      */
