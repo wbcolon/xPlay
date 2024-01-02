@@ -230,6 +230,7 @@ void xMoviePlayer::playPause() {
 void xMoviePlayer::playChapter(int chapter) {
     if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
         libvlc_media_player_set_chapter(movieMediaPlayer, chapter);
+        libvlc_media_player_play(movieMediaPlayer);
         vlcFixAudio();
         updateCurrentPosition();
         updateCurrentChapter();
@@ -294,6 +295,7 @@ void xMoviePlayer::stop() {
         // Update states.
         emit currentState(State::StopState);
         emit currentMoviePlayed(0);
+        emit currentChapter(0);
     }
 }
 

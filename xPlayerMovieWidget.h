@@ -87,7 +87,7 @@ public slots:
      */
     void currentMovieLength(qint64 length);
     /**
-     * Reset the the movie/audio/subtitle/scale and crop widgets.
+     * Reset the the movie/audio/subtitle/chapter.
      */
     void clear();
 
@@ -103,7 +103,7 @@ private:
      * Create the options menu for the movie player.
      */
     void createOptionsMenu();
-    /*xMoviePlayerVLC*
+    /**
      * Only update combo box if entries have changed.
      *
      * @param comboBox an existing combo box widget with entries.

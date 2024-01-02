@@ -207,11 +207,12 @@ void xPlayerMovieWidget::createOptionsMenu() {
 }
 
 void xPlayerMovieWidget::clear() {
-    // Clear the audio/subtitle combo box and reset the movie label.
+    // Clear the audio/subtitle/chapter combo box and reset the movie label.
     audioChannelBox->clear();
     subtitleBox->clear();
     movieLabel->setText("no movie");
     sliderWidget->clear();
+    chapterBox->clear();
 }
 
 void xPlayerMovieWidget::currentMovie(const std::filesystem::path& path, const QString& movie, const QString& tag, const QString& directory) {
@@ -220,6 +221,7 @@ void xPlayerMovieWidget::currentMovie(const std::filesystem::path& path, const Q
     Q_UNUSED(directory)
     audioChannelBox->clear();
     subtitleBox->clear();
+    chapterBox->clear();
     movieLabel->setText(movie);
 }
 
