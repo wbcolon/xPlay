@@ -74,6 +74,20 @@ public:
      */
     void removeToolTip();
     /**
+     * Add a red background pattern as error mark.
+     */
+    void addErrorMark();
+    /**
+     * Remove the error mark.
+     */
+    void removeErrorMark();
+    /**
+     * Check the item for an error mark.
+     *
+     * @return true if the item is marked, false otherwise.
+     */
+    bool hasErrorMark();
+    /**
      * Return the text of the list item.
      *
      * @return the text of the name label as string.
@@ -122,6 +136,8 @@ protected:
     xMusicLibraryAlbumEntry* itemAlbumEntry{};
     xMusicLibraryTrackEntry* itemTrackEntry{};
     xMovieLibraryEntry* itemMovieEntry{};
+    QBrush itemBackgroundBrush;
+    bool itemErrorMark;
 };
 
 #endif

@@ -34,10 +34,12 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(const QString& text, QTreeWidget* p
         itemArtistEntry(nullptr),
         itemAlbumEntry(nullptr),
         itemTrackEntry(nullptr),
-        itemMovieEntry(nullptr) {
+        itemMovieEntry(nullptr),
+        itemErrorMark(false) {
     Q_ASSERT(parent != nullptr);
     setText(0, itemText);
     itemTextWidth = parent->fontMetrics().width(itemText+"...");
+    itemBackgroundBrush = background(0);
 }
 
 xPlayerListWidgetItem::xPlayerListWidgetItem(std::function<QString ()> getText, std::function<qint64 ()> getLength,
@@ -52,11 +54,13 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(std::function<QString ()> getText, 
         itemArtistEntry(nullptr),
         itemAlbumEntry(nullptr),
         itemTrackEntry(nullptr),
-        itemMovieEntry(nullptr) {
+        itemMovieEntry(nullptr),
+        itemErrorMark(false) {
     Q_ASSERT(parent != nullptr);
     itemText = itemGetText();
     itemTextWidth = parent->fontMetrics().width(itemText+"...");
     setText(0, itemText);
+    itemBackgroundBrush = background(0);
 }
 
 xPlayerListWidgetItem::xPlayerListWidgetItem(xMusicLibraryArtistEntry* entry, QTreeWidget* parent):
@@ -129,6 +133,24 @@ void xPlayerListWidgetItem::removeToolTip() {
     updateToolTip();
 }
 
+void xPlayerListWidgetItem::addErrorMark() {
+    for (auto i = 0; i < columnCount(); ++i) {
+        setBackground(i, QBrush(Qt::red, Qt::Dense6Pattern));
+    }
+    itemErrorMark = true;
+}
+
+void xPlayerListWidgetItem::removeErrorMark() {
+    for (auto i = 0; i < columnCount(); ++i) {
+        setBackground(i, itemBackgroundBrush);
+    }
+    itemErrorMark = false;
+}
+
+bool xPlayerListWidgetItem::hasErrorMark() {
+    return itemErrorMark;
+}
+
 const QString& xPlayerListWidgetItem::text() const {
     return itemText;
 }
@@ -168,7 +190,14 @@ void xPlayerListWidgetItem::updateTimeDisplay() {
             } break;
             default: break;
         }
-
+        if (itemTime <= 0) {
+            addErrorMark();
+        } else {
+            // Only remove the error mark if it was marked.
+            if (hasErrorMark()) {
+                removeErrorMark();
+            }
+        }
     }
 }
 
