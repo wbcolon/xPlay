@@ -42,17 +42,14 @@ void xPlayerDatabase::updatedDatabaseDirectory() {
 }
 
 void xPlayerDatabase::loadDatabase() {
-
     if (sqlite3_open(xPlayerConfiguration::configuration()->getDatabasePath().toStdString().c_str(), &sqlDatabase) != SQLITE_OK) {
         qCritical() << "Unable to open database: " << sqlite3_errmsg(sqlDatabase);
         return;
     }
-
     // The following create table commands will fail if database already exists.
     // Create taggedSongs table.
     sqlite3_exec(sqlDatabase, "CREATE TABLE taggedSongs (ID INTEGER PRIMARY KEY AUTOINCREMENT, tag VARCHAR, hash VARCHAR)",
                  nullptr, nullptr, nullptr);
-
     // Create artistInfo table.
     sqlite3_exec(sqlDatabase, "CREATE TABLE artistInfo (artist VARCHAR PRIMARY KEY, url VARCHAR)",
                  nullptr, nullptr, nullptr);
@@ -92,7 +89,7 @@ xPlayerDatabase* xPlayerDatabase::database() {
 }
 
 int xPlayerDatabase::getPlayCount(int bitsPerSample, int sampleRate, qint64 after) {
-    sqlite3_stmt* sqlStatement;
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         if (bitsPerSample > 0) {
             if (sampleRate > 0) {
@@ -136,10 +133,10 @@ int xPlayerDatabase::getPlayCount(int bitsPerSample, int sampleRate, qint64 afte
 }
 
 int xPlayerDatabase::getPlayCount(const QString& artist, const QString& album, qint64 after) {
-    sqlite3_stmt* sqlStatement;
+    auto artistStd = artist.toStdString();
+    auto albumStd = album.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto artistStd = artist.toStdString();
-        auto albumStd = album.toStdString();
         if (artist.isEmpty()) {
             if (album.isEmpty()) {
                 dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT SUM(playCount) FROM music WHERE timeStamp >= ?",
@@ -182,11 +179,11 @@ int xPlayerDatabase::getPlayCount(const QString& artist, const QString& album, q
 }
 
 int xPlayerDatabase::getMaxPlayCount(const QString& artist, const QString& album, const QString& track, qint64 after) {
-    sqlite3_stmt* sqlStatement;
+    auto artistStd = artist.toStdString();
+    auto albumStd = album.toStdString();
+    auto trackStd = track.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto artistStd = artist.toStdString();
-        auto albumStd = album.toStdString();
-        auto trackStd = track.toStdString();
         if (album.isEmpty()) {
             dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT MAX(playCount) FROM music WHERE artist = ? "
                                                     "AND timeStamp >= ?", -1, &sqlStatement, nullptr));
@@ -225,7 +222,7 @@ int xPlayerDatabase::getMaxPlayCount(const QString& artist, const QString& album
 
 QList<std::pair<QString,int>> xPlayerDatabase::getPlayedArtists(qint64 after) {
     QList<std::pair<QString,int>> artists;
-    sqlite3_stmt* sqlStatement;
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT * FROM (SELECT artist, playCount FROM "
                                                 "music WHERE timeStamp >= ? ORDER BY playCount DESC) GROUP BY artist",
@@ -251,12 +248,12 @@ QList<std::pair<QString,int>> xPlayerDatabase::getPlayedArtists(qint64 after) {
 
 QList<std::pair<QString,int>> xPlayerDatabase::getPlayedAlbums(const QString& artist, qint64 after) {
     QList<std::pair<QString,int>> albums;
-    sqlite3_stmt *sqlStatement;
+    auto artistStd = artist.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT * FROM (SELECT album, playCount FROM music WHERE artist == ? "
                                                 "AND timeStamp >= ? ORDER BY playCount DESC) GROUP BY album",
                                    -1, &sqlStatement, nullptr));
-        auto artistStd = artist.toStdString();
         dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
         dbCheck(sqlite3_bind_int64(sqlStatement, 2, after));
         while (sqlite3_step(sqlStatement) != SQLITE_DONE) {
@@ -279,13 +276,13 @@ QList<std::pair<QString,int>> xPlayerDatabase::getPlayedAlbums(const QString& ar
 
 QList<std::tuple<QString,int,qint64>> xPlayerDatabase::getPlayedTracks(const QString& artist, const QString& album, qint64 after) {
     QList<std::tuple<QString,int,qint64>> tracks;
-    sqlite3_stmt *sqlStatement;
+    auto artistStd = artist.toStdString();
+    auto albumStd = album.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT track, playCount, timeStamp FROM music WHERE artist = ? "
                                                 " AND album = ? AND timeStamp >= ? GROUP BY track",
                                    -1, &sqlStatement, nullptr));
-        auto artistStd = artist.toStdString();
-        auto albumStd = album.toStdString();
         dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 2, albumStd.c_str(), static_cast<int>(albumStd.size()), nullptr));
         dbCheck(sqlite3_bind_int64(sqlStatement, 3, after));
@@ -307,11 +304,11 @@ QList<std::tuple<QString,int,qint64>> xPlayerDatabase::getPlayedTracks(const QSt
 }
 
 int xPlayerDatabase::getMaxViewCount(const QString& tag, const QString& directory, const QString& movie, qint64 after) {
-    sqlite3_stmt* sqlStatement;
+    auto tagStd = tag.toStdString();
+    auto directoryStd = directory.toStdString();
+    auto movieStd = movie.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto tagStd = tag.toStdString();
-        auto directoryStd = directory.toStdString();
-        auto movieStd = movie.toStdString();
         if (directory.isEmpty()) {
             dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT MAX(playCount) FROM movie WHERE tag = ? "
                                                     "AND timeStamp >= ?", -1, &sqlStatement, nullptr));
@@ -350,7 +347,7 @@ int xPlayerDatabase::getMaxViewCount(const QString& tag, const QString& director
 
 QList<std::pair<QString,int>> xPlayerDatabase::getPlayedTags(qint64 after) {
     QList<std::pair<QString,int>> tags;
-    sqlite3_stmt* sqlStatement;
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT * FROM (SELECT tag, playCount FROM "
                                                 "movie WHERE timeStamp >= ? ORDER BY playCount DESC) GROUP BY tag",
@@ -376,12 +373,12 @@ QList<std::pair<QString,int>> xPlayerDatabase::getPlayedTags(qint64 after) {
 
 QList<std::pair<QString,int>> xPlayerDatabase::getPlayedDirectories(const QString& tag, qint64 after) {
     QList<std::pair<QString,int>> directories;
-    sqlite3_stmt *sqlStatement;
+    auto tagStd = tag.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT * FROM (SELECT directory, playCount FROM movie WHERE tag == ? "
                                                 "AND timeStamp >= ? ORDER BY playCount DESC) GROUP BY directory",
                                    -1, &sqlStatement, nullptr));
-        auto tagStd = tag.toStdString();
         dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
         dbCheck(sqlite3_bind_int64(sqlStatement, 2, after));
         while (sqlite3_step(sqlStatement) != SQLITE_DONE) {
@@ -404,13 +401,13 @@ QList<std::pair<QString,int>> xPlayerDatabase::getPlayedDirectories(const QStrin
 
 QList<std::tuple<QString,int,qint64>> xPlayerDatabase::getPlayedMovies(const QString& tag, const QString& directory, qint64 after) {
     QList<std::tuple<QString,int,qint64>> movies;
-    sqlite3_stmt *sqlStatement;
+    auto tagStd = tag.toStdString();
+    auto directoryStd = directory.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT movie, playCount, timeStamp FROM movie WHERE tag = ? "
                                                 "AND directory = ? AND timeStamp >= ?",
                                    -1, &sqlStatement, nullptr));
-        auto tagStd = tag.toStdString();
-        auto directoryStd = directory.toStdString();
         dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 2, directoryStd.c_str(), static_cast<int>(directoryStd.size()),
                                   nullptr));
@@ -461,8 +458,9 @@ void xPlayerDatabase::updateMovieLengthCacheEntry(const QString& tag, const QStr
 std::pair<qint64,qint64> xPlayerDatabase::getMovieFileLength(const QString& tag, const QString& directory,
                                                              const QString& movie) {
     QList<std::tuple<QString,int,qint64>> movies;
-    sqlite3_stmt *sqlStatement;
-
+    auto tagStd = tag.toStdString();
+    auto directoryStd = directory.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     // Check movie length cache entry.
     auto cacheEntry = getMovieLengthCacheEntry(tag, directory, movie);
     if ((cacheEntry.first > 0) && (cacheEntry.second > 0)) {
@@ -472,8 +470,6 @@ std::pair<qint64,qint64> xPlayerDatabase::getMovieFileLength(const QString& tag,
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT size, length, movie FROM movieLength WHERE tag = ? AND directory = ?",
                                    -1, &sqlStatement, nullptr));
-        auto tagStd = tag.toStdString();
-        auto directoryStd = directory.toStdString();
         dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 2, directoryStd.c_str(), static_cast<int>(directoryStd.size()), nullptr));
         while (sqlite3_step(sqlStatement) != SQLITE_DONE) {
@@ -494,8 +490,7 @@ std::pair<qint64,qint64> xPlayerDatabase::getMovieFileLength(const QString& tag,
 std::pair<int,qint64> xPlayerDatabase::updateMusicFile(const QString& artist, const QString& album, const QString& track, int sampleRate, int bitsPerSample) {
     auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
-    sqlite3_stmt *sqlStatement;
-
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT playCount FROM music WHERE hash = ?",
                                    -1, &sqlStatement, nullptr));
@@ -555,8 +550,7 @@ std::pair<int,qint64> xPlayerDatabase::updateMusicFile(const QString& artist, co
 void xPlayerDatabase::renameMusicFile(const QString& artist, const QString& album, const QString& track, const QString& newTrack) {
     auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto newHash = QCryptographicHash::hash((artist+"/"+album+"/"+newTrack).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
-    sqlite3_stmt *sqlStatement;
-
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT playCount,timeStamp,sampleRate,bitsPerSample FROM music WHERE hash = ?",
                                    -1, &sqlStatement, nullptr));
@@ -596,17 +590,15 @@ void xPlayerDatabase::renameMusicFile(const QString& artist, const QString& albu
         emit databaseUpdateError();
         sqlite3_finalize(sqlStatement);
     }
-
 }
 
 void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& album, const QString& newAlbum) {
-    sqlite3_stmt *sqlStatement;
-
+    std::vector<std::tuple<std::string, int, int64_t, std::string, int, int>> renameEntries;
+    auto artistStd = artist.toStdString();
+    auto albumStd = album.toStdString();
+    auto newAlbumStd = newAlbum.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        std::vector<std::tuple<std::string, int, int64_t, std::string, int, int>> renameEntries;
-        auto artistStd = artist.toStdString();
-        auto albumStd = album.toStdString();
-        auto newAlbumStd = newAlbum.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT hash,playCount,timeStamp,track,sampleRate,bitsPerSample FROM music WHERE artist = ? and album = ?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
@@ -661,12 +653,11 @@ void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& alb
 }
 
 void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& newArtist) {
-    sqlite3_stmt *sqlStatement;
-
+    std::vector<std::tuple<std::string, int, int64_t, std::string, std::string, int, int>> renameEntries;
+    auto artistStd = artist.toStdString();
+    auto newArtistStd = newArtist.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        std::vector<std::tuple<std::string, int, int64_t, std::string, std::string, int, int>> renameEntries;
-        auto artistStd = artist.toStdString();
-        auto newArtistStd = newArtist.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT hash,playCount,timeStamp,album,track,sampleRate,bitsPerSample FROM music WHERE artist = ?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
@@ -724,8 +715,7 @@ void xPlayerDatabase::renameMusicFiles(const QString& artist, const QString& new
 std::pair<int,qint64> xPlayerDatabase::updateMovieFile(const QString& tag, const QString& directory, const QString& movie) {
     auto hash = QCryptographicHash::hash((tag+"/"+directory+"/"+movie).toUtf8(), QCryptographicHash::Sha256).toBase64().toStdString();
     auto timeStamp = QDateTime::currentMSecsSinceEpoch();
-
-    sqlite3_stmt* sqlStatement;
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT playCount FROM movie WHERE hash = ?",
                                    -1, &sqlStatement, nullptr));
@@ -773,7 +763,7 @@ void xPlayerDatabase::updateMovieFileLength(const QString &tag, const QString &d
     auto tagStd = tag.toStdString();
     auto directoryStd = directory.toStdString();
     auto movieStd = movie.toStdString();
-    sqlite3_stmt* sqlStatement;
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT id FROM movieLength WHERE tag=? AND directory=? AND movie=?",
                                    -1, &sqlStatement, nullptr));
@@ -807,14 +797,43 @@ void xPlayerDatabase::updateMovieFileLength(const QString &tag, const QString &d
         emit databaseUpdateError();
         sqlite3_finalize(sqlStatement);
     }
-    // Update cache.
+}
+
+void xPlayerDatabase::removeMovieFileLength(const QString &tag, const QString &directory, const QString &movie) {
+    auto tagStd = tag.toStdString();
+    auto directoryStd = directory.toStdString();
+    auto movieStd = movie.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
+    try {
+        std::string statementStr = "DELETE FROM movieLength WHERE tag=?";
+        // Adjust statement if no wildcards are used.
+        if (!directoryStd.empty()) {
+            statementStr += " AND directory=?";
+            if (!movieStd.empty()) {
+                statementStr += " AND movie=?";
+            }
+        }
+        dbCheck(sqlite3_prepare_v2(sqlDatabase, statementStr.c_str(), -1, &sqlStatement, nullptr));
+        dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
+        if (!directoryStd.empty()) {
+            dbCheck(sqlite3_bind_text(sqlStatement, 2, directoryStd.c_str(), static_cast<int>(directoryStd.size()), nullptr));
+            if (!movieStd.empty()) {
+                dbCheck(sqlite3_bind_text(sqlStatement, 3, movieStd.c_str(), static_cast<int>(movieStd.size()), nullptr));
+            }
+        }
+        dbCheck(sqlite3_step(sqlStatement), SQLITE_DONE);
+        dbCheck(sqlite3_finalize(sqlStatement));
+    } catch (const std::runtime_error& e) {
+        qCritical() << "xPlayerDatabase::removeMovieFileLength: error: " << e.what();
+        emit databaseUpdateError();
+        sqlite3_finalize(sqlStatement);
+    }
 }
 
 bool xPlayerDatabase::removeMusicPlaylist(const QString& name) {
-    sqlite3_stmt* sqlStatement;
-
+    auto nameStd = name.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto nameStd = name.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT ID FROM playlist WHERE name = ?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, nameStd.c_str(), static_cast<int>(nameStd.size()), nullptr));
@@ -843,8 +862,7 @@ bool xPlayerDatabase::removeMusicPlaylist(const QString& name) {
 
 QStringList xPlayerDatabase::getMusicPlaylists() {
     QStringList names;
-    sqlite3_stmt* sqlStatement;
-
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT name FROM playlist",
                                    -1, &sqlStatement, nullptr));
@@ -865,10 +883,9 @@ QStringList xPlayerDatabase::getMusicPlaylists() {
 
 std::vector<std::tuple<QString,QString,QString>> xPlayerDatabase::getMusicPlaylist(const QString& name) {
     std::vector<std::tuple<QString,QString,QString>> entries;
-    sqlite3_stmt* sqlStatement;
-
+    auto nameStd = name.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto nameStd = name.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT ID FROM playlist WHERE name = ?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, nameStd.c_str(), static_cast<int>(nameStd.size()), nullptr));
@@ -899,10 +916,9 @@ std::vector<std::tuple<QString,QString,QString>> xPlayerDatabase::getMusicPlayli
 }
 
 bool xPlayerDatabase::updateMusicPlaylist(const QString& name, const std::vector<std::tuple<QString,QString,QString>>& entries) {
-    sqlite3_stmt* sqlStatement;
+    sqlite3_stmt* sqlStatement = nullptr;
     auto nameStd = name.toStdString();
     auto playlistId = 0;
-
     try {
         // Insert playlist name.
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "INSERT INTO playlist (name) VALUES (?)",
@@ -998,8 +1014,7 @@ bool xPlayerDatabase::updateMusicPlaylist(const QString& name, const std::vector
 
 std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllTracks() {
     std::list<std::tuple<QString,QString,QString>> tracks;
-    sqlite3_stmt* sqlStatement;
-
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT artist, album, track FROM music ORDER BY artist, album",
                                    -1, &sqlStatement, nullptr));
@@ -1023,8 +1038,7 @@ std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllTracks() {
 
 std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllMovies() {
     std::list<std::tuple<QString,QString,QString>> movies;
-    sqlite3_stmt* sqlStatement;
-
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT tag, directory, movie FROM movie ORDER BY tag, directory",
                                    -1, &sqlStatement, nullptr));
@@ -1100,8 +1114,9 @@ std::list<std::string> xPlayerDatabase::convertEntriesToWhereArguments(const std
 }
 
 QString xPlayerDatabase::getArtistURL(const QString& artist) {
-    sqlite3_stmt* sqlStatement;
+    sqlite3_stmt* sqlStatement = nullptr;
     auto artistStd = artist.toStdString();
+
     dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT url FROM artistInfo WHERE artist = ?",
                                -1, &sqlStatement, nullptr));
     dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
@@ -1115,10 +1130,10 @@ QString xPlayerDatabase::getArtistURL(const QString& artist) {
 }
 
 void xPlayerDatabase::updateArtistURL(const QString& artist, const QString& url) {
-    sqlite3_stmt* sqlStatement;
+    auto artistStd = artist.toStdString();
+    auto urlStd = url.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto artistStd = artist.toStdString();
-        auto urlStd = url.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT url FROM artistInfo WHERE artist=? LIMIT 1",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
@@ -1147,9 +1162,9 @@ void xPlayerDatabase::updateArtistURL(const QString& artist, const QString& url)
 }
 
 void xPlayerDatabase::removeArtistURL(const QString& artist) {
-    sqlite3_stmt* sqlStatement;
+    auto artistStd = artist.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto artistStd = artist.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "DELETE FROM artistInfo WHERE artist=?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, artistStd.c_str(), static_cast<int>(artistStd.size()), nullptr));
@@ -1165,15 +1180,13 @@ void xPlayerDatabase::removeArtistURL(const QString& artist) {
 std::pair<int,qint64> xPlayerDatabase::updateTransition(const QString& fromArtist, const QString& fromAlbum,
                                                          const QString& toArtist, const QString& toAlbum,
                                                          bool shuffleMode) {
-    sqlite3_stmt* sqlStatement;
-
+    auto timeStamp = QDateTime::currentMSecsSinceEpoch();
+    auto fromArtistStd = fromArtist.toStdString();
+    auto fromAlbumStd = fromAlbum.toStdString();
+    auto toArtistStd = toArtist.toStdString();
+    auto toAlbumStd = toAlbum.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto timeStamp = QDateTime::currentMSecsSinceEpoch();
-        auto fromArtistStd = fromArtist.toStdString();
-        auto fromAlbumStd = fromAlbum.toStdString();
-        auto toArtistStd = toArtist.toStdString();
-        auto toAlbumStd = toAlbum.toStdString();
-
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT transitionCount FROM transition WHERE fromArtist=? "
                                                 "AND fromAlbum=? AND toArtist=? AND toAlbum=?",
                                    -1, &sqlStatement, nullptr));
@@ -1236,9 +1249,9 @@ std::pair<int,qint64> xPlayerDatabase::updateTransition(const QString& fromArtis
 
 std::vector<std::pair<QString,int>> xPlayerDatabase::getArtistTransitions(const QString& artist) {
     std::vector<std::pair<QString,int>> artistTransitions;
-    sqlite3_stmt* sqlStatement;
+    auto artistStd = artist.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto artistStd = artist.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase,
                                    "SELECT artist, SUM(count) FROM ( "
                                    "SELECT toArtist as artist, SUM(transitionCount) as count FROM transition WHERE fromArtist == ? GROUP BY toArtist "
@@ -1253,7 +1266,7 @@ std::vector<std::pair<QString,int>> xPlayerDatabase::getArtistTransitions(const 
             auto transitionArtist = reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 0));
             auto transitionCount = sqlite3_column_int(sqlStatement, 1);
             if (transitionArtist != nullptr) {
-                artistTransitions.emplace_back(std::make_pair(QString::fromUtf8(transitionArtist), transitionCount));
+                artistTransitions.emplace_back(QString::fromUtf8(transitionArtist), transitionCount);
             }
         }
         dbCheck(sqlite3_finalize(sqlStatement));
@@ -1266,12 +1279,11 @@ std::vector<std::pair<QString,int>> xPlayerDatabase::getArtistTransitions(const 
 }
 
 void xPlayerDatabase::addTag(const QString& artist, const QString& album, const QString& track, const QString& tag) {
-    sqlite3_stmt* sqlStatement;
-
+    auto hash = QCryptographicHash::hash((artist + "/" + album + "/" + track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
+    auto tagStd = tag.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto hash = QCryptographicHash::hash((artist + "/" + album + "/" + track).toUtf8(),
-                                             QCryptographicHash::Sha256).toBase64().toStdString();
-        auto tagStd = tag.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "INSERT INTO taggedSongs (tag, hash) VALUES (?,?)",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
@@ -1286,12 +1298,11 @@ void xPlayerDatabase::addTag(const QString& artist, const QString& album, const 
 }
 
 void xPlayerDatabase::removeTag(const QString& artist, const QString& album, const QString& track, const QString& tag) {
-    sqlite3_stmt* sqlStatement;
-
+    auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
+    auto tagStd = tag.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto hash = QCryptographicHash::hash((artist+"/"+album+"/"+track).toUtf8(),
-                                             QCryptographicHash::Sha256).toBase64().toStdString();
-        auto tagStd = tag.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "DELETE FROM taggedSongs WHERE tag == ? and hash == ?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
@@ -1306,11 +1317,10 @@ void xPlayerDatabase::removeTag(const QString& artist, const QString& album, con
 }
 
 void xPlayerDatabase::removeAllTags(const QString& artist, const QString& album, const QString& track) {
-    sqlite3_stmt* sqlStatement;
-
+    auto hash = QCryptographicHash::hash((artist + "/" + album + "/" + track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto hash = QCryptographicHash::hash((artist + "/" + album + "/" + track).toUtf8(),
-                                             QCryptographicHash::Sha256).toBase64().toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "DELETE FROM taggedSongs WHERE hash = ?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, hash.c_str(), static_cast<int>(hash.size()), nullptr));
@@ -1325,9 +1335,9 @@ void xPlayerDatabase::removeAllTags(const QString& artist, const QString& album,
 
 void xPlayerDatabase::updateTags(const QString& artist, const QString& album, const QString& track,
                                  const QStringList& tags) {
+    auto hash = QCryptographicHash::hash((artist + "/" + album + "/" + track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
     try {
-        auto hash = QCryptographicHash::hash((artist + "/" + album + "/" + track).toUtf8(),
-                                             QCryptographicHash::Sha256).toBase64().toStdString();
         // Remove old tags.
         removeFromTable("taggedSongs", " WHERE hash == \"" + hash + "\"");
         // Add new tags.
@@ -1346,11 +1356,11 @@ void xPlayerDatabase::updateTags(const QString& artist, const QString& album, co
 }
 
 QStringList xPlayerDatabase::getTags(const QString& artist, const QString& album, const QString& track) {
+    auto hash = QCryptographicHash::hash((artist + "/" + album + "/" + track).toUtf8(),
+                                         QCryptographicHash::Sha256).toBase64().toStdString();
     QStringList tags;
-    sqlite3_stmt* sqlStatement;
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto hash = QCryptographicHash::hash((artist + "/" + album + "/" + track).toUtf8(),
-                                             QCryptographicHash::Sha256).toBase64().toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT tag FROM taggedSongs WHERE hash = ?",
                                    -1, &sqlStatement, nullptr));
         dbCheck(sqlite3_bind_text(sqlStatement, 1, hash.c_str(), static_cast<int>(hash.size()), nullptr));
@@ -1371,10 +1381,9 @@ QStringList xPlayerDatabase::getTags(const QString& artist, const QString& album
 
 std::vector<std::tuple<QString, QString, QString>> xPlayerDatabase::getAllForTag(const QString& tag) {
     std::vector<std::tuple<QString,QString,QString>> entries;
-    sqlite3_stmt* sqlStatement;
-
+    auto tagStd = tag.toStdString();
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
-        auto tagStd = tag.toStdString();
         dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT music.artist, music.album, music.track FROM taggedSongs "
                                                 "INNER JOIN music ON music.hash = taggedSongs.hash WHERE tag = ?",
                                    -1, &sqlStatement, nullptr));
@@ -1384,7 +1393,7 @@ std::vector<std::tuple<QString, QString, QString>> xPlayerDatabase::getAllForTag
             auto album = reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 1));
             auto track = reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 2));
             if ((artist != nullptr) && (album != nullptr) && (track != nullptr)) {
-                entries.emplace_back(std::make_tuple(QString::fromUtf8(artist), QString::fromUtf8(album), QString::fromUtf8(track)));
+                entries.emplace_back(QString::fromUtf8(artist), QString::fromUtf8(album), QString::fromUtf8(track));
             }
         }
         dbCheck(sqlite3_finalize(sqlStatement));
@@ -1398,8 +1407,7 @@ std::vector<std::tuple<QString, QString, QString>> xPlayerDatabase::getAllForTag
 
 std::map<QString,std::set<QString>> xPlayerDatabase::getAllAlbums(qint64 after) {
     std::map<QString,std::set<QString>> mapArtistAlbum;
-    sqlite3_stmt* sqlStatement;
-
+    sqlite3_stmt* sqlStatement = nullptr;
     try {
         dbCheck(sqlite3_prepare_v2(sqlDatabase,
                                    "SELECT artist, album FROM music WHERE timeStamp >= ? GROUP BY artist, album",

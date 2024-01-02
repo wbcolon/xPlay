@@ -202,6 +202,16 @@ public:
     void updateMovieFileLength(const QString& tag, const QString& directory, const QString& movie,
                                qint64 movieSize, qint64 movieLength);
     /**
+     * Remove the recorded movie length.
+     *
+     * Empty strings for directory and movie can be used to simulate a wildcard.
+     *
+     * @param tag the tag the movie file played belongs to.
+     * @param directory the directory the movie file played belongs to.
+     * @param movie the file name displayed for the movie file played.
+     */
+    void removeMovieFileLength(const QString& tag, const QString& directory, const QString& movie);
+    /**
      * Remove the playlist and its entries from the database.
      *
      * @param name the name of the playlist to be removed.
