@@ -161,8 +161,10 @@ private slots:
      * Show dialog for unknown entries in the movie table of the database.
      *
      * @param entries a list of tuples of tag, directory and movie unknown.
+     * @param entriesCached a list of tuples of tag, directory and movie unknown in cached length.
      */
-    void unknownMovies(const std::list<std::tuple<QString,QString,QString>>& entries);
+    void unknownMovies(const std::list<std::tuple<QString,QString,QString>>& entries,
+                       const std::list<std::tuple<QString,QString,QString>>& entriesCached);
 
 protected:
     /**

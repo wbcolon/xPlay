@@ -117,11 +117,13 @@ signals:
      */
     void scannedMovies(const std::vector<xMovieLibraryEntry*>& movies);
     /**
-     * Signal the list of entries not found in the movie library
+     * Signal the list of entries (movies and cached length) not found in the movie library
      *
      * @param listEntries a list of tuples of tag, directory and movie not found.
+     * @param listCachedEntries a list of tuples of tag, directory and movie not found.
      */
-    void scannedUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries);
+    void scannedUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries,
+                               const std::list<std::tuple<QString, QString, QString>>& listCachedEntries);
 
 public slots:
     /**
@@ -141,10 +143,21 @@ public slots:
      * Scan list to find entries that are not in the movie library.
      *
      * @param listEntries the list of tuples of tag, directory and movie to verify.
+     * @param listCachedEntries the list of tuples of tag, directory and movie to verify.
      */
-    void scanForUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries);
+    void scanForUnknownEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries,
+                               const std::list<std::tuple<QString, QString, QString>>& listCachedEntries);
 
 private:
+    /**
+     * Check a list of tag/directory/movie entries and record unknown entries.
+     *
+     * @param listEntries the list of entries to verify.
+     * @param listUnknownEntries add unknown entries to existing list (do not clear).
+     */
+    void scanListOfEntries(const std::list<std::tuple<QString, QString, QString>>& listEntries,
+                           std::list<std::tuple<QString, QString, QString>>& listUnknownEntries);
+
     // maps directories and files to an assigned tag
     // movieFiles[tag][directory] = files
     xMovieFiles_t* movieFiles;

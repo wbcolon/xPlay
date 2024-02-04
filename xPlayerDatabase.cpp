@@ -1073,6 +1073,30 @@ std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllMovies() {
     return movies;
 }
 
+std::list<std::tuple<QString,QString,QString>> xPlayerDatabase::getAllMovieLengths() {
+    std::list<std::tuple<QString,QString,QString>> movies;
+    sqlite3_stmt* sqlStatement = nullptr;
+    try {
+        dbCheck(sqlite3_prepare_v2(sqlDatabase, "SELECT tag, directory, movie FROM movieLength ORDER BY tag, directory",
+                                   -1, &sqlStatement, nullptr));
+        while (sqlite3_step(sqlStatement) != SQLITE_DONE) {
+            auto tag = QString::fromUtf8(reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 0)));
+            auto directory = QString::fromUtf8(reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 1)));
+            auto movie = QString::fromUtf8(reinterpret_cast<const char *>(sqlite3_column_text(sqlStatement, 2)));
+            if ((!tag.isEmpty()) && (!directory.isEmpty()) && (!movie.isEmpty())) {
+                movies.emplace_back(tag, directory, movie);
+                qDebug() << "Length entries: " << tag << "," << directory << "," << movie;
+            }
+        }
+        dbCheck(sqlite3_finalize(sqlStatement));
+    } catch (const std::runtime_error& e) {
+        qCritical() << "Unable to get all movie lengths, error: " << sqlite3_errmsg(sqlDatabase);
+        sqlite3_finalize(sqlStatement);
+        movies.clear();
+    }
+    return movies;
+}
+
 void xPlayerDatabase::removeTracks(const std::list<std::tuple<QString, QString, QString>>& entries) {
     // We do not only need to remove the tracks in the music table,
     // but also the corresponding hashes in the playlistSongs table.
@@ -1094,6 +1118,29 @@ void xPlayerDatabase::removeMovies(const std::list<std::tuple<QString, QString, 
         auto whereArguments = convertEntriesToWhereArguments(entries);
         for (const auto &whereArgument : whereArguments) {
             removeFromTable("movie", whereArgument);
+        }
+    } catch (const std::runtime_error& e) {
+        qCritical() << "Unable to remove movies from the database, error: " << e.what();
+        emit databaseUpdateError();
+    }
+}
+
+void xPlayerDatabase::removeMovieLengths(const std::list<std::tuple<QString, QString, QString>>& entries) {
+    // We only need to remove the movies from the movie table.
+    try {
+        sqlite3_stmt* sqlStatement = nullptr;
+        for (const auto& [tag, directory, movie] : entries) {
+            dbCheck(sqlite3_prepare_v2(sqlDatabase, "DELETE FROM movieLength WHERE tag=? AND directory=? AND movie=?",
+                                       -1, &sqlStatement, nullptr));
+            auto tagStd = tag.toStdString();
+            auto directoryStd = directory.toStdString();
+            auto movieStd = movie.toStdString();
+            dbCheck(sqlite3_bind_text(sqlStatement, 1, tagStd.c_str(), static_cast<int>(tagStd.size()), nullptr));
+            dbCheck(sqlite3_bind_text(sqlStatement, 2, directoryStd.c_str(), static_cast<int>(directoryStd.size()), nullptr));
+            dbCheck(sqlite3_bind_text(sqlStatement, 3, movieStd.c_str(), static_cast<int>(movieStd.size()), nullptr));
+            dbCheck(sqlite3_step(sqlStatement), SQLITE_DONE);
+            dbCheck(sqlite3_finalize(sqlStatement));
+
         }
     } catch (const std::runtime_error& e) {
         qCritical() << "Unable to remove movies from the database, error: " << e.what();

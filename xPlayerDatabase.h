@@ -270,6 +270,12 @@ public:
      */
     std::list<std::tuple<QString,QString,QString>> getAllMovies();
     /**
+     * Return all cached movie length stored in the movieLength table of the database.
+     *
+     * @return a list of tuples of tag, directory and movie as strings.
+     */
+    std::list<std::tuple<QString,QString,QString>> getAllMovieLengths();
+    /**
      * Remove the list of entries from the music table of the database.
      *
      * Not only the entries of the music table are removed, but the also
@@ -285,6 +291,12 @@ public:
      * @param entries a list of tuples of tag, directory and movie.
      */
     void removeMovies(const std::list<std::tuple<QString,QString,QString>>& entries);
+    /**
+     * Remove the list of length entries from the movieLength table of the database.
+     *
+     * @param entries a list of tuples of tag, directory and movie.
+     */
+    void removeMovieLengths(const std::list<std::tuple<QString,QString,QString>>& entries);
     /**
      * Update the url for the given artist in the artistInfo table of the database.
      *

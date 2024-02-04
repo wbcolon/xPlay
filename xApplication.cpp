@@ -308,13 +308,23 @@ void xApplication::unknownTracks(const std::list<std::tuple<QString,QString,QStr
     }
 }
 
-void xApplication::unknownMovies(const std::list<std::tuple<QString,QString,QString>>& entries) {
+void xApplication::unknownMovies(const std::list<std::tuple<QString,QString,QString>>& entries,
+                                 const std::list<std::tuple<QString,QString,QString>>& entriesCached) {
     // Do we have any unknown tracks.
-    if (entries.empty()) {
+    if ((entries.empty() && (entriesCached.empty()))) {
         QMessageBox::information(this, "Movie Database", "No unknown entries found.");
     } else {
-        if (unknownEntriesDialog("Movie Database", entries) == QDialog::Accepted) {
-            xPlayerDatabase::database()->removeMovies(entries);
+        // Do we have unknown movies?
+        if (!entries.empty()) {
+            if (unknownEntriesDialog("Movie Database", entries) == QDialog::Accepted) {
+                xPlayerDatabase::database()->removeMovies(entries);
+            }
+        }
+        // Do we have unknown cached entries?
+        if (!entriesCached.empty()) {
+            if (unknownEntriesDialog("Cached Movie Length Database", entriesCached) == QDialog::Accepted) {
+                xPlayerDatabase::database()->removeMovieLengths(entriesCached);
+            }
         }
     }
 }
@@ -383,7 +393,8 @@ void xApplication::checkMusicDatabase() {
 }
 
 void xApplication::checkMovieDatabase() {
-    movieLibrary->scanForUnknownEntries(xPlayerDatabase::database()->getAllMovies());
+    movieLibrary->scanForUnknownEntries(xPlayerDatabase::database()->getAllMovies(),
+                                        xPlayerDatabase::database()->getAllMovieLengths());
 }
 
 void xApplication::clearMovieLength() {
