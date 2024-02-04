@@ -87,13 +87,10 @@ QStringList xMoviePlayer::vlcCreateMediaPlayerArguments(bool compressAudio) {
 void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
 
     auto vlcArgs = vlcCreateMediaPlayerArguments(compressAudio);
-    /*
-     * Output all vlc arguments.
+    // Output all vlc arguments.
     for (auto i = 0; i < vlcArgs.size(); ++i) {
         qDebug() << "VLC Argument[" << i << "]: " << vlcArgs[i];
     }
-     */
-
     // Allocate and convert arguments to VLC compatible format.
     const char** movieVLCArgs = new const char*[vlcArgs.size()];
     for (auto i = 0; i < vlcArgs.size(); ++i) {
@@ -561,6 +558,10 @@ void xMoviePlayer::scanForAudioAndSubtitles() {
          if (movieMediaTracks[i]->i_type == libvlc_track_audio) {
              auto audioChannelDescription = QString(movieMediaTracks[i]->psz_language).toLower();
              updateAudioAndSubtitleDescription(audioChannelDescription);
+             // Use generic description if no language description is available.
+             if (audioChannelDescription.isEmpty()) {
+                 audioChannelDescription = QString("track %1").arg(i);
+             }
              auto description = QString(movieMediaTracks[i]->psz_description).toLower();
              // The descriptions stereo and surround do not add any value. Skip them.
              if ((!description.isEmpty()) && (description.compare("stereo") != 0) && (description.compare("surround") != 0)) {
