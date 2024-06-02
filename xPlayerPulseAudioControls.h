@@ -15,7 +15,6 @@
 #define __XPLAYERPULSEAUDIOCONTROLS_H__
 
 #include <QPushButton>
-#include <qwt/qwt_knob.h>
 #include <pulse/pulseaudio.h>
 
 class xPlayerPulseAudioControls:public QObject {
