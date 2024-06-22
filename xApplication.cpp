@@ -14,6 +14,7 @@
 #include <QMenuBar>
 #include <QDialogButtonBox>
 #include <QMessageBox>
+#include <QActionGroup>
 #include <QApplication>
 #include <QMetaType>
 
@@ -369,6 +370,13 @@ void xApplication::setMusicLibrary(bool force) {
     musicLibrary->setUrl(musicLibraryUrl, force);
 }
 
+void xApplication::visualizationError() {
+    musicOptionsVisualization->setChecked(false);
+    musicOptionsVisualization->setEnabled(false);
+    musicOptionsVisualizationMenu->setEnabled(false);
+    xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
+}
+
 void xApplication::scanningErrorMusicLibrary() {
     QMessageBox::critical(this, "Music Library",
                           "Unable to scan the music error. Please check your configuration.");
@@ -549,7 +557,7 @@ void xApplication::createMusicOptionsMenus() {
     musicOptionsMenu->addAction(musicOptionsSelectors);
     musicOptionsMenu->addAction(musicOptionsFilters);
     musicOptionsMenu->addAction(musicOptionsVisualization);
-    auto musicOptionsVisualizationMenu = musicOptionsMenu->addMenu("Visualization Mode");
+    musicOptionsVisualizationMenu = musicOptionsMenu->addMenu("Visualization Mode");
     musicOptionsVisualizationMenu->addAction(musicOptionsVisualizationSmall);
     musicOptionsVisualizationMenu->addAction(musicOptionsVisualizationCentral);
     // Select the proper visualization mode.
@@ -605,13 +613,12 @@ void xApplication::createMusicOptionsMenus() {
         musicOptionsVisualizationMenu->setEnabled(true);
         xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
     });
+    // Disable the visualization view if the music player does not support it.
+    if (!musicPlayer->supportsVisualization()) {
+        visualizationError();
+    }
     // Disable the visualization view in case of an error.
-    connect(mainMusicWidget, &xMainMusicWidget::visualizationError, [=]() {
-        musicOptionsVisualization->setChecked(false);
-        musicOptionsVisualization->setEnabled(false);
-        musicOptionsVisualizationMenu->setEnabled(false);
-        xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
-    });
+    connect(mainMusicWidget, &xMainMusicWidget::visualizationError, this, &xApplication::visualizationError);
     // Connect menu entries to enable/disable them.
     connect(mainMobileSyncWidget, &xMainMobileSyncWidget::enableMusicLibraryScanning,
             musicOptionsRescanMusicLibrary, &QAction::setEnabled);

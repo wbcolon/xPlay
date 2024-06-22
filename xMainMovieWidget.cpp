@@ -394,10 +394,10 @@ void xMainMovieWidget::updatePlayedMovies() {
                 // Adjust tooltip to play count "once" vs "x times".
                 if (playCount > 1) {
                     movieItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                            arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
                 } else {
                     movieItem->addToolTip(QString(tr("played once, last time on %1")).
-                            arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                            arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
                 }
                 // Remove element to speed up search in the next iteration.
                 playedMovies.erase(playedMovie);
@@ -450,10 +450,10 @@ void xMainMovieWidget::updatePlayedMovie(const QString& tag, const QString& dire
         moviePlayedItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
         if (playCount > 1) {
             moviePlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
         } else {
             moviePlayedItem->addToolTip(QString(tr("played once, last time on %1")).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
         }
     }
 }

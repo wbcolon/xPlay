@@ -29,7 +29,7 @@ class xMusicPlayer: public QObject {
 
 public:
     // Default delta for forward and rewind.
-    static const qint64 ForwardRewindDelta = 5000;
+    static constexpr qint64 ForwardRewindDelta = 5000;
     // Music player states.
     enum State {
         PlayingState,
@@ -50,7 +50,7 @@ public:
      *
      * @return true if the music player supports visualization, false otherwise.
      */
-    [[nodiscard]] static bool supportsVisualization();
+    [[nodiscard]] bool supportsVisualization();
     /**
      * Return the visualization state for the music player
      *
@@ -98,6 +98,7 @@ signals:
      * @param track the name of the current track.
      * @param bitrate the bitrate in kb/sec.
      * @param sampleRate the sample rate in Hz.
+     * @param bitsPerSample the bits per sample.
      * @param quality the quality as string.
      */
     void currentTrack(int index, const QString& artist, const QString& album, const QString& track,
@@ -287,7 +288,7 @@ private slots:
      * Called whenever a new entry out of the playlist is played. The call is
      * triggered by the playlist. The currentTrack signal is triggered.
      *
-     * @param index the position of the current track in the playlist.
+     * @param current the media object of the current track in the playlist.
      */
     void currentTrackSource(const Phonon::MediaSource& current);
     /**
@@ -368,6 +369,7 @@ private:
     Phonon::MediaObject* musicPlayer;
     Phonon::AudioOutput* musicOutput;
     Phonon::AudioDataOutput* musicVisualization;
+    bool musicVisualizationSupported;
     bool musicVisualizationEnabled;
     int musicVisualizationSampleRate;
     xMusicPlayer::State musicPlayerState;

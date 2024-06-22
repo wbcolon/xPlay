@@ -38,7 +38,7 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(const QString& text, QTreeWidget* p
         itemErrorMark(false) {
     Q_ASSERT(parent != nullptr);
     setText(0, itemText);
-    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+    itemTextWidth = parent->fontMetrics().size(Qt::TextSingleLine, itemText+"...").width();
     itemBackgroundBrush = background(0);
 }
 
@@ -58,7 +58,7 @@ xPlayerListWidgetItem::xPlayerListWidgetItem(std::function<QString ()> getText, 
         itemErrorMark(false) {
     Q_ASSERT(parent != nullptr);
     itemText = itemGetText();
-    itemTextWidth = parent->fontMetrics().width(itemText+"...");
+    itemTextWidth = parent->fontMetrics().size(Qt::TextSingleLine, itemText+"...").width();
     setText(0, itemText);
     itemBackgroundBrush = background(0);
 }
@@ -163,7 +163,7 @@ void xPlayerListWidgetItem::updateText() {
     if (itemGetText != nullptr) {
         itemText = itemGetText();
         // Update with for new text.
-        itemTextWidth = treeWidget()->fontMetrics().width(itemText+"...");
+        itemTextWidth = treeWidget()->fontMetrics().size(Qt::TextSingleLine, itemText+"...").width();
     }
     setText(0, itemText);
     updateToolTip();

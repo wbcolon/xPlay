@@ -37,7 +37,7 @@ xPlayerListWidget::xPlayerListWidget(QWidget* parent, bool displayTime):
     header()->setSectionResizeMode(0, QHeaderView::Stretch);
     if (displayTime) {
         setColumnCount(2);
-        setColumnWidth(1, fontMetrics().width("99:99:99"));
+        setColumnWidth(1, fontMetrics().size(Qt::TextSingleLine, "99:99:99").width());
     } else {
         setColumnCount(1);
     }

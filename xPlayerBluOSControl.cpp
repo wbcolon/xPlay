@@ -26,7 +26,7 @@ xPlayerBluOSControls* xPlayerBluOSControls::bluOSControls = nullptr;
 
 xPlayerBluOSControls::xPlayerBluOSControls():
         QObject(),
-        bluOSMutex(QMutex::NonRecursive),
+        bluOSMutex(),
         bluOSReIndexingInProgress(false) {
     bluOSRequests = curl_easy_init();
     bluOSStatus = new QTimer(this);

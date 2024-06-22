@@ -458,7 +458,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qint64 databaseCutOff = 0;
     if (databaseCutOffCheck->isChecked()) {
         // startOfDay requires Qt 5.14 or higher.
-        databaseCutOff = QDateTime(databaseCutOffDate->date()).toMSecsSinceEpoch();
+        databaseCutOff = QDateTime(databaseCutOffDate->date(), QTime(0, 0, 0)).toMSecsSinceEpoch();
     }
     QStringList movieLibraryTagAndDirectory;
     if (movieLibraryListWidget->count() > 0) {

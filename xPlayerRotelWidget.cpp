@@ -79,9 +79,9 @@ xPlayerRotelWidget::xPlayerRotelWidget(QWidget *parent, Qt::Orientation orientat
     // Connect the widgets to the amp commands.
     QObject::connect(rotelVolume, &xPlayerVolumeWidget::volume, rotelControls, &xPlayerRotelControls::setVolume);
     QObject::connect(rotelVolume, &xPlayerVolumeWidget::muted, rotelControls, &xPlayerRotelControls::setMuted);
-    QObject::connect(rotelBass, SIGNAL(valueChanged(int)), rotelControls, SLOT(setBass(int)));
-    QObject::connect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
-    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
+    QObject::connect(rotelBass, &QSpinBox::valueChanged, rotelControls, &xPlayerRotelControls::setBass);
+    QObject::connect(rotelTreble, &QSpinBox::valueChanged, rotelControls, &xPlayerRotelControls::setTreble);
+    QObject::connect(rotelSource, &QComboBox::currentTextChanged, rotelControls, &xPlayerRotelControls::setSource);
     QObject::connect(rotelBalance, &xPlayerBalanceWidget::balance, rotelControls, &xPlayerRotelControls::setBalance);
     // Connect Rotel controls to Rotel widget.
     QObject::connect(rotelControls, &xPlayerRotelControls::volume, this, &xPlayerRotelWidget::updateVolume);
@@ -105,16 +105,16 @@ void xPlayerRotelWidget::updateVolume(int vol) {
 
 void xPlayerRotelWidget::updateBass(int b) {
     qDebug() << "xPlayerRotel: updateBass: " << b;
-    QObject::disconnect(rotelBass, SIGNAL(valueChanged(int)), rotelControls, SLOT(setBass(int)));
+    QObject::disconnect(rotelBass, &QSpinBox::valueChanged, rotelControls, &xPlayerRotelControls::setBass);
     rotelBass->setValue(b);
-    QObject::connect(rotelBass, SIGNAL(valueChanged(int)), rotelControls, SLOT(setBass(int)));
+    QObject::connect(rotelBass, &QSpinBox::valueChanged, rotelControls, &xPlayerRotelControls::setBass);
 }
 
 void xPlayerRotelWidget::updateTreble(int t) {
     qDebug() << "xPlayerRotel: updateTreble: " << t;
-    QObject::disconnect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
+    QObject::disconnect(rotelTreble, &QSpinBox::valueChanged, rotelControls, &xPlayerRotelControls::setTreble);
     rotelTreble->setValue(t);
-    QObject::connect(rotelTreble, SIGNAL(valueChanged(int)), rotelControls, SLOT(setTreble(int)));
+    QObject::connect(rotelTreble, &QSpinBox::valueChanged, rotelControls, &xPlayerRotelControls::setTreble);
 }
 
 void xPlayerRotelWidget::updateBalance(int b) {
@@ -126,9 +126,9 @@ void xPlayerRotelWidget::updateBalance(int b) {
 
 void xPlayerRotelWidget::updateSource(const QString& source) {
     qDebug() << "xPlayerRotel: updateSource: " << source;
-    QObject::disconnect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
+    QObject::disconnect(rotelSource, &QComboBox::currentTextChanged, rotelControls, &xPlayerRotelControls::setSource);
     rotelSource->setCurrentIndex(Rotel::Sources.indexOf(source));
-    QObject::connect(rotelSource, SIGNAL(currentIndexChanged(QString)), rotelControls, SLOT(setSource(QString)));
+    QObject::connect(rotelSource, &QComboBox::currentTextChanged, rotelControls, &xPlayerRotelControls::setSource);
 }
 
 void xPlayerRotelWidget::updateMuted(bool mute) {
