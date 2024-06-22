@@ -54,6 +54,10 @@ private slots:
      */
     void setMusicLibrary(bool force=false);
     /**
+     * Disable visualization of an error occurs.
+     */
+    void visualizationError();
+    /**
      * Notify about an error while scanning the music library.
      */
     void scanningErrorMusicLibrary();
@@ -209,6 +213,7 @@ private:
     QMenuBar* movieOptionsMenuBar;
     QMenuBar* streamingOptionsMenuBar;
     QMenuBar* mobileSyncOptionsMenuBar;
+    QMenu* musicOptionsVisualizationMenu;
 };
 
 #endif

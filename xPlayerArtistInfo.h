@@ -20,7 +20,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QAction>
-#include <QtWebEngineWidgets/QWebEngineView>
+#include <QWebEngineView>
 
 class xPlayerArtistInfo:public QWidget {
     Q_OBJECT

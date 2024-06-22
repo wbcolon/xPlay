@@ -232,7 +232,7 @@ xPlayerMusicLibraryWidget::xPlayerMusicLibraryWidget(xMusicLibrary* library, con
     musicLibraryTree->header()->setStretchLastSection(false);
     musicLibraryTree->header()->setVisible(false);
     musicLibraryTree->setContextMenuPolicy(Qt::CustomContextMenu);
-    musicLibraryTree->setColumnWidth(1, QFontMetrics(QApplication::font()).width("99999.99 GB"));
+    musicLibraryTree->setColumnWidth(1, QFontMetrics(QApplication::font()).size(Qt::TextSingleLine, "99999.99 GB").width());
     auto boxLayout = new QVBoxLayout();
     boxLayout->addWidget(musicLibraryTree);
     setLayout(boxLayout);

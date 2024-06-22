@@ -18,10 +18,10 @@
 #include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 
-#include <QtWebEngineWidgets/QWebEngineView>
-#include <QtWebEngineWidgets/QWebEngineSettings>
-#include <QtWebEngineWidgets/QWebEngineProfile>
-#include <QtWebEngineWidgets/QWebEngineHistory>
+#include <QWebEngineView>
+#include <QWebEngineSettings>
+#include <QWebEngineProfile>
+#include <QWebEngineHistory>
 #include <QWebEngineCookieStore>
 #include <QGroupBox>
 #include <QPushButton>
@@ -36,9 +36,9 @@ xMainStreamingWidget::xMainStreamingWidget(QWidget *parent, Qt::WindowFlags flag
     // Webview.
     streamingWebView = new QWebEngineView(this);
     QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+    streamingWebView->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    streamingWebView->settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
+    streamingWebView->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     // Sidebar.
     auto sideBarWidget = new QWidget(this);
     auto sideBarLayout = new xPlayerLayout(sideBarWidget);

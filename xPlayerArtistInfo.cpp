@@ -18,9 +18,9 @@
 #include "xPlayerUI.h"
 
 #include <QComboBox>
-#include <QtWebEngineWidgets/QWebEngineSettings>
-#include <QtWebEngineWidgets/QWebEngineProfile>
-#include <QtWebEngineWidgets/QWebEngineHistory>
+#include <QWebEngineSettings>
+#include <QWebEngineProfile>
+#include <QWebEngineHistory>
 #include <QWebEngineCookieStore>
 #include <QToolButton>
 
@@ -37,9 +37,9 @@ xPlayerArtistInfo::xPlayerArtistInfo(QWidget* parent, Qt::WindowFlags flags):
     urlView = new QWebEngineView(this);
     // Configure QWebEngine.
     QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
-    QWebEngineSettings::defaultSettings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+    urlView->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    urlView->settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
+    urlView->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     // Navigation buttons and zoom factor box.
     homeButton = new QPushButton(QIcon(":images/xplay-home.svg"), "", this);
     homeButton->setIconSize(QSize(xPlayer::IconSize, xPlayer::IconSize));

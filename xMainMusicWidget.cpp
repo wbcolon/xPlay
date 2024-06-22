@@ -190,7 +190,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueBoxLayout->addWidget(queueTagsButton, 9, 2);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 3);
     // Does the music player support visualization.
-    if (xMusicPlayer::supportsVisualization()) {
+    if (musicPlayer->supportsVisualization()) {
         musicVisualizationWidget = new xPlayerVisualizationWidget(queueBox);
         // Connect music visualization view
         connect(musicPlayer, &xMusicPlayer::visualizationStereo,
@@ -971,7 +971,7 @@ void xMainMusicWidget::updatedMusicViewSelectors() {
 }
 
 void xMainMusicWidget::updatedMusicViewVisualization() {
-    if (xMusicPlayer::supportsVisualization()) {
+    if (musicPlayer->supportsVisualization()) {
         musicVisualizationEnabled = xPlayerConfiguration::configuration()->getMusicViewVisualization();
         musicVisualizationMode = xPlayerConfiguration::configuration()->getMusicViewVisualizationMode();
         musicPlayer->setVisualization(musicVisualizationEnabled);
@@ -1217,10 +1217,10 @@ void xMainMusicWidget::updatePlayedTracks() {
             // Adjust tooltip to play count "once" vs "x times".
             if (playCount > 1) {
                 trackItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                        arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                        arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
             } else {
                 trackItem->addToolTip(QString(tr("played once, last time on %1")).
-                        arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                        arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
             }
             // Move to the next element in the list.
             ++playedMusicTrack;
@@ -1267,10 +1267,10 @@ void xMainMusicWidget::updatePlayedTrack(const QString& artist, const QString& a
         trackPlayedItem->setIcon(xPlayerConfiguration::configuration()->getPlayedLevelIcon(playCount));
         if (playCount > 1) {
             trackPlayedItem->addToolTip(QString(tr("played %1 times, last time on %2")).arg(playCount).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
         } else {
             trackPlayedItem->addToolTip(QString(tr("played once, last time on %1")).
-                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::DefaultLocaleLongDate)));
+                    arg(QDateTime::fromMSecsSinceEpoch(timeStamp).toString(Qt::TextDate)));
         }
     }
 }

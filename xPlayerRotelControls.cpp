@@ -23,7 +23,7 @@ xPlayerRotelControls::xPlayerRotelControls():
         QObject(),
         rotelNetworkPort(0),
         rotelNetworkAddress(),
-        rotelMutex(QMutex::NonRecursive) {
+        rotelMutex() {
     // Setup timer for reconnect
     rotelNetworkReconnect = new QTimer(this);
     rotelNetworkReconnect->setSingleShot(true);

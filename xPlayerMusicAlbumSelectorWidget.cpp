@@ -93,7 +93,7 @@ void xPlayerMusicAlbumSelectorWidget::clear() {
         if (selectorState[i] != xPlayerMusicAlbumSelectorWidget::StateSpacer) {
             selectorState[i] = xPlayerMusicAlbumSelectorWidget::StateNotUsed;
             // Update the background color
-            selectorListWidget->item(i)->setBackgroundColor(xPlayerMusicAlbumSelectorWidget_StateColors[selectorState[i]]);
+            selectorListWidget->item(i)->setBackground(QBrush(xPlayerMusicAlbumSelectorWidget_StateColors[selectorState[i]]));
         }
     }
     emit clearAllSelectors();
@@ -112,7 +112,7 @@ void xPlayerMusicAlbumSelectorWidget::selectorClicked(QListWidgetItem* selectorI
             if (selectorState[i] != xPlayerMusicAlbumSelectorWidget::StateSpacer) {
                 selectorState[i] = xPlayerMusicAlbumSelectorWidget::StateNotUsed;
                 // Update the background color
-                selectorListWidget->item(i)->setBackgroundColor(xPlayerMusicAlbumSelectorWidget_StateColors[xPlayerMusicAlbumSelectorWidget::StateNotUsed]);
+                selectorListWidget->item(i)->setBackground(QBrush(xPlayerMusicAlbumSelectorWidget_StateColors[xPlayerMusicAlbumSelectorWidget::StateNotUsed]));
                 // We need to check and update the selectors
                 updateRequired = true;
             }
@@ -130,7 +130,7 @@ void xPlayerMusicAlbumSelectorWidget::selectorClicked(QListWidgetItem* selectorI
             // Move to the next state.
             state = static_cast<xSelectorStates>((state + 1) % xPlayerMusicAlbumSelectorWidget_StateColors.count());
             // Update the background color
-            selectorItem->setBackgroundColor(xPlayerMusicAlbumSelectorWidget_StateColors[state]);
+            selectorItem->setBackground(QBrush(xPlayerMusicAlbumSelectorWidget_StateColors[state]));
             // Save new state.
             selectorState[index] = state;
             // We need to check and update the selectors

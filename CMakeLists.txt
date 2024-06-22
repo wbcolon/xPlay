@@ -31,12 +31,14 @@ configure_file(xPlayerConfig.h.in xPlayerConfig.h)
 
 set(OpenGL_GL_PREFERENCE GLVND)
 
-find_package(Qt5 COMPONENTS Widgets DBus REQUIRED)
-find_package(Qt5Multimedia REQUIRED)
-find_package(Qt5MultimediaWidgets REQUIRED)
-find_package(Qt5WebEngineWidgets REQUIRED)
-find_package(Qt5Test REQUIRED)
-find_package(Phonon4Qt5)
+find_package(Qt6 COMPONENTS Widgets DBus REQUIRED)
+find_package(Qt6Multimedia REQUIRED)
+find_package(Qt6MultimediaWidgets REQUIRED)
+find_package(Qt6OpenGL REQUIRED)
+find_package(Qt6OpenGLWidgets REQUIRED)
+find_package(Qt6WebEngineWidgets REQUIRED)
+find_package(Qt6Test REQUIRED)
+find_package(Phonon4Qt6)
 find_package(SQLite3)
 find_package(CURL)
 find_package(OpenGL REQUIRED)
@@ -123,8 +125,8 @@ set(xPlay_sources
         xPlayerDBus.cpp)
 
 set(xPlay_libraries
-        Qt5::WebEngineWidgets Qt5::Widgets Qt5::Multimedia Qt5::MultimediaWidgets Qt5::DBus
-        Phonon::phonon4qt5
+        Qt6::WebEngineWidgets Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets Qt6::OpenGLWidgets Qt6::DBus
+        Phonon::phonon4qt6
         sqlite3
         ${TAGLIB_LIBRARIES}
         ${PROJECTM_LIBRARIES}

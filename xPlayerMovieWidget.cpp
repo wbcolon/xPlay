@@ -23,6 +23,7 @@
 #include <QTabWidget>
 #include <QMenu>
 #include <QPushButton>
+#include <QActionGroup>
 #include <QApplication>
 
 xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt::WindowFlags flags):

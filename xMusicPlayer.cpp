@@ -19,6 +19,7 @@
 #include "xPlayerBluOSControl.h"
 
 #include <QRandomGenerator>
+#include <QAudioOutput>
 #include <cmath>
 
 constexpr auto xMusicPlayer_MusicVisualizationSamples = 1024;
@@ -49,10 +50,12 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     musicPlayer = new Phonon::MediaObject(this);
     musicOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
     // Set stream output volume to 100%
-    musicOutput->setVolume(1.0);
+    //musicOutput->setVolume(1.0);
+    musicOutput->setVolume(100);
     musicVisualization = new Phonon::AudioDataOutput(this);
     Phonon::createPath(musicPlayer, musicOutput);
-    Phonon::createPath(musicPlayer, musicVisualization);
+    musicVisualizationSupported = Phonon::createPath(musicPlayer, musicVisualization).isValid();
+    qDebug() << "xMusicPlayer::xMusicPlayer: visualization support: " << musicVisualizationSupported;
     // Alternate setup, but we need the output to change volume.
     // musicPlayer = Phonon::createPlayer(Phonon::MusicCategory);
     musicPlayer->setTransitionTime(0);
@@ -76,9 +79,11 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     connect(xPlayerBluOSControls::controls(), &xPlayerBluOSControls::playerStopped, this, &xMusicPlayer::stop);
     // We only need this one to determine the time due to issues with Phonon
     musicPlayerForTime = new QMediaPlayer(this);
+    auto audioOutputForTime = new QAudioOutput(this);
+    musicPlayerForTime->setAudioOutput(audioOutputForTime);
     // This player is muted. It is only used to determine the proper duration.
-    musicPlayerForTime->setVolume(0);
-    musicPlayerForTime->setMuted(true);
+    audioOutputForTime->setVolume(0);
+    audioOutputForTime->setMuted(true);
     // Connect musicPlayerForTime.
     connect(musicPlayerForTime, &QMediaPlayer::durationChanged, this, &xMusicPlayer::currentTrackDuration);
 }
@@ -638,7 +643,7 @@ int xMusicPlayer::getVolume() const {
 }
 
 bool xMusicPlayer::supportsVisualization() {
-    return true;
+    return musicVisualizationSupported;
 }
 
 bool xMusicPlayer::getVisualization() const {
@@ -649,7 +654,8 @@ void xMusicPlayer::currentTrackDuration(qint64 duration) {
     emit currentTrackLength(duration);
     musicPlayerForTime->stop();
     // Reset media to avoid open files.
-    musicPlayerForTime->setMedia(QMediaContent());
+    // UPDATA QT6: Segfault if source is set to an empty URL
+    // musicPlayerForTime->setSource(QUrl());
     // Update current duration.
     musicCurrentDuration = duration;
 }
@@ -726,7 +732,7 @@ void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {
         // Use hack to determine the proper total length.
         // We need the muted musicPlayerForTime to play until the total time has been determined
         // and the durationChanged signal was triggered.
-        musicPlayerForTime->setMedia(QUrl::fromLocalFile(current.fileName()));
+        musicPlayerForTime->setSource(QUrl::fromLocalFile(current.fileName()));
         musicPlayerForTime->play();
         musicCurrentFinished = false;
         // Update current index.
