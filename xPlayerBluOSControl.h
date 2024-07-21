@@ -312,6 +312,13 @@ private:
      * @param commandResult the result of the query as string.
      */
     void parsePlayerStatus(const QString& commandResult);
+    /**
+     * Correct problematic characters in HTML request.
+     *
+     * @param input the input as string
+     * @return corrected input string without problematic characters
+     */
+    static QString correctHtmlString(const QString& input);
 
     QString bluOSUrl;
     QString bluOSBasePath;

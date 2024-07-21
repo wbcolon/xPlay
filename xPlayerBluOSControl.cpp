@@ -121,16 +121,7 @@ QString xPlayerBluOSControls::state() {
 }
 
 void xPlayerBluOSControls::addQueue(const QString& path) {
-    // Some character only seem to cause issues if one tries to add them to the BlueOS Player queue.
-    // Replace them usually with their ASCII code representation in the path URL.
-    static const std::vector<std::tuple<QString,QString>> problemCharacters {
-            {"=", "%3D"}
-    };
-    auto correctedPath(path);
-    for (const auto& [problemCharacter, replaceCharacter] : problemCharacters) {
-        correctedPath.replace(problemCharacter, replaceCharacter);
-    }
-    sendCommand(QUrl(bluOSUrl+"/Add?file="+correctedPath));
+    sendCommand(QUrl(bluOSUrl+"/Add?file="+correctHtmlString(path)));
 }
 
 void xPlayerBluOSControls::removeQueue(int index) {
@@ -185,7 +176,7 @@ std::vector<xDirectoryEntry> xPlayerBluOSControls::getArtists() {
 
 std::vector<xDirectoryEntry> xPlayerBluOSControls::getAlbums(const QString& artist) {
     std::vector<xDirectoryEntry> albums;
-    auto albumsPath = bluOSUrl+"/Folders?&service=LocalMusic&path="+bluOSBasePath+"/"+artist;
+    auto albumsPath = bluOSUrl+"/Folders?&service=LocalMusic&path="+bluOSBasePath+"/"+correctHtmlString(artist);
     qDebug() << "xPlayerBluOSControls::getAlbums: " << albumsPath;
     auto albumNames = parseFolders(sendCommand(albumsPath));
     albums.reserve(albumNames.size());
@@ -197,7 +188,7 @@ std::vector<xDirectoryEntry> xPlayerBluOSControls::getAlbums(const QString& arti
 
 std::vector<xDirectoryEntry> xPlayerBluOSControls::getTracks(const QString& artist, const QString& album) {
     std::vector<xDirectoryEntry> tracks;
-    auto tracksPath = bluOSUrl+"/Folders?&service=LocalMusic&path="+bluOSBasePath+"/"+artist+"/"+album;
+    auto tracksPath = bluOSUrl+"/Folders?&service=LocalMusic&path="+bluOSBasePath+"/"+correctHtmlString(artist)+"/"+correctHtmlString(album);
     qDebug() << "xPlayerBluOSControls::getTracks: " << tracksPath;
     auto trackInfos = parseTracks(sendCommand(tracksPath));
     tracks.reserve(trackInfos.size());
@@ -397,6 +388,19 @@ QStringList xPlayerBluOSControls::parsePlaylist(const QString& commandResult) {
         qCritical() << "Unable to parse result for tracks: " << result.description();
     }
     return queue;
+}
+
+QString xPlayerBluOSControls::correctHtmlString(const QString& input) {
+    // Some character only seem to cause issues if one tries to add them to the BlueOS Player queue.
+    // Replace them usually with their ASCII code representation in the path URL.
+    static const std::vector<std::tuple<QString,QString>> problemCharacters {
+            {"=", "%3D"}
+    };
+    auto correctedInput(input);
+    for (const auto& [problemCharacter, replaceCharacter] : problemCharacters) {
+        correctedInput.replace(problemCharacter, replaceCharacter);
+    }
+    return correctedInput;
 }
 
 void xPlayerBluOSControls::connect(const QUrl& url) {
