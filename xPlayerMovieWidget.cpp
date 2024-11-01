@@ -186,7 +186,7 @@ void xPlayerMovieWidget::createOptionsMenu() {
     cropDisabled->setCheckable(true);
     cropDisabled->setChecked(true);
     connect(cropDisabled, &QAction::triggered, [=](bool) {
-        moviePlayer->setCropAspectRatio(QString());
+        moviePlayer->setCropAspectRatio(xMoviePlayer::RatioAuto);
     });
     cropSubmenu->addAction(cropDisabled);
     cropSubmenu->addSeparator();

@@ -25,122 +25,17 @@
 
 #include <vlc/vlc.h>
 
-std::list<std::pair<QString,QString>> xMoviePlayer::supportedAspectRatio() {
+std::list<std::pair<QString,xMoviePlayer::AspectRatio>> xMoviePlayer::supportedAspectRatio() {
     return {
-        {"2.39 : 1", "239:100"},
-        {"1.85 : 1", "185:100"},
-        {"16 : 9", "16:9"},
-        {"16 : 10", "16:10"},
-        {"4 : 3", "4:3"}
+        {"auto", xMoviePlayer::RatioAuto},
+        {"fit", xMoviePlayer::RatioFitWidget},
+        {"16 : 9", xMoviePlayer::Ratio16x9},
+        {"4 : 3", xMoviePlayer::Ratio4x3}
     };
-}
-
-const std::list<int> VLC_MediaPlayer_Events {  // NOLINT
-        libvlc_MediaPlayerPlaying,
-        libvlc_MediaPlayerEndReached,
-        libvlc_MediaPlayerPositionChanged,
-        libvlc_MediaPlayerLengthChanged,
-        libvlc_MediaPlayerBuffering,
-        libvlc_MediaPlayerChapterChanged,
-        libvlc_MediaPlayerEncounteredError
-};
-
-const std::list<int> VLC_Media_Events {  // NOLINT
-        libvlc_MediaParsedChanged, libvlc_MediaDurationChanged, libvlc_MediaStateChanged,
-};
-
-QStringList xMoviePlayer::vlcCreateMediaPlayerArguments(bool compressAudio) {
-    static const QStringList vlcCacheArguments {
-        "--file-caching=60000",
-        "--live-caching=60000",
-        "--disc-caching=60000",
-        "--network-caching=60000"
-    };
-    static const QStringList vlcCompressArguments {
-        "--audio-filter=compressor",
-        "--compressor-rms-peak=0.0",
-        "--compressor-attack=30",
-        "--compressor-release=120",
-        "--compressor-threshold=-15",
-        "--compressor-ratio=15",
-        // "--compressor-attack=52",
-        // "--compressor-release=285",
-        // "--compressor-threshold=-13",
-        // "--compressor-ratio=13",
-        "--compressor-knee=3",
-        "--compressor-makeup-gain=3.6",
-    };
-    QStringList vlcArguments;
-    auto videoOut = xPlayerConfiguration::configuration()->getMovieVLCVideoOutput();
-    vlcArguments.append(QString("--vout=%1").arg(videoOut));
-    vlcArguments += vlcCacheArguments;
-    auto vlcAdditional = xPlayerConfiguration::configuration()->getMovieVLCAdditionalCommandline();
-    if (!vlcArguments.isEmpty()) {
-        vlcArguments += vlcAdditional.split(" ");
-    }
-    if (compressAudio) {
-        vlcArguments += vlcCompressArguments;
-    }
-    return vlcArguments;
-}
-
-void xMoviePlayer::vlcStartMediaPlayer(bool compressAudio) {
-
-    auto vlcArgs = vlcCreateMediaPlayerArguments(compressAudio);
-    // Output all vlc arguments.
-    for (auto i = 0; i < vlcArgs.size(); ++i) {
-        qDebug() << "VLC Argument[" << i << "]: " << vlcArgs[i];
-    }
-    // Allocate and convert arguments to VLC compatible format.
-    const char** movieVLCArgs = new const char*[vlcArgs.size()];
-    for (auto i = 0; i < vlcArgs.size(); ++i) {
-        movieVLCArgs[i] = vlcArgs[i].toStdString().c_str();
-    }
-    movieMediaAudioCompressionMode = compressAudio;
-    movieInstance = libvlc_new(static_cast<int>(vlcArgs.size()), movieVLCArgs);
-    if (!movieInstance) {
-        if (movieMediaAudioCompressionMode) {
-            qCritical() << "Unable to enable the VLC compressor plugin. Disabling audio compression.";
-            emit moviePlayerError(tr("Unable to enable the VLC compressor plugin. Disabling audio compression."));
-            vlcStartMediaPlayer(false);
-        } else {
-            qCritical() << "Unable to start vlc. Critical error. Abort.";
-            abort();
-        }
-    }
-    movieMediaPlayer = libvlc_media_player_new(movieInstance);
-    libvlc_media_player_set_role(movieMediaPlayer, libvlc_role_Video);
-    movieMediaPlayerEventManager = libvlc_media_player_event_manager(movieMediaPlayer);
-    for (auto event : VLC_MediaPlayer_Events) {
-        libvlc_event_attach(movieMediaPlayerEventManager, event, handleVLCMediaEvents, this);
-    }
-    // Delete movie arguments.
-    delete[] movieVLCArgs;
-}
-
-void xMoviePlayer::vlcStopMediaPlayer() {
-    // Detach events
-    for (auto event : VLC_MediaPlayer_Events) {
-        libvlc_event_detach(movieMediaPlayerEventManager, event, handleVLCMediaEvents, this);
-    }
-    // Stop playing
-    libvlc_media_player_stop(movieMediaPlayer);
-    // Free the media_player
-    libvlc_media_player_release(movieMediaPlayer);
-    // Release instance
-    libvlc_release(movieInstance);
 }
 
 xMoviePlayer::xMoviePlayer(QWidget *parent):
-        QFrame(parent),
-        movieInstance(nullptr),
-        movieMediaPlayer(nullptr),
-        movieMediaPlayerEventManager(nullptr),
-        movieMediaEventManager(nullptr),
-        movieMedia(nullptr),
-        movieMediaInitialPlay(false),
-        movieMediaParsed(false),
-        movieMediaPlaying(false),
+        Phonon::VideoWidget(parent),
         movieMediaLength(0),
         movieMediaChapter(0),
         movieMediaDeinterlaceMode(false),
@@ -150,38 +45,50 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         movieCurrentPlayed(0),
         moviePlayed(-1),
         movieCurrentSkip(false),
-        moviePlayedRecorded(false),
-        movieDefaultAudioLanguageIndex(-1),
-        movieDefaultSubtitleLanguageIndex(-1) {
-    // Do we use audio compression.
-    movieMediaAudioCompressionMode = xPlayerConfiguration::configuration()->getMovieAudioCompression();
-    // Set up the media player.
-    vlcStartMediaPlayer(movieMediaAudioCompressionMode);
+        moviePlayedRecorded(false) {
+
+    // Setup pulseAudio controls.
     pulseAudioControls = xPlayerPulseAudioControls::controls();
-    // Connect signals used to call out of VLC handler.
-    connect(this, &xMoviePlayer::eventHandler_stop, this, &xMoviePlayer::stop);
-    connect(this, &xMoviePlayer::eventHandler_setMovie, this, &xMoviePlayer::setMovie);
-    connect(this, &xMoviePlayer::eventHandler_selectAudioChannel, this, &xMoviePlayer::selectAudioChannel);
-    connect(this, &xMoviePlayer::eventHandler_selectSubtitle, this, &xMoviePlayer::selectSubtitle);
-    connect(this, &xMoviePlayer::eventHandler_parseFinished, this, &xMoviePlayer::parseFinished);
+    movieFile = new xMovieFile(this);
+    // Setup the media player.
+    audioOutput = new Phonon::AudioOutput(Phonon::VideoCategory, this);
+    audioOutput->setMuted(false);
+    audioOutput->setVolume(1.0);
+    // Setup the media player.
+    moviePlayer = new Phonon::MediaObject(this);
+    // Update each second
+    moviePlayer->setTickInterval(500);
+    moviePlayer->setPrefinishMark(1500);
+    movieController = new Phonon::MediaController(moviePlayer);
+    Phonon::createPath(moviePlayer, audioOutput);
+    Phonon::createPath(moviePlayer, this);
+    // Connect Phonon signals to out music player signals.
+    connect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
+    connect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
+    connect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
+    // Chapters and Titles are not properly updated by Phonon. Therefor we are using VLC to scan for chapters.
+    // connect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
+    // connect(movieController, &Phonon::MediaController::chapterChanged, this, &xMoviePlayer::updatedChapter);
+    connect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, [=](qint64 totalTime) {
+        movieMediaLength = totalTime;
+        qDebug() << "xMoviePlayer: totalTime: " << totalTime;
+        emit currentMovieLength(totalTime);
+    });
+    connect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::updatedTick);
+    connect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayer::stateChanged);
+    connect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayer::aboutToFinish);
+    connect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayer::closeToFinish);
     // Connect to configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultAudioLanguage,
-            this, &xMoviePlayer::updatedDefaultAudioLanguage);
+        this, &xMoviePlayer::updatedDefaultAudioLanguage);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultSubtitleLanguage,
-            this, &xMoviePlayer::updatedDefaultSubtitleLanguage);
+        this, &xMoviePlayer::updatedDefaultSubtitleLanguage);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMoviePlayed, [=]() {
         moviePlayed = xPlayerConfiguration::configuration()->getDatabaseMoviePlayed();
-    });
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieVLCParameters, [=]() {
-        // Reset the vlc player.
-        vlcStopMediaPlayer();
-        vlcStartMediaPlayer(movieMediaAudioCompressionMode);
-        emit currentState(State::ResetState);
     });
 }
 
 xMoviePlayer::~xMoviePlayer() noexcept {
-    vlcStopMediaPlayer();
 }
 
 void xMoviePlayer::setFullWindowMode(bool enabled) {
@@ -197,12 +104,12 @@ bool xMoviePlayer::getFullWindowMode() const {
 
 void xMoviePlayer::setMuted(bool mute) {
     // Mute/unmute the stream and the pulseaudio sink
-    libvlc_audio_set_mute(movieMediaPlayer, mute);
+    audioOutput->setMuted(mute);
     pulseAudioControls->setMuted(mute);
 }
 
 bool xMoviePlayer::isMuted() const {
-    return static_cast<bool>(libvlc_audio_get_mute(movieMediaPlayer));
+    return audioOutput->isMuted();
 }
 
 void xMoviePlayer::setVolume(int vol) {
@@ -216,108 +123,79 @@ int xMoviePlayer::getVolume() const {
 
 void xMoviePlayer::playPause() {
     // Pause if the media player is in playing state, resume play.
-    auto state = libvlc_media_player_get_state(movieMediaPlayer);
-    if (state == libvlc_Playing) {
-        libvlc_media_player_pause(movieMediaPlayer);
+    if (moviePlayer->state() == Phonon::PlayingState) {
+        moviePlayer->pause();
         emit currentState(State::PauseState);
-    }
-    if ((state == libvlc_Paused) || (state == libvlc_Stopped)) {
-        libvlc_media_player_play(movieMediaPlayer);
-        vlcFixAudio();
+    } else {
+        moviePlayer->play();
         emit currentState(State::PlayingState);
     }
 }
 
 void xMoviePlayer::playChapter(int chapter) {
     if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
-        libvlc_media_player_set_chapter(movieMediaPlayer, chapter);
-        libvlc_media_player_play(movieMediaPlayer);
-        vlcFixAudio();
-        updateCurrentPosition();
-        updateCurrentChapter();
+        qDebug() << "xMoviePlayer: playChapter:: " << chapter;
+        movieController->setCurrentChapter( chapter );
         emit currentState(State::PlayingState);
     }
+    updateCurrentChapter();
 }
 
 void xMoviePlayer::previousChapter() {
     // Indicate skip in order to correctly current position.
+    int chapter = movieController->currentChapter();
     movieCurrentSkip = true;
-    libvlc_media_player_previous_chapter(movieMediaPlayer);
-    vlcFixAudio();
+    if (chapter > 0) {
+        qDebug() << "xMoviePlayer: previousChapter:: " << chapter;
+        movieController->setCurrentChapter(chapter - 1);
+        emit currentState(State::PlayingState);
+    }
     updateCurrentChapter();
 }
 
 void xMoviePlayer::nextChapter() {
     // Indicate skip in order to correctly current position.
     movieCurrentSkip = true;
-    libvlc_media_player_next_chapter(movieMediaPlayer);
-    vlcFixAudio();
+    int chapter = movieController->currentChapter();
+    if (chapter < movieController->availableChapters() - 1 ) {
+        qDebug() << "xMoviePlayer: nextChapter:: " << chapter;
+        movieController->setCurrentChapter( chapter + 1 );
+        emit currentState(State::PlayingState);
+    }
     updateCurrentChapter();
 }
 
 void xMoviePlayer::seek(qint64 position) {
     // Check if VLC is still playing.
-    if (libvlc_media_player_get_media(movieMediaPlayer) == nullptr) {
-        return;
-    }
-    // Jump to position (in milliseconds) in the current track.
-    movieCurrentPosition = position;
-    movieCurrentSkip = false;
-    // Convert to VLC position.
-    auto newPosition = static_cast<float>(static_cast<double>(position)/static_cast<double>(movieMediaLength));
-    libvlc_media_player_set_position(movieMediaPlayer, newPosition);
-    vlcFixAudio();
+    moviePlayer->seek(position);
+    movieCurrentSkip = true;
     updateCurrentChapter();
 }
 
 void xMoviePlayer::jump(qint64 delta) {
-    // Check if VLC is still playing.
-    if (libvlc_media_player_get_media(movieMediaPlayer) == nullptr) {
-        return;
-    }
     // Jump to current position + delta (in milliseconds) in the current track.
-    auto currentPosition = static_cast<qint64>(libvlc_media_player_get_position(movieMediaPlayer)*movieMediaLength); // NOLINT
-    seek(currentPosition+delta);
+    qint64 currentPosition = moviePlayer->currentTime() + delta;
+    // Do not jump past the end (minus 100ms).
+    qint64 currentLength = moviePlayer->totalTime() - 100;
+    moviePlayer->seek(std::clamp(currentPosition, static_cast<qint64>(0), currentLength));
+    movieCurrentSkip = true;
+    updateCurrentChapter();
 }
 
 void xMoviePlayer::stop() {
-    // Reset the movie player if current movie has ended.
-    auto state = libvlc_media_player_get_state(movieMediaPlayer);
-    if (state == libvlc_Ended) {
-        emit currentState(State::ResetState);
-    } else {
-        // Stop (pause and reset to position 0) the media player.
-        libvlc_media_player_set_pause(movieMediaPlayer, 1);
-        libvlc_media_player_set_position(movieMediaPlayer, 0);
-        vlcFixAudio();
-        updateCurrentChapter();
-        // Reset the current position.
-        movieCurrentPosition =  0;
-        // Update states.
-        emit currentState(State::StopState);
-        emit currentMoviePlayed(0);
-        emit currentChapter(0);
-    }
+    // Stop the media player.
+    moviePlayer->stop();
+    seek(0);
+    // Reset the current position.
+    movieCurrentPosition = 0;
+    // Update states.
+    emit currentState(State::StopState);
+    emit currentMoviePlayed(0);
+    emit currentChapter(0);
 }
 
 void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory) {
-    // Stop parsing if current movie file is still being parsed.
-    if (movieMedia) {
-        for (auto event: VLC_Media_Events) {
-            libvlc_event_detach(movieMediaEventManager, event, handleVLCMediaEvents, this);
-        }
-        libvlc_media_parse_stop(movieMedia);
-        libvlc_media_release(movieMedia);
-        movieMedia = nullptr;
-    }
-    movieMedia = libvlc_media_new_path(movieInstance, path.generic_string().c_str());
-    movieMediaEventManager = libvlc_media_event_manager(movieMedia);
-    for (auto event: VLC_Media_Events) {
-        libvlc_event_attach(movieMediaEventManager, event, handleVLCMediaEvents, this);
-    }
-    // Handle events coming in any order.
-    movieMediaParsed = false;
-    movieMediaPlaying = false;
+    QString filePath = QString::fromStdString( path.string() );
     // Reset movie played.
     movieCurrentPosition = 0;
     movieCurrentPlayed = 0;
@@ -327,18 +205,14 @@ void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& na
     movieCurrent = std::make_pair(path, name);
     movieCurrentTag = tag;
     movieCurrentDirectory = directory;
-    // Create a media player playing environment.
-    libvlc_media_player_set_media(movieMediaPlayer, movieMedia);
-    // Start parsing the file. Allow up to 10 second for preparsing.
-    libvlc_media_parse_with_options(movieMedia, libvlc_media_parse_network, 10000);
-    // Update display.
+    // Analyze movie file.
+    movieFile->analyze(filePath);
+    currentChapterBegin = movieFile->getChapterBegin();
+    // Set current movie.
+    moviePlayer->setCurrentSource(QUrl::fromLocalFile(filePath));
+    moviePlayer->play();
+    qDebug() << "xMoviePlayer: play: " << filePath;
     emit currentMovie(path, name, tag, directory);
-}
-
-void xMoviePlayer::parseFinished() {
-    movieMediaInitialPlay = true;
-    libvlc_media_player_set_xwindow(movieMediaPlayer, winId());
-    libvlc_media_player_play(movieMediaPlayer);
     emit currentState(xMoviePlayer::PlayingState);
 }
 
@@ -351,12 +225,9 @@ void xMoviePlayer::clearMovieQueue() {
 }
 
 void xMoviePlayer::setAudioCompressionMode(bool mode) {
+    /* VLC */
     if (mode != movieMediaAudioCompressionMode) {
         // Reset the vlc player.
-        vlcStopMediaPlayer();
-        vlcStartMediaPlayer(mode);
-        emit currentState(State::ResetState);
-        // Do not update the configuration. Configuration is default behavior.
     }
 }
 
@@ -366,282 +237,207 @@ bool xMoviePlayer::audioCompressionMode() const {
 
 void xMoviePlayer::setDeinterlaceMode(bool mode) {
     movieMediaDeinterlaceMode = mode;
-    if (movieMediaDeinterlaceMode) {
-        libvlc_video_set_deinterlace(movieMediaPlayer, "Linear");
-    } else {
-        libvlc_video_set_deinterlace(movieMediaPlayer, nullptr);
-    }
+    /* VLC */
 }
 
 bool xMoviePlayer::deinterlaceMode() const {
     return movieMediaDeinterlaceMode;
 }
 
-void xMoviePlayer::setCropAspectRatio(const QString& aspectRatio) {
-    if (aspectRatio.isEmpty()) {
-        libvlc_video_set_crop_geometry(movieMediaPlayer, nullptr);
-        movieMediaCropAspectRatio.clear();
-    } else {
-        for (auto&& supported : supportedAspectRatio()) {
-            if (supported.second == aspectRatio) {
-                libvlc_video_set_crop_geometry(movieMediaPlayer, aspectRatio.toStdString().c_str());
-                movieMediaCropAspectRatio = aspectRatio;
-            }
-        }
-    }
+void xMoviePlayer::setCropAspectRatio(xMoviePlayer::AspectRatio aspectRatio) {
+    setAspectRatio(static_cast<Phonon::VideoWidget::AspectRatio>(aspectRatio));
 }
 
 QString xMoviePlayer::cropAspectRatio() const {
     return movieMediaCropAspectRatio;
 }
 
+void xMoviePlayer::availableAudioChannels() {
+    QStringList audioChannels;
+    currentAudioChannelDescriptions = movieController->availableAudioChannels();
+    for (const auto& description : currentAudioChannelDescriptions) {
+        auto audioChannel = description.name();
+        if (!description.description().isEmpty()) {
+            audioChannel += QString(" (%1)").arg(description.description());
+        }
+        // Shorten a few audio descriptions.
+        audioChannel.replace("Free Lossless Audio Codec (FLAC)", "FLAC");
+        audioChannel.replace("PCM audio", "PCM");
+        audioChannel.replace("Uncompressed ", "");
+        audioChannels.push_back(audioChannel);
+        qDebug() << "xMoviePlayer: audio channel: " << audioChannel;
+    }
+    // Determine default audio track.
+    int defaultAudioIndex = 0; // First phonon audio track is disabled.
+    for (const auto& audioChannel : audioChannels ) {
+        if (audioChannel.contains(movieDefaultAudioLanguage, Qt::CaseInsensitive)) {
+            break;
+        }
+        ++defaultAudioIndex;
+    }
+    // Do we have a default audio channel?
+    if (defaultAudioIndex >= audioChannels.count()) {
+        // Phonon uses index 0 for disabled.
+        defaultAudioIndex = 1;
+    }
+    emit currentAudioChannels(audioChannels, QStringList() );
+    emit currentAudioChannel(defaultAudioIndex);
+    selectAudioChannel(defaultAudioIndex);
+    qDebug() << "xMoviePlayer: audio channel descriptions: " << currentAudioChannelDescriptions;
+}
+
+void xMoviePlayer::availableSubtitles() {
+    currentSubtitleDescriptions = movieController->availableSubtitles();
+    QStringList subtitles;
+    for (const auto& description : currentSubtitleDescriptions) {
+        auto subtitle = description.name();
+        if (!description.description().isEmpty()) {
+            subtitle += QString(" (%1)").arg(description.description());
+        }
+        subtitles.push_back(subtitle);
+    }
+    emit currentSubtitles(subtitles);
+    if (currentSubtitleDescriptions.count() > 0) {
+        // Disable subtitles on default.
+        movieController->setCurrentSubtitle(currentSubtitleDescriptions[0]);
+    }
+    qDebug() << "xMoviePlayer: subtitle track descriptions: " << currentSubtitleDescriptions;
+}
+
+void xMoviePlayer::availableChapters(int chapters) {
+    qDebug() << "xMoviePlayer: number of chapters: " << chapters;
+    currentChapterDescriptions.clear();
+    for (int i = 1; i <= chapters; ++i) {
+        currentChapterDescriptions.push_back( QString("Chapter %1").arg(i) );
+    }
+    emit currentChapters( currentChapterDescriptions );
+}
+
+void xMoviePlayer::availableTitles(int titles) {
+    qDebug() << "xMovie: number of titles: " << titles;
+}
+
 void xMoviePlayer::selectAudioChannel(int index) {
     if ((index >= 0) && (index < currentAudioChannelDescriptions.size())) {
-        libvlc_audio_set_track(movieMediaPlayer, currentAudioChannelDescriptions[index].first);
+        qDebug() << "xMovie: selectAudioChannel:: " << index;
+        movieController->setCurrentAudioChannel(currentAudioChannelDescriptions[index]);
+        fixAudioIssue();
     }
 }
+
 void xMoviePlayer::selectSubtitle(int index) {
     if ((index >= 0) && (index < currentSubtitleDescriptions.size())) {
-        libvlc_video_set_spu(movieMediaPlayer, currentSubtitleDescriptions[index].first);
+        qDebug() << "xMovie: selectSubtitle:: " << index;
+        movieController->setCurrentSubtitle(currentSubtitleDescriptions[index]);
+        fixAudioIssue();
     }
 }
 
-void xMoviePlayer::handleVLCMediaEvents(const libvlc_event_t *event, void *data) {
-    // Reconvert data to this (as self).
-    auto self = reinterpret_cast<xMoviePlayer*>(data);
-    switch (event->type) {
-        case libvlc_MediaParsedChanged: {
-            auto parsedStatus = libvlc_media_get_parsed_status(self->movieMedia);
-            switch (parsedStatus) {
-                case libvlc_media_parsed_status_done: {
-                    // Determine length.
-                    self->movieMediaLength = libvlc_media_get_duration(self->movieMedia);
-                    emit self->currentMovieLength(self->movieMediaLength);
-                    // Scan for audio channels and subtitles.
-                    self->scanForAudioAndSubtitles();
-                    // Scan for chapters.
-                    self->scanForChapters();
-                    // Scanning successful. No need for movieMedia pointer any more.
-                    libvlc_event_detach(self->movieMediaEventManager,libvlc_MediaParsedChanged, handleVLCMediaEvents, self);
-                    libvlc_media_release(self->movieMedia);
-                    if (!self->movieMediaPlaying) {
-                        self->movieMedia = nullptr;
-                        self->movieMediaParsed = true;
-                        emit self->eventHandler_parseFinished();
-                    }
-                    qDebug() << "Parsing finished...";
-                } break;
-                case libvlc_media_parsed_status_timeout: {
-                    // Start playing.
-                    emit self->eventHandler_parseFinished();
-                } break;
-                default: {
-                    qCritical() << "[libvlc] parsing failed with: " << parsedStatus << ". Stopping movie";
-                    emit self->eventHandler_stop();
-                }
-            }
-        } break;
-        case libvlc_MediaDurationChanged: {
-            if (event->u.media_duration_changed.new_duration != self->movieMediaLength) {
-                qDebug() << "[libvlc_MediaDurationChanged] duration changed from " << self->movieMediaLength << " to "
-                         << event->u.media_duration_changed.new_duration;
-                self->movieMediaLength = event->u.media_duration_changed.new_duration;
-                emit self->currentMovieLength(self->movieMediaLength);
-            }
-        } break;
-        case libvlc_MediaPlayerPositionChanged: {
-            auto movieMediaPos = static_cast<qint64>(event->u.media_player_position_changed.new_position*self->movieMediaLength); // NOLINT
-            // Update played time and current position.
-            if (self->movieCurrentSkip) {
-                // Update the current position if we skipped.
-                self->movieCurrentPosition = movieMediaPos;
-                self->movieCurrentSkip = false;
-            }
-            // Do we need to check for database update.
-            if (!self->moviePlayedRecorded) {
-                if (self->movieCurrentPosition <= movieMediaPos) {
-                    self->movieCurrentPlayed += (movieMediaPos - self->movieCurrentPosition);
-                    self->movieCurrentPosition = movieMediaPos;
-                    // Determine if we need to update the database.
-                    auto update = false;
-                    if ((self->movieMediaLength - 10000) <= self->moviePlayed) {
-                        // Update if we are close to the end (within 10 seconds towards the end)
-                        update = (self->movieCurrentPosition >= self->movieMediaLength - 10000) &&
-                                 (self->movieCurrentPosition <= self->movieCurrentPlayed);
-                    } else {
-                        // Update if we played enough of the song.
-                        update = (self->movieCurrentPlayed >= self->moviePlayed);
-                    }
-                    if (update) {
-                        // Update database.
-                        auto name = self->movieCurrent.second;
-                        auto result = xPlayerDatabase::database()->updateMovieFile(self->movieCurrentTag,
-                                                                                   self->movieCurrentDirectory,
-                                                                                   name);
-                        if (result.second > 0) {
-                            // Update database overlay.
-                            emit self->updatePlayedMovie(self->movieCurrentTag, self->movieCurrentDirectory,
-                                                         name, result.first, result.second);
-                            self->moviePlayedRecorded = true;
-                        }
-                    }
-                } else {
-                    qCritical() << "xMoviePlayer::handleVLCMediaEvents: illegal movie positions: "
-                                << self->movieCurrentPosition << "," << movieMediaPos;
-                }
-            }
-            emit self->currentMoviePlayed(movieMediaPos);
-            self->updateCurrentChapter();
-        } break;
-        case libvlc_MediaPlayerLengthChanged: {
-            if (event->u.media_player_length_changed.new_length != self->movieMediaLength) {
-                qDebug() << "[libvlc_MediaPlayerLengthChanged] duration changed from " << self->movieMediaLength << " to "
-                         << event->u.media_player_length_changed.new_length;
-                self->movieMediaLength = event->u.media_player_length_changed.new_length;
-                emit self->currentMovieLength(self->movieMediaLength);
-            }
-        } break;
-        case libvlc_MediaPlayerChapterChanged: {
-            // Scan for chapters if we did not find any so far.
-            if (!self->currentChapterDescriptions.count()) {
-                self->scanForChapters();
-            }
-        } break;
-        case libvlc_MediaPlayerEncounteredError: {
-            qWarning() << "[libvlc_MediaPlayerEncounteredError]";
-        } break;
-        case libvlc_MediaPlayerEndReached: {
-            // Supposed to be playing, but state does not match.
-            // Play next movie in the queue or stop.
-            if (self->movieQueue.isEmpty()) {
-                emit self->eventHandler_stop();
+void xMoviePlayer::updatedChapter(int chapter) {
+    qDebug() << "xMovie: updatedChapter:: " << chapter;
+}
+
+void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
+    qDebug() << "xMovie: updatedTick:: " << movieMediaPos << ", currentPlayed: " << movieCurrentPlayed << ", currentPos: " << movieCurrentPosition;
+
+    // Skip left-over ticks from previous movie
+    if ((movieMediaPos > 500) && (movieCurrentPlayed == 0) && (movieCurrentPosition == 0)) {
+        qWarning() << "xMovie: skip left-over tick";
+        return;
+    }
+
+    // Update played time and current position.
+    if (movieCurrentSkip) {
+        // Update the current position if we skipped.
+        movieCurrentPosition = movieMediaPos;
+        movieCurrentSkip = false;
+    }
+    // Do we need to check for database update.
+    if (!moviePlayedRecorded) {
+        if (movieCurrentPosition <= movieMediaPos) {
+            movieCurrentPlayed += (movieMediaPos - movieCurrentPosition);
+            movieCurrentPosition = movieMediaPos;
+            // Determine if we need to update the database.
+            auto update = false;
+            if ((movieMediaLength - 10000) <= moviePlayed) {
+                // Update if we are close to the end (within 10 seconds towards the end)
+                update = (movieCurrentPosition >= movieMediaLength - 10000) &&
+                    (movieCurrentPosition <= movieCurrentPlayed);
             } else {
-                auto nextMovie = self->movieQueue.takeFirst();
-                emit self->eventHandler_setMovie(nextMovie.first, nextMovie.second, self->movieCurrentTag,
-                                                 self->movieCurrentDirectory);
+                // Update if we played enough of the song.
+                update = (movieCurrentPlayed >= moviePlayed);
             }
-        } break;
-        case libvlc_MediaStateChanged: {
-            qDebug() << "[libvlc_MediaStateChanged] new state: " << event->u.media_state_changed.new_state;
-            if (event->u.media_state_changed.new_state == libvlc_Playing) {
-                self->movieMediaPlaying = true;
+            if (update) {
+                // Update database.
+                auto name = movieCurrent.second;
+                auto result = xPlayerDatabase::database()->updateMovieFile(movieCurrentTag,
+                                                                           movieCurrentDirectory, name);
+
+                qDebug() << "xMovie: updatedTick: db: " << movieCurrentTag << "," << movieCurrentDirectory << "," << name;
+                qDebug() << "xMovie: updatedTick: db: " << result;
+                if (result.second > 0) {
+                    // Update database overlay.
+                    emit updatePlayedMovie(movieCurrentTag, movieCurrentDirectory,
+                                           name, result.first, result.second);
+                    moviePlayedRecorded = true;
+                }
             }
-        } break;
-    }
-    // Movie is parsed and playing.
-    if ((self->movieMediaPlaying) && (self->movieMediaParsed)) {
-        if (self->movieMediaInitialPlay) {
-            self->movieMediaInitialPlay = false;
-            // Select default audio channel in the UI and the player.
-            if (self->movieDefaultAudioLanguageIndex >= 0) {
-                emit self->eventHandler_selectAudioChannel(self->movieDefaultAudioLanguageIndex);
-                emit self->currentAudioChannel(self->movieDefaultAudioLanguageIndex);
-            }
-            // Select default subtitle in the UI and the player.
-            emit self->eventHandler_selectSubtitle(self->movieDefaultSubtitleLanguageIndex);
-            emit self->currentSubtitle(self->movieDefaultSubtitleLanguageIndex);
+        } else {
+            qCritical() << "xMoviePlayer::updatedTick: illegal movie positions: "
+                << movieCurrentPosition << "," << movieMediaPos;
         }
+    }
+
+    emit currentMoviePlayed(movieMediaPos);
+    updateCurrentChapter();
+}
+
+void xMoviePlayer::stateChanged(Phonon::State newState, Phonon::State oldState) {
+    qDebug() << "xMoviePlayer: new: " << newState << ", old: " << oldState;
+    if ((newState == Phonon::StoppedState) && (oldState == Phonon::PlayingState)) {
+        emit currentState(xMoviePlayer::StopState);
     }
 }
 
-void xMoviePlayer::scanForAudioAndSubtitles() {
-    libvlc_media_track_t** movieMediaTracks = nullptr;
-    unsigned noTracks = libvlc_media_tracks_get(movieMedia, &movieMediaTracks);
-    // Reset channel descriptions.
-    currentAudioChannelDescriptions.clear();
-    currentSubtitleDescriptions.clear();
-    currentSubtitleDescriptions.push_back(std::make_pair(-1, "disable"));
-    QStringList audioChannels;
-    QStringList audioCodecs;
-    QStringList subtitles { "disable" };
-    for (unsigned i = 0; i < noTracks; ++i) {
-         if (movieMediaTracks[i]->i_type == libvlc_track_audio) {
-             auto audioChannelDescription = QString(movieMediaTracks[i]->psz_language).toLower();
-             updateAudioAndSubtitleDescription(audioChannelDescription);
-             // Use generic description if no language description is available.
-             if (audioChannelDescription.isEmpty()) {
-                 audioChannelDescription = QString("track %1").arg(i);
-             }
-             auto description = QString(movieMediaTracks[i]->psz_description).toLower();
-             // The descriptions stereo and surround do not add any value. Skip them.
-             if ((!description.isEmpty()) && (description.compare("stereo") != 0) && (description.compare("surround") != 0)) {
-                 audioChannelDescription += QString(" (%1)").arg(description);
-             }
-             if (movieMediaTracks[i]->audio->i_channels > 2) {
-                 audioChannelDescription += QString(" [%1.1]").arg(movieMediaTracks[i]->audio->i_channels - 1);
-             } else {
-                 audioChannelDescription += QString(" [stereo]");
-             }
-             auto codec = QString(libvlc_media_get_codec_description(libvlc_track_audio, movieMediaTracks[i]->i_codec)).toLower();
-             audioCodecs.push_back(codec);
-             audioChannels.push_back(audioChannelDescription);
-             currentAudioChannelDescriptions.push_back(std::make_pair(i, audioChannelDescription));
-         }
-        if (movieMediaTracks[i]->i_type == libvlc_track_text) {
-            auto subtitleDescription = QString(movieMediaTracks[i]->psz_language);
-            updateAudioAndSubtitleDescription(subtitleDescription);
-            auto description = QString(movieMediaTracks[i]->psz_description).toLower();
-            if (!description.isEmpty()) {
-                subtitleDescription += QString(" (%1)").arg(movieMediaTracks[i]->psz_description).toLower();
-            }
-            auto encoding = QString(movieMediaTracks[i]->subtitle->psz_encoding).toLower();
-            if (!encoding.isEmpty()) {
-                subtitleDescription += QString(" [%1]").arg(movieMediaTracks[i]->subtitle->psz_encoding).toLower();
-            }
-            subtitles.push_back(subtitleDescription);
-            currentSubtitleDescriptions.push_back(std::make_pair(i, subtitleDescription));
-        }
+void xMoviePlayer::aboutToFinish() {
+    if (movieQueue.isEmpty()) {
+        qDebug() << "xMoviePlayer: aboutToFinish";
+        // Go to stopping state. End full window mode.
+        emit currentState(xMoviePlayer::StoppingState);
     }
-    libvlc_media_tracks_release(movieMediaTracks, noTracks);
-    // Check if we have a default audio language.
-    movieDefaultAudioLanguageIndex = -1;
-    if (!movieDefaultAudioLanguage.isEmpty()) {
-        for (auto i = 0; i < audioChannels.count(); ++i) {
-            // Find the first match.
-            if (audioChannels[i].contains(movieDefaultAudioLanguage, Qt::CaseInsensitive)) {
-                movieDefaultAudioLanguageIndex = i;
-                break;
-            }
-        }
-    }
-    // Check if we have a default audio language.
-    movieDefaultSubtitleLanguageIndex = 0;
-    if (!movieDefaultSubtitleLanguage.isEmpty()) {
-        for (auto i = 0; i < subtitles.count(); ++i) {
-            // Find the first match.
-            if (subtitles[i].contains(movieDefaultSubtitleLanguage, Qt::CaseInsensitive)) {
-                movieDefaultSubtitleLanguageIndex = i;
-                break;
-            }
-        }
-    }
-    // Emit the updates.
-    emit currentAudioChannels(audioChannels, audioCodecs);
-    emit currentSubtitles(subtitles);
 }
 
-void xMoviePlayer::scanForChapters() {
-    // Reset chapter descriptions.
-    currentChapterDescriptions.clear();
-    // Check for chapters.
-    QStringList chapters;
-    libvlc_chapter_description_t** chapterDescription = nullptr;
-    int noChapters = libvlc_media_player_get_full_chapter_descriptions(movieMediaPlayer, -1, &chapterDescription);
-    if (chapterDescription != nullptr) {
-        for (auto i = 0; i < noChapters; ++i) {
-            auto chapterName = QString(chapterDescription[i]->psz_name).trimmed();
-            currentChapterDescriptions.push_back(std::make_pair(chapterDescription[i]->i_time_offset, chapterName));
-            chapters.push_back(chapterName);
-        }
-        libvlc_chapter_descriptions_release(chapterDescription, noChapters);
+void xMoviePlayer::closeToFinish(qint32 timeLeft) {
+    qDebug() << "xMoviePlayer: closeToFinish: " << timeLeft;
+    if (movieQueue.isEmpty()) {
+        // Stop the media player.
+        moviePlayer->stop();
+        emit currentState(xMoviePlayer::StopState);
+    } else {
+        // Take next movie out of the queue and directly play it.
+        auto nextMovie = movieQueue.takeFirst();
+        setMovie(nextMovie.first, nextMovie.second, movieCurrentTag, movieCurrentDirectory);
     }
-    // Emit the updates.
-    emit currentChapters(chapters);
+}
+
+void xMoviePlayer::updatedDefaultAudioLanguage() {
+    movieDefaultAudioLanguage = xPlayerConfiguration::configuration()->getMovieDefaultAudioLanguage();
+}
+
+void xMoviePlayer::updatedDefaultSubtitleLanguage() {
+    movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
 }
 
 void xMoviePlayer::updateCurrentChapter() {
-    if (currentChapterDescriptions.count() > 0) {
-        auto chapter = libvlc_media_player_get_chapter(movieMediaPlayer);
+    if (currentChapterBegin.count() > 0) {
+        qint64 currentPosition = moviePlayer->currentTime();
+        int chapter = static_cast<int>(currentChapterBegin.count())-1;
+        while (chapter >= 0) {
+            if (currentChapterBegin[chapter] < currentPosition) {
+                break;
+            }
+            --chapter;
+        }
         if (movieMediaChapter != chapter) {
             // Update current chapter.
             movieMediaChapter = chapter;
@@ -651,34 +447,8 @@ void xMoviePlayer::updateCurrentChapter() {
     }
 }
 
-void xMoviePlayer::updateCurrentPosition() {
-    movieCurrentPosition =  static_cast<qint64>(libvlc_media_player_get_position(movieMediaPlayer)*movieMediaLength); // NOLINT
-}
-
-void xMoviePlayer::vlcFixAudio() {
-    // Workaround for audio issues after seeking, otherwise we see some kind of audio stutter.
-    auto oldAudioChannel = libvlc_audio_get_channel(movieMediaPlayer);
-    if (oldAudioChannel != libvlc_AudioChannel_RStereo) {
-        libvlc_audio_set_channel(movieMediaPlayer, libvlc_AudioChannel_RStereo);
-    } else {
-        libvlc_audio_set_channel(movieMediaPlayer, libvlc_AudioChannel_Stereo);
-    }
-    libvlc_audio_set_channel(movieMediaPlayer, oldAudioChannel);
-}
-
-void xMoviePlayer::updateAudioAndSubtitleDescription(QString& description) {
-    description.replace("ger", "german");
-    description.replace("deu", "german");
-    description.replace("eng", "english");
-    description.replace("fre", "french");
-}
-
-void xMoviePlayer::updatedDefaultAudioLanguage() {
-    movieDefaultAudioLanguage = xPlayerConfiguration::configuration()->getMovieDefaultAudioLanguage();
-}
-
-void xMoviePlayer::updatedDefaultSubtitleLanguage() {
-    movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
+void xMoviePlayer::fixAudioIssue() {
+    jump(-1);
 }
 
 void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
@@ -713,19 +483,16 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
             emit currentVolume(getVolume());
         } break;
         case Qt::Key_Space: {
-            auto state = libvlc_media_player_get_state(movieMediaPlayer);
-            if (state == libvlc_Playing) {
-                libvlc_media_player_pause(movieMediaPlayer);
-                emit currentState(State::PauseState);
-            }
-            if ((state == libvlc_Paused) || (state == libvlc_Stopped)) {
-                libvlc_media_player_play(movieMediaPlayer);
-                vlcFixAudio();
-                emit currentState(State::PlayingState);
+            if (moviePlayer->state() == Phonon::PlayingState) {
+                moviePlayer->pause();
+                emit currentState(xMoviePlayer::PauseState);
+            } else {
+                moviePlayer->play();
+                emit currentState(xMoviePlayer::PlayingState);
             }
         } break;
         default: {
-            QFrame::keyPressEvent(keyEvent);
+            Phonon::VideoWidget::keyPressEvent(keyEvent);
             // Do not accept key event.
             return;
         }
@@ -739,5 +506,5 @@ void xMoviePlayer::mouseDoubleClickEvent(QMouseEvent* mouseEvent) {
 }
 
 void xMoviePlayer::mousePressEvent(QMouseEvent* mouseEvent) {
-    QFrame::mousePressEvent(mouseEvent);
+    Phonon::VideoWidget::mousePressEvent(mouseEvent);
 }

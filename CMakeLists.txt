@@ -39,6 +39,7 @@ find_package(Qt6OpenGLWidgets REQUIRED)
 find_package(Qt6WebEngineWidgets REQUIRED)
 find_package(Qt6Test REQUIRED)
 find_package(Phonon4Qt6)
+find_package(Boost 1.70 REQUIRED)
 find_package(SQLite3)
 find_package(CURL)
 find_package(OpenGL REQUIRED)
@@ -96,6 +97,7 @@ set(xPlay_sources
         xPlayerDatabase.cpp
         xMusicPlayer.cpp
         xMoviePlayer.cpp
+        xMovieFile.cpp
         xPlayerArtistInfo.cpp
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp
@@ -130,6 +132,7 @@ set(xPlay_libraries
         sqlite3
         ${TAGLIB_LIBRARIES}
         ${PROJECTM_LIBRARIES}
+        ${Boost_LIBRARIES}
         OpenGL::GL
         curl
         ${PUGIXML_LIBRARIES}

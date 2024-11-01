@@ -16,12 +16,17 @@
 #define __XMOVIEPLAYER_H__
 
 #include "xPlayerPulseAudioControls.h"
+#include "xMovieFile.h"
 
-#include <QFrame>
-#include <filesystem>
+#include <phonon/MediaObject>
+#include <phonon/MediaSource>
+#include <phonon/MediaController>
+#include <phonon/AudioOutput>
+#include <phonon/VideoWidget>
 #include <vlc/vlc.h>
+#include <filesystem>
 
-class xMoviePlayer:public QFrame {
+class xMoviePlayer:public Phonon::VideoWidget {
     Q_OBJECT
 
 public:
@@ -36,6 +41,13 @@ public:
         StoppingState,
         StopState,
         ResetState,
+    };
+
+    enum AspectRatio {
+        RatioAuto = Phonon::VideoWidget::AspectRatioAuto,
+        RatioFitWidget = Phonon::VideoWidget::AspectRatioWidget,
+        Ratio4x3  = Phonon::VideoWidget::AspectRatio4_3,
+        Ratio16x9  = Phonon::VideoWidget::AspectRatio16_9,
     };
 
     explicit xMoviePlayer(QWidget* parent=nullptr);
@@ -67,9 +79,9 @@ public:
     /**
      * Return the supported aspect ratio.
      *
-     * @return a list of pairs (label and geometry) of aspect ratio.
+     * @return a list of pairs (label, mode) of aspect ratio.
      */
-    [[nodiscard]] static std::list<std::pair<QString,QString>> supportedAspectRatio();
+    [[nodiscard]] static std::list<std::pair<QString,xMoviePlayer::AspectRatio>> supportedAspectRatio();
 
 signals:
     /**
@@ -284,7 +296,7 @@ public slots:
      *
      * @param aspectRatio the aspect ratio geometry as string. Disable on empty string.
      */
-    void setCropAspectRatio(const QString& aspectRatio);
+    void setCropAspectRatio(xMoviePlayer::AspectRatio aspectRatio);
     /**
      * Return the aspect ratio geometry.
      *
@@ -306,6 +318,49 @@ public slots:
 
 private slots:
     /**
+     * Get the number of chapters for the current movie.
+     *
+     * @param chapters number of chapters as integer.
+     */
+    void availableChapters(int chapters);
+    /**
+     * Get the number of titles for the current movie.
+     *
+     * @param titles number of titles as integer.
+     */
+    void availableTitles(int titles);
+    /**
+     * The audio channels for the current movie have been determined.
+     */
+    void availableAudioChannels();
+    /**
+     * The subtitles for the current movie have been determined.
+     */
+    void availableSubtitles();
+    /**
+     * Follow the state changes of the movie player.
+     *
+     * @param newState the current state of the movie player.
+     * @param oldState the previous state of the movie player.
+     */
+    void stateChanged(Phonon::State newState, Phonon::State oldState);
+    /**
+     * The playback of the current movie player is about to end.
+     */
+    void aboutToFinish();
+    /**
+     * The playback has reached the pre-finish mark.
+     *
+     * @param timeLeft time left to play in milliseconds.
+     */
+    void closeToFinish(qint32 timeLeft);
+    /**
+     * Called if tick has been changed.
+     */
+    void updatedTick(qint64 tick);
+
+    void updatedChapter(int chapter);
+    /**
      * Called if default audio language has been changed.
      */
     void updatedDefaultAudioLanguage();
@@ -313,10 +368,6 @@ private slots:
      * Called if default subtitle language has been changed.
      */
     void updatedDefaultSubtitleLanguage();
-    /**
-     * Called if the parsing is finished and the playback actually starts.
-     */
-    void parseFinished();
 
 protected:
     /**
@@ -340,17 +391,9 @@ protected:
 
 private:
     /**
-     * VLC handler for Media events.
+     * Fix audio issues with when switching audio tracks.
      */
-    static void handleVLCMediaEvents(const libvlc_event_t*  event, void* data);
-    /**
-     * Scan the media file for audio and subtitle tracks.
-     */
-    void scanForAudioAndSubtitles();
-    /**
-     * Scan the media file for chapters.
-     */
-    void scanForChapters();
+    void fixAudioIssue();
     /**
      * Update the current chapter index.
      */
@@ -360,41 +403,23 @@ private:
      */
     void updateCurrentPosition();
     /**
-     * Create argument list compatible with vlc.
-     *
-     * @param compressAudio
+     * VLC handler for Media events.
      */
-    QStringList vlcCreateMediaPlayerArguments(bool compressAudio);
+    static void handleVLCMediaEvents(const libvlc_event_t*  event, void* data);
     /**
-     * Start the libvlc media player.
-     *
-     * @param compressAudio use dynamic compression effect for audio if true, do not if otherwise.
+     * Scan the media file for chapters.
      */
-    void vlcStartMediaPlayer(bool compressAudio);
-    /**
-     * Stop the libvlc media player.
-     */
-    void vlcStopMediaPlayer();
-    /**
-     * Fix audio issues with VLC after seek and play/pause.
-     */
-    void vlcFixAudio();
-    /**
-     * Update the audio channel/subtitle description. Expand language strings.
-     *
-     * @param decription the current description as string.
-     */
-    static void updateAudioAndSubtitleDescription(QString& description);
+    void scanForChapters();
 
     xPlayerPulseAudioControls* pulseAudioControls;
-    libvlc_instance_t* movieInstance;
-    libvlc_media_player_t* movieMediaPlayer;
-    libvlc_event_manager_t* movieMediaPlayerEventManager;
-    libvlc_event_manager_t* movieMediaEventManager;
-    libvlc_media_t* movieMedia;
-    bool movieMediaInitialPlay;
-    bool movieMediaParsed;
-    bool movieMediaPlaying;
+    xMovieFile* movieFile;
+    Phonon::MediaObject* moviePlayer;
+    Phonon::MediaController* movieController;
+    Phonon::AudioOutput* audioOutput;
+    QList<Phonon::SubtitleDescription> currentSubtitleDescriptions;
+    QList<Phonon::AudioChannelDescription> currentAudioChannelDescriptions;
+    QList<std::pair<std::filesystem::path,QString>> movieQueue;
+    bool fullWindow;
     qint64 movieMediaLength;
     int movieMediaChapter;
     bool movieMediaDeinterlaceMode;
@@ -406,18 +431,13 @@ private:
     qint64 moviePlayed;
     bool movieCurrentSkip;
     bool moviePlayedRecorded;
-
-    QList<std::pair<int,QString>> currentSubtitleDescriptions;
-    QList<std::pair<int,QString>> currentAudioChannelDescriptions;
-    QList<std::pair<qint64,QString>> currentChapterDescriptions;
-    QList<std::pair<std::filesystem::path,QString>> movieQueue;
+    QStringList currentChapterDescriptions;
+    QVector<qint64> currentChapterBegin;
     std::pair<std::filesystem::path,QString> movieCurrent;
     QString movieCurrentTag;
     QString movieCurrentDirectory;
     QString movieDefaultAudioLanguage;
     QString movieDefaultSubtitleLanguage;
-    int movieDefaultAudioLanguageIndex;
-    int movieDefaultSubtitleLanguageIndex;
 };
 
 Q_DECLARE_METATYPE(std::filesystem::path)
