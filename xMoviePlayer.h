@@ -414,6 +414,7 @@ private:
     xPlayerPulseAudioControls* pulseAudioControls;
     xMovieFile* movieFile;
     Phonon::MediaObject* moviePlayer;
+    xMoviePlayer::State moviePlayerState;
     Phonon::MediaController* movieController;
     Phonon::AudioOutput* audioOutput;
     QList<Phonon::SubtitleDescription> currentSubtitleDescriptions;

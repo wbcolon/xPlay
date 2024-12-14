@@ -219,6 +219,7 @@ void xPlayerSliderWidget::setLength(qint64 length) {
         slider->setMinimum(0);
         slider->setMaximum(static_cast<int>(length));
         slider->repaint();
+        qApp->processEvents();
     }
 }
 
@@ -231,6 +232,7 @@ void xPlayerSliderWidget::setPlayed(qint64 played) {
         // Update the slider position.
         slider->setValue(static_cast<int>(played));
         slider->repaint();
+        qApp->processEvents();
     }
 }
 

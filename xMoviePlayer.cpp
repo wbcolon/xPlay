@@ -36,6 +36,7 @@ std::list<std::pair<QString,xMoviePlayer::AspectRatio>> xMoviePlayer::supportedA
 
 xMoviePlayer::xMoviePlayer(QWidget *parent):
         Phonon::VideoWidget(parent),
+        moviePlayerState(xMoviePlayer::StopState),
         movieMediaLength(0),
         movieMediaChapter(0),
         movieMediaDeinterlaceMode(false),
@@ -66,7 +67,7 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     connect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
     connect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
     connect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
-    // Chapters and Titles are not properly updated by Phonon. Therefor we are using VLC to scan for chapters.
+    // Chapters and Titles are not properly updated by Phonon. Therefor we are using ffprobe to scan for chapters.
     // connect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
     // connect(movieController, &Phonon::MediaController::chapterChanged, this, &xMoviePlayer::updatedChapter);
     connect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, [=](qint64 totalTime) {
@@ -125,18 +126,19 @@ void xMoviePlayer::playPause() {
     // Pause if the media player is in playing state, resume play.
     if (moviePlayer->state() == Phonon::PlayingState) {
         moviePlayer->pause();
-        emit currentState(State::PauseState);
+        moviePlayerState = State::PauseState;
     } else {
         moviePlayer->play();
-        emit currentState(State::PlayingState);
+        moviePlayerState = State::PlayingState;
     }
+    emit currentState(moviePlayerState);
 }
 
 void xMoviePlayer::playChapter(int chapter) {
     if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
         qDebug() << "xMoviePlayer: playChapter:: " << chapter;
         movieController->setCurrentChapter( chapter );
-        emit currentState(State::PlayingState);
+        emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
 }
@@ -148,7 +150,7 @@ void xMoviePlayer::previousChapter() {
     if (chapter > 0) {
         qDebug() << "xMoviePlayer: previousChapter:: " << chapter;
         movieController->setCurrentChapter(chapter - 1);
-        emit currentState(State::PlayingState);
+        emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
 }
@@ -160,7 +162,7 @@ void xMoviePlayer::nextChapter() {
     if (chapter < movieController->availableChapters() - 1 ) {
         qDebug() << "xMoviePlayer: nextChapter:: " << chapter;
         movieController->setCurrentChapter( chapter + 1 );
-        emit currentState(State::PlayingState);
+        emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
 }
@@ -183,13 +185,14 @@ void xMoviePlayer::jump(qint64 delta) {
 }
 
 void xMoviePlayer::stop() {
+    qDebug() << "xMoviePlayer: stop";
     // Stop the media player.
     moviePlayer->stop();
     seek(0);
     // Reset the current position.
     movieCurrentPosition = 0;
     // Update states.
-    emit currentState(State::StopState);
+    emit currentState(moviePlayerState = State::StopState);
     emit currentMoviePlayed(0);
     emit currentChapter(0);
 }
@@ -213,7 +216,7 @@ void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& na
     moviePlayer->play();
     qDebug() << "xMoviePlayer: play: " << filePath;
     emit currentMovie(path, name, tag, directory);
-    emit currentState(xMoviePlayer::PlayingState);
+    emit currentState(moviePlayerState = xMoviePlayer::PlayingState);
 }
 
 void xMoviePlayer::setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue) {
@@ -340,6 +343,10 @@ void xMoviePlayer::updatedChapter(int chapter) {
 void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
     qDebug() << "xMovie: updatedTick:: " << movieMediaPos << ", currentPlayed: " << movieCurrentPlayed << ", currentPos: " << movieCurrentPosition;
 
+    if (moviePlayerState != xMoviePlayer::PlayingState) {
+        qWarning() << "xMovie: already stopping; not tick update";
+        return;
+    }
     // Skip left-over ticks from previous movie
     if ((movieMediaPos > 500) && (movieCurrentPlayed == 0) && (movieCurrentPosition == 0)) {
         qWarning() << "xMovie: skip left-over tick";
@@ -395,7 +402,7 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
 void xMoviePlayer::stateChanged(Phonon::State newState, Phonon::State oldState) {
     qDebug() << "xMoviePlayer: new: " << newState << ", old: " << oldState;
     if ((newState == Phonon::StoppedState) && (oldState == Phonon::PlayingState)) {
-        emit currentState(xMoviePlayer::StopState);
+        emit currentState(moviePlayerState = xMoviePlayer::StopState);
     }
 }
 
@@ -403,16 +410,14 @@ void xMoviePlayer::aboutToFinish() {
     if (movieQueue.isEmpty()) {
         qDebug() << "xMoviePlayer: aboutToFinish";
         // Go to stopping state. End full window mode.
-        emit currentState(xMoviePlayer::StoppingState);
+        emit currentState(moviePlayerState = xMoviePlayer::StoppingState);
     }
 }
 
 void xMoviePlayer::closeToFinish(qint32 timeLeft) {
     qDebug() << "xMoviePlayer: closeToFinish: " << timeLeft;
     if (movieQueue.isEmpty()) {
-        // Stop the media player.
-        moviePlayer->stop();
-        emit currentState(xMoviePlayer::StopState);
+        stop();
     } else {
         // Take next movie out of the queue and directly play it.
         auto nextMovie = movieQueue.takeFirst();
@@ -485,10 +490,10 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
         case Qt::Key_Space: {
             if (moviePlayer->state() == Phonon::PlayingState) {
                 moviePlayer->pause();
-                emit currentState(xMoviePlayer::PauseState);
+                emit currentState(moviePlayerState = xMoviePlayer::PauseState);
             } else {
                 moviePlayer->play();
-                emit currentState(xMoviePlayer::PlayingState);
+                emit currentState(moviePlayerState = xMoviePlayer::PlayingState);
             }
         } break;
         default: {
