@@ -22,6 +22,7 @@ namespace xPlayer {
 /*
  * UI configuration values
  */
+// Widget configuration
 const bool UseFlatGroupBox = true;
 const double SelectorHeightFontFactor = 1.6;
 const int SliderWidgetSliderOffset = 32;
@@ -31,35 +32,41 @@ const int VolumeWidgetLCDWidth = 40;
 const int VolumeWidgetLCDHeight = 28;
 const int ControlButtonWidgetWidth = 200;
 const int SidebarWidgetWidth = 300;
-
+// Main window configuration
 const int ArtistListMinimumWidth = 350;
 const int AlbumListMinimumWidth = 550;
 const int TracksListMinimumWidth = 400;
 const int QueueListMinimumWidth = 400;
-
 const int DialogMinimumWidth = 400;
-
 const int QueueCriticalNumberEntries = 50000;
-
+// Icon sizes
 const int IconSize = 24;
 const int LargeIconSize = 32;
-
+// Visualization configuration
 const int VisualizationNoDrop = 0;
 const int VisualizationDropRate = 3;
+// Player configuration
+const qint64 MusicTickDelta = 500;
+const qint64 MusicTickDeltaIgnore = 250;
+const qint64 MusicForwardRewindDelta = 5000;
+const qint64 MovieTickDelta = 1000;
+const qint64 MovieTickDeltaIgnore = 500;
+const qint64 MovieFinishDelta = 1500;
+const qint64 MovieForwardRewindDelta = 60000;
 
 /**
- * Convert the time given to human readable time stamp.
+ * Convert the time given to human-readable time stamp.
  *
  * @param ms the given time in ms.
  * @param showHours show hours if true, ms instead otherwise.
- * @return the human readable time (hour:min:sec) or (min:sec.ms)as string.
+ * @return the human-readable time (hour:min:sec) or (min:sec.ms)as string.
  */
 QString millisecondsToTimeFormat(qint64 ms, bool showHours);
 /**
- * Convert the time given to short human readable time stamp.
+ * Convert the time given to short human-readable time stamp.
  *
  * @param ms the given time in ms.
- * @return the human readable time (hour:min:sec) or (min:sec) as string.
+ * @return the human-readable time (hour:min:sec) or (min:sec) as string.
  */
 QString millisecondsToShortTimeFormat(qint64 ms);
 

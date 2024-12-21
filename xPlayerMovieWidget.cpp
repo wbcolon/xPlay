@@ -117,10 +117,10 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     connect(controlButtonWidget, &xPlayerControlButtonWidget::previousPressed, moviePlayer, &xMoviePlayer::previousChapter);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::nextPressed, moviePlayer, &xMoviePlayer::nextChapter);
     connect(controlButtonWidget, &xPlayerControlButtonWidget::rewindPressed, [=]() {
-        moviePlayer->jump(-xMoviePlayer::ForwardRewindDelta);
+        moviePlayer->jump(-xPlayer::MovieForwardRewindDelta);
     });
     connect(controlButtonWidget, &xPlayerControlButtonWidget::forwardPressed, [=]() {
-        moviePlayer->jump(xMoviePlayer::ForwardRewindDelta);
+        moviePlayer->jump(xPlayer::MovieForwardRewindDelta);
     });
     connect(controlButtonWidget, &xPlayerControlButtonWidget::fullWindowPressed, this, &xPlayerMovieWidget::fullWindowPressed);
     // Connect combo boxes.

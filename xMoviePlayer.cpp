@@ -13,6 +13,7 @@
  */
 
 #include "xMoviePlayer.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerDatabase.h"
 
@@ -58,8 +59,8 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     // Setup the media player.
     moviePlayer = new Phonon::MediaObject(this);
     // Update each second
-    moviePlayer->setTickInterval(500);
-    moviePlayer->setPrefinishMark(1500);
+    moviePlayer->setTickInterval(xPlayer::MovieTickDelta);
+    moviePlayer->setPrefinishMark(xPlayer::MovieFinishDelta);
     movieController = new Phonon::MediaController(moviePlayer);
     Phonon::createPath(moviePlayer, audioOutput);
     Phonon::createPath(moviePlayer, this);
@@ -137,7 +138,8 @@ void xMoviePlayer::playPause() {
 void xMoviePlayer::playChapter(int chapter) {
     if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
         qDebug() << "xMoviePlayer: playChapter:: " << chapter;
-        movieController->setCurrentChapter( chapter );
+        movieCurrentSkip = true;
+        movieController->setCurrentChapter(chapter);
         emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
@@ -146,9 +148,9 @@ void xMoviePlayer::playChapter(int chapter) {
 void xMoviePlayer::previousChapter() {
     // Indicate skip in order to correctly current position.
     int chapter = movieController->currentChapter();
-    movieCurrentSkip = true;
     if (chapter > 0) {
         qDebug() << "xMoviePlayer: previousChapter:: " << chapter;
+        movieCurrentSkip = true;
         movieController->setCurrentChapter(chapter - 1);
         emit currentState(moviePlayerState = State::PlayingState);
     }
@@ -157,11 +159,11 @@ void xMoviePlayer::previousChapter() {
 
 void xMoviePlayer::nextChapter() {
     // Indicate skip in order to correctly current position.
-    movieCurrentSkip = true;
     int chapter = movieController->currentChapter();
     if (chapter < movieController->availableChapters() - 1 ) {
         qDebug() << "xMoviePlayer: nextChapter:: " << chapter;
-        movieController->setCurrentChapter( chapter + 1 );
+        movieCurrentSkip = true;
+        movieController->setCurrentChapter(chapter + 1);
         emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
@@ -341,6 +343,10 @@ void xMoviePlayer::updatedChapter(int chapter) {
 }
 
 void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
+    /* The VLC backend for phonon-kde produces way to many tick update. Ignore most of them. */
+    if (std::abs(movieMediaPos - movieCurrentPosition) < xPlayer::MovieTickDeltaIgnore) {
+        return;
+    }
     qDebug() << "xMovie: updatedTick:: " << movieMediaPos << ", currentPlayed: " << movieCurrentPlayed << ", currentPos: " << movieCurrentPosition;
 
     if (moviePlayerState != xMoviePlayer::PlayingState) {
@@ -348,7 +354,7 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
         return;
     }
     // Skip left-over ticks from previous movie
-    if ((movieMediaPos > 500) && (movieCurrentPlayed == 0) && (movieCurrentPosition == 0)) {
+    if ((movieMediaPos > xPlayer::MovieTickDelta) && (movieCurrentPlayed == 0) && (movieCurrentPosition == 0)) {
         qWarning() << "xMovie: skip left-over tick";
         return;
     }
@@ -363,13 +369,11 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
     if (!moviePlayedRecorded) {
         if (movieCurrentPosition <= movieMediaPos) {
             movieCurrentPlayed += (movieMediaPos - movieCurrentPosition);
-            movieCurrentPosition = movieMediaPos;
             // Determine if we need to update the database.
             auto update = false;
             if ((movieMediaLength - 10000) <= moviePlayed) {
                 // Update if we are close to the end (within 10 seconds towards the end)
-                update = (movieCurrentPosition >= movieMediaLength - 10000) &&
-                    (movieCurrentPosition <= movieCurrentPlayed);
+                update = (movieMediaPos >= movieMediaLength - 10000) && (movieMediaPos <= movieCurrentPlayed);
             } else {
                 // Update if we played enough of the song.
                 update = (movieCurrentPlayed >= moviePlayed);
@@ -377,8 +381,7 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
             if (update) {
                 // Update database.
                 auto name = movieCurrent.second;
-                auto result = xPlayerDatabase::database()->updateMovieFile(movieCurrentTag,
-                                                                           movieCurrentDirectory, name);
+                auto result = xPlayerDatabase::database()->updateMovieFile(movieCurrentTag, movieCurrentDirectory, name);
 
                 qDebug() << "xMovie: updatedTick: db: " << movieCurrentTag << "," << movieCurrentDirectory << "," << name;
                 qDebug() << "xMovie: updatedTick: db: " << result;
@@ -394,8 +397,7 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
                 << movieCurrentPosition << "," << movieMediaPos;
         }
     }
-
-    emit currentMoviePlayed(movieMediaPos);
+    emit currentMoviePlayed(movieCurrentPosition = movieMediaPos);
     updateCurrentChapter();
 }
 
@@ -466,7 +468,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
                 nextChapter();
             } else {
                 // Seek +1 min
-                jump(xMoviePlayer::ForwardRewindDelta);
+                jump(xPlayer::MovieForwardRewindDelta);
             }
         } break;
         case Qt::Key_Left: {
@@ -474,7 +476,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
                 previousChapter();
             } else {
                 // Seek -1 min
-                jump(-xMoviePlayer::ForwardRewindDelta);
+                jump(-xPlayer::MovieForwardRewindDelta);
             }
         } break;
         case Qt::Key_Up: {

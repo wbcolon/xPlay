@@ -28,8 +28,6 @@ class xMusicPlayer: public QObject {
     Q_OBJECT
 
 public:
-    // Default delta for forward and rewind.
-    static constexpr qint64 ForwardRewindDelta = 5000;
     // Music player states.
     enum State {
         PlayingState,

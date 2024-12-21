@@ -14,6 +14,7 @@
 #include "xMusicPlayer.h"
 #include "xMusicLibrary.h"
 #include "xMusicLibraryTrackEntry.h"
+#include "xPlayerUI.h"
 #include "xPlayerConfiguration.h"
 #include "xPlayerDatabase.h"
 #include "xPlayerBluOSControl.h"
@@ -59,12 +60,11 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     // Alternate setup, but we need the output to change volume.
     // musicPlayer = Phonon::createPlayer(Phonon::MusicCategory);
     musicPlayer->setTransitionTime(0);
-    musicPlayer->setTickInterval(500);
+    musicPlayer->setTickInterval(xPlayer::MusicTickDelta);
     musicOutput->setMuted(false);
     musicVisualization->setDataSize(xMusicPlayer_MusicVisualizationSamples);
     // Set up the play list.
     // Connect QMediaPlayer signals to out music player signals.
-    connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayer::currentTrackPlayed);
     connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayer::updatePlayed);
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayer::currentTrackSource);
     connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayer::stateChanged);
@@ -475,14 +475,14 @@ void xMusicPlayer::jump(qint64 delta) {
 void xMusicPlayer::stop() {
     // Stop the media player.
     emit currentState(musicPlayerState = State::StopState);
-    // Update current position.
-    musicCurrentPosition = 0;
     if (musicLibrary->isLocal()) {
         musicPlayer->stop();
     } else {
         xPlayerBluOSControls::controls()->stop();
-        emit currentTrackPlayed(musicCurrentPosition);
     }
+    // Update current position.
+    musicCurrentPosition = 0;
+    emit currentTrackPlayed(musicCurrentPosition);
 }
 
 void xMusicPlayer::prev() {
@@ -661,6 +661,10 @@ void xMusicPlayer::currentTrackDuration(qint64 duration) {
 }
 
 void xMusicPlayer::updatePlayed(qint64 pos) {
+    /* The VLC backend for phonon-kde produces way to many tick update. Ignore most of them. */
+    if (std::abs(pos - musicCurrentPosition) < xPlayer::MusicTickDeltaIgnore) {
+        return;
+    }
     qDebug() << "xMusicPlayer::updatePlayed: pos:" << pos << ", currentPos: " << musicCurrentPosition
         << ", currentPlayed: " << musicCurrentPlayed << ", currentDuration: " << musicCurrentDuration
         << ", playedIndex: " << musicPlayedIndex << ", played: " << musicPlayed;
@@ -691,6 +695,7 @@ void xMusicPlayer::updatePlayed(qint64 pos) {
             musicPlayedIndex = -1;
         }
     }
+    emit currentTrackPlayed(musicCurrentPosition);
 }
 
 void xMusicPlayer::updateDatabase(int index) {
