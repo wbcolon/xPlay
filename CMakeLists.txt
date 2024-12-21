@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.24)
 
 project(xPlay)
 
@@ -8,6 +8,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
+set(CMAKE_POLICY_DEFAULT_CMP0167 NEW)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -39,7 +40,7 @@ find_package(Qt6OpenGLWidgets REQUIRED)
 find_package(Qt6WebEngineWidgets REQUIRED)
 find_package(Qt6Test REQUIRED)
 find_package(Phonon4Qt6)
-find_package(Boost 1.70 REQUIRED)
+find_package(boost_system REQUIRED)
 find_package(SQLite3)
 find_package(CURL)
 find_package(OpenGL REQUIRED)
@@ -132,7 +133,7 @@ set(xPlay_libraries
         sqlite3
         ${TAGLIB_LIBRARIES}
         ${PROJECTM_LIBRARIES}
-        ${Boost_LIBRARIES}
+        Boost::system
         OpenGL::GL
         curl
         ${PUGIXML_LIBRARIES}
