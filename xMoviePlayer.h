@@ -266,18 +266,6 @@ public slots:
      */
     void clearMovieQueue();
     /**
-     * Enable or disable dynamic audio compression.
-     *
-     * @param enable enable deinterlace if true, disable otherwise.
-     */
-    void setAudioCompressionMode(bool mode);
-    /**
-     * Return the currently state of dynamic audio compression.
-     *
-     * @return return true if dynamic compression is enabled, false otherwise.
-     */
-    [[nodiscard]] bool audioCompressionMode() const;
-    /**
      * Enable or disable deinterlace.
      *
      * @param enable enable deinterlace if true, disable otherwise.
@@ -388,6 +376,8 @@ protected:
     void mousePressEvent(QMouseEvent* mouseEvent) override;
 
 private:
+    void connectTick();
+    void disconnectTick();
     /**
      * Fix audio issues with when switching audio tracks.
      */
@@ -418,13 +408,12 @@ private:
     QList<Phonon::SubtitleDescription> currentSubtitleDescriptions;
     QList<Phonon::AudioChannelDescription> currentAudioChannelDescriptions;
     QList<std::pair<std::filesystem::path,QString>> movieQueue;
-    bool fullWindow;
     qint64 movieMediaLength;
     int movieMediaChapter;
     bool movieMediaDeinterlaceMode;
-    bool movieMediaAudioCompressionMode;
     QString movieMediaCropAspectRatio;
     bool movieMediaFullWindow;
+    bool movieTickConnected;
     qint64 movieCurrentPosition;
     qint64 movieCurrentPlayed;
     qint64 moviePlayed;

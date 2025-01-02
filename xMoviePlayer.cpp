@@ -41,8 +41,8 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         movieMediaLength(0),
         movieMediaChapter(0),
         movieMediaDeinterlaceMode(false),
-        movieMediaCropAspectRatio(),
         movieMediaFullWindow(false),
+        movieTickConnected(false),
         movieCurrentPosition(0),
         movieCurrentPlayed(0),
         moviePlayed(-1),
@@ -76,7 +76,6 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         qDebug() << "xMoviePlayer: totalTime: " << totalTime;
         emit currentMovieLength(totalTime);
     });
-    connect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::updatedTick);
     connect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayer::stateChanged);
     connect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayer::aboutToFinish);
     connect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayer::closeToFinish);
@@ -90,8 +89,7 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     });
 }
 
-xMoviePlayer::~xMoviePlayer() noexcept {
-}
+xMoviePlayer::~xMoviePlayer() noexcept = default;
 
 void xMoviePlayer::setFullWindowMode(bool enabled) {
     if (movieMediaFullWindow != enabled) {
@@ -129,6 +127,7 @@ void xMoviePlayer::playPause() {
         moviePlayer->pause();
         moviePlayerState = State::PauseState;
     } else {
+        connectTick();
         moviePlayer->play();
         moviePlayerState = State::PlayingState;
     }
@@ -138,6 +137,8 @@ void xMoviePlayer::playPause() {
 void xMoviePlayer::playChapter(int chapter) {
     if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
         qDebug() << "xMoviePlayer: playChapter:: " << chapter;
+        connectTick();
+        moviePlayer->play();
         movieCurrentSkip = true;
         movieController->setCurrentChapter(chapter);
         emit currentState(moviePlayerState = State::PlayingState);
@@ -150,6 +151,8 @@ void xMoviePlayer::previousChapter() {
     int chapter = movieController->currentChapter();
     if (chapter > 0) {
         qDebug() << "xMoviePlayer: previousChapter:: " << chapter;
+        connectTick();
+        moviePlayer->play();
         movieCurrentSkip = true;
         movieController->setCurrentChapter(chapter - 1);
         emit currentState(moviePlayerState = State::PlayingState);
@@ -162,6 +165,8 @@ void xMoviePlayer::nextChapter() {
     int chapter = movieController->currentChapter();
     if (chapter < movieController->availableChapters() - 1 ) {
         qDebug() << "xMoviePlayer: nextChapter:: " << chapter;
+        connectTick();
+        moviePlayer->play();
         movieCurrentSkip = true;
         movieController->setCurrentChapter(chapter + 1);
         emit currentState(moviePlayerState = State::PlayingState);
@@ -170,9 +175,11 @@ void xMoviePlayer::nextChapter() {
 }
 
 void xMoviePlayer::seek(qint64 position) {
-    // Check if VLC is still playing.
+    connectTick();
+    moviePlayer->play();
     moviePlayer->seek(position);
     movieCurrentSkip = true;
+    emit currentState(moviePlayerState = State::PlayingState);
     updateCurrentChapter();
 }
 
@@ -181,16 +188,21 @@ void xMoviePlayer::jump(qint64 delta) {
     qint64 currentPosition = moviePlayer->currentTime() + delta;
     // Do not jump past the end (minus 100ms).
     qint64 currentLength = moviePlayer->totalTime() - 100;
+    connectTick();
+    moviePlayer->play();
     moviePlayer->seek(std::clamp(currentPosition, static_cast<qint64>(0), currentLength));
     movieCurrentSkip = true;
+    emit currentState(moviePlayerState = State::PlayingState);
     updateCurrentChapter();
 }
 
 void xMoviePlayer::stop() {
     qDebug() << "xMoviePlayer: stop";
-    // Stop the media player.
-    moviePlayer->stop();
-    seek(0);
+    // Disconnect the tick.
+    disconnectTick();
+    // Simulate the stop by pausing and seeking to the zero position.
+    moviePlayer->seek(0);
+    moviePlayer->pause();
     // Reset the current position.
     movieCurrentPosition = 0;
     // Update states.
@@ -219,6 +231,8 @@ void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& na
     qDebug() << "xMoviePlayer: play: " << filePath;
     emit currentMovie(path, name, tag, directory);
     emit currentState(moviePlayerState = xMoviePlayer::PlayingState);
+
+    connectTick();
 }
 
 void xMoviePlayer::setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue) {
@@ -227,17 +241,6 @@ void xMoviePlayer::setMovieQueue(const QList<std::pair<std::filesystem::path,QSt
 
 void xMoviePlayer::clearMovieQueue() {
     movieQueue.clear();
-}
-
-void xMoviePlayer::setAudioCompressionMode(bool mode) {
-    /* VLC */
-    if (mode != movieMediaAudioCompressionMode) {
-        // Reset the vlc player.
-    }
-}
-
-bool xMoviePlayer::audioCompressionMode() const {
-    return movieMediaAudioCompressionMode;
 }
 
 void xMoviePlayer::setDeinterlaceMode(bool mode) {
@@ -349,16 +352,6 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
     }
     qDebug() << "xMovie: updatedTick:: " << movieMediaPos << ", currentPlayed: " << movieCurrentPlayed << ", currentPos: " << movieCurrentPosition;
 
-    if (moviePlayerState != xMoviePlayer::PlayingState) {
-        qWarning() << "xMovie: already stopping; not tick update";
-        return;
-    }
-    // Skip left-over ticks from previous movie
-    if ((movieMediaPos > xPlayer::MovieTickDelta) && (movieCurrentPlayed == 0) && (movieCurrentPosition == 0)) {
-        qWarning() << "xMovie: skip left-over tick";
-        return;
-    }
-
     // Update played time and current position.
     if (movieCurrentSkip) {
         // Update the current position if we skipped.
@@ -423,6 +416,7 @@ void xMoviePlayer::closeToFinish(qint32 timeLeft) {
     } else {
         // Take next movie out of the queue and directly play it.
         auto nextMovie = movieQueue.takeFirst();
+        disconnectTick();
         setMovie(nextMovie.first, nextMovie.second, movieCurrentTag, movieCurrentDirectory);
     }
 }
@@ -451,6 +445,22 @@ void xMoviePlayer::updateCurrentChapter() {
             // Emit new chapter index.
             emit currentChapter(chapter);
         }
+    }
+}
+
+void xMoviePlayer::connectTick() {
+    // Only connect if not already connected.
+    if (!movieTickConnected) {
+        connect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::updatedTick);
+        movieTickConnected = true;
+    }
+}
+
+void xMoviePlayer::disconnectTick() {
+    // Only disconnect if already connected.
+    if (movieTickConnected) {
+        disconnect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::updatedTick);
+        movieTickConnected = false;
     }
 }
 
