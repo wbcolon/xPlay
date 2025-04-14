@@ -205,6 +205,9 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
                 this, &xMainMusicWidget::visualizationError);
         // Add it initially to the stacked widget.
         musicStacked->addWidget(musicVisualizationWidget);
+    } else {
+        // No visualization.
+        musicVisualizationWidget = nullptr;
     }
     queueBoxLayout->setColumnStretch(1, 3);
     // Setup splitter, queue should stretch a little more than the rest.
@@ -249,9 +252,11 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Connect artist info view
     connect(musicInfoView, &xPlayerArtistInfo::close, this, [=]() {
         musicStacked->setCurrentWidget(musicListView);
-        // Reset reduced framerate mode for visualization.
-        musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationNoDrop);
-        updateVisualizationView(musicPlayer->isPlaying());
+        if (musicVisualizationWidget) {
+            // Reset reduced framerate mode for visualization.
+            musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationNoDrop);
+            updateVisualizationView(musicPlayer->isPlaying());
+        }
     });
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
@@ -625,9 +630,11 @@ void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
             artistMenu.addAction(tr("Artist Website"), this, [=] () {
                 musicStacked->setCurrentWidget(musicInfoView);
                 musicInfoView->show(artistItem->text());
-                // Enable the reduced framerate mode for visualization.
-                // Required for usable website browsing.
-                musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationDropRate);
+                if (musicVisualizationWidget) {
+                    // Enable the reduced framerate mode for visualization.
+                    // Required for usable website browsing.
+                    musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationDropRate);
+                }
             });
             // Add section for similar artist based on recorded transitions.
             auto artistTransitions = xPlayerDatabase::database()->getArtistTransitions(artistItem->text());
