@@ -1,5 +1,7 @@
 # xPlay
 
+**Note:** The current Qt6 port is a work-in-progress.
+
 ## Overview
 
 xPlay is a music/movie player designed for large music/movie file libraries that may be accessed through a 
@@ -67,12 +69,8 @@ overwritten and previous movie file is not accessible.
 
 The Phonon/KDE backend supports gapless playback, but it is a bit more complicated to use. On top, there seems
 to be an issue calculating the length of the currently played track. I worked around this issue by utilizing
-a muted QMediaPlayer object. The Phonon backend is only used for the music player.
-
-### VLC
-
-The VLC backend is used for the movie player. It replaced the earlier Phonon backend due to stability issues.
-xPlay uses the event based method for libVLC without using a QTimer thread to constantly updating the status.
+a muted QMediaPlayer object. The Phonon backend is used for the music player and for the movie player due to VLC 
+issues with Qt6 and Wayland.
 
 ### PulseAudio
 
@@ -159,6 +157,8 @@ The Rotel widget allows to control a Rotel A12 or A14 amp via a network connecti
 as well as the balance (from -5 to +5).
 
 #### Visualization
+
+**TODO:** The music visualization is currently not supported for Qt6.
 
 ![Screenshot Music View (visualization)(1)](screenshots/xplay_screenshot_music_view_09.png)
 ![Screenshot Music View (visualization)(2)](screenshots/xplay_screenshot_music_view_091.png)
@@ -341,7 +341,7 @@ and the KDE 5.x breeze icons.
 
 ## Requirements
 
-* Qt 5.x (https://www.qt.io/)
+* Qt 6.x (https://www.qt.io/)
 * Phonon (https://github.com/KDE/phonon)
 * SQLite3 - The Database Access Library (https://sqlite.org/)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
@@ -356,18 +356,12 @@ and the KDE 5.x breeze icons.
 
 * Ending the Application before the library scanning threads are finished will result in an abort return code.
 * Phonon issues
-    * The music player sometimes stops the playback. It can be restarted without any problems.
-    * The backend should be configured to GStreamer. The VLC backend may cause issues.
-    * The GStreamer backend crashed on Ubuntu 20.04 for some movies. Replacing the library
-      */usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgsta52dec.so* from *streamer1.0-plugins-ugly* with the
-      corresponding library for Ubuntu 20.10 may solve the issue.
-* VLC audio issues
-    * Using VLC on Ubuntu 22.04 can lead to audio stutter after seeking within the movie itself.
-    * A workaround switching audio channels back and forth has been implemented.
+    * The GStreamer backend is unfortunately non-functional for Qt6.
+    * The VLC backend does not support visualization.
+    * The VLC backend performance is poor for wayland output.
 * PulseAudio
     * Changing the default audio sink may not be recognized.
     * Changing the volume outside xPlay is not recognized by xPlay.
-* May need to use clang instead of gcc for Ubuntu 20.04.  
 
 ## Notes
 

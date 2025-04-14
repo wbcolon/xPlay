@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Switched to QT6. 
+- Switched back to phonon-kde for music and movie player due to wayland issues.
+- TODO: no support for visualization.
+- TODO: wayland performance not optimal (use xwayland instead).
+
 
 ## 0.16.0 - 2024-07-21
 
