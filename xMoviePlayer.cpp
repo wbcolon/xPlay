@@ -17,6 +17,10 @@
 #include "xPlayerConfiguration.h"
 #include "xPlayerDatabase.h"
 
+#include <QAudioOutput>
+#include <QAudioDevice>
+#include <QMediaDevices>
+#include <QMediaMetaData>
 #include <QEvent>
 #include <QMouseEvent>
 #include <QCheckBox>
@@ -26,21 +30,22 @@
 
 #include <vlc/vlc.h>
 
+// Use the pulse audio device.
+const QString xPlayMoviePlayerAudioDeviceDescription { "PulseAudio Sound Server" };
+
 std::list<std::pair<QString,xMoviePlayer::AspectRatio>> xMoviePlayer::supportedAspectRatio() {
     return {
-        {"auto", xMoviePlayer::RatioAuto},
-        {"fit", xMoviePlayer::RatioFitWidget},
-        {"16 : 9", xMoviePlayer::Ratio16x9},
-        {"4 : 3", xMoviePlayer::Ratio4x3}
+        {"Keep", xMoviePlayer::RatioKeep},
+        {"Fit", xMoviePlayer::RatioIgnore},
+        {"Expand", xMoviePlayer::RatioExpanding}
     };
 }
 
 xMoviePlayer::xMoviePlayer(QWidget *parent):
-        Phonon::VideoWidget(parent),
+        QVideoWidget(parent),
         moviePlayerState(xMoviePlayer::StopState),
         movieMediaLength(0),
         movieMediaChapter(0),
-        movieMediaDeinterlaceMode(false),
         movieMediaFullWindow(false),
         movieTickConnected(false),
         movieCurrentPosition(0),
@@ -52,33 +57,32 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     // Setup pulseAudio controls.
     pulseAudioControls = xPlayerPulseAudioControls::controls();
     movieFile = new xMovieFile(this);
-    // Setup the media player.
-    audioOutput = new Phonon::AudioOutput(Phonon::VideoCategory, this);
+    moviePlayer = new QMediaPlayer();
+    // Configure the audio device.
+    audioOutput = new QAudioOutput();
+    for (const auto& audioDevice : QMediaDevices::audioOutputs()) {
+        if (audioDevice.description().contains(xPlayMoviePlayerAudioDeviceDescription)) {
+            audioOutput->setDevice(audioDevice);
+            break;
+        }
+    }
     audioOutput->setMuted(false);
     audioOutput->setVolume(1.0);
+    // Connect Video and Audio to movie player.
+    moviePlayer->setVideoOutput(this);
+    moviePlayer->setAudioOutput(audioOutput);
+
     // Setup the media player.
-    moviePlayer = new Phonon::MediaObject(this);
-    // Update each second
-    moviePlayer->setTickInterval(xPlayer::MovieTickDelta);
-    moviePlayer->setPrefinishMark(xPlayer::MovieFinishDelta);
-    movieController = new Phonon::MediaController(moviePlayer);
-    Phonon::createPath(moviePlayer, audioOutput);
-    Phonon::createPath(moviePlayer, this);
-    // Connect Phonon signals to out music player signals.
-    connect(movieController, &Phonon::MediaController::availableAudioChannelsChanged, this, &xMoviePlayer::availableAudioChannels);
-    connect(movieController, &Phonon::MediaController::availableSubtitlesChanged, this, &xMoviePlayer::availableSubtitles);
-    connect(movieController, &Phonon::MediaController::availableChaptersChanged, this, &xMoviePlayer::availableChapters);
-    // Chapters and Titles are not properly updated by Phonon. Therefor we are using ffprobe to scan for chapters.
-    // connect(movieController, &Phonon::MediaController::availableTitlesChanged, this, &xMoviePlayer::availableTitles);
-    // connect(movieController, &Phonon::MediaController::chapterChanged, this, &xMoviePlayer::updatedChapter);
-    connect(moviePlayer, &Phonon::MediaObject::totalTimeChanged, [=](qint64 totalTime) {
+    connect(moviePlayer, &QMediaPlayer::positionChanged, this, &xMoviePlayer::updatedPosition);
+    connect(moviePlayer, &QMediaPlayer::durationChanged, [=](qint64 totalTime) {
         movieMediaLength = totalTime;
         qDebug() << "xMoviePlayer: totalTime: " << totalTime;
         emit currentMovieLength(totalTime);
     });
-    connect(moviePlayer, &Phonon::MediaObject::stateChanged, this, &xMoviePlayer::stateChanged);
-    connect(moviePlayer, &Phonon::MediaObject::aboutToFinish, this, &xMoviePlayer::aboutToFinish);
-    connect(moviePlayer, &Phonon::MediaObject::prefinishMarkReached, this, &xMoviePlayer::closeToFinish);
+    connect(moviePlayer, &QMediaPlayer::metaDataChanged, this, &xMoviePlayer::availableAudioChannels);
+    connect(moviePlayer, &QMediaPlayer::metaDataChanged, this, &xMoviePlayer::availableSubtitles);
+    connect(moviePlayer, &QMediaPlayer::mediaStatusChanged, this, &xMoviePlayer::updatedMediaStatus);
+
     // Connect to configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultAudioLanguage,
         this, &xMoviePlayer::updatedDefaultAudioLanguage);
@@ -123,11 +127,10 @@ int xMoviePlayer::getVolume() const {
 
 void xMoviePlayer::playPause() {
     // Pause if the media player is in playing state, resume play.
-    if (moviePlayer->state() == Phonon::PlayingState) {
+    if (moviePlayer->playbackState() == QMediaPlayer::PlaybackState::PlayingState) {
         moviePlayer->pause();
         moviePlayerState = State::PauseState;
     } else {
-        connectTick();
         moviePlayer->play();
         moviePlayerState = State::PlayingState;
     }
@@ -135,12 +138,11 @@ void xMoviePlayer::playPause() {
 }
 
 void xMoviePlayer::playChapter(int chapter) {
-    if ((chapter >= 0) && (chapter < currentChapterDescriptions.count())) {
+    if ((chapter >= 0) && (chapter < movieMediaChapterBegin.count())) {
         qDebug() << "xMoviePlayer: playChapter:: " << chapter;
-        connectTick();
+        seek(movieMediaChapterBegin[chapter]);
         moviePlayer->play();
         movieCurrentSkip = true;
-        movieController->setCurrentChapter(chapter);
         emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
@@ -148,13 +150,12 @@ void xMoviePlayer::playChapter(int chapter) {
 
 void xMoviePlayer::previousChapter() {
     // Indicate skip in order to correctly current position.
-    int chapter = movieController->currentChapter();
-    if (chapter > 0) {
-        qDebug() << "xMoviePlayer: previousChapter:: " << chapter;
-        connectTick();
+    if (movieMediaChapter > 0) {
+        --movieMediaChapter;
+        qDebug() << "xMoviePlayer: previousChapter:: " << movieMediaChapter;
+        moviePlayer->setPosition(movieMediaChapterBegin[movieMediaChapter]);
         moviePlayer->play();
         movieCurrentSkip = true;
-        movieController->setCurrentChapter(chapter - 1);
         emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
@@ -162,47 +163,39 @@ void xMoviePlayer::previousChapter() {
 
 void xMoviePlayer::nextChapter() {
     // Indicate skip in order to correctly current position.
-    int chapter = movieController->currentChapter();
-    if (chapter < movieController->availableChapters() - 1 ) {
-        qDebug() << "xMoviePlayer: nextChapter:: " << chapter;
-        connectTick();
+    if (movieMediaChapter < movieMediaChapterBegin.size() - 1 ) {
+        ++movieMediaChapter;
+        qDebug() << "xMoviePlayer: nextChapter:: " << movieMediaChapter;
+        moviePlayer->setPosition(movieMediaChapterBegin[movieMediaChapter]);
         moviePlayer->play();
         movieCurrentSkip = true;
-        movieController->setCurrentChapter(chapter + 1);
         emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
 }
 
 void xMoviePlayer::seek(qint64 position) {
-    connectTick();
-    moviePlayer->play();
-    moviePlayer->seek(position);
     movieCurrentSkip = true;
-    emit currentState(moviePlayerState = State::PlayingState);
+    moviePlayer->setPosition(position);
     updateCurrentChapter();
 }
 
 void xMoviePlayer::jump(qint64 delta) {
     // Jump to current position + delta (in milliseconds) in the current track.
-    qint64 currentPosition = moviePlayer->currentTime() + delta;
+    qint64 currentPosition = moviePlayer->position() + delta;
     // Do not jump past the end (minus 100ms).
-    qint64 currentLength = moviePlayer->totalTime() - 100;
-    connectTick();
-    moviePlayer->play();
-    moviePlayer->seek(std::clamp(currentPosition, static_cast<qint64>(0), currentLength));
+    qint64 currentLength = moviePlayer->duration() - 100;
     movieCurrentSkip = true;
+    moviePlayer->play();
+    moviePlayer->setPosition(std::clamp(currentPosition, static_cast<qint64>(0), currentLength));
     emit currentState(moviePlayerState = State::PlayingState);
     updateCurrentChapter();
 }
 
 void xMoviePlayer::stop() {
     qDebug() << "xMoviePlayer: stop";
-    // Disconnect the tick.
-    disconnectTick();
     // Simulate the stop by pausing and seeking to the zero position.
-    moviePlayer->seek(0);
-    moviePlayer->pause();
+    moviePlayer->stop();
     // Reset the current position.
     movieCurrentPosition = 0;
     // Update states.
@@ -224,15 +217,14 @@ void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& na
     movieCurrentDirectory = directory;
     // Analyze movie file.
     movieFile->analyze(filePath);
-    currentChapterBegin = movieFile->getChapterBegin();
+    movieMediaChapterBegin = movieFile->getChapterBegin();
     // Set current movie.
-    moviePlayer->setCurrentSource(QUrl::fromLocalFile(filePath));
+    moviePlayer->setSource(QUrl::fromLocalFile(filePath));
     moviePlayer->play();
     qDebug() << "xMoviePlayer: play: " << filePath;
     emit currentMovie(path, name, tag, directory);
     emit currentState(moviePlayerState = xMoviePlayer::PlayingState);
-
-    connectTick();
+    availableChapters(movieMediaChapterBegin.size());
 }
 
 void xMoviePlayer::setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue) {
@@ -243,40 +235,21 @@ void xMoviePlayer::clearMovieQueue() {
     movieQueue.clear();
 }
 
-void xMoviePlayer::setDeinterlaceMode(bool mode) {
-    movieMediaDeinterlaceMode = mode;
-    /* VLC */
-}
-
-bool xMoviePlayer::deinterlaceMode() const {
-    return movieMediaDeinterlaceMode;
-}
-
-void xMoviePlayer::setCropAspectRatio(xMoviePlayer::AspectRatio aspectRatio) {
-    setAspectRatio(static_cast<Phonon::VideoWidget::AspectRatio>(aspectRatio));
-}
-
-QString xMoviePlayer::cropAspectRatio() const {
-    return movieMediaCropAspectRatio;
+void xMoviePlayer::setAspectRatio(xMoviePlayer::AspectRatio aspectRatio) {
+    setAspectRatioMode(static_cast<Qt::AspectRatioMode>(aspectRatio));
 }
 
 void xMoviePlayer::availableAudioChannels() {
     QStringList audioChannels;
-    currentAudioChannelDescriptions = movieController->availableAudioChannels();
-    for (const auto& description : currentAudioChannelDescriptions) {
-        auto audioChannel = description.name();
-        if (!description.description().isEmpty()) {
-            audioChannel += QString(" (%1)").arg(description.description());
-        }
-        // Shorten a few audio descriptions.
-        audioChannel.replace("Free Lossless Audio Codec (FLAC)", "FLAC");
-        audioChannel.replace("PCM audio", "PCM");
-        audioChannel.replace("Uncompressed ", "");
-        audioChannels.push_back(audioChannel);
-        qDebug() << "xMoviePlayer: audio channel: " << audioChannel;
+
+    // Process audio channels
+    audioChannelsMetaData = moviePlayer->audioTracks();
+    for (auto& audioChannelMetaData : audioChannelsMetaData) {
+        audioChannels.push_back(QString("%1 (%2)").arg(audioChannelMetaData.stringValue(QMediaMetaData::Language),
+                                                       audioChannelMetaData.stringValue(QMediaMetaData::AudioCodec)));
     }
     // Determine default audio track.
-    int defaultAudioIndex = 0; // First phonon audio track is disabled.
+    int defaultAudioIndex = 0; // Choose first audio track if default does not match.
     for (const auto& audioChannel : audioChannels ) {
         if (audioChannel.contains(movieDefaultAudioLanguage, Qt::CaseInsensitive)) {
             break;
@@ -285,40 +258,41 @@ void xMoviePlayer::availableAudioChannels() {
     }
     // Do we have a default audio channel?
     if (defaultAudioIndex >= audioChannels.count()) {
-        // Phonon uses index 0 for disabled.
-        defaultAudioIndex = 1;
+        defaultAudioIndex = 0;
     }
-    emit currentAudioChannels(audioChannels, QStringList() );
+
+    emit currentAudioChannels(audioChannels, QStringList());
     emit currentAudioChannel(defaultAudioIndex);
     selectAudioChannel(defaultAudioIndex);
-    qDebug() << "xMoviePlayer: audio channel descriptions: " << currentAudioChannelDescriptions;
 }
 
 void xMoviePlayer::availableSubtitles() {
-    currentSubtitleDescriptions = movieController->availableSubtitles();
     QStringList subtitles;
-    for (const auto& description : currentSubtitleDescriptions) {
-        auto subtitle = description.name();
-        if (!description.description().isEmpty()) {
-            subtitle += QString(" (%1)").arg(description.description());
+
+    subtitlesMetaData = moviePlayer->subtitleTracks();
+    for (auto& subtitleMetaData : subtitlesMetaData) {
+        qDebug() << "Subtitle: keys: " << subtitleMetaData.keys();
+        if (subtitleMetaData.keys().contains(QMediaMetaData::Language)) {
+            subtitles.push_back(subtitleMetaData.stringValue(QMediaMetaData::Language));
+        } else {
+            subtitles.push_back("Unknown");
         }
-        subtitles.push_back(subtitle);
     }
+    if (!subtitles.isEmpty()) {
+        subtitles.push_back("Disable");
+    }
+    // Subtitles are currently disabled. Segmentation fault for "two and a half men".
+    subtitles.clear(); // Remove once subtitles work properly.
     emit currentSubtitles(subtitles);
-    if (currentSubtitleDescriptions.count() > 0) {
-        // Disable subtitles on default.
-        movieController->setCurrentSubtitle(currentSubtitleDescriptions[0]);
-    }
-    qDebug() << "xMoviePlayer: subtitle track descriptions: " << currentSubtitleDescriptions;
 }
 
 void xMoviePlayer::availableChapters(int chapters) {
     qDebug() << "xMoviePlayer: number of chapters: " << chapters;
     currentChapterDescriptions.clear();
     for (int i = 1; i <= chapters; ++i) {
-        currentChapterDescriptions.push_back( QString("Chapter %1").arg(i) );
+        currentChapterDescriptions.push_back(QString("Chapter %1").arg(i));
     }
-    emit currentChapters( currentChapterDescriptions );
+    emit currentChapters(currentChapterDescriptions);
 }
 
 void xMoviePlayer::availableTitles(int titles) {
@@ -326,18 +300,22 @@ void xMoviePlayer::availableTitles(int titles) {
 }
 
 void xMoviePlayer::selectAudioChannel(int index) {
-    if ((index >= 0) && (index < currentAudioChannelDescriptions.size())) {
+    if ((index >= 0) && (index < audioChannelsMetaData.size())) {
         qDebug() << "xMovie: selectAudioChannel:: " << index;
-        movieController->setCurrentAudioChannel(currentAudioChannelDescriptions[index]);
-        fixAudioIssue();
+        moviePlayer->setActiveAudioTrack(index);
     }
 }
 
 void xMoviePlayer::selectSubtitle(int index) {
-    if ((index >= 0) && (index < currentSubtitleDescriptions.size())) {
-        qDebug() << "xMovie: selectSubtitle:: " << index;
-        movieController->setCurrentSubtitle(currentSubtitleDescriptions[index]);
-        fixAudioIssue();
+    qDebug() << "xMovie: selectSubtitle:: " << index;
+    if (subtitlesMetaData.count() > 0) {
+        if ((index > 0) && (index < subtitlesMetaData.count())) {
+            moviePlayer->setActiveSubtitleTrack(index);
+        }
+        else {
+            /* Disable subtitles */
+            moviePlayer->setActiveSubtitleTrack(-1);
+        }
     }
 }
 
@@ -345,12 +323,12 @@ void xMoviePlayer::updatedChapter(int chapter) {
     qDebug() << "xMovie: updatedChapter:: " << chapter;
 }
 
-void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
-    /* The VLC backend for phonon-kde produces way to many tick update. Ignore most of them. */
+void xMoviePlayer::updatedPosition(qint64 movieMediaPos) {
+    // The phonon-kde and QMediaPlayer may produce way to many tick/position updates. Ignore most of them.
     if (std::abs(movieMediaPos - movieCurrentPosition) < xPlayer::MovieTickDeltaIgnore) {
         return;
     }
-    qDebug() << "xMovie: updatedTick:: " << movieMediaPos << ", currentPlayed: " << movieCurrentPlayed << ", currentPos: " << movieCurrentPosition;
+    qDebug() << "xMovie: updatedPosition:: " << movieMediaPos << ", currentPlayed: " << movieCurrentPlayed << ", currentPos: " << movieCurrentPosition;
 
     // Update played time and current position.
     if (movieCurrentSkip) {
@@ -376,8 +354,8 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
                 auto name = movieCurrent.second;
                 auto result = xPlayerDatabase::database()->updateMovieFile(movieCurrentTag, movieCurrentDirectory, name);
 
-                qDebug() << "xMovie: updatedTick: db: " << movieCurrentTag << "," << movieCurrentDirectory << "," << name;
-                qDebug() << "xMovie: updatedTick: db: " << result;
+                qDebug() << "xMovie: updatedPosition: db: " << movieCurrentTag << "," << movieCurrentDirectory << "," << name;
+                qDebug() << "xMovie: updatedPosition: db: " << result;
                 if (result.second > 0) {
                     // Update database overlay.
                     emit updatePlayedMovie(movieCurrentTag, movieCurrentDirectory,
@@ -386,7 +364,7 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
                 }
             }
         } else {
-            qCritical() << "xMoviePlayer::updatedTick: illegal movie positions: "
+            qCritical() << "xMoviePlayer::updatedPosition: illegal movie positions: "
                 << movieCurrentPosition << "," << movieMediaPos;
         }
     }
@@ -394,11 +372,8 @@ void xMoviePlayer::updatedTick(qint64 movieMediaPos) {
     updateCurrentChapter();
 }
 
-void xMoviePlayer::stateChanged(Phonon::State newState, Phonon::State oldState) {
-    qDebug() << "xMoviePlayer: new: " << newState << ", old: " << oldState;
-    if ((newState == Phonon::StoppedState) && (oldState == Phonon::PlayingState)) {
-        emit currentState(moviePlayerState = xMoviePlayer::StopState);
-    }
+void xMoviePlayer::stateChanged(QMediaPlayer::PlaybackState newState) {
+    qDebug() << "xMoviePlayer: new: " << newState;
 }
 
 void xMoviePlayer::aboutToFinish() {
@@ -409,15 +384,18 @@ void xMoviePlayer::aboutToFinish() {
     }
 }
 
-void xMoviePlayer::closeToFinish(qint32 timeLeft) {
-    qDebug() << "xMoviePlayer: closeToFinish: " << timeLeft;
-    if (movieQueue.isEmpty()) {
-        stop();
-    } else {
-        // Take next movie out of the queue and directly play it.
-        auto nextMovie = movieQueue.takeFirst();
-        disconnectTick();
-        setMovie(nextMovie.first, nextMovie.second, movieCurrentTag, movieCurrentDirectory);
+void xMoviePlayer::updatedMediaStatus(QMediaPlayer::MediaStatus status) {
+    qDebug() << "xMoviePlayer: media status: " << status;
+    if (status == QMediaPlayer::EndOfMedia) {
+        if (movieQueue.isEmpty()) {
+            emit currentState(moviePlayerState = xMoviePlayer::StoppingState);
+            stop();
+        }
+        else {
+            // Take next movie out of the queue and directly play it.
+            auto nextMovie = movieQueue.takeFirst();
+            setMovie(nextMovie.first, nextMovie.second, movieCurrentTag, movieCurrentDirectory);
+        }
     }
 }
 
@@ -430,11 +408,11 @@ void xMoviePlayer::updatedDefaultSubtitleLanguage() {
 }
 
 void xMoviePlayer::updateCurrentChapter() {
-    if (currentChapterBegin.count() > 0) {
-        qint64 currentPosition = moviePlayer->currentTime();
-        int chapter = static_cast<int>(currentChapterBegin.count())-1;
+    if (movieMediaChapterBegin.count() > 0) {
+        qint64 currentPosition = moviePlayer->position();
+        int chapter = static_cast<int>(movieMediaChapterBegin.count())-1;
         while (chapter >= 0) {
-            if (currentChapterBegin[chapter] < currentPosition) {
+            if (movieMediaChapterBegin[chapter] < currentPosition) {
                 break;
             }
             --chapter;
@@ -446,26 +424,6 @@ void xMoviePlayer::updateCurrentChapter() {
             emit currentChapter(chapter);
         }
     }
-}
-
-void xMoviePlayer::connectTick() {
-    // Only connect if not already connected.
-    if (!movieTickConnected) {
-        connect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::updatedTick);
-        movieTickConnected = true;
-    }
-}
-
-void xMoviePlayer::disconnectTick() {
-    // Only disconnect if already connected.
-    if (movieTickConnected) {
-        disconnect(moviePlayer, &Phonon::MediaObject::tick, this, &xMoviePlayer::updatedTick);
-        movieTickConnected = false;
-    }
-}
-
-void xMoviePlayer::fixAudioIssue() {
-    jump(-1);
 }
 
 void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
@@ -500,7 +458,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
             emit currentVolume(getVolume());
         } break;
         case Qt::Key_Space: {
-            if (moviePlayer->state() == Phonon::PlayingState) {
+            if (moviePlayer->playbackState() == QMediaPlayer::PlaybackState::PlayingState) {
                 moviePlayer->pause();
                 emit currentState(moviePlayerState = xMoviePlayer::PauseState);
             } else {
@@ -509,7 +467,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
             }
         } break;
         default: {
-            Phonon::VideoWidget::keyPressEvent(keyEvent);
+            QVideoWidget::keyPressEvent(keyEvent);
             // Do not accept key event.
             return;
         }
@@ -523,5 +481,5 @@ void xMoviePlayer::mouseDoubleClickEvent(QMouseEvent* mouseEvent) {
 }
 
 void xMoviePlayer::mousePressEvent(QMouseEvent* mouseEvent) {
-    Phonon::VideoWidget::mousePressEvent(mouseEvent);
+    QVideoWidget::mousePressEvent(mouseEvent);
 }

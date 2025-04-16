@@ -114,6 +114,7 @@ private:
     static bool updateComboBoxEntries(QComboBox* comboBox, const QStringList& entries);
 
     QComboBox* subtitleBox;
+    QLabel* subtitleLabel;
     QComboBox* audioChannelBox;
     QLabel* chapterLabel;
     QComboBox* chapterBox;

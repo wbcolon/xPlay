@@ -18,15 +18,11 @@
 #include "xPlayerPulseAudioControls.h"
 #include "xMovieFile.h"
 
-#include <phonon/MediaObject>
-#include <phonon/MediaSource>
-#include <phonon/MediaController>
-#include <phonon/AudioOutput>
-#include <phonon/VideoWidget>
-#include <vlc/vlc.h>
+#include <QMediaPlayer>
+#include <QVideoWidget>
 #include <filesystem>
 
-class xMoviePlayer:public Phonon::VideoWidget {
+class xMoviePlayer:public QVideoWidget {
     Q_OBJECT
 
 public:
@@ -42,10 +38,10 @@ public:
     };
 
     enum AspectRatio {
-        RatioAuto = Phonon::VideoWidget::AspectRatioAuto,
-        RatioFitWidget = Phonon::VideoWidget::AspectRatioWidget,
-        Ratio4x3  = Phonon::VideoWidget::AspectRatio4_3,
-        Ratio16x9  = Phonon::VideoWidget::AspectRatio16_9,
+        RatioAuto = Qt::KeepAspectRatio,
+        RatioKeep = Qt::KeepAspectRatio,
+        RatioIgnore = Qt::IgnoreAspectRatio,
+        RatioExpanding = Qt::KeepAspectRatioByExpanding,
     };
 
     explicit xMoviePlayer(QWidget* parent=nullptr);
@@ -266,29 +262,11 @@ public slots:
      */
     void clearMovieQueue();
     /**
-     * Enable or disable deinterlace.
+     * Set the aspect ratio used for the video output crop.
      *
-     * @param enable enable deinterlace if true, disable otherwise.
+     * @param aspectRatio the aspect ratio.
      */
-    void setDeinterlaceMode(bool mode);
-    /**
-     * Return the currently state of deinterlace.
-     *
-     * @return return true if deinterlace is enabled, false otherwise.
-     */
-    [[nodiscard]] bool deinterlaceMode() const;
-    /**
-     * Set the aspect ratio geometry used for the video output crop.
-     *
-     * @param aspectRatio the aspect ratio geometry as string. Disable on empty string.
-     */
-    void setCropAspectRatio(xMoviePlayer::AspectRatio aspectRatio);
-    /**
-     * Return the aspect ratio geometry.
-     *
-     * @return the aspect ratio geometry as string.
-     */
-    [[nodiscard]] QString cropAspectRatio() const;
+    void setAspectRatio(xMoviePlayer::AspectRatio aspectRatio);
     /**
      * Select an audio channel for the current movie.
      *
@@ -327,23 +305,22 @@ private slots:
      * Follow the state changes of the movie player.
      *
      * @param newState the current state of the movie player.
-     * @param oldState the previous state of the movie player.
      */
-    void stateChanged(Phonon::State newState, Phonon::State oldState);
+    void stateChanged(QMediaPlayer::PlaybackState newState);
     /**
      * The playback of the current movie player is about to end.
      */
     void aboutToFinish();
     /**
-     * The playback has reached the pre-finish mark.
-     *
-     * @param timeLeft time left to play in milliseconds.
-     */
-    void closeToFinish(qint32 timeLeft);
-    /**
      * Called if tick has been changed.
      */
-    void updatedTick(qint64 tick);
+    void updatedPosition(qint64 position);
+    /**
+     * Called if the media status is updated. Handles end of media.
+     *
+     * @param status the current media status for movie player.
+     */
+    void updatedMediaStatus(QMediaPlayer::MediaStatus status);
 
     void updatedChapter(int chapter);
     /**
@@ -376,12 +353,6 @@ protected:
     void mousePressEvent(QMouseEvent* mouseEvent) override;
 
 private:
-    void connectTick();
-    void disconnectTick();
-    /**
-     * Fix audio issues with when switching audio tracks.
-     */
-    void fixAudioIssue();
     /**
      * Update the current chapter index.
      */
@@ -393,7 +364,7 @@ private:
     /**
      * VLC handler for Media events.
      */
-    static void handleVLCMediaEvents(const libvlc_event_t*  event, void* data);
+    // static void handleVLCMediaEvents(const libvlc_event_t*  event, void* data);
     /**
      * Scan the media file for chapters.
      */
@@ -401,16 +372,15 @@ private:
 
     xPlayerPulseAudioControls* pulseAudioControls;
     xMovieFile* movieFile;
-    Phonon::MediaObject* moviePlayer;
+    QMediaPlayer* moviePlayer;
+    QAudioOutput* audioOutput;
     xMoviePlayer::State moviePlayerState;
-    Phonon::MediaController* movieController;
-    Phonon::AudioOutput* audioOutput;
-    QList<Phonon::SubtitleDescription> currentSubtitleDescriptions;
-    QList<Phonon::AudioChannelDescription> currentAudioChannelDescriptions;
+    QList<QMediaMetaData> subtitlesMetaData;
+    QList<QMediaMetaData> audioChannelsMetaData;
     QList<std::pair<std::filesystem::path,QString>> movieQueue;
     qint64 movieMediaLength;
+    QVector<qint64> movieMediaChapterBegin;
     int movieMediaChapter;
-    bool movieMediaDeinterlaceMode;
     QString movieMediaCropAspectRatio;
     bool movieMediaFullWindow;
     bool movieTickConnected;
@@ -420,7 +390,6 @@ private:
     bool movieCurrentSkip;
     bool moviePlayedRecorded;
     QStringList currentChapterDescriptions;
-    QVector<qint64> currentChapterBegin;
     std::pair<std::filesystem::path,QString> movieCurrent;
     QString movieCurrentTag;
     QString movieCurrentDirectory;

@@ -63,7 +63,7 @@ xPlayerMovieWidget::xPlayerMovieWidget(xMoviePlayer* player, QWidget *parent, Qt
     audioChannelLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
     // Subtitles.
     subtitleBox = new QComboBox(controlBox);
-    auto subtitleLabel = new QLabel(tr("Subtitle"), controlBox);
+    subtitleLabel = new QLabel(tr("Subtitle"), controlBox);
     subtitleLabel->setAlignment(Qt::AlignLeft|Qt::AlignBottom);
     subtitleLabel->setContentsMargins(xPlayerLayout::SmallSpace, 0, 0, 0);
     // Video options menu.
@@ -160,36 +160,30 @@ void xPlayerMovieWidget::createOptionsMenu() {
     optionsAutoplayNext->setCheckable(true);
     optionsAutoplayNext->setChecked(false);
     connect(optionsAutoplayNext, &QAction::triggered, this, &xPlayerMovieWidget::autoPlayNextMovie);
-    // Deinterlace.
-    auto optionsDeinterlace = new QAction(tr("Deinterlace"), optionsMenu);
-    optionsDeinterlace->setCheckable(true);
-    optionsDeinterlace->setChecked(false);
-    connect(optionsDeinterlace, &QAction::triggered, moviePlayer, &xMoviePlayer::setDeinterlaceMode);
-    // Crop submenu.
-    auto cropSubmenu = new QMenu(tr("Crop"), optionsMenu);
-    auto cropActions = new QActionGroup(cropSubmenu);
-    cropActions->setExclusive(true);
-    auto cropDisabled = cropActions->addAction(tr("Disable"));
-    cropDisabled->setCheckable(true);
-    cropDisabled->setChecked(true);
-    connect(cropDisabled, &QAction::triggered, [=](bool) {
-        moviePlayer->setCropAspectRatio(xMoviePlayer::RatioAuto);
+    // Aspect ration submenu.
+    auto aspectRatioSubmenu = new QMenu(tr("Aspect Ratio"), optionsMenu);
+    auto aspectRatioActions = new QActionGroup(aspectRatioSubmenu);
+    aspectRatioActions->setExclusive(true);
+    auto aspectRatioAuto = aspectRatioActions->addAction(tr("Auto"));
+    aspectRatioAuto->setCheckable(true);
+    aspectRatioAuto->setChecked(true);
+    connect(aspectRatioAuto, &QAction::triggered, [=](bool) {
+        moviePlayer->setAspectRatio(xMoviePlayer::RatioAuto);
     });
-    cropSubmenu->addAction(cropDisabled);
-    cropSubmenu->addSeparator();
+    aspectRatioSubmenu->addAction(aspectRatioAuto);
+    aspectRatioSubmenu->addSeparator();
     for (auto&& supported : xMoviePlayer::supportedAspectRatio()) {
-        auto cropSupported = cropActions->addAction(supported.first);
-        cropSupported->setCheckable(true);
-        connect(cropSupported, &QAction::triggered, [=](bool) {
-            moviePlayer->setCropAspectRatio(supported.second);
+        auto aspectRatioSupported = aspectRatioActions->addAction(supported.first);
+        aspectRatioSupported->setCheckable(true);
+        connect(aspectRatioSupported, &QAction::triggered, [=](bool) {
+            moviePlayer->setAspectRatio(supported.second);
         });
-        cropSubmenu->addAction(cropSupported);
+        aspectRatioSubmenu->addAction(aspectRatioSupported);
     }
     // Compose menu.
     optionsMenu->addAction(optionsAutoplayNext);
     optionsMenu->addSeparator();
-    optionsMenu->addAction(optionsDeinterlace);
-    optionsMenu->addMenu(cropSubmenu);
+    optionsMenu->addMenu(aspectRatioSubmenu);
     optionsMenuButton->setMenu(optionsMenu);
 }
 
@@ -223,6 +217,17 @@ void xPlayerMovieWidget::currentAudioChannels(const QStringList& audioChannels, 
 }
 
 void xPlayerMovieWidget::currentSubtitles(const QStringList& subtitles) {
+    if (subtitles.count() > 0) {
+        // Enable chapter section and update entries.
+        subtitleLabel->setEnabled(true);
+        subtitleBox->setEnabled(true);
+        updateComboBoxEntries(chapterBox, subtitles);
+    } else {
+        // Disable chapter section and clear entries.
+        subtitleLabel->setEnabled(false);
+        subtitleBox->setEnabled(false);
+        subtitleBox->clear();
+    }
     updateComboBoxEntries(subtitleBox, subtitles);
 }
 
