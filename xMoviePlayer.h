@@ -324,13 +324,17 @@ private slots:
 
     void updatedChapter(int chapter);
     /**
-     * Called if default audio language has been changed.
+     * Called if the default audio language has been changed.
      */
     void updatedDefaultAudioLanguage();
     /**
-     * Called if default subtitle language has been changed.
+     * Called if the default subtitle language has been changed.
      */
     void updatedDefaultSubtitleLanguage();
+    /**
+     * Called if the audio device Id has been changed.
+     */
+    void updatedAudioDeviceId();
 
 protected:
     /**

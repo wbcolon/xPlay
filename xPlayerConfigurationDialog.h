@@ -158,6 +158,7 @@ private:
     QLineEdit* movieLibraryExtensionsWidget;
     QComboBox* movieDefaultAudioLanguageWidget;
     QComboBox* movieDefaultSubtitleLanguageWidget;
+    QComboBox* movieAudioDeviceWidget;
     QListWidget* movieLibraryListWidget;
     QLineEdit* streamingNameWidget;
     QLineEdit* streamingUrlWidget;

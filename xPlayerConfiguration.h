@@ -148,6 +148,12 @@ public:
      */
     void setMovieDefaultSubtitleLanguage(const QString& language);
     /**
+     * Set the ID of the audio device used for the movie player.
+     *
+     * @param audioDeviceId the ID of the audio device for the movie player.
+     */
+    void setMovieAudioDeviceId(const QByteArray& audioDeviceId);
+    /**
      * Set the visibility status of the movie filters widget.
      *
      * @param visible show movie filters if true, hide otherwise.
@@ -315,7 +321,7 @@ public:
      */
     [[nodiscard]] QStringList getMusicLibraryTags();
     /**
-     * Get tagging mode for music library.
+     * Get tagging mode for the music library.
      *
      * @return true if lltag is enabled, false otherwise.
      */
@@ -346,10 +352,8 @@ public:
     [[nodiscard]] bool getMusicViewVisualization();
     /**
      * Get the music visualization mode.
-     * - 0: small window
-     * - 1: central window
      *
-     * @param mode the music visualization mode as integer.
+     * @return 0, if we use a small window, 1 if the central window is used.
      */
     int getMusicViewVisualizationMode();
     /**
@@ -401,7 +405,13 @@ public:
      */
     [[nodiscard]] QString getMovieDefaultSubtitleLanguage();
     /**
-     * Get the list of languages used for default audio channel and subtitles.
+     * Get the device Id of the audio device.
+     *
+     * @return the Id for the audio device used for the movie player.
+     */
+    [[nodiscard]] QByteArray getMovieAudioDeviceId();
+    /**
+     * Get the list of languages used for the default audio channel and subtitles.
      *
      * @return the languages as string list.
      */
@@ -602,9 +612,13 @@ signals:
      */
     void updatedMovieDefaultAudioLanguage();
     /**
-     * Signal and update of the default movie subtitle language.
+     * Signal an update of the default movie subtitle language.
      */
     void updatedMovieDefaultSubtitleLanguage();
+    /**
+     * Signal an update of the audio device for the movie player.
+     */
+    void updatedMovieAudioDeviceId();
     /**
      * Signal an update of the movie filters visibility.
      */

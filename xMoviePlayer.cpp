@@ -30,9 +30,6 @@
 
 #include <vlc/vlc.h>
 
-// Use the pulse audio device.
-const QString xPlayMoviePlayerAudioDeviceDescription { "PulseAudio Sound Server" };
-
 std::list<std::pair<QString,xMoviePlayer::AspectRatio>> xMoviePlayer::supportedAspectRatio() {
     return {
         {"Keep", xMoviePlayer::RatioKeep},
@@ -60,12 +57,6 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
     moviePlayer = new QMediaPlayer();
     // Configure the audio device.
     audioOutput = new QAudioOutput();
-    for (const auto& audioDevice : QMediaDevices::audioOutputs()) {
-        if (audioDevice.description().contains(xPlayMoviePlayerAudioDeviceDescription)) {
-            audioOutput->setDevice(audioDevice);
-            break;
-        }
-    }
     audioOutput->setMuted(false);
     audioOutput->setVolume(1.0);
     // Connect Video and Audio to movie player.
@@ -88,6 +79,8 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
         this, &xMoviePlayer::updatedDefaultAudioLanguage);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieDefaultSubtitleLanguage,
         this, &xMoviePlayer::updatedDefaultSubtitleLanguage);
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMovieAudioDeviceId,
+        this, &xMoviePlayer::updatedAudioDeviceId);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMoviePlayed, [=]() {
         moviePlayed = xPlayerConfiguration::configuration()->getDatabaseMoviePlayed();
     });
@@ -162,7 +155,7 @@ void xMoviePlayer::previousChapter() {
 }
 
 void xMoviePlayer::nextChapter() {
-    // Indicate skip in order to correctly current position.
+    // Indicate skip to correctly current position.
     if (movieMediaChapter < movieMediaChapterBegin.size() - 1 ) {
         ++movieMediaChapter;
         qDebug() << "xMoviePlayer: nextChapter:: " << movieMediaChapter;
@@ -379,7 +372,7 @@ void xMoviePlayer::stateChanged(QMediaPlayer::PlaybackState newState) {
 void xMoviePlayer::aboutToFinish() {
     if (movieQueue.isEmpty()) {
         qDebug() << "xMoviePlayer: aboutToFinish";
-        // Go to stopping state. End full window mode.
+        // Go to the stopping state. End full window mode.
         emit currentState(moviePlayerState = xMoviePlayer::StoppingState);
     }
 }
@@ -392,7 +385,7 @@ void xMoviePlayer::updatedMediaStatus(QMediaPlayer::MediaStatus status) {
             stop();
         }
         else {
-            // Take next movie out of the queue and directly play it.
+            // Take the next movie out of the queue and directly play it.
             auto nextMovie = movieQueue.takeFirst();
             setMovie(nextMovie.first, nextMovie.second, movieCurrentTag, movieCurrentDirectory);
         }
@@ -405,6 +398,17 @@ void xMoviePlayer::updatedDefaultAudioLanguage() {
 
 void xMoviePlayer::updatedDefaultSubtitleLanguage() {
     movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
+}
+
+void xMoviePlayer::updatedAudioDeviceId() {
+    auto audioDeviceId = xPlayerConfiguration::configuration()->getMovieAudioDeviceId();
+    for (const auto& audioDevice : QMediaDevices::audioOutputs()) {
+        if (audioDevice.id() == audioDeviceId) {
+            qDebug() << "Selecting Audio Device: " << audioDevice.description();
+            audioOutput->setDevice(audioDevice);
+            break;
+        }
+    }
 }
 
 void xMoviePlayer::updateCurrentChapter() {

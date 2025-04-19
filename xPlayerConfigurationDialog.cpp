@@ -15,6 +15,7 @@
 #include "xPlayerConfigurationDialog.h"
 #include "xPlayerUI.h"
 
+#include <QAudioDevice>
 #include <QGroupBox>
 #include <QComboBox>
 #include <QFileDialog>
@@ -22,6 +23,7 @@
 #include <QRegularExpression>
 #include <QTabWidget>
 #include <QDebug>
+#include <QMediaDevices>
 
 xPlayerConfigurationDialog::xPlayerConfigurationDialog(QWidget* parent, Qt::WindowFlags flags):
         QDialog(parent, flags) {
@@ -142,6 +144,14 @@ void xPlayerConfigurationDialog::createMovieConfigurationTab(QWidget* movieLibra
     movieDefaultSubtitleLanguageWidget = new QComboBox(movieLibraryTab);
     movieDefaultSubtitleLanguageWidget->addItem(tr("disable"));
     movieDefaultSubtitleLanguageWidget->addItems(xPlayerConfiguration::getMovieDefaultLanguages());
+    auto movieAudioDeviceLabel = new QLabel(tr("Audio Device"), movieLibraryTab);
+    movieAudioDeviceWidget = new QComboBox(movieLibraryTab);
+    for (auto& audioDevice : QMediaDevices::audioOutputs()) {
+        qDebug() << "QMultimedia Audio Device: (id) " << audioDevice.id() << ", description: " << audioDevice.description();
+        movieAudioDeviceWidget->addItem(audioDevice.description(), audioDevice.id());
+    }
+    qDebug() << "QMultimedia Audio Device: (id) " << QMediaDevices::defaultAudioOutput().id() << ", description: " <<
+        QMediaDevices::defaultAudioOutput().description();
 
     movieLibraryLayout->addWidget(movieLibraryTagLabel, 0, 0, 1, 5);
     movieLibraryLayout->addWidget(movieLibraryTagWidget, 1, 0, 1, 5);
@@ -158,8 +168,11 @@ void xPlayerConfigurationDialog::createMovieConfigurationTab(QWidget* movieLibra
     movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageLabel, 11, 3, 1, 2);
     movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
     movieLibraryLayout->addWidget(movieDefaultSubtitleLanguageWidget, 12, 3, 1, 2);
-    movieLibraryLayout->addRowSpacer(13, xPlayerLayout::SmallSpace);
-    movieLibraryLayout->addRowStretcher(14);
+    movieLibraryLayout->addRowSpacer(13, xPlayerLayout::LargeSpace);
+    movieLibraryLayout->addWidget(movieAudioDeviceLabel, 14, 0, 1, 2);
+    movieLibraryLayout->addWidget(movieAudioDeviceWidget, 15, 0, 1, 5);
+    movieLibraryLayout->addRowSpacer(16, xPlayerLayout::LargeSpace);
+    movieLibraryLayout->addRowStretcher(17);
     movieLibraryTab->setLayout(movieLibraryLayout);
     // Connect movie library.
     connect(movieLibraryDirectoryOpenButton, &QPushButton::pressed, this, &xPlayerConfigurationDialog::openMovieLibraryDirectory);
@@ -341,6 +354,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     auto movieLibraryExtensions = xPlayerConfiguration::configuration()->getMovieLibraryExtensions();
     auto movieDefaultAudioLanguage = xPlayerConfiguration::configuration()->getMovieDefaultAudioLanguage();
     auto movieDefaultSubtitleLanguage = xPlayerConfiguration::configuration()->getMovieDefaultSubtitleLanguage();
+    auto movieAudioDeviceId = xPlayerConfiguration::configuration()->getMovieAudioDeviceId();
     auto databaseDirectory = xPlayerConfiguration::configuration()->getDatabaseDirectory();
     auto databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
     auto streamingSites = xPlayerConfiguration::configuration()->getStreamingSites();
@@ -406,6 +420,7 @@ void xPlayerConfigurationDialog::loadSettings() {
     } else {
         movieDefaultSubtitleLanguageWidget->setCurrentText(movieDefaultSubtitleLanguage);
     }
+    movieAudioDeviceWidget->setCurrentIndex(movieAudioDeviceWidget->findData(movieAudioDeviceId));
     streamingSitesListWidget->clear();
     if (!streamingSites.isEmpty()) {
         for (const auto& entry : streamingSites) {
@@ -433,6 +448,7 @@ void xPlayerConfigurationDialog::saveSettings() {
             movieDefaultAudioLanguageWidget->currentIndex() ? movieDefaultAudioLanguageWidget->currentText() : "";
     auto movieDefaultSubtitleLanguage =
             movieDefaultSubtitleLanguageWidget->currentIndex() ? movieDefaultSubtitleLanguageWidget->currentText() : "";
+    auto movieAudioDeviceId = movieAudioDeviceWidget->currentData().toByteArray();
     auto databaseDirectory = databaseDirectoryWidget->text();
     qint64 databaseCutOff = 0;
     if (databaseCutOffCheck->isChecked()) {
@@ -478,6 +494,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     qDebug() << "xPlayerConfigurationDialog: save: movieLibraryExtensions: " << movieLibraryExtensions;
     qDebug() << "xPlayerConfigurationDialog: save: movieDefaultAudioLanguage: " << movieDefaultAudioLanguage;
     qDebug() << "xPlayerConfigurationDialog: save: movieDefaultSubtitleLanguage: " << movieDefaultSubtitleLanguage;
+    qDebug() << "xPlayerConfigurationDialog: save: movieAudioDevice: " << movieAudioDeviceId;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSites: " << streamingSites;
     qDebug() << "xPlayerConfigurationDialog: save: streamingSitesDefault: " << streamingSitesDefault;
     qDebug() << "xPlayerConfigurationDialog: save: databaseDirectory: " << databaseDirectory;
@@ -506,6 +523,7 @@ void xPlayerConfigurationDialog::saveSettings() {
     xPlayerConfiguration::configuration()->setMovieLibraryExtensions(movieLibraryExtensions);
     xPlayerConfiguration::configuration()->setMovieDefaultAudioLanguage(movieDefaultAudioLanguage);
     xPlayerConfiguration::configuration()->setMovieDefaultSubtitleLanguage(movieDefaultSubtitleLanguage);
+    xPlayerConfiguration::configuration()->setMovieAudioDeviceId(movieAudioDeviceId);
     xPlayerConfiguration::configuration()->setStreamingSites(streamingSites);
     xPlayerConfiguration::configuration()->setStreamingSitesDefault(streamingSitesDefault);
     xPlayerConfiguration::configuration()->setDatabaseDirectory(databaseDirectory);
