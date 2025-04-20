@@ -234,15 +234,21 @@ void xMoviePlayer::setAspectRatio(xMoviePlayer::AspectRatio aspectRatio) {
 
 void xMoviePlayer::availableAudioChannels() {
     QStringList audioChannels;
-
     // Process audio channels
     audioChannelsMetaData = moviePlayer->audioTracks();
     for (auto& audioChannelMetaData : audioChannelsMetaData) {
-        audioChannels.push_back(QString("%1 (%2)").arg(audioChannelMetaData.stringValue(QMediaMetaData::Language),
-                                                       audioChannelMetaData.stringValue(QMediaMetaData::AudioCodec)));
+        auto audioChannelDescription = audioChannelMetaData.stringValue(QMediaMetaData::Language);
+        if (audioChannelDescription.isEmpty()) {
+            audioChannelDescription = "Unknown";
+        }
+        auto audioCodec = audioChannelMetaData.stringValue(QMediaMetaData::AudioCodec);
+        if (!audioCodec.isEmpty()) {
+            audioChannelDescription.append(QString(" (%1)").arg(audioCodec));
+        }
+        audioChannels.push_back(audioChannelDescription);
     }
     // Determine default audio track.
-    int defaultAudioIndex = 0; // Choose first audio track if default does not match.
+    int defaultAudioIndex = 0; // Choose the first audio track if the default does not match.
     for (const auto& audioChannel : audioChannels ) {
         if (audioChannel.contains(movieDefaultAudioLanguage, Qt::CaseInsensitive)) {
             break;
@@ -261,10 +267,9 @@ void xMoviePlayer::availableAudioChannels() {
 
 void xMoviePlayer::availableSubtitles() {
     QStringList subtitles;
-
+    // Process subtitles.
     subtitlesMetaData = moviePlayer->subtitleTracks();
     for (auto& subtitleMetaData : subtitlesMetaData) {
-        qDebug() << "Subtitle: keys: " << subtitleMetaData.keys();
         if (subtitleMetaData.keys().contains(QMediaMetaData::Language)) {
             subtitles.push_back(subtitleMetaData.stringValue(QMediaMetaData::Language));
         } else {
@@ -274,7 +279,7 @@ void xMoviePlayer::availableSubtitles() {
     if (!subtitles.isEmpty()) {
         subtitles.push_back("Disable");
     }
-    // Subtitles are currently disabled. Segmentation fault for "two and a half men".
+    // Subtitles are currently disabled. Segmentation fault for a number of movies.
     subtitles.clear(); // Remove once subtitles work properly.
     emit currentSubtitles(subtitles);
 }
@@ -286,10 +291,6 @@ void xMoviePlayer::availableChapters(int chapters) {
         currentChapterDescriptions.push_back(QString("Chapter %1").arg(i));
     }
     emit currentChapters(currentChapterDescriptions);
-}
-
-void xMoviePlayer::availableTitles(int titles) {
-    qDebug() << "xMovie: number of titles: " << titles;
 }
 
 void xMoviePlayer::selectAudioChannel(int index) {
@@ -310,10 +311,6 @@ void xMoviePlayer::selectSubtitle(int index) {
             moviePlayer->setActiveSubtitleTrack(-1);
         }
     }
-}
-
-void xMoviePlayer::updatedChapter(int chapter) {
-    qDebug() << "xMovie: updatedChapter:: " << chapter;
 }
 
 void xMoviePlayer::updatedPosition(qint64 movieMediaPos) {

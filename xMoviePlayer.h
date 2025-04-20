@@ -87,7 +87,7 @@ signals:
     /**
      * Signal the audio channel for the current movie.
      *
-     * @param audioChannel the index of audio channel.
+     * @param audioChannel the index of the audio channel.
      */
     void currentAudioChannel(int audioChannel);
     /**
@@ -116,13 +116,13 @@ signals:
      */
     void currentChapter(int chapter);
     /**
-     * Signal the number chapters for the current movie.
+     * Signal the number of chapters for the current movie.
      *
      * @param chapters number of chapters as integer.
      */
     void currentChapters(const QStringList& chapters);
     /**
-     * Signal the number titles for the current movie.
+     * Signal the number of titles for the current movie.
      *
      * @param titles number of titles as integer.
      */
@@ -165,35 +165,15 @@ signals:
      */
     void currentState(xMoviePlayer::State state);
     /**
-     * Update the database overlay for currently played movie and add tooltips.
+     * Update the database overlay for the currently played movie and add tooltips.
      *
      * @param tag the tag for the currently played movie.
      * @param directory the directory for the currently played movie.
      * @param movie the name of the currently played movie.
      * @param playCount the play count for the currently played movie.
-     * @param timeStamp the last played time stamp in milli seconds for the currently played movie.
+     * @param timeStamp the last played time stamp in milliseconds for the currently played movie.
      */
     void updatePlayedMovie(const QString& tag, const QString& directory, const QString& movie, int playCount, qint64 timeStamp);
-    /**
-     * Helper signal to call stop from event handler callback.
-     */
-    void eventHandler_stop();
-    /**
-     * Helper signal to call setMovie from event handler callback.
-     */
-    void eventHandler_setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
-    /*
-     * Helper signal to call selectAudioChannel from the event handler callback.
-     */
-    void eventHandler_selectAudioChannel(int audioChannel);
-    /*
-     * Helper signal to call selectSubtitle from the event handler callback.
-     */
-    void eventHandler_selectSubtitle(int subtitle);
-    /*
-     * Helper signal to call parseFinished from the event handler callback.
-     */
-    void eventHandler_parseFinished();
 
 public slots:
     /**
@@ -252,7 +232,7 @@ public slots:
      */
     void setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
     /**
-     * Setup the queue of movies to be played after the current one.
+     * Set up the queue of movies to be played after the current one.
      *
      * @param queue list of pairs of path and name to be displayed.
      */
@@ -288,12 +268,6 @@ private slots:
      */
     void availableChapters(int chapters);
     /**
-     * Get the number of titles for the current movie.
-     *
-     * @param titles number of titles as integer.
-     */
-    void availableTitles(int titles);
-    /**
      * The audio channels for the current movie have been determined.
      */
     void availableAudioChannels();
@@ -321,8 +295,6 @@ private slots:
      * @param status the current media status for movie player.
      */
     void updatedMediaStatus(QMediaPlayer::MediaStatus status);
-
-    void updatedChapter(int chapter);
     /**
      * Called if the default audio language has been changed.
      */
@@ -332,7 +304,7 @@ private slots:
      */
     void updatedDefaultSubtitleLanguage();
     /**
-     * Called if the audio device Id has been changed.
+     * Called if the audio device ID has been changed.
      */
     void updatedAudioDeviceId();
 
@@ -361,18 +333,6 @@ private:
      * Update the current chapter index.
      */
     void updateCurrentChapter();
-    /**
-     * Update the current position for play time recording.
-     */
-    void updateCurrentPosition();
-    /**
-     * VLC handler for Media events.
-     */
-    // static void handleVLCMediaEvents(const libvlc_event_t*  event, void* data);
-    /**
-     * Scan the media file for chapters.
-     */
-    void scanForChapters();
 
     xPlayerPulseAudioControls* pulseAudioControls;
     xMovieFile* movieFile;
