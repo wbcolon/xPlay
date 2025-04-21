@@ -218,12 +218,12 @@ void xPlayerMovieWidget::currentAudioChannels(const QStringList& audioChannels, 
 
 void xPlayerMovieWidget::currentSubtitles(const QStringList& subtitles) {
     if (subtitles.count() > 0) {
-        // Enable chapter section and update entries.
+        // Enable the subtitle section and update entries.
         subtitleLabel->setEnabled(true);
         subtitleBox->setEnabled(true);
-        updateComboBoxEntries(chapterBox, subtitles);
+        updateComboBoxEntries(subtitleBox, subtitles);
     } else {
-        // Disable chapter section and clear entries.
+        // Disable the subtitle section and clear entries.
         subtitleLabel->setEnabled(false);
         subtitleBox->setEnabled(false);
         subtitleBox->clear();
@@ -233,12 +233,12 @@ void xPlayerMovieWidget::currentSubtitles(const QStringList& subtitles) {
 
 void xPlayerMovieWidget::currentChapters(const QStringList& chapters) {
     if (chapters.count() > 0) {
-        // Enable chapter section and update entries.
+        // Enable the chapter section and update entries.
         chapterLabel->setEnabled(true);
         chapterBox->setEnabled(true);
         updateComboBoxEntries(chapterBox, chapters);
     } else {
-        // Disable chapter section and clear entries.
+        // Disable the chapter section and clear entries.
         chapterLabel->setEnabled(false);
         chapterBox->setEnabled(false);
         chapterBox->clear();

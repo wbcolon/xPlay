@@ -63,8 +63,8 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     musicPlayer->setTickInterval(xPlayer::MusicTickDelta);
     musicOutput->setMuted(false);
     musicVisualization->setDataSize(xMusicPlayer_MusicVisualizationSamples);
-    // Set up the play list.
-    // Connect QMediaPlayer signals to out music player signals.
+    // Set up the playlist.
+    // Connect QMediaPlayer signals to our music player signals.
     connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayer::updatePlayed);
     connect(musicPlayer, &Phonon::MediaObject::currentSourceChanged, this, &xMusicPlayer::currentTrackSource);
     connect(musicPlayer, &Phonon::MediaObject::stateChanged, this, &xMusicPlayer::stateChanged);
@@ -100,7 +100,7 @@ void xMusicPlayer::queueTracks(const QString& artist, const QString& album, cons
             }
         }
     } else {
-        musicRemoteAutoNext |= (musicPlaylistRemote.length() > 0) &&
+        musicRemoteAutoNext |= (!musicPlaylistRemote.empty()) &&
                 (musicPlaylistRemote.constLast() == musicCurrentRemote) &&
                 (musicPlayerState == State::StopState);
         // Add given tracks to the playlist and to the musicPlaylistEntries data structure.
