@@ -21,17 +21,17 @@
 
 #include <QRandomGenerator>
 #include <QAudioOutput>
+#include <QAudioFormat>
+#include <QAudioBuffer>
+#include <QAudioBufferOutput>
 #include <cmath>
 
-constexpr auto xMusicPlayer_MusicVisualizationSamples = 1024;
-constexpr auto xMusicPlayer_MusicVisualizationSamplesFactor = xMusicPlayer_MusicVisualizationSamples * 10;
+#include "xApplication.h"
 
 xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         QObject(parent),
         musicLibrary(library),
         musicPlaylistPermutation(),
-        musicVisualizationEnabled(false),
-        musicVisualizationSampleRate(44100 / xMusicPlayer_MusicVisualizationSamplesFactor),
         musicPlayerState(State::StopState),
         useShuffleMode(false),
         musicCurrentPosition(-1),
@@ -51,18 +51,13 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     musicPlayer = new Phonon::MediaObject(this);
     musicOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
     // Set stream output volume to 100%
-    //musicOutput->setVolume(1.0);
-    musicOutput->setVolume(100);
-    musicVisualization = new Phonon::AudioDataOutput(this);
+    musicOutput->setVolume(1.0);
     Phonon::createPath(musicPlayer, musicOutput);
-    musicVisualizationSupported = Phonon::createPath(musicPlayer, musicVisualization).isValid();
-    qDebug() << "xMusicPlayer::xMusicPlayer: visualization support: " << musicVisualizationSupported;
     // Alternate setup, but we need the output to change volume.
     // musicPlayer = Phonon::createPlayer(Phonon::MusicCategory);
     musicPlayer->setTransitionTime(0);
     musicPlayer->setTickInterval(xPlayer::MusicTickDelta);
     musicOutput->setMuted(false);
-    musicVisualization->setDataSize(xMusicPlayer_MusicVisualizationSamples);
     // Set up the playlist.
     // Connect QMediaPlayer signals to our music player signals.
     connect(musicPlayer, &Phonon::MediaObject::tick, this, &xMusicPlayer::updatePlayed);
@@ -155,7 +150,7 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
             // If no track currently played and queue empty then currentIndex == -1.
             // Clear queue and enqueue the remaining entries.
             musicPlayer->clearQueue();
-            for (auto i = currentIndex + 1; i < static_cast<int>(musicPlaylistEntries.size()); ++i) {
+            for (auto i = currentIndex + 1; i < static_cast<qsizetype>(musicPlaylistEntries.size()); ++i) {
                 musicPlayer->enqueue(musicPlaylist[i]);
             }
         }
@@ -164,6 +159,7 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
             if (noMedia) {
                 emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
                 musicPlayer->play();
+                xPlayerPulseAudioControls::controls()->enableMonitor();
             } else {
                 // Go to next if music player queue is empty but files are in the general queue.
                 next();
@@ -193,7 +189,7 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
     emit allowShuffleMode(true);
 }
 
-void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
+void xMusicPlayer::moveQueueTracks(qsizetype fromIndex, qsizetype toIndex) {
     if (useShuffleMode) {
         return;
     }
@@ -219,7 +215,7 @@ void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
     if ((fromIndex >= currentIndex) || (toIndex >= currentIndex)) {
         // Repopulate playlist if move affected the elements to be played.
         musicPlayer->clearQueue();
-        for (auto i = currentIndex+1; i < static_cast<int>(musicPlaylistEntries.size()); ++i) {
+        for (auto i = currentIndex+1; i < static_cast<qsizetype>(musicPlaylistEntries.size()); ++i) {
             musicPlayer->enqueue(musicPlaylist[i]);
         }
     }
@@ -231,7 +227,7 @@ void xMusicPlayer::moveQueueTracks(int fromIndex, int toIndex) {
     musicCurrentIndex = currentIndex;
 }
 
-void xMusicPlayer::dequeueTrack(int index) {
+void xMusicPlayer::dequeueTrack(qsizetype index) {
     // We do not allow deque tracks if in shuffle mode.
     if (useShuffleMode) {
         return;
@@ -249,6 +245,7 @@ void xMusicPlayer::dequeueTrack(int index) {
             // Determine the state of the music player.
             auto state = musicPlayer->state();
             // We need to stop everything because we are deleting the currently played track
+            xPlayerPulseAudioControls::controls()->disableMonitor();
             musicPlayer->stop();
             musicPlayer->clear();
             musicPlayer->clearQueue();
@@ -259,6 +256,7 @@ void xMusicPlayer::dequeueTrack(int index) {
             // We do not need to signal an update on the state because we did not change it overall.
             if (state == Phonon::PlayingState) {
                 musicPlayer->play();
+                xPlayerPulseAudioControls::controls()->enableMonitor();
             }
         } else if (index > currentIndex) {
             // Do not stop, just clear the queue
@@ -280,6 +278,7 @@ void xMusicPlayer::clearQueue() {
     // Stop the music player and clear its state (including queue).
     emit currentState(musicPlayerState = State::StopState);
     if (musicLibrary->isLocal()) {
+        xPlayerPulseAudioControls::controls()->disableMonitor();
         musicPlayer->clearQueue();
         musicPlayer->stop();
         musicPlayer->clear();
@@ -289,7 +288,7 @@ void xMusicPlayer::clearQueue() {
         xPlayerBluOSControls::controls()->stop();
         emit allowShuffleMode(false);
     }
-    // Remove entries from the play lists.
+    // Remove entries from the playlists.
     musicPlaylistEntries.clear();
     musicPlaylistRemote.clear();
     musicPlaylist.clear();
@@ -401,9 +400,11 @@ void xMusicPlayer::playPause() {
         if (musicPlayer->state() == Phonon::PlayingState) {
             emit currentState(musicPlayerState = State::PauseState);
             musicPlayer->pause();
+            xPlayerPulseAudioControls::controls()->disableMonitor();
         } else {
             emit currentState(musicPlayerState = State::PlayingState);
             musicPlayer->play();
+            xPlayerPulseAudioControls::controls()->enableMonitor();
         }
     } else {
         auto state = xPlayerBluOSControls::controls()->state();
@@ -417,7 +418,7 @@ void xMusicPlayer::playPause() {
     }
 }
 
-void xMusicPlayer::play(int index) {
+void xMusicPlayer::play(qsizetype index) {
     // We do not allow clicking on a queued tracks if in shuffle mode.
     if (useShuffleMode) {
         return;
@@ -437,6 +438,7 @@ void xMusicPlayer::play(int index) {
             // Play.
             emit currentState(musicPlayerState = State::PlayingState);
             musicPlayer->play();
+            xPlayerPulseAudioControls::controls()->enableMonitor();
         }
     } else {
         if ((index >= 0) && (index < musicPlaylistRemote.size())) {
@@ -477,6 +479,7 @@ void xMusicPlayer::stop() {
     emit currentState(musicPlayerState = State::StopState);
     if (musicLibrary->isLocal()) {
         musicPlayer->stop();
+        xPlayerPulseAudioControls::controls()->disableMonitor();
     } else {
         xPlayerBluOSControls::controls()->stop();
     }
@@ -511,6 +514,7 @@ void xMusicPlayer::prev() {
             }
             // Play.
             musicPlayer->play();
+            xPlayerPulseAudioControls::controls()->enableMonitor();
         }
     } else {
         xPlayerBluOSControls::controls()->prev();
@@ -544,6 +548,7 @@ void xMusicPlayer::next() {
             }
             // Play.
             musicPlayer->play();
+            xPlayerPulseAudioControls::controls()->enableMonitor();
         }
     } else {
         xPlayerBluOSControls::controls()->next();
@@ -613,7 +618,7 @@ bool xMusicPlayer::isQueueTracksAllowed() const {
 }
 
 void xMusicPlayer::setVolume(int vol) {
-    vol = std::clamp(vol, 0, 100);
+    vol = qBound(vol, 0, 100);
     if (musicLibrary->isLocal()) {
         if (!musicOutput->isMuted()) {
             pulseAudioControls->setVolume(vol);
@@ -623,18 +628,7 @@ void xMusicPlayer::setVolume(int vol) {
     }
 }
 
-void xMusicPlayer::setVisualization(bool enabled) {
-    if (musicLibrary->isLocal()) {
-        musicVisualizationEnabled = enabled;
-        if (musicVisualizationEnabled) {
-            connect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayer::visualizationUpdate);
-        } else {
-            disconnect(musicVisualization, &Phonon::AudioDataOutput::dataReady, this, &xMusicPlayer::visualizationUpdate);
-        }
-    }
-}
-
-int xMusicPlayer::getVolume() const {
+qsizetype xMusicPlayer::getVolume() const {
     if (musicLibrary->isLocal()) {
         return pulseAudioControls->getVolume();
     } else {
@@ -642,32 +636,24 @@ int xMusicPlayer::getVolume() const {
     }
 }
 
-bool xMusicPlayer::supportsVisualization() {
-    return musicVisualizationSupported;
-}
-
-bool xMusicPlayer::getVisualization() const {
-    return musicVisualizationEnabled;
-}
-
 void xMusicPlayer::currentTrackDuration(qint64 duration) {
     emit currentTrackLength(duration);
     musicPlayerForTime->stop();
     // Reset media to avoid open files.
-    // UPDATA QT6: Segfault if source is set to an empty URL
+    // Update Qt6: Segfault if a source is set to an empty URL
     // musicPlayerForTime->setSource(QUrl());
     // Update current duration.
     musicCurrentDuration = duration;
 }
 
 void xMusicPlayer::updatePlayed(qint64 pos) {
-    /* The VLC backend for phonon-kde produces way to many tick update. Ignore most of them. */
+    /* The VLC backend for phonon-kde produces way to many tick updates. Ignore most of them. */
     if (std::abs(pos - musicCurrentPosition) < xPlayer::MusicTickDeltaIgnore) {
         return;
     }
-    qDebug() << "xMusicPlayer::updatePlayed: pos:" << pos << ", currentPos: " << musicCurrentPosition
-        << ", currentPlayed: " << musicCurrentPlayed << ", currentDuration: " << musicCurrentDuration
-        << ", playedIndex: " << musicPlayedIndex << ", played: " << musicPlayed;
+    // qDebug() << "xMusicPlayer::updatePlayed: pos:" << pos << ", currentPos: " << musicCurrentPosition
+    //     << ", currentPlayed: " << musicCurrentPlayed << ", currentDuration: " << musicCurrentDuration
+    //     << ", playedIndex: " << musicPlayedIndex << ", played: " << musicPlayed;
     if (pos < musicCurrentPosition) {
         qCritical() << "xMusicPlayer::updatePlayed: illegal positions: " << pos << "," << musicCurrentPosition;
         musicCurrentPosition = pos; // correct position.
@@ -698,9 +684,9 @@ void xMusicPlayer::updatePlayed(qint64 pos) {
     emit currentTrackPlayed(musicCurrentPosition);
 }
 
-void xMusicPlayer::updateDatabase(int index) {
+void xMusicPlayer::updateDatabase(qsizetype index) {
     // Retrieve info for the currently played track and emit the information.
-    if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
+    if ((index >= 0) && (index < static_cast<qsizetype>(musicPlaylistEntries.size()))) {
         auto [artist, album, entryObject] = musicPlaylistEntries[index];
         auto trackName = entryObject->getTrackName();
         // Update database.
@@ -726,14 +712,13 @@ void xMusicPlayer::updateDatabase(int index) {
 void xMusicPlayer::currentTrackSource(const Phonon::MediaSource& current) {
     // Check in the index is valid.
     auto index = musicPlaylist.indexOf(current);
-    if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
+    if ((index >= 0) && (index < static_cast<qsizetype>(musicPlaylistEntries.size()))) {
         // Retrieve info for the currently played track and emit the information.
         auto [artist, album, entryObject] = musicPlaylistEntries[index];
 
         emit currentTrack(index, artist, album, entryObject->getTrackName(), entryObject->getBitrate(),
                           entryObject->getSampleRate(), entryObject->getBitsPerSample(), {});
         // Save sample rate for music visualization scaling
-        musicVisualizationSampleRate = entryObject->getSampleRate() / xMusicPlayer_MusicVisualizationSamplesFactor;
         // Use hack to determine the proper total length.
         // We need the muted musicPlayerForTime to play until the total time has been determined
         // and the durationChanged signal was triggered.
@@ -791,34 +776,12 @@ void xMusicPlayer::aboutToFinish() {
     }
 }
 
-void xMusicPlayer::visualizationUpdate(const QMap<Phonon::AudioDataOutput::Channel, QVector<qint16>>& data) {
-    // Use simple counter to drop audio data.
-    static int sampleCounter = 0;
-    if (sampleCounter++ % musicVisualizationSampleRate) {
-        return;
-    }
-    // Reset sample counter to avoid overflow.
-    sampleCounter = 1;
-    // Transmit data only if we have any.
-    if (data.count() > 0) {
-        QVector<qint16> left, right;
-        // Only extract the left and right channel.
-        left = data[Phonon::AudioDataOutput::LeftChannel];
-        right = data[Phonon::AudioDataOutput::RightChannel];
-        // Ensure that we have the proper amount of samples.
-        left.resize(xMusicPlayer_MusicVisualizationSamples);
-        right.resize(xMusicPlayer_MusicVisualizationSamples);
-        // Emit signal to visualization.
-        emit visualizationStereo(left, right);
-    }
-}
-
-void xMusicPlayer::playerStatus(const QString& path, int index, qint64 position, const QString& quality) {
+void xMusicPlayer::playerStatus(const QString& path, qsizetype index, qint64 position, const QString& quality) {
     // Translate updates from the BluOS player. Index will be incorrect for shuffle mode.
     if (musicPlaylistRemote.value(index) != path) {
         index = musicPlaylistRemote.indexOf(path);
     }
-    if ((index >= 0) && (index < static_cast<int>(musicPlaylistEntries.size()))) {
+    if ((index >= 0) && (index < static_cast<qsizetype>(musicPlaylistEntries.size()))) {
         if ((musicCurrentRemote != path) || (musicCurrentIndex != index)) {
             // Update currently played remote track.
             musicCurrentRemote = path;
@@ -848,9 +811,9 @@ void xMusicPlayer::resetPlayed() {
     musicPlayedIndex = -1;
 }
 
-QVector<int> xMusicPlayer::computePermutation(int elements, int startIndex) {
-    QList<int> input;
-    QVector<int> permutation;
+QVector<qsizetype> xMusicPlayer::computePermutation(qsizetype elements, qsizetype startIndex) {
+    QList<qsizetype> input;
+    QVector<qsizetype> permutation;
     // Set up the input with all indices.
     for (auto i = 0; i < elements; ++i) {
         input.push_back(i);
@@ -871,13 +834,13 @@ QVector<int> xMusicPlayer::computePermutation(int elements, int startIndex) {
     return permutation;
 }
 
-QVector<int> xMusicPlayer::extendPermutation(const QVector<int>& permutation, int elements, int extendIndex) {
+QVector<qsizetype> xMusicPlayer::extendPermutation(const QVector<qsizetype>& permutation, qsizetype elements, qsizetype extendIndex) {
     // Return an empty permutation if we do not extend.
     if (elements < permutation.count()) {
-        return QVector<int>{};
+        return QVector<qsizetype>{};
     }
-    QList<int> input;
-    QVector<int> ePermutation;
+    QList<qsizetype> input;
+    QVector<qsizetype> ePermutation;
     // Set up the input with all indices.
     for (auto i = 0; i < elements; ++i) {
         input.push_back(i);

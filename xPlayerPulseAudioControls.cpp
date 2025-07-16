@@ -15,32 +15,42 @@
  * Source code inspired by
  * - https://github.com/pulseaudio/pavucontrol
  * - https://github.com/cdemoulins/pamixer
+ * - https://github.com/dbarac/pulseaudio-spectrum-visualizer
  */
 #include "xPlayerPulseAudioControls.h"
+#include "xPlayerAnalyzerWidget.h"
 
 #include <QThread>
 #include <QDebug>
 #include <cmath>
+#include <qdatetime.h>
 
 xPlayerPulseAudioControls* xPlayerPulseAudioControls::paControls = nullptr;
 
 xPlayerPulseAudioControls::xPlayerPulseAudioControls():
-        QObject(),
-        defaultSinkName(),
-        defaultSinkDescription(),
-        defaultSinkVolume(),
-        defaultSinkVolumeAverage(0),
-        defaultSinkVolumePercent(0),
-        paState(PA_DISCONNECTED),
-        paRetValue(0) {
-    // Only create main loop here. Do not connect to pulseaudio server here.
+    QObject(),
+    defaultSinkName(),
+    defaultMonitor(),
+    defaultSinkDescription(),
+    defaultSinkVolume(),
+    defaultSinkVolumeAverage(0),
+    defaultSinkVolumePercent(0),
+    paState(PA_DISCONNECTED),
+    paRetValue(0),
+    paMonitorStream(nullptr),
+    paMonitorTimer(nullptr) {
+    // Only create the main loop here. Do not connect to the pulseaudio server here.
     paMainLoop = pa_mainloop_new();
     paMainLoopApi = pa_mainloop_get_api(paMainLoop);
     paContext = pa_context_new(paMainLoopApi, "xPlayerPulseAudioControls");
+    // Allocate sample buffer.
+    paMonitorBuffer = new float[xPlayer::AnalyzerMaxNoOfSamples];
 }
 
 xPlayerPulseAudioControls::~xPlayerPulseAudioControls() {
-    // Reset state, disconnect and free main loop.
+    // Free sample buffer.
+    delete[] paMonitorBuffer;
+    // Reset state, disconnect and free the main loop.
     pa_context_set_state_callback(paContext, nullptr, nullptr);
     paDisconnect();
     pa_context_unref(paContext);
@@ -50,7 +60,7 @@ xPlayerPulseAudioControls::~xPlayerPulseAudioControls() {
 xPlayerPulseAudioControls* xPlayerPulseAudioControls::controls() {
     // Create and return singleton controls.
     // We have several volume widgets that share these controls and need to be updated whenever one of
-    // the widget does change the settings.
+    // the widgets does change the settings.
     if (paControls == nullptr) {
         paControls = new xPlayerPulseAudioControls;
     }
@@ -82,7 +92,7 @@ void xPlayerPulseAudioControls::setVolume(int vol) {
 }
 
 void xPlayerPulseAudioControls::setMuted(bool mute) {
-    // Only set mute state if connected to pulseaudio.
+    // Only set the mute state if connected to pulseaudio.
     // Emulate previous mute behavior by saving prior volume setting.
     // Therefore, slightly different to setVolume(0)
     if (paConnect()) {
@@ -93,6 +103,65 @@ void xPlayerPulseAudioControls::setMuted(bool mute) {
         pa_operation_unref(op);
         emit muted(mute);
     }
+}
+
+void xPlayerPulseAudioControls::enableMonitor() {
+    const pa_sample_spec paSampleSpec = {
+        PA_SAMPLE_FLOAT32LE,
+        44100,
+        1
+    };
+
+    const pa_buffer_attr paBufferAttr = {
+        xPlayer::AnalyzerMaxNoOfSamples / 4,  // Only reserve buffer for a quarter of samples read.
+        (uint32_t)-1,
+        (uint32_t)-1,
+        (uint32_t)-1,
+        (uint32_t)-1,
+    };
+    int paError;
+
+    QString paMonitorDeviceName = QString::fromStdString(defaultSinkName) + QString(".monitor");
+
+    if (paMonitorStream == nullptr) {
+        paMonitorStream = pa_simple_new(nullptr, "xPlayVisualizer", PA_STREAM_RECORD,
+                                        defaultMonitor.c_str(),
+                                        "record", &paSampleSpec, nullptr, &paBufferAttr, &paError);
+        qDebug() << "xPlayerPulseAudioControls::monitorEnable: error: " << paError;
+
+        paMonitorTimer = new QTimer(this);
+        paMonitorTimer->setTimerType(Qt::PreciseTimer);
+        connect(paMonitorTimer, &QTimer::timeout, this, &xPlayerPulseAudioControls::paMonitorThread);
+        paMonitorTimer->start(xPlayer::AnalyzerRepeatMS);
+    }
+}
+
+void xPlayerPulseAudioControls::disableMonitor() {
+    if (paMonitorStream != nullptr) {
+        paMonitorTimer->stop();
+        delete paMonitorTimer;
+        pa_simple_free(paMonitorStream);
+        // Reset
+        paMonitorTimer = nullptr;
+        paMonitorStream = nullptr;
+        // Send cleanup samples.
+        memset(paMonitorBuffer, 0, xPlayer::AnalyzerMaxNoOfSamples*sizeof(float));
+        emit monitorSamples(paMonitorBuffer, xPlayer::AnalyzerMaxNoOfSamples);
+    }
+
+}
+
+void xPlayerPulseAudioControls::paMonitorThread() {
+    int paError;
+
+    if (paMonitorTimer) {
+        if (pa_simple_read(paMonitorStream, paMonitorBuffer, xPlayer::AnalyzerMaxNoOfSamples*sizeof(float), &paError) >= 0) {
+            emit monitorSamples(paMonitorBuffer, xPlayer::AnalyzerMaxNoOfSamples);
+        } else {
+            qDebug() << "sample reading failed";
+        }
+    }
+
 }
 
 bool xPlayerPulseAudioControls::paConnect() {
@@ -164,6 +233,7 @@ void xPlayerPulseAudioControls::paCallbackServerInfo(pa_context* context, const 
     switch(pa_context_get_state(context)) {
         case PA_CONTEXT_READY: {
             vControls->defaultSinkName = info->default_sink_name;
+            vControls->defaultMonitor = info->default_sink_name + std::string(".monitor");
         } break;
         case PA_CONTEXT_FAILED: {
             vControls->defaultSinkName.clear();

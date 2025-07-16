@@ -26,6 +26,7 @@ xPlayerMusicArtistSelectorWidget::xPlayerMusicArtistSelectorWidget(QWidget* pare
     layout->setSpacing(0);
     selectorList = new QListWidget(this);
     selectorList->setViewMode(QListView::IconMode);
+    selectorList->setDragDropMode(QAbstractItemView::NoDragDrop);
     selectorList->setWrapping(false);
     sortingLatestBox = new QCheckBox(tr("Sorting Latest"), this);
     layout->addWidget(sortingLatestBox, 0, 11);

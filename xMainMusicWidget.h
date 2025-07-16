@@ -22,7 +22,7 @@
 #include "xPlayerMusicAlbumSelectorWidget.h"
 #include "xPlayerListWidget.h"
 #include "xPlayerArtistInfo.h"
-#include "xPlayerVisualizationWidget.h"
+#include "xPlayerAnalyzerWidget.h"
 
 #include <QGroupBox>
 #include <QString>
@@ -69,18 +69,6 @@ signals:
      * @param menu show menu bar if true, hide otherwise.
      */
     void showMenuBar(bool menu);
-    /**
-     * Signal emitted if the visualization is toggled.
-     */
-    void visualizationToggle();
-    /**
-     * Signal emitted if the visualization is ending.
-     */
-    void visualizationExiting();
-    /**
-     * Signal emitted if there is an issue with projectM visualization.
-     */
-    void visualizationError();
     /**
      * Signal to scan and filter for artists.
      *
@@ -449,14 +437,6 @@ private slots:
      */
     void updatedMusicViewFilters();
     /**
-     * Show or hide the music visualization.
-     */
-    void updatedMusicViewVisualization();
-    /**
-     * Update full window mode for the music visualization.
-     */
-    void updateMusicViewVisualizationFullWindow(bool enable);
-    /**
      * Update the music database overlay on configuration changes.
      */
     void updatedDatabaseMusicOverlay();
@@ -476,17 +456,6 @@ private slots:
      * @param total the total time (in ms) to be displayed, clear if 0.
      */
     void updateQueueTotalTime(qint64 total);
-    /**
-     * Update the visualization view based on the state.
-     *
-     * @param playing the playing state of the music player.
-     */
-    void updateVisualizationView(bool playing);
-    /**
-     * DDDD
-     * @param time
-     */
-    void updateWindowTitle(qint64 time);
     /**
      * Worker function that inserts a chunk of tracks into queue.
      *
@@ -640,10 +609,6 @@ private:
     QStackedWidget* musicStacked;
     QWidget* musicListView;
     xPlayerArtistInfo* musicInfoView;
-    xPlayerVisualizationWidget* musicVisualizationWidget;
-    bool musicVisualizationEnabled;
-    int musicVisualizationMode;
-    bool musicVisualizationFullWindow;
     xMusicPlayer* musicPlayer;
     xMusicLibrary* musicLibrary;
     xMusicLibraryFilter musicLibraryFilter;
@@ -667,6 +632,7 @@ private:
     QProgressBar* queueProgress;
     xPlayerLayout* queueBoxLayout;
     QGroupBox* queueBox;
+    xPlayerAnalyzerWidget* analyzerWidget;
     int playedTrack;
     bool useDatabaseMusicOverlay;
     qint64 databaseCutOff;

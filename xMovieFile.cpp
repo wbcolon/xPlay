@@ -20,7 +20,12 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <filesystem>
 
-xMovieFile::xMovieFile(QObject* parent):QObject(parent) {
+xMovieFile::xMovieFile(QObject* parent):
+    QObject(parent),
+    movieFile(),
+    movieFilePath(),
+    movieChapterLength(),
+    movieChapterBegin() {
 }
 
 void xMovieFile::analyze(const QString& file) {
@@ -31,7 +36,7 @@ void xMovieFile::analyze(const QString& file) {
     }
     movieFile = file;
     // Start ffprobe in order to analyze the movie file.
-    process = new QProcess();
+    auto process = new QProcess();
     process->setProcessChannelMode(QProcess::MergedChannels);
     process->start("/usr/bin/ffprobe", { {"-v"}, {"quiet"}, {"-print_format"}, {"json"},
                                         {"-show_streams"}, {"-show_chapters"}, {"-show_format"}, movieFile });

@@ -34,7 +34,6 @@ xApplication::xApplication(QWidget* parent, Qt::WindowFlags flags):
         QMainWindow(parent, flags),
         optionsMenuBars(nullptr),
         musicOptionsMenuBar(nullptr),
-        musicOptionsVisualization(nullptr),
         movieOptionsMenuBar(nullptr),
         streamingOptionsMenuBar(nullptr),
         mobileSyncOptionsMenuBar(nullptr) {
@@ -370,13 +369,6 @@ void xApplication::setMusicLibrary(bool force) {
     musicLibrary->setUrl(musicLibraryUrl, force);
 }
 
-void xApplication::visualizationError() {
-    musicOptionsVisualization->setChecked(false);
-    musicOptionsVisualization->setEnabled(false);
-    musicOptionsVisualizationMenu->setEnabled(false);
-    xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
-}
-
 void xApplication::scanningErrorMusicLibrary() {
     QMessageBox::critical(this, "Music Library",
                           "Unable to scan the music error. Please check your configuration.");
@@ -533,19 +525,6 @@ void xApplication::createMusicOptionsMenus() {
     musicOptionsFilters->setCheckable(true);
     //musicOptionsFilters->setShortcut(QKeySequence("Ctrl+Alt+F"));
     musicOptionsFilters->setChecked(xPlayerConfiguration::configuration()->getMusicViewFilters());
-    musicOptionsVisualization = new QAction("Visualization", this);
-    musicOptionsVisualization->setCheckable(true);
-    //musicOptionsVisualization->setShortcut(QKeySequence("Ctrl+Alt+V"));
-    musicOptionsVisualization->setChecked(xPlayerConfiguration::configuration()->getMusicViewVisualization());
-    musicOptionsVisualization->setDisabled(xPlayerConfiguration::configuration()->useMusicLibraryBluOS());
-    // Action group for visualization mode
-    auto musicOptionsVisualizationMode = new QActionGroup(this);
-    musicOptionsVisualizationMode->setExclusive(true);
-    auto musicOptionsVisualizationSmall = new QAction("Small Window", musicOptionsVisualizationMode);
-    musicOptionsVisualizationSmall->setCheckable(true);
-    musicOptionsVisualizationSmall->setChecked(true);
-    auto musicOptionsVisualizationCentral = new QAction("Central Window", musicOptionsVisualizationMode);
-    musicOptionsVisualizationCentral->setCheckable(true);
 
     // Create music options menu.
     musicOptionsMenu->addAction(musicOptionsRescanMusicLibrary);
@@ -556,17 +535,6 @@ void xApplication::createMusicOptionsMenus() {
     musicOptionsMenu->addSeparator();
     musicOptionsMenu->addAction(musicOptionsSelectors);
     musicOptionsMenu->addAction(musicOptionsFilters);
-    musicOptionsMenu->addAction(musicOptionsVisualization);
-    musicOptionsVisualizationMenu = musicOptionsMenu->addMenu("Visualization Mode");
-    musicOptionsVisualizationMenu->addAction(musicOptionsVisualizationSmall);
-    musicOptionsVisualizationMenu->addAction(musicOptionsVisualizationCentral);
-    // Select the proper visualization mode.
-    if (xPlayerConfiguration::configuration()->getMusicViewVisualizationMode() == 0) {
-        musicOptionsVisualizationSmall->setChecked(true);
-    } else {
-        musicOptionsVisualizationCentral->setChecked(true);
-    }
-    musicOptionsVisualizationMenu->setDisabled(xPlayerConfiguration::configuration()->getMusicViewVisualization());
 
     // Create connections.
     connect(musicOptionsRescanMusicLibrary, &QAction::triggered, [=]() {
@@ -575,8 +543,6 @@ void xApplication::createMusicOptionsMenus() {
     connect(musicOptionsCheckDatabase, &QAction::triggered, this, &xApplication::checkMusicDatabase);
     connect(musicOptionsUseBluOSPlayer, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->useMusicLibraryBluOS(checked);
-        // Disable visualization menu entry if BluOS is enabled.
-        musicOptionsVisualization->setEnabled(!checked);
         // Enable reindex menu entry if BluOS is enabled.
         musicOptionsReIndexBluOSPlayer->setEnabled(checked);
     });
@@ -587,38 +553,6 @@ void xApplication::createMusicOptionsMenus() {
     connect(musicOptionsFilters, &QAction::triggered, mainMusicWidget, [=](bool checked) {
         xPlayerConfiguration::configuration()->setMusicViewFilters(checked);
     });
-    // Connect visualization signals.
-    connect(musicOptionsVisualization, &QAction::triggered, mainMusicWidget, [=](bool checked) {
-        xPlayerConfiguration::configuration()->setMusicViewVisualization(checked);
-        // Mode can only be changed when visualization disabled.
-        musicOptionsVisualizationMenu->setEnabled(!checked);
-    });
-    connect(musicOptionsVisualizationMode, &QActionGroup::triggered, [=](QAction* action) {
-        if (action == musicOptionsVisualizationSmall) {
-            xPlayerConfiguration::configuration()->setMusicViewVisualizationMode(0);
-        } else {
-            xPlayerConfiguration::configuration()->setMusicViewVisualizationMode(1);
-        }
-    });
-    // Toggle the visualization view.
-    connect(mainMusicWidget, &xMainMusicWidget::visualizationToggle, [=]() {
-        auto toggleChecked = !musicOptionsVisualization->isChecked();
-        musicOptionsVisualization->setChecked(toggleChecked);
-        musicOptionsVisualizationMenu->setEnabled(!toggleChecked);
-        xPlayerConfiguration::configuration()->setMusicViewVisualization(toggleChecked);
-    });
-    // Disable music visualization if ESC is pressed.
-    connect(mainMusicWidget, &xMainMusicWidget::visualizationExiting, [=]() {
-        musicOptionsVisualization->setChecked(false);
-        musicOptionsVisualizationMenu->setEnabled(true);
-        xPlayerConfiguration::configuration()->setMusicViewVisualization(false);
-    });
-    // Disable the visualization view if the music player does not support it.
-    if (!musicPlayer->supportsVisualization()) {
-        visualizationError();
-    }
-    // Disable the visualization view in case of an error.
-    connect(mainMusicWidget, &xMainMusicWidget::visualizationError, this, &xApplication::visualizationError);
     // Connect menu entries to enable/disable them.
     connect(mainMobileSyncWidget, &xMainMobileSyncWidget::enableMusicLibraryScanning,
             musicOptionsRescanMusicLibrary, &QAction::setEnabled);

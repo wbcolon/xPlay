@@ -14,6 +14,7 @@
 
 #include <QApplication>
 #include "xApplication.h"
+#include "xPlayerAnalyzerWidget.h"
 
 bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser) {
     // Commandline handling.
@@ -157,6 +158,9 @@ int main(int argc, char* argv[])
         // Exit if the command line was handled.
         return 0;
     }
+
+    // auto spectrumDisplay = new xPlayerAnalyzerWidget(10, 40, 20);
+    // spectrumDisplay->show();
     // Start xPlay.
     xApplication app;
     if (playAppParser.isSet("maximized")) {

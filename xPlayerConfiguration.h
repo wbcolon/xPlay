@@ -97,20 +97,6 @@ public:
      */
     void setMusicViewFilters(bool visible);
     /**
-     * Set the visibility status of the music visualization.
-     *
-     * @param visible show the music visualization of true, hide otherwise.
-     */
-    void setMusicViewVisualization(bool visible);
-    /**
-     * Set the music visualization mode.
-     * - 0: small window
-     * - 1: central window
-     *
-     * @param mode the music visualization mode as integer.
-     */
-    void setMusicViewVisualizationMode(int mode);
-    /**
      * Set availability of the Rotel amp widget.
      *
      * @param enabled show Rotel widget after restart if true, disable otherwise.
@@ -243,18 +229,6 @@ public:
      */
     void setDatabaseIgnoreUpdateErrors(bool enabled);
     /**
-     * Set the path where to find the configuration for projectM visualization.
-     *
-     * @param path absolute path as string.
-     */
-    void setVisualizationConfigPath(const QString& path);
-    /**
-     * Set the name of the projectM visualization preset.
-     *
-     * @param preset the name of the preset as string.
-     */
-    void setVisualizationPreset(const QString& preset);
-    /**
      * Set the index for the zoom factor for websites.
      *
      * @param index the new index for the zoom factor as integer.
@@ -344,18 +318,6 @@ public:
      * @return true if the filters are visible, false otherwise.
      */
     [[nodiscard]] bool getMusicViewFilters();
-    /**
-     * Get the visibility of the music visualization.
-     *
-     * @return true if the music visualization is visible, false otherwise.
-     */
-    [[nodiscard]] bool getMusicViewVisualization();
-    /**
-     * Get the music visualization mode.
-     *
-     * @return 0, if we use a small window, 1 if the central window is used.
-     */
-    int getMusicViewVisualizationMode();
     /**
      * Return the availability of the Rotel amp widget.
      *
@@ -514,18 +476,6 @@ public:
      */
     [[nodiscard]] bool getDatabaseIgnoreUpdateErrors() const;
     /**
-     * Get the configuration path for the projectM visualization.
-     *
-     * @return the absolute path as string.
-     */
-    [[nodiscard]] QString getVisualizationConfigPath() const;
-    /**
-     * Get the visualization preset for projectM.
-     *
-     * @return the name of the preset as string.
-     */
-    [[nodiscard]] QString getVisualizationPreset() const;
-    /**
      * Get the default zoom factor for websites.
      *
      * @return the index for the zoom factor.
@@ -591,14 +541,6 @@ signals:
      * Signal an update of the filters visibility.
      */
     void updatedMusicViewFilters();
-    /**
-     * Signal an update of the visualization visibility.
-     */
-    void updatedMusicViewVisualization();
-    /**
-     * Signal an update of the visualization mode.
-     */
-    void updatedMusicViewVisualizationMode();
     /**
      * Signal an update of the movie library directory.
      */
@@ -667,10 +609,6 @@ signals:
      * Signal an update of the time the movie is played.
      */
     void updatedDatabaseMoviePlayed();
-    /**
-     * Signal an update of the projectM visualization config path.
-     */
-    void updatedVisualizationConfigPath();
     /**
      * Signal an update of the zoom factor.
      */

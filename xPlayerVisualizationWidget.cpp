@@ -143,18 +143,15 @@ void xPlayerVisualizationWidget::initializeVisualizationGL() {
 
 void xPlayerVisualizationWidget::resizeGL(int glWidth, int glHeight) {
     if (visualizationEnabled) {
+        initializeVisualizationGL();
         visualization->projectM_resetGL(glWidth, glHeight);
-        initializeGL();
     }
-    QOpenGLWidget::resizeGL(glWidth, glHeight);
 }
 
 void xPlayerVisualizationWidget::paintGL() {
     if (visualizationEnabled) {
         visualization->renderFrame();
-        update();
     }
-    QOpenGLWidget::paintGL();
 }
 
 bool xPlayerVisualizationWidget::event(QEvent* e) {
@@ -231,9 +228,10 @@ void xPlayerVisualizationWidget::visualizationStereo(const QVector<qint16>& left
             // Copy data to pcmData. Left channel is 0, right channel is 1.
             std::memcpy(pcmData[0], left.data()+(i * 512), 512 * sizeof(short));
             std::memcpy(pcmData[1], right.data()+(i * 512), 512 * sizeof(short));
+            qDebug() << "PCM: " << visualization->pcm();
             visualization->pcm()->addPCM16(pcmData);
         }
-        paintGL();
+        // paintGL();
     }
 }
 

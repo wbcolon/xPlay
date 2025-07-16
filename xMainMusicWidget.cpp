@@ -65,9 +65,6 @@ auto xMainMusicWidget::addLineEditGroupBox(const QString& boxLabel, QWidget* par
 
 xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library, QWidget *parent, Qt::WindowFlags flags):
         QWidget(parent, flags),
-        musicVisualizationEnabled(false),
-        musicVisualizationMode(0),
-        musicVisualizationFullWindow(false),
         musicPlayer(player),
         musicLibrary(library),
         playedTrack(0),
@@ -78,7 +75,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         currentTrackName(),
         currentArtistSelector(),
         useSortingLatest(false) {
-
     auto mainWidgetSplitter = new QSplitter(this);
     mainWidgetSplitter->setOrientation(Qt::Horizontal);
     // Widget for music player and stacked widget.
@@ -152,7 +148,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     selectorTabs->addTab(albumSelectorList, tr("Album Selector"));
     selectorTabs->addTab(searchSelector, tr("Search"));
     selectorTabs->setFixedHeight(artistSelectorList->height()+selectorTabs->tabBar()->sizeHint().height());
-    // Setup layout for list view.
+    // Setup layout for the list view.
     auto musicListViewLayout = new xPlayerLayout(musicListView);
     musicListViewLayout->setContentsMargins(0, 0, 0, 0);
     musicListViewLayout->setSpacing(xPlayerLayout::SmallSpace);
@@ -183,32 +179,20 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueProgress = new QProgressBar(queueBox);
     queueProgress->setVisible(false);
     queuePlaylistButton->setFlat(false);
+    // Analyzer
+    analyzerWidget = new xPlayerAnalyzerWidget(xPlayer::AnalyzerFrameRows, xPlayer::AnalyzerFrameColums,
+                                               xPlayer::AnalyzerFrameSize, queueBox);
+    connect(xPlayerPulseAudioControls::controls(), &xPlayerPulseAudioControls::monitorSamples,
+            analyzerWidget, &xPlayerAnalyzerWidget::updateAnalyzer);
+
     queueBoxLayout->addWidget(queueList, 0, 0, 7, 4);
     queueBoxLayout->addRowSpacer(7, xPlayerLayout::MediumSpace);
     queueBoxLayout->addWidget(queueProgress, 8, 0, 1, 4);
     queueBoxLayout->addWidget(queueShuffleCheck, 9, 0);
     queueBoxLayout->addWidget(queueTagsButton, 9, 2);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 3);
-    // Does the music player support visualization.
-    if (musicPlayer->supportsVisualization()) {
-        musicVisualizationWidget = new xPlayerVisualizationWidget(queueBox);
-        // Connect music visualization view
-        connect(musicPlayer, &xMusicPlayer::visualizationStereo,
-                musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationStereo);
-        connect(musicPlayer, &xMusicPlayer::currentTrackPlayed, this, &xMainMusicWidget::updateWindowTitle);
-        connect(playerWidget, &xPlayerMusicWidget::mouseDoubleClicked, this, &xMainMusicWidget::visualizationToggle);
-        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationFullWindow,
-                this, &xMainMusicWidget::updateMusicViewVisualizationFullWindow);
-        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationExiting,
-                this, &xMainMusicWidget::visualizationExiting);
-        connect(musicVisualizationWidget, &xPlayerVisualizationWidget::visualizationError,
-                this, &xMainMusicWidget::visualizationError);
-        // Add it initially to the stacked widget.
-        musicStacked->addWidget(musicVisualizationWidget);
-    } else {
-        // No visualization.
-        musicVisualizationWidget = nullptr;
-    }
+    queueBoxLayout->addRowSpacer(10, xPlayerLayout::SmallSpace);
+    queueBoxLayout->addWidget(analyzerWidget, 11, 0, 1, 4);
     queueBoxLayout->setColumnStretch(1, 3);
     // Setup splitter, queue should stretch a little more than the rest.
     mainWidgetSplitter->addWidget(musicPlayerStackedWidget);
@@ -252,11 +236,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     // Connect artist info view
     connect(musicInfoView, &xPlayerArtistInfo::close, this, [=]() {
         musicStacked->setCurrentWidget(musicListView);
-        if (musicVisualizationWidget) {
-            // Reset reduced framerate mode for visualization.
-            musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationNoDrop);
-            updateVisualizationView(musicPlayer->isPlaying());
-        }
     });
     // Connect main widget to music player
     connect(this, &xMainMusicWidget::queueTracks, musicPlayer, &xMusicPlayer::queueTracks);
@@ -281,7 +260,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     connect(albumList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentAlbumRightClicked);
     connect(trackList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentTrackRightClicked);
     connect(queueList, &QListWidget::customContextMenuRequested, this, &xMainMusicWidget::currentQueueTrackRightClicked);
-    // Connect music player to main widget for queue update.
+    // Connect music player to the main widget for queue update.
     connect(musicPlayer, &xMusicPlayer::currentState, this, &xMainMusicWidget::currentState);
     // Connect update for current track. Update queue, database and database overlay.
     connect(musicPlayer, &xMusicPlayer::currentTrack, this, &xMainMusicWidget::currentTrack);
@@ -298,6 +277,13 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         queueShuffleCheck->setEnabled(enable);
     });
     // Connect configuration.
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS,
+            [=]() {
+                auto enable = xPlayerConfiguration::configuration()->useMusicLibraryBluOS();
+                analyzerWidget->setDisabled(enable);
+                analyzerWidget->setVisible(!enable);
+            }
+    );
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicOverlay,
             this, &xMainMusicWidget::updatedDatabaseMusicOverlay);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryAlbumSelectors,
@@ -306,9 +292,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
             this, &xMainMusicWidget::updatedMusicViewSelectors);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewFilters,
             this, &xMainMusicWidget::updatedMusicViewFilters);
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicViewVisualization,
-            this, &xMainMusicWidget::updatedMusicViewVisualization);
-    // No need to connect to updatedMusicViewVisualizationMode since mode can only be changed if visualization is off.
 }
 
 void xMainMusicWidget::initializeView() {
@@ -630,11 +613,6 @@ void xMainMusicWidget::currentArtistRightClicked(const QPoint& point) {
             artistMenu.addAction(tr("Artist Website"), this, [=] () {
                 musicStacked->setCurrentWidget(musicInfoView);
                 musicInfoView->show(artistItem->text());
-                if (musicVisualizationWidget) {
-                    // Enable the reduced framerate mode for visualization.
-                    // Required for usable website browsing.
-                    musicVisualizationWidget->setReducedFrameRate(xPlayer::VisualizationDropRate);
-                }
             });
             // Add section for similar artist based on recorded transitions.
             auto artistTransitions = xPlayerDatabase::database()->getArtistTransitions(artistItem->text());
@@ -852,8 +830,6 @@ void xMainMusicWidget::updateSearchSelectorFilter(const std::tuple<QString,QStri
 }
 
 void xMainMusicWidget::currentState(xMusicPlayer::State state) {
-    // Update visualization.
-    updateVisualizationView(state == xMusicPlayer::PlayingState);
     // Update the icon for the played track based on the state of the music player.
     auto currentTrack = queueList->listItem(playedTrack);
     if (!currentTrack) {
@@ -887,10 +863,6 @@ void xMainMusicWidget::currentTrack(int index, const QString& artist, const QStr
     currentArtist = artist;
     currentAlbum = album;
     currentTrackName = track;
-    // Update visualization title.
-    if (musicPlayer->getVisualization()) {
-        musicVisualizationWidget->showTitle(QString("%1 - %2 - %3").arg(track, artist, album));
-    }
 }
 
 void xMainMusicWidget::currentQueueTrack(int index) {
@@ -977,74 +949,6 @@ void xMainMusicWidget::updatedMusicViewSelectors() {
     }
 }
 
-void xMainMusicWidget::updatedMusicViewVisualization() {
-    if (musicPlayer->supportsVisualization()) {
-        musicVisualizationEnabled = xPlayerConfiguration::configuration()->getMusicViewVisualization();
-        musicVisualizationMode = xPlayerConfiguration::configuration()->getMusicViewVisualizationMode();
-        musicPlayer->setVisualization(musicVisualizationEnabled);
-        if (musicVisualizationEnabled) {
-            if (musicVisualizationMode == 0) {
-                musicStacked->removeWidget(musicVisualizationWidget);
-                // Attach to queue box parent
-                musicVisualizationWidget->setParent(queueBox);
-                musicVisualizationWidget->setVisible(true);
-                // Integrate into queue box layout.
-                queueBoxLayout->addRowSpacer(10, xPlayerLayout::SmallSpace);
-                queueBoxLayout->addWidget(musicVisualizationWidget, 11, 0, 2, 4);
-            } else {
-                // Attach to stacked widget parent
-                musicVisualizationWidget->setParent(musicStacked);
-                musicStacked->addWidget(musicVisualizationWidget);
-                // Switch over to the visualization if in a playing state and currently on the list view.
-                if ((musicStacked->currentWidget() == musicListView) && (musicPlayer->isPlaying())) {
-                    musicStacked->setCurrentWidget(musicVisualizationWidget);
-                }
-            }
-            // Adjust visual part if necessary.
-            updateVisualizationView(musicPlayer->isPlaying());
-        } else {
-            if (musicVisualizationMode == 0) {
-                musicVisualizationWidget->setVisible(false);
-                // Remove from queue box layout.
-                queueBoxLayout->addRowSpacer(10, xPlayerLayout::NoSpace);
-                queueBoxLayout->removeWidget(musicVisualizationWidget);
-            } else {
-                if (musicStacked->currentWidget() != musicInfoView) {
-                    musicStacked->setCurrentWidget(musicListView);
-                }
-            }
-        }
-        updateMusicViewVisualizationFullWindow(musicVisualizationFullWindow);
-    }
-}
-
-void xMainMusicWidget::updateMusicViewVisualizationFullWindow(bool enabled) {
-    // Only full window mode for central window mode.
-    if (musicVisualizationEnabled) {
-        // Toggle mode only for central window.
-        if (musicVisualizationMode == 1) {
-            musicVisualizationFullWindow = enabled;
-        } else {
-            musicVisualizationFullWindow = false;
-        }
-        // Hide/show queue box and player widget if full window mode is enabled/disabled
-        if (musicVisualizationFullWindow) {
-            queueBox->setVisible(false);
-            playerWidget->setVisible(false);
-            // Hide menu bar.
-            emit showMenuBar(false);
-            emit showWindowTitle(QString("%1 - %2 - %3").arg(currentTrackName, currentArtist, currentAlbum));
-            return;
-        }
-    }
-    // Disabled music visualization or disabled full window mode.
-    queueBox->setVisible(true);
-    playerWidget->setVisible(true);
-    // Show menu bar and reset window title.
-    emit showWindowTitle(QApplication::applicationName());
-    emit showMenuBar(true);
-}
-
 void xMainMusicWidget::updatedDatabaseMusicOverlay() {
     useDatabaseMusicOverlay = xPlayerConfiguration::configuration()->getDatabaseMusicOverlay();
     databaseCutOff = xPlayerConfiguration::configuration()->getDatabaseCutOff();
@@ -1112,42 +1016,6 @@ void xMainMusicWidget::updateQueueTotalTime(qint64 total) {
                 arg(xPlayer::millisecondsToShortTimeFormat(total)));
     } else {
         queueBox->setTitle("Queue");
-    }
-}
-
-void xMainMusicWidget::updateVisualizationView(bool playing) {
-    if (musicVisualizationEnabled) {
-        // Switch back-and-forth between visualization and list view only if either of the views is selected.
-        if (playing) {
-            if (musicVisualizationMode == 0) {
-                musicVisualizationWidget->setVisible(true);
-                // Integrate into queue box layout.
-                queueBoxLayout->addRowSpacer(10, xPlayerLayout::SmallSpace);
-                queueBoxLayout->addWidget(musicVisualizationWidget, 11, 0, 2, 4);
-            } else {
-                if (musicStacked->currentWidget() == musicListView) {
-                    musicStacked->setCurrentWidget(musicVisualizationWidget);
-                }
-            }
-        } else {
-            if (musicVisualizationMode == 0) {
-                musicVisualizationWidget->setVisible(false);
-                // Remove from queue box layout.
-                queueBoxLayout->addRowSpacer(10, xPlayerLayout::NoSpace);
-                queueBoxLayout->removeWidget(musicVisualizationWidget);
-            } else {
-                if (musicStacked->currentWidget() == musicVisualizationWidget) {
-                    musicStacked->setCurrentWidget(musicListView);
-                }
-            }
-        }
-    }
-}
-
-void xMainMusicWidget::updateWindowTitle(qint64 time) {
-    if ((musicPlayer->getVisualization()) && (musicVisualizationFullWindow)) {
-        emit showWindowTitle(QString("%1 - %2 - %3 (%4)").arg(currentTrackName, currentArtist, currentAlbum,
-                                                              xPlayer::millisecondsToTimeFormat(time, false)));
     }
 }
 

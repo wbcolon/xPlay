@@ -55,7 +55,6 @@ private:
     QString movieFilePath;
     QVector<qint64> movieChapterLength;
     QVector<qint64> movieChapterBegin;
-    QProcess* process;
 };
 
 #endif

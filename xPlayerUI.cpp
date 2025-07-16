@@ -53,9 +53,9 @@ void xPlayerLayout::addRowSpacer(int row, int space) {
     setRowStretch(row, 0);
 }
 
-void xPlayerLayout::addRowStretcher(int row) {
+void xPlayerLayout::addRowStretcher(int row, int stretch) {
     setRowMinimumHeight(row, 0);
-    setRowStretch(row, 2);
+    setRowStretch(row, stretch);
 }
 
 void xPlayerLayout::addColumnSpacer(int column, int space) {
@@ -63,9 +63,9 @@ void xPlayerLayout::addColumnSpacer(int column, int space) {
     setColumnStretch(column, 0);
 }
 
-void xPlayerLayout::addColumnStretcher(int column) {
+void xPlayerLayout::addColumnStretcher(int column, int stretch) {
     setColumnMinimumWidth(column, 0);
-    setColumnStretch(column, 2);
+    setColumnStretch(column, stretch);
 }
 
 

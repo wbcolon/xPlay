@@ -55,10 +55,6 @@ private slots:
      */
     void openMusicLibraryDirectory();
     /**
-     * Open a dialog in order to select a music visualization configuration (projectM).
-     */
-    void openMusicVisualizationConfig();
-    /**
      * Open a dialog in order to select a movie library directory.
      */
     void openMovieLibraryDirectory();
@@ -152,7 +148,6 @@ private:
     QLineEdit* musicLibraryTaggingLLTagWidget;
     QPushButton* musicLibraryTaggingLLTagOpenButton;
     QComboBox* musicLibraryTaggingModeWidget;
-    QLineEdit* musicVisualizationConfigWidget;
     QLineEdit* movieLibraryTagWidget;
     QLineEdit* movieLibraryDirectoryWidget;
     QLineEdit* movieLibraryExtensionsWidget;

@@ -19,7 +19,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Default flags for all builds.
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -pthread -pedantic -Wno-deprecated-declarations -I/usr/local/include")
 # Additional flags for 'Debug' build.
 set(CMAKE_CXX_FLAGS_DEBUG "-ggdb -fno-omit-frame-pointer -DXPLAY_APP_NAME=\\\"xPlayDebug\\\"")
 # Additional flags for 'Release' build.
@@ -56,11 +56,6 @@ set(CMAKE_REQUIRED_INCLUDES "${TAGLIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_CFLAGS "${TAGLIB_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${TAGLIB_LIBRARIES}")
 
-pkg_check_modules(PROJECTM libprojectM REQUIRED)
-set(CMAKE_REQUIRED_INCLUDES "${PROJECTM_INCLUDE_DIRS}")
-set(CMAKE_REQUIRED_CFLAGS "${PROJECTM_CFLAGS}")
-set(CMAKE_REQUIRED_LIBRARIES "${PROJECTM_LIBRARIES}")
-
 pkg_check_modules(VLCLIB libvlc REQUIRED)
 set(CMAKE_REQUIRED_INCLUDES "${VLCLIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_CFLAGS "${VLCLIB_CFLAGS}")
@@ -79,7 +74,6 @@ include_directories(${SQLITE3_INCLUDE_DIRS})
 
 add_definitions(${PUGIXML_CFLAGS})
 add_definitions(${TAGLIB_CFLAGS})
-add_definitions(${PROJECTM_CFLAGS})
 add_definitions(${VLCLIB_CFLAGS})
 add_definitions(${PALIB_CFLAGS})
 
@@ -110,6 +104,7 @@ set(xPlay_sources
         xPlayerVolumeWidget.cpp
         xPlayerSliderWidget.cpp
         xPlayerBalanceWidget.cpp
+        xPlayerAnalyzerWidget.cpp
         xPlayerControlButtonWidget.cpp
         xPlayerPulseAudioControls.cpp
         xPlayerBluOSControl.cpp
@@ -119,7 +114,6 @@ set(xPlay_sources
         xPlayerMusicArtistSelectorWidget.cpp
         xPlayerMusicAlbumSelectorWidget.cpp
         xPlayerMusicLibraryWidget.cpp
-        xPlayerVisualizationWidget.cpp
         xMainMusicWidget.cpp
         xMainMovieWidget.cpp
         xMainStreamingWidget.cpp
@@ -132,12 +126,11 @@ set(xPlay_libraries
         Phonon::phonon4qt6
         sqlite3
         ${TAGLIB_LIBRARIES}
-        ${PROJECTM_LIBRARIES}
         Boost::system
         OpenGL::GL
         curl
         ${PUGIXML_LIBRARIES}
-        ${PALIB_LIBRARIES}
+        ${PALIB_LIBRARIES} pulse-simple
         ${VLCLIB_LIBRARIES})
 
 if (USE_TESTS)
@@ -154,7 +147,9 @@ else()
     add_executable(xPlay
             ${xPlay_sources}
             xPlay.cpp
-            xPlay.qrc)
+            xPlay.qrc
+            xPlayerAnalyzerWidget.cpp
+            xPlayerAnalyzerWidget.h)
     target_link_libraries(xPlay ${xPlay_libraries})
     target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
     install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})

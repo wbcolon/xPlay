@@ -39,6 +39,7 @@ xPlayerMusicAlbumSelectorWidget::xPlayerMusicAlbumSelectorWidget(QWidget* parent
     selectorListWidget = new QListWidget(this);
     selectorListWidget->setViewMode(QListWidget::IconMode);
     selectorListWidget->setSelectionMode(QListWidget::NoSelection);
+    selectorListWidget->setDragDropMode(QAbstractItemView::NoDragDrop);
     auto timestampLabel = new QLabel(tr("Timestamp"), this);
     timestampLabel->setAlignment(Qt::AlignRight);
     timestampWidget = new QDateTimeEdit(QDateTime::currentDateTime(), this);

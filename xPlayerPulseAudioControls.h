@@ -15,7 +15,11 @@
 #define __XPLAYERPULSEAUDIOCONTROLS_H__
 
 #include <QPushButton>
+#include <QTimer>
+
 #include <pulse/pulseaudio.h>
+#include <pulse/simple.h>
+#include <pulse/error.h>
 
 class xPlayerPulseAudioControls:public QObject {
     Q_OBJECT
@@ -46,7 +50,11 @@ public slots:
      * @param mute enable mute if true, disable otherwise.
      */
     void setMuted(bool mute);
-
+    /**
+     *
+     */
+    void enableMonitor();
+    void disableMonitor();
 signals:
     /**
      * Signal emitted if a pulseaudio error occurs.
@@ -66,6 +74,13 @@ signals:
      * @param m the new mute state as boolean.
      */
     void muted(bool m);
+    /**
+     * Signal
+     *
+     * @param samples
+     * @param noSamples
+     */
+    void monitorSamples(float* samples, int noSamples);
 
 private:
     typedef enum {
@@ -83,16 +98,18 @@ private:
      */
     ~xPlayerPulseAudioControls() override;
 
+
     /**
      * Pulseaudio helper functions.
      * Code inspired by
      * - https://github.com/pulseaudio/pavucontrol
      * - https://github.com/cdemoulins/pamixer
+     * - https://github.com/dbarac/pulseaudio-spectrum-visualizer
      */
     /**
      * Connect to pulseaudio.
      *
-     * @return true if connection is successful, false otherwise.
+     * @return true if the connection is successful, false otherwise.
      */
     bool paConnect();
     /**
@@ -105,6 +122,10 @@ private:
      * @param op the operation we are observing.
      */
     void paIterate(pa_operation* op);
+    /**
+     * Reads samples from the monitor stream and emits them for analysis.
+     */
+    void paMonitorThread();
     /**
      * Callback for the pulseaudio connection state.
      *
@@ -131,6 +152,7 @@ private:
     static void paCallbackSinkList(pa_context* context, const pa_sink_info* info, int eol, void* data);
 
     std::string defaultSinkName;
+    std::string defaultMonitor;
     QString defaultSinkDescription;
     pa_cvolume defaultSinkVolume;
     pa_volume_t defaultSinkVolumeAverage;
@@ -138,8 +160,11 @@ private:
     pa_mainloop* paMainLoop;
     pa_mainloop_api* paMainLoopApi;
     pa_context* paContext;
-    pa_state_t paState;
+    volatile pa_state_t paState;
     int paRetValue;
+	pa_simple* paMonitorStream;
+    QTimer* paMonitorTimer;
+	float* paMonitorBuffer;
     static xPlayerPulseAudioControls* paControls;
 };
 

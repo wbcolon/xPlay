@@ -32,8 +32,6 @@ const QString xPlayerConfiguration_UseLLTag {"xPlay/UseLLTag" }; // NOLINT
 const QString xPlayerConfiguration_LLTag {"xPlay/LLTag" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewSelectors { "xPlay/MusicViewSelectors" }; // NOLINT
 const QString xPlayerConfiguration_MusicViewFilters { "xPlay/MusicViewFilters" }; // NOLINT
-const QString xPlayerConfiguration_MusicViewVisualization { "xPlay/MusicViewVisualization" }; // NOLINT
-const QString xPlayerConfiguration_MusicViewVisualizationMode { "xPlay/MusicViewVisualizationMode" }; // NOLINT
 const QString xPlayerConfiguration_RotelWidget { "xPlay/RotelWidget" }; // NOLINT
 const QString xPlayerConfiguration_RotelNetworkAddress { "xPlay/RotelNetworkAddress" }; // NOLINT
 const QString xPlayerConfiguration_RotelNetworkPort { "xPlay/RotelNetworkPort" }; // NOLINT
@@ -55,8 +53,6 @@ const QString xPlayerConfiguration_DatabaseMusicOverlay { "xPlay/DatabaseMusicOv
 const QString xPlayerConfiguration_DatabaseMusicPlayed { "xPlay/DatabaseMusicPlayed" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMovieOverlay { "xPlay/DatabaseMovieOverlay" }; // NOLINT
 const QString xPlayerConfiguration_DatabaseMoviePlayed { "xPlay/DatabaseMoviePlayed" }; // NOLINT
-const QString xPlayerConfiguration_VisualizationConfigPath { "xPlay/VisualizationConfigPath" }; // NOLINT
-const QString xPlayerConfiguration_VisualizationPreset { "xPlay/VisualizationPreset" }; // NOLINT
 const QString xPlayerConfiguration_WebsiteZoomFactor { "xPlay/WebsiteZoomFactor" }; // NOLINT
 const QString xPlayerConfiguration_WebsiteUserAgent { "xPlay/WebsiteUserAgent" }; // NOLINT
 
@@ -68,8 +64,6 @@ const QString xPlayerConfiguration_MusicLibraryTags_Default { "[ballads] [epics]
 const QString xPlayerConfiguration_LLTag_Default {"/usr/bin/lltag" }; // NOLINT
 const bool xPlayerConfiguration_MusicViewSelectors_Default = true; // NOLINT
 const bool xPlayerConfiguration_MusicViewFilters_Default = false; // NOLINT
-const bool xPlayerConfiguration_MusicViewVisualization_Default = false; // NOLINT
-const int xPlayerConfiguration_MusicViewVisualizationMode_Default = 0; // NOLINT
 const QString xPlayerConfiguration_MovieLibraryExtensions_Default { ".mkv .mp4 .avi .mov .wmv" }; // NOLINT
 const QString xPlayerConfiguration_MovieAudioDeviceId_Default { "pulse" }; // NOLINT
 const bool xPlayerConfiguration_MovieViewFilters_Default = true; // NOLINT
@@ -82,7 +76,6 @@ const QList<std::pair<QString,QUrl>> xPlayerConfiguration_StreamingDefaultSites 
 const bool xPlayerConfiguration_StreamingViewSidebar_Default = true; // NOLINT
 const bool xPlayerConfiguration_StreamingViewNavigation_Default = true; // NOLINT
 const QStringList xPlayerConfiguration_MovieDefaultLanguages { "english", "german" }; // NOLINT
-const QString xPlayerConfiguration_VisualizationConfigPathDefault { "/usr/share/projectM/config.inp" }; // NOLINT
 const QList<int> xPlayerConfiguration_WebsiteZoomFactors { 50, 75, 100, 125, 150, 175, 200 }; // NOLINT
 const QString xPlayerConfiguration_WebsiteUserAgent_Default { "Mozilla/5.0 (X11; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0" }; // NOLINT
 
@@ -130,10 +123,6 @@ void xPlayerConfiguration::setMusicLibraryBluOS(const QString& url) {
 
 void xPlayerConfiguration::useMusicLibraryBluOS(bool enabled) {
     if (enabled != useMusicLibraryBluOS()) {
-        // Disable visualization if we enable the BluOS player library.
-        if (enabled) {
-            setMusicViewVisualization(false);
-        }
         settings->setValue(xPlayerConfiguration_UseMusicLibraryBluOS, enabled);
         settings->sync();
         emit updatedUseMusicLibraryBluOS();
@@ -193,27 +182,6 @@ void xPlayerConfiguration::setMusicViewFilters(bool visible) {
         settings->setValue(xPlayerConfiguration_MusicViewFilters, visible);
         settings->sync();
         emit updatedMusicViewFilters();
-    }
-}
-
-void xPlayerConfiguration::setMusicViewVisualization(bool visible) {
-    // Visualization is disabled for BluOS player libraries.
-    if (useMusicLibraryBluOS()) {
-        emit updatedMusicViewVisualization();
-        return;
-    }
-    if (visible != getMusicViewVisualization()) {
-        settings->setValue(xPlayerConfiguration_MusicViewVisualization, visible);
-        settings->sync();
-        emit updatedMusicViewVisualization();
-    }
-}
-
-void xPlayerConfiguration::setMusicViewVisualizationMode(int mode) {
-    if (mode != getMusicViewVisualizationMode()) {
-        settings->setValue(xPlayerConfiguration_MusicViewVisualizationMode, mode);
-        settings->sync();
-        emit updatedMusicViewVisualizationMode();
     }
 }
 
@@ -412,21 +380,6 @@ void xPlayerConfiguration::setStreamingSitesDefault(const std::pair<QString,QUrl
     }
 }
 
-void xPlayerConfiguration::setVisualizationConfigPath(const QString& path) {
-    if (path != getVisualizationConfigPath()) {
-        settings->setValue(xPlayerConfiguration_VisualizationConfigPath, path);
-        settings->sync();
-        emit updatedVisualizationConfigPath();
-    }
-}
-
-void xPlayerConfiguration::setVisualizationPreset(const QString& preset) {
-    if (preset != getVisualizationPreset()) {
-        settings->setValue(xPlayerConfiguration_VisualizationPreset, preset);
-        settings->sync();
-    }
-}
-
 void xPlayerConfiguration::setWebsiteZoomFactorIndex(int index) {
     if (index != getWebsiteZoomFactorIndex()) {
         settings->setValue(xPlayerConfiguration_WebsiteZoomFactor, index);
@@ -512,14 +465,6 @@ bool xPlayerConfiguration::getMusicViewSelectors() {
 
 bool xPlayerConfiguration::getMusicViewFilters() {
     return settings->value(xPlayerConfiguration_MusicViewFilters, xPlayerConfiguration_MusicViewFilters_Default).toBool();
-}
-
-bool xPlayerConfiguration::getMusicViewVisualization() {
-    return settings->value(xPlayerConfiguration_MusicViewVisualization, xPlayerConfiguration_MusicViewVisualization_Default).toBool();
-}
-
-int xPlayerConfiguration::getMusicViewVisualizationMode() {
-    return settings->value(xPlayerConfiguration_MusicViewVisualizationMode, xPlayerConfiguration_MusicViewVisualizationMode_Default).toInt();
 }
 
 bool xPlayerConfiguration::rotelWidget() {
@@ -686,15 +631,6 @@ const QStringList& xPlayerConfiguration::getMovieDefaultLanguages() {
     return xPlayerConfiguration_MovieDefaultLanguages;
 }
 
-QString xPlayerConfiguration::getVisualizationConfigPath() const {
-    return settings->value(xPlayerConfiguration_VisualizationConfigPath,
-                           xPlayerConfiguration_VisualizationConfigPathDefault).toString();
-}
-
-QString xPlayerConfiguration::getVisualizationPreset() const {
-    return settings->value(xPlayerConfiguration_VisualizationPreset, "").toString();
-}
-
 int xPlayerConfiguration::getWebsiteZoomFactorIndex() {
     // Default entry at index 2 is 100%
     return settings->value(xPlayerConfiguration_WebsiteZoomFactor, 2).toInt();
@@ -740,8 +676,6 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedMusicLibraryTags();
     emit updatedMusicViewSelectors();
     emit updatedMusicViewFilters();
-    emit updatedMusicViewVisualization();
-    emit updatedMusicViewVisualizationMode();
     emit updatedRotelNetworkAddress();
     emit updatedMovieLibraryTagsAndDirectories();
     emit updatedMovieLibraryExtensions();
@@ -757,7 +691,6 @@ void xPlayerConfiguration::updatedConfiguration() {
     emit updatedDatabaseMusicPlayed();
     emit updatedDatabaseMovieOverlay();
     emit updatedDatabaseMoviePlayed();
-    emit updatedVisualizationConfigPath();
     emit updatedWebsiteZoomFactor();
     emit updatedWebsiteUserAgent();
 }

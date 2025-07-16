@@ -20,7 +20,6 @@
 #include <phonon/MediaObject>
 #include <phonon/MediaSource>
 #include <phonon/AudioOutput>
-#include <phonon/AudioDataOutput>
 
 #include <QMediaPlayer>
 
@@ -42,29 +41,17 @@ public:
      *
      * @return integer value in between 0 and 100.
      */
-    [[nodiscard]] int getVolume() const;
-    /**
-     * Return if support for visualization exists.
-     *
-     * @return true if the music player supports visualization, false otherwise.
-     */
-    [[nodiscard]] bool supportsVisualization();
-    /**
-     * Return the visualization state for the music player
-     *
-     * @return true if visualization support is enabled, false otherwise.
-     */
-    [[nodiscard]] bool getVisualization() const;
+    [[nodiscard]] qsizetype getVolume() const;
     /**
      * Return the mute state for the music player
      *
-     * @return true if music player is muted, false otherwise.
+     * @return true if the music player is muted, false otherwise.
      */
     [[nodiscard]] bool isMuted() const;
     /**
      * Return the playing state for the music player.
      *
-     * @return true if music player is currently playing a track, false otherwise.
+     * @return true if the music player is currently playing a track, false otherwise.
      */
     [[nodiscard]] bool isPlaying() const;
     /**
@@ -80,9 +67,9 @@ public:
      */
     [[nodiscard]] bool isQueueEmpty() const;
     /**
-     * Return if queue tracks is allowed.
+     * Return if it is allowed to queue tracks.
      *
-     * @return true if queue track is allowed, false if no tracks should be queued.
+     * @return true if it is allowed queueing tracks, false if no tracks should be queued.
      */
     [[nodiscard]] bool isQueueTracksAllowed() const;
 
@@ -99,8 +86,8 @@ signals:
      * @param bitsPerSample the bits per sample.
      * @param quality the quality as string.
      */
-    void currentTrack(int index, const QString& artist, const QString& album, const QString& track,
-                      int bitrate, int sampleRate, int bitsPerSample, const QString& quality);
+    void currentTrack(qsizetype index, const QString& artist, const QString& album, const QString& track,
+                      qsizetype bitrate, qsizetype sampleRate, qsizetype bitsPerSample, const QString& quality);
     /**
      * Update the database overlay for currently played track and add tooltips.
      *
@@ -108,9 +95,9 @@ signals:
      * @param album the album for the currently played track.
      * @param track the track number and name for the currently played track.
      * @param playCount the play count for the currently played track.
-     * @param timeStamp the last played time stamp in milli seconds for the currently played track.
+     * @param timeStamp the last played time stamp in milliseconds for the currently played track.
      */
-    void updatePlayedTrack(const QString& artist, const QString& album, const QString& track, int playCount, qint64 timeStamp);
+    void updatePlayedTrack(const QString& artist, const QString& album, const QString& track, qsizetype playCount, qint64 timeStamp);
     /**
      * Signal the amount played for the current track.
      *
@@ -128,7 +115,7 @@ signals:
      *
      * @param vol the volume as integer in between 0 and 100.
      */
-    void currentVolume(int vol);
+    void currentVolume(qsizetype vol);
     /**
      * Signal the current state of the music player.
      *
@@ -154,22 +141,13 @@ signals:
      * @param saved true is playlist was saved, false otherwise.
      */
     void playlistState(const QString& name, bool saved);
-    /**
-     * Signal the visualization data for the left and right channel.
-     *
-     * The signal always transmits 512 samples for left and right.
-     *
-     * @param left the data for the left channel.
-     * @param right the data for the right channel.
-     */
-    void visualizationStereo(const QVector<qint16>& left, const QVector<qint16>& right);
 
 public slots:
     /**
      * Append the given tracks to the current playlist.
      *
-     * Each of the tracks will be added to the playlist as file (@see pathFromQueueEntry).
-     * In addition the information is cached in the musicPlaylistEntries data structure
+     * Each of the tracks will be added to the playlist as a file (@see pathFromQueueEntry).
+     * In addition, the information is cached in the musicPlaylistEntries data structure
      * to allow for GUI updates of the player widget.
      *
      * @param artist the artist name for all queued tracks.
@@ -178,25 +156,25 @@ public slots:
      */
     void queueTracks(const QString& artist, const QString& album, const std::vector<xMusicLibraryTrackEntry*>& tracks);
     /**
-     * Indicate end of queueing tracks and hand over to the actual player.
+     * Indicate the end of queueing tracks and hand over to the actual player.
      *
-     * Called after the one or more queueTracks. The permutation for shuffle mode is computed
+     * Called after the one or more queueTracks. The permutation for shuffle mode is computed,
      * and the state of autoplay is determined and acted on.
      */
     void finishedQueueTracks(bool autoPlay);
     /**
-     * Move the queue track after drag-drop action.
+     * Move the queue track after the drag-drop action.
      *
-     * @param fromIndex start index of the queued track that is moved.
+     * @param fromIndex start the index of the queued track that is moved.
      * @param toIndex destination index the queued track is inserted before.
      */
-    void moveQueueTracks(int fromIndex, int toIndex);
+    void moveQueueTracks(qsizetype fromIndex, qsizetype toIndex);
     /**
      * Remove the track from the queue.
      *
      * @param index the position of the track in the queue.
      */
-    void dequeueTrack(int index);
+    void dequeueTrack(qsizetype index);
     /**
      * Clear the playlist and stop the player.
      */
@@ -216,7 +194,7 @@ public slots:
     /**
      * Load the playlist with tagged songs from the database.
      *
-     * @param tag the tag name as string.
+     * @param tag the tag name as a string.
      * @param extend extend the playlist if true, replace it otherwise.
      */
     void loadQueueFromTag(const QString& tag, bool extend);
@@ -229,7 +207,7 @@ public slots:
      *
      * @param index the position of the track in the playlist.
      */
-    void play(int index);
+    void play(qsizetype index);
     /**
      * Move to the given position in the current track.
      *
@@ -272,16 +250,10 @@ public slots:
      * @param vol integer value between 0 (silence) and 100 (full volume)
      */
     void setVolume(int vol);
-    /**
-     * Set the visualization support.
-     *
-     * @param enabled add visualization support if true, disable otherwise.
-     */
-    void setVisualization(bool enabled);
 
 private slots:
     /**
-     * Current playlist track has changed.
+     * The current playlist track has changed.
      *
      * Called whenever a new entry out of the playlist is played. The call is
      * triggered by the playlist. The currentTrack signal is triggered.
@@ -306,7 +278,7 @@ private slots:
      *
      * @param index the position of the current track in the playlist.
      */
-    void updateDatabase(int index);
+    void updateDatabase(qsizetype index);
     /**
      * Track state changes in phonon media player. Try to recover from errors.
      *
@@ -319,26 +291,23 @@ private slots:
      */
     void aboutToFinish();
     /**
-     * Transform the data from the AudioDataOutput to be used by visualization.
-     *
-     * @param data the map of samples.
-     */
-    void visualizationUpdate(const QMap<Phonon::AudioDataOutput::Channel, QVector<qint16>>& data);
-    /**
      * Handle the status of the BluOS player.
      *
-     * @param path the path of the currently plqyed track.
+     * @param path the path of the currently played track.
      * @param index the index in the playlist.
      * @param position the currently play portion of the song in ms.
      * @param quality the quality of track as string.
      */
-    void playerStatus(const QString& path, int index, qint64 position, const QString& quality);
+    void playerStatus(const QString& path, qsizetype index, qint64 position, const QString& quality);
     /**
      * Possibly reinitialize the music player when we switch music libraries.
      */
     void reInitialize();
 
 private:
+    /**
+     * Reset played indicator variables.
+     */
     void resetPlayed();
     /**
      * Compute a permutation for 0...elements-1. Allow for a fixed starting index.
@@ -347,40 +316,36 @@ private:
      * @param startIndex the fixed starting index if >= 0.
      * @return a vector containing a random permutation of 0...elements-1.
      */
-    static QVector<int> computePermutation(int elements, int startIndex);
+    static QVector<qsizetype> computePermutation(qsizetype elements, qsizetype startIndex);
     /**
      * Extend a given permutation by keeping the initial permutation to extendIndex.
      *
-     * @param permutation the current permutation used. Contains extendIndex.
+     * @param permutation The current permutation used. Contains extendIndex.
      * @param elements the new number of elements for the permutation.
      * @param extendIndex the index up to the permutation is used in the extended permutation.
      * @return a vector containing an extended random permutation of 0...elements-1.
      */
-    static QVector<int> extendPermutation(const QVector<int>& permutation, int elements, int extendIndex);
+    static QVector<qsizetype> extendPermutation(const QVector<qsizetype>& permutation, qsizetype elements, qsizetype extendIndex);
 
     xPlayerPulseAudioControls* pulseAudioControls;
     xMusicLibrary* musicLibrary;
     std::vector<std::tuple<QString,QString,xMusicLibraryTrackEntry*>> musicPlaylistEntries;
     QList<Phonon::MediaSource> musicPlaylist;
     QStringList musicPlaylistRemote;
-    QVector<int> musicPlaylistPermutation;
+    QVector<qsizetype> musicPlaylistPermutation;
     Phonon::MediaObject* musicPlayer;
     Phonon::AudioOutput* musicOutput;
-    Phonon::AudioDataOutput* musicVisualization;
-    bool musicVisualizationSupported;
-    bool musicVisualizationEnabled;
-    int musicVisualizationSampleRate;
     xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;
     // Keep track of the time played.
     qint64 musicCurrentPosition;
     qint64 musicCurrentPlayed;
     qint64 musicCurrentDuration;
-    int musicCurrentIndex;
+    qsizetype musicCurrentIndex;
     // Keep track only of played artist and album for transition.
     QString musicPlayedArtist;
     QString musicPlayedAlbum;
-    int musicPlayedIndex;
+    qsizetype musicPlayedIndex;
     qint64 musicPlayed;
     bool musicPlayedRecorded;
     // We need to track the current remote track played to avoid duplicate database entries.

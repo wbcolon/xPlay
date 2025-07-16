@@ -53,6 +53,19 @@ const qint64 MovieTickDelta = 1000;
 const qint64 MovieTickDeltaIgnore = 500;
 const qint64 MovieFinishDelta = 1500;
 const qint64 MovieForwardRewindDelta = 60000;
+// Spectrum analyzer
+// const int AnalyzerFrameRows = 10;
+// const int AnalyzerFrameColums = 35;
+// const int AnalyzerFrameSpaceing = 0;
+// const int AnalyzerFrameSize = 10;
+const int AnalyzerFrameRows = 7;
+const int AnalyzerFrameColums = 23;
+const int AnalyzerFrameSpaceing = 4;
+const int AnalyzerFrameSize = 16;
+const int AnalyzerMaxNoOfSamples = 512;
+const double AnalyzerScalingFactor = 2.0;
+const int AnalyzerRepeatMS = 100;
+
 
 /**
  * Convert the time given to human-readable time stamp.
@@ -81,15 +94,16 @@ public:
     static const int LargeSpace = 24;
     static const int HugeSpace = 32;
     static const int SeparatorSpace = 48;
+    static const int DefaultStretch = 2;
 
     xPlayerLayout();
     explicit xPlayerLayout(QWidget* parent);
     ~xPlayerLayout() override = default;
 
     void addRowSpacer(int row, int space);
-    void addRowStretcher(int row);
+    void addRowStretcher(int row, int stretch = DefaultStretch);
     void addColumnSpacer(int column, int space);
-    void addColumnStretcher(int column);
+    void addColumnStretcher(int column, int stretch = DefaultStretch);
 };
 
 
