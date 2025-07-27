@@ -126,6 +126,7 @@ void xMoviePlayer::playPause() {
     } else {
         moviePlayer->play();
         moviePlayerState = State::PlayingState;
+        applyAudioFix();
     }
     emit currentState(moviePlayerState);
 }
@@ -136,6 +137,7 @@ void xMoviePlayer::playChapter(int chapter) {
         seek(movieMediaChapterBegin[chapter]);
         moviePlayer->play();
         movieCurrentSkip = true;
+        applyAudioFix();
         emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
@@ -149,6 +151,7 @@ void xMoviePlayer::previousChapter() {
         moviePlayer->setPosition(movieMediaChapterBegin[movieMediaChapter]);
         moviePlayer->play();
         movieCurrentSkip = true;
+        applyAudioFix();
         emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
@@ -162,6 +165,7 @@ void xMoviePlayer::nextChapter() {
         moviePlayer->setPosition(movieMediaChapterBegin[movieMediaChapter]);
         moviePlayer->play();
         movieCurrentSkip = true;
+        applyAudioFix();
         emit currentState(moviePlayerState = State::PlayingState);
     }
     updateCurrentChapter();
@@ -427,6 +431,14 @@ void xMoviePlayer::updateCurrentChapter() {
     }
 }
 
+void xMoviePlayer::applyAudioFix() {
+    qint64 currentPosition = moviePlayer->position();
+    /* seeking seems to solve the audio issue. */
+    moviePlayer->setPosition(currentPosition-10);
+    moviePlayer->setPosition(currentPosition);
+}
+
+
 void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
     switch (keyEvent->key()) {
         case Qt::Key_Escape: {
@@ -464,6 +476,7 @@ void xMoviePlayer::keyPressEvent(QKeyEvent *keyEvent) {
                 emit currentState(moviePlayerState = xMoviePlayer::PauseState);
             } else {
                 moviePlayer->play();
+                applyAudioFix();
                 emit currentState(moviePlayerState = xMoviePlayer::PlayingState);
             }
         } break;

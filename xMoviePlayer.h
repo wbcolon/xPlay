@@ -307,6 +307,10 @@ private slots:
      * Called if the audio device ID has been changed.
      */
     void updatedAudioDeviceId();
+    /**
+     * Apply a fix for missing audio after pause.
+     */
+    void applyAudioFix();
 
 protected:
     /**

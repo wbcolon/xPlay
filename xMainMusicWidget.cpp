@@ -180,10 +180,12 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueProgress->setVisible(false);
     queuePlaylistButton->setFlat(false);
     // Analyzer
+#ifdef XPLAYER_USE_ANALYZER
     analyzerWidget = new xPlayerAnalyzerWidget(xPlayer::AnalyzerFrameRows, xPlayer::AnalyzerFrameColums,
                                                xPlayer::AnalyzerFrameSize, queueBox);
     connect(xPlayerPulseAudioControls::controls(), &xPlayerPulseAudioControls::monitorSamples,
             analyzerWidget, &xPlayerAnalyzerWidget::updateAnalyzer);
+#endif
 
     queueBoxLayout->addWidget(queueList, 0, 0, 7, 4);
     queueBoxLayout->addRowSpacer(7, xPlayerLayout::MediumSpace);
@@ -276,6 +278,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         }
         queueShuffleCheck->setEnabled(enable);
     });
+#ifdef XPLAYER_USE_ANALYZER
     // Connect configuration.
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS,
             [=]() {
@@ -284,6 +287,7 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
                 analyzerWidget->setVisible(!enable);
             }
     );
+#endif
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicOverlay,
             this, &xMainMusicWidget::updatedDatabaseMusicOverlay);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryAlbumSelectors,

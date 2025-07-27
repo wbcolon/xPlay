@@ -54,12 +54,14 @@ const qint64 MovieTickDeltaIgnore = 500;
 const qint64 MovieFinishDelta = 1500;
 const qint64 MovieForwardRewindDelta = 60000;
 // Spectrum analyzer
+// (alternate set of parameters)
 // const int AnalyzerFrameRows = 10;
 // const int AnalyzerFrameColums = 35;
 // const int AnalyzerFrameSpaceing = 0;
 // const int AnalyzerFrameSize = 10;
-const int AnalyzerFrameRows = 7;
-const int AnalyzerFrameColums = 23;
+// (defaultparameters)
+const int AnalyzerFrameRows = 8;
+const int AnalyzerFrameColums = 24;
 const int AnalyzerFrameSpaceing = 4;
 const int AnalyzerFrameSize = 16;
 const int AnalyzerMaxNoOfSamples = 512;
