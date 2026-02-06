@@ -102,11 +102,6 @@ void xPlayerArtistInfo::show(const QString& artist) {
     if (artist.isEmpty()) {
         return;
     }
-    // Show blank page.
-    urlView->load(QUrl("about:blank"));
-    // Clear history before loading new artists page.
-    urlView->page()->profile()->clearAllVisitedLinks();
-    urlView->history()->clear();
     // Update artist name.
     artistName = artist;
     // Query database for artist info. Configure URL.
@@ -123,7 +118,7 @@ void xPlayerArtistInfo::show(const QString& artist) {
     }
     connect(urlEditAction, &QAction::toggled, this, &xPlayerArtistInfo::bookmarkToggled);
     // Load the site.
-    urlView->load(QUrl(artistUrl));
+    urlView->setUrl(QUrl(artistUrl));
     urlView->page()->setZoomFactor(zoomFactor);
 }
 

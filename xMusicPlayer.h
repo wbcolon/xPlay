@@ -17,10 +17,8 @@
 #include "xMusicLibrary.h"
 #include "xPlayerPulseAudioControls.h"
 
-#include <phonon/MediaObject>
-#include <phonon/MediaSource>
-#include <phonon/AudioOutput>
-
+#include <gst/gst.h>
+#include <gst/pbutils/pbutils.h>
 #include <QMediaPlayer>
 
 class xMusicPlayer: public QObject {
@@ -35,7 +33,7 @@ public:
     };
 
     explicit xMusicPlayer(xMusicLibrary* library, QObject* parent = nullptr);
-    ~xMusicPlayer() override = default;
+    ~xMusicPlayer();
     /**
      * Return the volume for the music player
      *
@@ -251,45 +249,14 @@ public slots:
      */
     void setVolume(int vol);
 
-private slots:
-    /**
-     * The current playlist track has changed.
-     *
-     * Called whenever a new entry out of the playlist is played. The call is
-     * triggered by the playlist. The currentTrack signal is triggered.
-     *
-     * @param current the media object of the current track in the playlist.
-     */
-    void currentTrackSource(const Phonon::MediaSource& current);
-    /**
-     * Determine current track length through Qt mediaplayer.
-     *
-     * @param duration the track length in milliseconds.
-     */
+    void currentTrackSource(const QUrl& current);
     void currentTrackDuration(qint64 duration);
-    /**
-     * Update the actual time played.
-     *
-     * @param pos the current position in milliseconds.
-     */
     void updatePlayed(qint64 pos);
-    /**
-     * Update the database.
-     *
-     * @param index the position of the current track in the playlist.
-     */
     void updateDatabase(qsizetype index);
-    /**
-     * Track state changes in phonon media player. Try to recover from errors.
-     *
-     * @param newState the current state of the phonon media player.
-     * @param oldState the previous state of the phonon media player.
-     */
-    void stateChanged(Phonon::State newState, Phonon::State oldState);
-    /**
-     * Track finished signal from the phonon media player. Track errors.
-     */
+    void handleBusMessage();
     void aboutToFinish();
+
+private slots:
     /**
      * Handle the status of the BluOS player.
      *
@@ -330,11 +297,10 @@ private:
     xPlayerPulseAudioControls* pulseAudioControls;
     xMusicLibrary* musicLibrary;
     std::vector<std::tuple<QString,QString,xMusicLibraryTrackEntry*>> musicPlaylistEntries;
-    QList<Phonon::MediaSource> musicPlaylist;
+    QList<QUrl> musicPlaylist;
     QStringList musicPlaylistRemote;
     QVector<qsizetype> musicPlaylistPermutation;
-    Phonon::MediaObject* musicPlayer;
-    Phonon::AudioOutput* musicOutput;
+    GstElement* musicPlayer;
     xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;
     // Keep track of the time played.
@@ -353,8 +319,10 @@ private:
     bool musicRemoteAutoNext;
     // We need to track if the current track played to work around some phonon issues.
     bool musicCurrentFinished;
-    // Only required due to track length issues with phonon.
-    QMediaPlayer* musicPlayerForTime;
+    // Required to determine track length and other properties.
+    GstDiscoverer* musicDiscoverer;
+    // Timer for position updates.
+    QTimer* musicTimer;
 };
 
 #endif

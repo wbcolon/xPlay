@@ -66,6 +66,10 @@ set(CMAKE_REQUIRED_INCLUDES "${PALIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_CFLAGS "${PALIB_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${PALIB_LIBRARIES}")
 
+pkg_check_modules(GSTREAMER gstreamer-1.0 REQUIRED)
+pkg_check_modules(GSTREAMER_AUDIO gstreamer-audio-1.0 REQUIRED)
+pkg_check_modules(GSTREAMER_PBUTILS gstreamer-pbutils-1.0 REQUIRED)
+
 set(QT_USE_QTMULTIMEDIA TRUE)
 set(QT_USE_QTMULTIMEDIAWIDGETS TRUE)
 
@@ -76,6 +80,9 @@ add_definitions(${PUGIXML_CFLAGS})
 add_definitions(${TAGLIB_CFLAGS})
 add_definitions(${VLCLIB_CFLAGS})
 add_definitions(${PALIB_CFLAGS})
+add_definitions(${GSTREAMER_CFLAGS})
+add_definitions(${GSTREAMER_AUDIO_CFLAGS})
+add_definitions(${GSTREAMER_PBUTILS_CFLAGS})
 
 set(xPlay_sources
         xMusicLibraryEntry.cpp
@@ -123,7 +130,6 @@ set(xPlay_sources
 
 set(xPlay_libraries
         Qt6::WebEngineWidgets Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets Qt6::OpenGLWidgets Qt6::DBus
-        Phonon::phonon4qt6
         sqlite3
         ${TAGLIB_LIBRARIES}
         Boost::system
@@ -131,7 +137,10 @@ set(xPlay_libraries
         curl
         ${PUGIXML_LIBRARIES}
         ${PALIB_LIBRARIES} pulse-simple
-        ${VLCLIB_LIBRARIES})
+        ${VLCLIB_LIBRARIES}
+        ${GSTREAMER_LIBRARIES}
+        ${GSTREAMER_AUDIO_LIBRARIES}
+        ${GSTREAMER_PBUTILS_LIBRARIES})
 
 if (USE_TESTS)
     add_executable(test_xPlay
