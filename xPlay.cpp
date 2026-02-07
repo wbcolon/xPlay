@@ -17,39 +17,69 @@
 
 bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser) {
     // Commandline handling.
-    playAppParser.addOptions( {
-            { {"p", "playpause"},
-              QApplication::translate("xPlay", "Toggle play/pause in the current view.") },
-            { {"s", "stop"},
-              QApplication::translate("xPlay", "Stop the playback in current view.") },
-            { {"P", "prev"},
-              QApplication::translate("xPlay", "Play the previous file in the music view.") },
-            { {"N", "next"},
-              QApplication::translate("xPlay", "Play the next file in the music view.") },
-            { {"j", "jump"},
-              QApplication::translate("xPlay", "Jump relative (in ms) within the movie file."),
-              QApplication::translate("xPlay", "delta") },
-            { {"m", "mute"},
-              QApplication::translate("xPlay", "Toggle mute the audio in the current view.") },
-            { {"c", "changevolume"},
-              QApplication::translate("xPlay", "Change the volume for the current view."),
-              QApplication::translate("xPlay", "delta") },
-            { {"F", "fullwindow"},
-              QApplication::translate("xPlay", "Toggle the full window mode in the movie view.") },
-            { {"e", "selectview"},
-                    QApplication::translate("xPlay", R"(Select a view ("music", "movie" or "streaming").)"),
-                    QApplication::translate("xPlay", "view") },
-            { {"M", "muterotel"},
-                    QApplication::translate("xPlay", "Toggle mute the audio for the Rotel amp.") },
-            { {"C", "changerotelvolume"},
-                    QApplication::translate("xPlay", "Change the volume of the Rotel amp."),
-                    QApplication::translate("xPlay", "delta") },
-            { {"E", "selectrotelsource"},
-              QApplication::translate("xPlay", R"(Select source for Rotel amp ("aux1", "aux1", "opt1", ...).)"),
-              QApplication::translate("xPlay", "source") },
-            { {"x", "maximized"},
-                    QApplication::translate("xPlay", "Start xplay in maximized window.") },
-    } );
+    playAppParser.addOptions({
+        {
+            {"p", "playpause"},
+            QApplication::translate("xPlay", "Toggle play/pause in the current view.")
+        },
+        {
+            {"s", "stop"},
+            QApplication::translate("xPlay", "Stop the playback in current view.")
+        },
+        {
+            {"P", "prev"},
+            QApplication::translate("xPlay", "Play the previous file in the music view.")
+        },
+        {
+            {"N", "next"},
+            QApplication::translate("xPlay", "Play the next file in the music view.")
+        },
+        {
+            {"j", "jump"},
+            QApplication::translate("xPlay", "Jump relative (in ms) within the movie file."),
+            QApplication::translate("xPlay", "delta")
+        },
+        {
+            {"m", "mute"},
+            QApplication::translate("xPlay", "Toggle mute the audio in the current view.")
+        },
+        {
+            {"c", "changevolume"},
+            QApplication::translate("xPlay", "Change the volume for the current view."),
+            QApplication::translate("xPlay", "delta")
+        },
+        {
+            {"F", "fullwindow"},
+            QApplication::translate("xPlay", "Toggle the full window mode in the movie view.")
+        },
+        {
+            {"e", "selectview"},
+            QApplication::translate("xPlay", R"(Select a view ("music", "movie" or "streaming").)"),
+            QApplication::translate("xPlay", "view")
+        },
+        {
+            {"M", "muterotel"},
+            QApplication::translate("xPlay", "Toggle mute the audio for the Rotel amp.")
+        },
+        {
+            {"C", "changerotelvolume"},
+            QApplication::translate("xPlay", "Change the volume of the Rotel amp."),
+            QApplication::translate("xPlay", "delta")
+        },
+        {
+            {"E", "selectrotelsource"},
+            QApplication::translate("xPlay", R"(Select source for Rotel amp ("aux1", "aux1", "opt1", ...).)"),
+            QApplication::translate("xPlay", "source")
+        },
+        {
+            {"x", "maximized"},
+            QApplication::translate("xPlay", "Start xplay in maximized window.")
+        },
+        {
+            {"g", "disablewebgpu"},
+            QApplication::translate("xPlay", "Start xplay with gpu disabled for artist info.")
+        },
+    });
     playAppParser.addHelpOption();
     playAppParser.addVersionOption();
     playAppParser.process(playApp);
@@ -62,7 +92,7 @@ bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser)
         return false;
     }
     // Exit with false for non-dbus arguments.
-    if (playAppParser.isSet("maximized")) {
+    if (playAppParser.isSet("maximized") || playAppParser.isSet("disablewebgpu")) {
         return false;
     }
     // Prepare for DBus commands to be issued.
@@ -151,17 +181,19 @@ int main(int argc, char* argv[])
 {
     QApplication playApp(argc, argv);
     QApplication::setApplicationName("xPlay");
-    QApplication::setApplicationVersion("0.16.0");
+    QApplication::setApplicationVersion("0.16.1");
     QCommandLineParser playAppParser;
     if (handleCommandLine(playApp, playAppParser)) {
         // Exit if the command line was handled.
         return 0;
     }
 
-    // auto spectrumDisplay = new xPlayerAnalyzerWidget(10, 40, 20);
-    // spectrumDisplay->show();
-    // Start xPlay.
     xApplication app;
+
+    if (playAppParser.isSet("disablewebgpu")) {
+        /* Set environment variable to disable GPU usage for WEGENGINE to avoid black screens. */
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu");
+    }
     if (playAppParser.isSet("maximized")) {
         app.showMaximized();
     } else {
