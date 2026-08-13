@@ -23,9 +23,6 @@
 #include <QTimer>
 #include <QUrl>
 #include <cmath>
-#include <iostream>
-
-#include "xApplication.h"
 
 void xMusicPlayer::gst_AboutToFinishCallback(GstElement*, gpointer user_data) {
     auto player = static_cast<xMusicPlayer*>(user_data);
@@ -36,14 +33,16 @@ gboolean xMusicPlayer::gst_BusWatchCallback(GstBus*, GstMessage* msg, gpointer u
     auto player = static_cast<xMusicPlayer*>(user_data);
     switch (GST_MESSAGE_TYPE(msg)) {
         case GST_MESSAGE_EOS:
-            // We handle EOS by moving to the next track if not already handled by about-to-finish.
+            // Handle EOS by moving to the next track if not already handled by about-to-finish.
+            // - EOS used in cases where the sample rate and/or bits per sample has changed.
+            player->musicNextIndex = player->musicCurrentIndex;
             player->next();
             break;
         case GST_MESSAGE_ERROR: {
             GError* err;
             gchar* debug;
             gst_message_parse_error(msg, &err, &debug);
-            std::cerr << "GStreamer error: " << err->message << std::endl;
+            qCritical() << "GStreamer error: " << err->message;
             g_error_free(err);
             g_free(debug);
             player->stop();
@@ -52,7 +51,6 @@ gboolean xMusicPlayer::gst_BusWatchCallback(GstBus*, GstMessage* msg, gpointer u
         case GST_MESSAGE_STREAM_START: {
             // Update current track index only when the stream starts.
             player->musicCurrentIndex = player->musicNextIndex;
-            std::cerr << "CURRENT: " << player->musicPlaylist[player->musicCurrentIndex].toEncoded().constData() << std::endl;
             player->currentTrackSource(player->musicPlaylist[player->musicCurrentIndex]);
             break;
         }
@@ -60,7 +58,6 @@ gboolean xMusicPlayer::gst_BusWatchCallback(GstBus*, GstMessage* msg, gpointer u
             if (GST_MESSAGE_SRC(msg) == GST_OBJECT(player->musicPlayer)) {
                 GstState old_state, new_state, pending_state;
                 gst_message_parse_state_changed(msg, &old_state, &new_state, &pending_state);
-                std::cerr << "STATE: OLD, NEW, PENDING: " << old_state << "," << new_state << "," << pending_state << std::endl;
                 if (new_state == GST_STATE_PLAYING) {
                     emit player->currentState(player->musicPlayerState = State::PlayingState);
                 } else if (new_state == GST_STATE_PAUSED && pending_state == GST_STATE_VOID_PENDING) {
@@ -77,8 +74,10 @@ gboolean xMusicPlayer::gst_BusWatchCallback(GstBus*, GstMessage* msg, gpointer u
 
 xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         QObject(parent),
+        pulseAudioControls(xPlayerPulseAudioControls::controls()),
         musicLibrary(library),
         musicPlaylistPermutation(),
+        musicPlayer(nullptr),
         musicPlayerState(State::StopState),
         useShuffleMode(false),
         musicCurrentPosition(-1),
@@ -93,38 +92,34 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         musicPlayedRecorded(false),
         musicCurrentRemote(),
         musicRemoteAutoNext(false),
-        musicCurrentFinished(false) {
-    pulseAudioControls = xPlayerPulseAudioControls::controls();
-
+        musicDiscoverer(nullptr),
+        musicTimer(nullptr) {
     // Initialize GStreamer.
     gst_init(nullptr, nullptr);
 
     // Set up the media player.
     musicPlayer = gst_element_factory_make("playbin3", "playbin3");
     if (!musicPlayer) {
-        std::cerr << "Failed to create playbin3 element" << std::endl;
+        qCritical() << "Failed to create playbin3 element. Playback not available.";
     }
 
     // Use PipeWire for audio output. PipeWire negotiates the stream format,
     // including the sample rate, with the configured output device.
     GstElement* pipewireSink = gst_element_factory_make("pipewiresink", "pipewire-audio-sink");
-    if (musicPlayer && pipewireSink) {
-        g_object_set(musicPlayer, "audio-sink", pipewireSink, nullptr);
+    if (pipewireSink) {
+        if (musicPlayer) {
+            g_object_set(musicPlayer, "audio-sink", pipewireSink, nullptr);
+        }
         gst_object_unref(pipewireSink);
     } else {
-        if (!pipewireSink) {
-            std::cerr << "Failed to create pipewiresink element" << std::endl;
-        }
-        if (pipewireSink) {
-            gst_object_unref(pipewireSink);
-        }
+        qCritical() << "Failed to create pipewiresink element. Audio output not possible.";
     }
 
     // Set up GStreamer discoverer.
     GError* error = nullptr;
     musicDiscoverer = gst_discoverer_new(5 * GST_SECOND, &error);
     if (error) {
-        std::cerr << "Failed to create discoverer: " << error->message << std::endl;
+        qCritical() << "Failed to create discoverer: " << error->message;
         g_error_free(error);
     }
 
@@ -150,7 +145,7 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
 
     connect(musicLibrary, &xMusicLibrary::scanningInitialized, this, &xMusicPlayer::reInitialize);
     // Connect configuration.
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicPlayed, [=]() {
+    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicPlayed, this, [this]() {
         musicPlayed = xPlayerConfiguration::configuration()->getDatabaseMusicPlayed();
     });
     // Connect status update from BluOS player.
@@ -217,7 +212,8 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
         // Play if autoplay is enabled.
         if (autoPlay) {
             if (noMedia) {
-                play(0);
+                // Play first song. Use permutation if in shuffle mode.
+                play((useShuffleMode && (!musicPlaylistPermutation.isEmpty())) ? musicPlaylistPermutation[0] : 0);
             } else {
                 // Go to next if music player queue is empty but files are in the general queue.
                 next();
@@ -236,11 +232,9 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
             emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
             xPlayerBluOSControls::controls()->next();
             musicRemoteAutoNext = false;
-        } else {
-            if (autoPlay) {
-                emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
-                xPlayerBluOSControls::controls()->play();
-            }
+        } else if (autoPlay) {
+            emit currentState(musicPlayerState = xMusicPlayer::PlayingState);
+            xPlayerBluOSControls::controls()->play();
         }
     }
     // Allow shuffle mode to be enabled.
@@ -328,6 +322,9 @@ void xMusicPlayer::clearQueue() {
     musicCurrentRemote.clear();
     // Reset played.
     resetPlayed();
+    // Reset current and next index.
+    musicCurrentIndex = -1;
+    musicNextIndex = -1;
 }
 
 void xMusicPlayer::loadQueueFromPlaylist(const QString& name) {
@@ -448,11 +445,6 @@ void xMusicPlayer::playPause() {
 }
 
 void xMusicPlayer::play(qsizetype index) {
-    // We do not allow clicking on a queued tracks if in shuffle mode.
-    if (useShuffleMode) {
-        return;
-    }
-    // Reset played.
     resetPlayed();
     if (musicLibrary->isLocal()) {
         // Check if the index is valid.
@@ -513,7 +505,8 @@ void xMusicPlayer::stop() {
     // Stop the media player.
     emit currentState(musicPlayerState = State::StopState);
     if (musicLibrary->isLocal()) {
-        gst_element_set_state(musicPlayer, GST_STATE_READY);
+        gst_element_set_state(musicPlayer, GST_STATE_NULL);
+        //gst_element_set_state(musicPlayer, GST_STATE_READY);
         musicTimer->stop();
     } else {
         xPlayerBluOSControls::controls()->stop();
@@ -734,23 +727,18 @@ void xMusicPlayer::currentTrackSource(const QUrl& current) {
                                                               current.toEncoded().constData(),
                                                               &error);
         if (info) {
-            currentTrackDuration(gst_discoverer_info_get_duration(info) / GST_MSECOND);
+            currentTrackDuration(static_cast<qint64>(gst_discoverer_info_get_duration(info) / GST_MSECOND));
             gst_discoverer_info_unref(info);
         } else if (error) {
-            std::cerr << "Discoverer error: " << error->message << std::endl;
+            qCritical() << "Discoverer error: " << error->message;
             g_error_free(error);
         }
 
-        musicCurrentFinished = false;
         // Update current index.
         musicCurrentIndex = index;
         // Reset played. We have a new track.
         resetPlayed();
     }
-}
-
-void xMusicPlayer::handleBusMessage() {
-    // This is handled via gst_bus_add_watch in constructor.
 }
 
 void xMusicPlayer::aboutToFinish() {
@@ -765,8 +753,14 @@ void xMusicPlayer::aboutToFinish() {
             } else {
                 musicNextIndex = position + 1;
             }
-            // Use GStreamer's about-to-finish to set the next URI for gapless playback.
-            g_object_set(musicPlayer, "uri", musicPlaylist[musicNextIndex].toEncoded().constData(), NULL);
+            auto currentEntry = std::get<2>(musicPlaylistEntries[musicCurrentIndex]);
+            auto nextEntry = std::get<2>(musicPlaylistEntries[musicNextIndex]);
+            if ((nextEntry->getSampleRate() == currentEntry->getSampleRate()) &&
+                (nextEntry->getBitsPerSample() == currentEntry->getBitsPerSample())) {
+                // Gapless playback only works if there is no change in the sample rate or bits per sample.
+                // Use GStreamer's about-to-finish to set the next URI for gapless playback.
+                g_object_set(musicPlayer, "uri", musicPlaylist[musicNextIndex].toEncoded().constData(), NULL);
+            }
             // The actual update of current track source will happen when the stream starts.
         }
     }

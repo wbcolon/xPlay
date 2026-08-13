@@ -19,7 +19,6 @@
 
 #include <gst/gst.h>
 #include <gst/pbutils/pbutils.h>
-#include <QMediaPlayer>
 
 class xMusicPlayer: public QObject {
     Q_OBJECT
@@ -33,7 +32,7 @@ public:
     };
 
     explicit xMusicPlayer(xMusicLibrary* library, QObject* parent = nullptr);
-    ~xMusicPlayer();
+    ~xMusicPlayer() override;
     /**
      * Return the volume for the music player
      *
@@ -144,7 +143,7 @@ public slots:
     /**
      * Append the given tracks to the current playlist.
      *
-     * Each of the tracks will be added to the playlist as a file (@see pathFromQueueEntry).
+     * Each of the tracks will be added to the playlist as a file.
      * In addition, the information is cached in the musicPlaylistEntries data structure
      * to allow for GUI updates of the player widget.
      *
@@ -249,13 +248,6 @@ public slots:
      */
     void setVolume(int vol);
 
-    void currentTrackSource(const QUrl& current);
-    void currentTrackDuration(qint64 duration);
-    void updatePlayed(qint64 pos);
-    void updateDatabase(qsizetype index);
-    void handleBusMessage();
-    void aboutToFinish();
-
 private slots:
     /**
      * Handle the status of the BluOS player.
@@ -270,6 +262,42 @@ private slots:
      * Possibly reinitialize the music player when we switch music libraries.
      */
     void reInitialize();
+    /**
+     * Update the player widget for the track the given source belongs to.
+     *
+     * Called when the stream for a new track starts. Determines the duration of the track
+     * using the GStreamer discoverer and resets the played indicators.
+     *
+     * @param current the URL of the track the player switched to.
+     */
+    void currentTrackSource(const QUrl& current);
+    /**
+     * Signal the duration of the currently played track.
+     *
+     * @param duration the duration in milliseconds.
+     */
+    void currentTrackDuration(qint64 duration);
+    /**
+     * Update the amount played for the currently played track.
+     *
+     * Records the track in the database as soon as enough of it has been played.
+     *
+     * @param pos the current position within the track in milliseconds.
+     */
+    void updatePlayed(qint64 pos);
+    /**
+     * Record the queued track at the given index as played in the database.
+     *
+     * @param index the position of the track in the queue.
+     */
+    void updateDatabase(qsizetype index);
+    /**
+     * Hand the URL of the next track to the player for gapless playback.
+     *
+     * Triggered by the "about-to-finish" signal of the GStreamer pipeline. The next URL is
+     * only handed over if the sample rate and the bits per sample do not change.
+     */
+    void aboutToFinish();
 
 private:
     /**
@@ -342,8 +370,6 @@ private:
     // We need to track the current remote track played to avoid duplicate database entries.
     QString musicCurrentRemote;
     bool musicRemoteAutoNext;
-    // We need to track if the current track played to work around some phonon issues.
-    bool musicCurrentFinished;
     // Required to determine track length and other properties.
     GstDiscoverer* musicDiscoverer;
     // Timer for position updates.
