@@ -50,11 +50,7 @@ public slots:
      * @param mute enable mute if true, disable otherwise.
      */
     void setMuted(bool mute);
-    /**
-     *
-     */
-    void enableMonitor();
-    void disableMonitor();
+
 signals:
     /**
      * Signal emitted if a pulseaudio error occurs.
@@ -123,10 +119,6 @@ private:
      */
     void paIterate(pa_operation* op);
     /**
-     * Reads samples from the monitor stream and emits them for analysis.
-     */
-    void paMonitorThread();
-    /**
      * Callback for the pulseaudio connection state.
      *
      * @param context pointer to the pulseaudio context.
@@ -152,7 +144,6 @@ private:
     static void paCallbackSinkList(pa_context* context, const pa_sink_info* info, int eol, void* data);
 
     std::string defaultSinkName;
-    std::string defaultMonitor;
     QString defaultSinkDescription;
     pa_cvolume defaultSinkVolume;
     pa_volume_t defaultSinkVolumeAverage;
@@ -162,9 +153,6 @@ private:
     pa_context* paContext;
     volatile pa_state_t paState;
     int paRetValue;
-	pa_simple* paMonitorStream;
-    QTimer* paMonitorTimer;
-	float* paMonitorBuffer;
     static xPlayerPulseAudioControls* paControls;
 };
 

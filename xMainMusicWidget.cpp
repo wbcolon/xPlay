@@ -179,14 +179,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueProgress = new QProgressBar(queueBox);
     queueProgress->setVisible(false);
     queuePlaylistButton->setFlat(false);
-    // Analyzer
-#ifdef XPLAYER_USE_ANALYZER
-    analyzerWidget = new xPlayerAnalyzerWidget(xPlayer::AnalyzerFrameRows, xPlayer::AnalyzerFrameColums,
-                                               xPlayer::AnalyzerFrameSize, queueBox);
-    connect(xPlayerPulseAudioControls::controls(), &xPlayerPulseAudioControls::monitorSamples,
-            analyzerWidget, &xPlayerAnalyzerWidget::updateAnalyzer);
-#endif
-
     queueBoxLayout->addWidget(queueList, 0, 0, 7, 4);
     queueBoxLayout->addRowSpacer(7, xPlayerLayout::MediumSpace);
     queueBoxLayout->addWidget(queueProgress, 8, 0, 1, 4);
@@ -194,7 +186,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
     queueBoxLayout->addWidget(queueTagsButton, 9, 2);
     queueBoxLayout->addWidget(queuePlaylistButton, 9, 3);
     queueBoxLayout->addRowSpacer(10, xPlayerLayout::SmallSpace);
-    queueBoxLayout->addWidget(analyzerWidget, 11, 0, 1, 4);
     queueBoxLayout->setColumnStretch(1, 3);
     // Setup splitter, queue should stretch a little more than the rest.
     mainWidgetSplitter->addWidget(musicPlayerStackedWidget);
@@ -278,16 +269,6 @@ xMainMusicWidget::xMainMusicWidget(xMusicPlayer* player, xMusicLibrary* library,
         }
         queueShuffleCheck->setEnabled(enable);
     });
-#ifdef XPLAYER_USE_ANALYZER
-    // Connect configuration.
-    connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedUseMusicLibraryBluOS,
-            [=]() {
-                auto enable = xPlayerConfiguration::configuration()->useMusicLibraryBluOS();
-                analyzerWidget->setDisabled(enable);
-                analyzerWidget->setVisible(!enable);
-            }
-    );
-#endif
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedDatabaseMusicOverlay,
             this, &xMainMusicWidget::updatedDatabaseMusicOverlay);
     connect(xPlayerConfiguration::configuration(), &xPlayerConfiguration::updatedMusicLibraryAlbumSelectors,

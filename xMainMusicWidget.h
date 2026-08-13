@@ -632,7 +632,6 @@ private:
     QProgressBar* queueProgress;
     xPlayerLayout* queueBoxLayout;
     QGroupBox* queueBox;
-    xPlayerAnalyzerWidget* analyzerWidget;
     int playedTrack;
     bool useDatabaseMusicOverlay;
     qint64 databaseCutOff;

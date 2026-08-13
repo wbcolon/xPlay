@@ -27,9 +27,52 @@
 
 #include "xApplication.h"
 
-static void about_to_finish_cb(GstElement*, gpointer user_data) {
+void xMusicPlayer::gst_AboutToFinishCallback(GstElement*, gpointer user_data) {
     auto player = static_cast<xMusicPlayer*>(user_data);
     player->aboutToFinish();
+}
+
+gboolean xMusicPlayer::gst_BusWatchCallback(GstBus*, GstMessage* msg, gpointer user_data) {
+    auto player = static_cast<xMusicPlayer*>(user_data);
+    switch (GST_MESSAGE_TYPE(msg)) {
+        case GST_MESSAGE_EOS:
+            // We handle EOS by moving to the next track if not already handled by about-to-finish.
+            player->next();
+            break;
+        case GST_MESSAGE_ERROR: {
+            GError* err;
+            gchar* debug;
+            gst_message_parse_error(msg, &err, &debug);
+            std::cerr << "GStreamer error: " << err->message << std::endl;
+            g_error_free(err);
+            g_free(debug);
+            player->stop();
+            break;
+        }
+        case GST_MESSAGE_STREAM_START: {
+            // Update current track index only when the stream starts.
+            player->musicCurrentIndex = player->musicNextIndex;
+            std::cerr << "CURRENT: " << player->musicPlaylist[player->musicCurrentIndex].toEncoded().constData() << std::endl;
+            player->currentTrackSource(player->musicPlaylist[player->musicCurrentIndex]);
+            break;
+        }
+        case GST_MESSAGE_STATE_CHANGED: {
+            if (GST_MESSAGE_SRC(msg) == GST_OBJECT(player->musicPlayer)) {
+                GstState old_state, new_state, pending_state;
+                gst_message_parse_state_changed(msg, &old_state, &new_state, &pending_state);
+                std::cerr << "STATE: OLD, NEW, PENDING: " << old_state << "," << new_state << "," << pending_state << std::endl;
+                if (new_state == GST_STATE_PLAYING) {
+                    emit player->currentState(player->musicPlayerState = State::PlayingState);
+                } else if (new_state == GST_STATE_PAUSED && pending_state == GST_STATE_VOID_PENDING) {
+                    emit player->currentState(player->musicPlayerState = State::PauseState);
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return TRUE;
 }
 
 xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
@@ -42,6 +85,7 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         musicCurrentPlayed(0),
         musicCurrentDuration(-1),
         musicCurrentIndex(-1),
+        musicNextIndex(-1),
         musicPlayedArtist(),
         musicPlayedAlbum(),
         musicPlayedIndex(-1),
@@ -56,9 +100,24 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
     gst_init(nullptr, nullptr);
 
     // Set up the media player.
-    musicPlayer = gst_element_factory_make("playbin", "playbin");
+    musicPlayer = gst_element_factory_make("playbin3", "playbin3");
     if (!musicPlayer) {
-        std::cerr << "Failed to create playbin element" << std::endl;
+        std::cerr << "Failed to create playbin3 element" << std::endl;
+    }
+
+    // Use PipeWire for audio output. PipeWire negotiates the stream format,
+    // including the sample rate, with the configured output device.
+    GstElement* pipewireSink = gst_element_factory_make("pipewiresink", "pipewire-audio-sink");
+    if (musicPlayer && pipewireSink) {
+        g_object_set(musicPlayer, "audio-sink", pipewireSink, nullptr);
+        gst_object_unref(pipewireSink);
+    } else {
+        if (!pipewireSink) {
+            std::cerr << "Failed to create pipewiresink element" << std::endl;
+        }
+        if (pipewireSink) {
+            gst_object_unref(pipewireSink);
+        }
     }
 
     // Set up GStreamer discoverer.
@@ -83,44 +142,11 @@ xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
 
     // Handle bus messages.
     GstBus* bus = gst_element_get_bus(musicPlayer);
-    gst_bus_add_watch(bus, [](GstBus*, GstMessage* msg, gpointer user_data) -> gboolean {
-        auto player = static_cast<xMusicPlayer*>(user_data);
-        switch (GST_MESSAGE_TYPE(msg)) {
-            case GST_MESSAGE_EOS:
-                // We handle EOS by moving to the next track if not already handled by about-to-finish.
-                player->next();
-                break;
-            case GST_MESSAGE_ERROR: {
-                GError* err;
-                gchar* debug;
-                gst_message_parse_error(msg, &err, &debug);
-                std::cerr << "GStreamer error: " << err->message << std::endl;
-                g_error_free(err);
-                g_free(debug);
-                player->stop();
-                break;
-            }
-            case GST_MESSAGE_STATE_CHANGED: {
-                if (GST_MESSAGE_SRC(msg) == GST_OBJECT(player->musicPlayer)) {
-                    GstState old_state, new_state, pending_state;
-                    gst_message_parse_state_changed(msg, &old_state, &new_state, &pending_state);
-                    if (new_state == GST_STATE_PLAYING) {
-                        emit player->currentState(player->musicPlayerState = State::PlayingState);
-                    } else if (new_state == GST_STATE_PAUSED && pending_state == GST_STATE_VOID_PENDING) {
-                        emit player->currentState(player->musicPlayerState = State::PauseState);
-                    }
-                }
-                break;
-            }
-            default:
-                break;
-        }
-        return TRUE;
-    }, this);
+    gst_bus_add_watch(bus, xMusicPlayer::gst_BusWatchCallback, this);
     gst_object_unref(bus);
 
     // Connect about-to-finish for gapless playback.
-    g_signal_connect(musicPlayer, "about-to-finish", G_CALLBACK(about_to_finish_cb), this);
+    g_signal_connect(musicPlayer, "about-to-finish", G_CALLBACK(xMusicPlayer::gst_AboutToFinishCallback), this);
 
     connect(musicLibrary, &xMusicLibrary::scanningInitialized, this, &xMusicPlayer::reInitialize);
     // Connect configuration.
@@ -244,7 +270,7 @@ void xMusicPlayer::moveQueueTracks(qsizetype fromIndex, qsizetype toIndex) {
     }
     // Update playlist.
     if ((fromIndex >= musicCurrentIndex) || (toIndex >= musicCurrentIndex)) {
-        // No action needed for playbin, it will just continue playing.
+        // No action needed for playbin3, it will just continue playing.
     }
     // Update queue list.
     auto entryObject = std::get<2>(musicPlaylistEntries[musicCurrentIndex]);
@@ -268,12 +294,10 @@ void xMusicPlayer::dequeueTrack(qsizetype index) {
             // Determine the state of the music player.
             auto state = musicPlayerState;
             // We need to stop everything because we are deleting the currently played track
-            xPlayerPulseAudioControls::controls()->disableMonitor();
             stop();
             // We do not need to signal an update on the state because we did not change it overall.
             if (state == State::PlayingState) {
                 play(currentIndex);
-                xPlayerPulseAudioControls::controls()->enableMonitor();
             }
         } else if (index < currentIndex) {
             musicCurrentIndex--;
@@ -290,7 +314,6 @@ void xMusicPlayer::clearQueue() {
     // Stop the music player and clear its state.
     emit currentState(musicPlayerState = State::StopState);
     if (musicLibrary->isLocal()) {
-        xPlayerPulseAudioControls::controls()->disableMonitor();
         stop();
         emit allowShuffleMode(true);
     } else {
@@ -407,12 +430,10 @@ void xMusicPlayer::playPause() {
             emit currentState(musicPlayerState = State::PauseState);
             gst_element_set_state(musicPlayer, GST_STATE_PAUSED);
             musicTimer->stop();
-            xPlayerPulseAudioControls::controls()->disableMonitor();
         } else {
             emit currentState(musicPlayerState = State::PlayingState);
             gst_element_set_state(musicPlayer, GST_STATE_PLAYING);
             musicTimer->start();
-            xPlayerPulseAudioControls::controls()->enableMonitor();
         }
     } else {
         auto state = xPlayerBluOSControls::controls()->state();
@@ -442,13 +463,13 @@ void xMusicPlayer::play(qsizetype index) {
 
             // Set the URI to the selected track.
             musicCurrentIndex = index;
+            musicNextIndex = index;
             g_object_set(musicPlayer, "uri", musicPlaylist[index].toEncoded().constData(), NULL);
 
             // Play.
             emit currentState(musicPlayerState = State::PlayingState);
             gst_element_set_state(musicPlayer, GST_STATE_PLAYING);
             musicTimer->start();
-            xPlayerPulseAudioControls::controls()->enableMonitor();
         }
     } else {
         if ((index >= 0) && (index < musicPlaylistRemote.size())) {
@@ -494,7 +515,6 @@ void xMusicPlayer::stop() {
     if (musicLibrary->isLocal()) {
         gst_element_set_state(musicPlayer, GST_STATE_READY);
         musicTimer->stop();
-        xPlayerPulseAudioControls::controls()->disableMonitor();
     } else {
         xPlayerBluOSControls::controls()->stop();
     }
@@ -740,16 +760,14 @@ void xMusicPlayer::aboutToFinish() {
             position = musicPlaylistPermutation.indexOf(position);
         }
         if (position < musicPlaylist.size() - 1) {
-            qsizetype nextIndex;
             if (useShuffleMode) {
-                nextIndex = musicPlaylistPermutation[position + 1];
+                musicNextIndex = musicPlaylistPermutation[position + 1];
             } else {
-                nextIndex = position + 1;
+                musicNextIndex = position + 1;
             }
             // Use GStreamer's about-to-finish to set the next URI for gapless playback.
-            g_object_set(musicPlayer, "uri", musicPlaylist[nextIndex].toEncoded().constData(), NULL);
-            // We also need to trigger currentTrackSource update for the next track.
-            currentTrackSource(musicPlaylist[nextIndex]);
+            g_object_set(musicPlayer, "uri", musicPlaylist[musicNextIndex].toEncoded().constData(), NULL);
+            // The actual update of current track source will happen when the stream starts.
         }
     }
 }

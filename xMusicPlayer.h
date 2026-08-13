@@ -273,6 +273,30 @@ private slots:
 
 private:
     /**
+     * Callback function triggered when the "about-to-finish" signal is emitted by a GStreamer element.
+     *
+     * This function is used to prepare for playback of the next track in the playlist or to handle
+     * specific actions required when the current track is about to finish.
+     *
+     * @param user_data A pointer to user-defined data, expected to be an instance of xMusicPlayer.
+     */
+    static void gst_AboutToFinishCallback(GstElement*, gpointer user_data);
+
+    /**
+     * Callback function invoked by GStreamer for handling various bus messages.
+     * This function processes different message types such as end of stream, errors,
+     * stream start, and state changes. It performs appropriate actions depending
+     * on the type of message received, such as transitioning to the next track,
+     * stopping the player, or updating the player's state.
+     *
+     * @param bus The GStreamer bus that delivered the message.
+     * @param msg The GStreamer message being processed.
+     * @param user_data A pointer to user-defined data, expected to be a pointer
+     *                  to the xMusicPlayer instance.
+     * @return gboolean Returns TRUE to indicate successful processing of the message.
+     */
+    static gboolean gst_BusWatchCallback(GstBus*, GstMessage*, gpointer userData);
+    /**
      * Reset played indicator variables.
      */
     void resetPlayed();
@@ -308,6 +332,7 @@ private:
     qint64 musicCurrentPlayed;
     qint64 musicCurrentDuration;
     qsizetype musicCurrentIndex;
+    qsizetype musicNextIndex;
     // Keep track only of played artist and album for transition.
     QString musicPlayedArtist;
     QString musicPlayedAlbum;
