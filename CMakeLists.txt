@@ -111,7 +111,6 @@ set(xPlay_sources
         xPlayerVolumeWidget.cpp
         xPlayerSliderWidget.cpp
         xPlayerBalanceWidget.cpp
-        xPlayerAnalyzerWidget.cpp
         xPlayerControlButtonWidget.cpp
         xPlayerPulseAudioControls.cpp
         xPlayerBluOSControl.cpp
@@ -151,14 +150,13 @@ if (USE_TESTS)
             tests/test_xMovieLibrary.cpp
             tests/test_xPlayerRotelControls.cpp
             tests/test_xPlay.cpp)
-    target_link_libraries(test_xPlay Qt5::Test ${xPlay_libraries})
+    target_link_libraries(test_xPlay Qt6::Test ${xPlay_libraries})
 else()
     add_executable(xPlay
             ${xPlay_sources}
             xPlay.cpp
             xPlay.qrc
-            xPlayerAnalyzerWidget.cpp
-            xPlayerAnalyzerWidget.h)
+            )
     target_link_libraries(xPlay ${xPlay_libraries})
     target_include_directories(xPlay PUBLIC "${PROJECT_BINARY_DIR}")
     install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})

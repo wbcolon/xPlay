@@ -33,7 +33,7 @@ void test_xMusicLibraryTrackEntry::testAccessFunctions() {
 
 void test_xMusicLibraryTrackEntry::testScanInvalidFile() {
     xMusicLibraryTrackEntry trackEntry("01 track.flac", QUrl::fromLocalFile("/tmp/artist/album/01 track.flac"),
-                                       "/tmp/artist/album/01 track.flac", 1, nullptr);
+                                       "/tmp/artist/album/01 track.flac", -1, nullptr);
     QVERIFY(!trackEntry.isScanned());
     QVERIFY(trackEntry.getLength() <= 0);
     QVERIFY(trackEntry.getBitrate() <= 0);

@@ -18,26 +18,11 @@
  * - https://github.com/dbarac/pulseaudio-spectrum-visualizer
  */
 #include "xPlayerPulseAudioControls.h"
-#include "xPlayerAnalyzerWidget.h"
 
 #include <QThread>
 #include <QDebug>
 #include <cmath>
 #include <qdatetime.h>
-
-const pa_sample_spec xPlay_paSampleSpec = {
-    PA_SAMPLE_FLOAT32LE,
-    44100,
-    1
-};
-
-const pa_buffer_attr xPlay_paBufferAttr = {
-    xPlayer::AnalyzerMaxNoOfSamples / 4,  // Only reserve buffer for a quarter of samples read.
-    (uint32_t)-1,
-    (uint32_t)-1,
-    (uint32_t)-1,
-    (uint32_t)-1,
-};
 
 xPlayerPulseAudioControls* xPlayerPulseAudioControls::paControls = nullptr;
 

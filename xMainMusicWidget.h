@@ -22,7 +22,6 @@
 #include "xPlayerMusicAlbumSelectorWidget.h"
 #include "xPlayerListWidget.h"
 #include "xPlayerArtistInfo.h"
-#include "xPlayerAnalyzerWidget.h"
 
 #include <QGroupBox>
 #include <QString>

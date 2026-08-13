@@ -14,7 +14,6 @@
 
 #include <QApplication>
 #include "xApplication.h"
-#include "xPlayerAnalyzerWidget.h"
 
 bool handleCommandLine(QApplication& playApp, QCommandLineParser& playAppParser) {
     // Commandline handling.
