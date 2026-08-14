@@ -678,23 +678,24 @@ void xMusicPlayer::currentTrackSource(const QUrl& current) {
         emit currentTrack(index, artist, album, entryObject->getTrackName(), entryObject->getBitrate(),
                           entryObject->getSampleRate(), entryObject->getBitsPerSample(), {});
 
+        // Reset played as we have a new track.
+        resetPlayed();
+
         // Use GStreamer discoverer to determine proper duration.
-        GError* error = nullptr;
-        GstDiscovererInfo* info = gst_discoverer_discover_uri(musicDiscoverer,
-                                                              current.toEncoded().constData(),
-                                                              &error);
-        if (info) {
-            currentTrackDuration(static_cast<qint64>(gst_discoverer_info_get_duration(info) / GST_MSECOND));
-            gst_discoverer_info_unref(info);
-        } else if (error) {
-            qCritical() << "Discoverer error: " << error->message;
-            g_error_free(error);
+        GError* gstError = nullptr;
+        GstDiscovererInfo* gstInfo = nullptr;
+
+        gstInfo = gst_discoverer_discover_uri(musicDiscoverer, current.toEncoded().constData(), &gstError);
+        if (gstInfo) {
+            currentTrackDuration(static_cast<qint64>(gst_discoverer_info_get_duration(gstInfo) / GST_MSECOND));
+            gst_discoverer_info_unref(gstInfo);
+        } else if (gstError) {
+            qCritical() << "Discoverer error: " << gstError->message;
+            g_error_free(gstError);
         }
 
         // Update current index.
         musicCurrentIndex = index;
-        // Reset played. We have a new track.
-        resetPlayed();
     }
 }
 
@@ -714,8 +715,9 @@ void xMusicPlayer::aboutToFinish() {
             auto nextEntry = std::get<2>(musicPlaylistEntries[musicNextIndex]);
             if ((nextEntry->getSampleRate() == currentEntry->getSampleRate()) &&
                 (nextEntry->getBitsPerSample() == currentEntry->getBitsPerSample())) {
-                // Gapless playback only works if there is no change in the sample rate or bits per sample.
                 // Use GStreamer's about-to-finish to set the next URI for gapless playback.
+                // - Gapless playback only works if there is no change in the sample rate or bits per sample.
+                //   It will otherwise result in audio distortion.
                 g_object_set(musicPlayer, "uri", musicPlaylist[musicNextIndex].toEncoded().constData(), NULL);
             }
             // The actual update of current track source will happen when the stream starts.
