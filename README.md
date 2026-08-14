@@ -65,12 +65,18 @@ overwritten and previous movie file is not accessible.
 
 ## Player Backends
 
-### Phonon
+### GStreamer
 
-The Phonon/KDE backend supports gapless playback, but it is a bit more complicated to use. On top, there seems
-to be an issue calculating the length of the currently played track. I worked around this issue by utilizing
-a muted QMediaPlayer object. The Phonon backend is used for the music player and for the movie player due to VLC 
-issues with Qt6 and Wayland.
+The GStreamer output supports gapless playback and is using a pipewire output. The original Phonon/KDE backend was
+removed due to issues and the workarounds required. It is basically deprecated. The QMediaPlayer object is not used 
+for audio output due to missing support for gapless playback.
+
+
+### QMediaPlayer
+
+The QMediaPlayer object is used for movie playback. The missing movie chapter detection of QMediaPlayer is done
+using ffprobe on the movie file. The ffprobe output is then parsed and used to emulate the chapters in the movie file.
+
 
 ### PulseAudio
 
@@ -342,23 +348,19 @@ and the KDE 5.x breeze icons.
 ## Requirements
 
 * Qt 6.x (https://www.qt.io/)
-* Phonon (https://github.com/KDE/phonon)
-* SQLite3 - The Database Access Library (https://sqlite.org/)
+* GStreamer (https://gstreamer.freedesktop.org/)
+* ffprobe (https://ffmpeg.org/ffprobe.html)
 * TagLib Audio Meta-Data Library (https://taglib.org/)
 * libcurl Library (https://curl.se/libcurl/)
 * PugiXML Library (https://pugixml.org/)
-* libVLC Library (https://wiki.videolan.org/LibVLC/)
 * libpulse Library (https://freedesktop.org/software/pulseaudio/doxygen)
 * projectM Library (https://github.com/projectM-visualizer/projectm)
 * C++17 (clang or gcc)
+* Boost
 
 ## Known Issues
 
 * Ending the Application before the library scanning threads are finished will result in an abort return code.
-* Phonon issues
-    * The GStreamer backend is unfortunately non-functional for Qt6.
-    * The VLC backend does not support visualization.
-    * The VLC backend performance is poor for wayland output.
 * PulseAudio
     * Changing the default audio sink may not be recognized.
     * Changing the volume outside xPlay is not recognized by xPlay.
