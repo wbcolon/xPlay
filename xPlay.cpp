@@ -187,13 +187,12 @@ int main(int argc, char* argv[])
         // Exit if the command line was handled.
         return 0;
     }
-
-    xApplication app;
-
     if (playAppParser.isSet("disablewebgpu")) {
         /* Set environment variable to disable GPU usage for WEGENGINE to avoid black screens. */
         qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu");
+        qInfo() << "WebGPU disabled.";
     }
+    xApplication app;
     if (playAppParser.isSet("maximized")) {
         app.showMaximized();
     } else {

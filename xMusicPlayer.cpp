@@ -24,59 +24,12 @@
 #include <QUrl>
 #include <cmath>
 
-void xMusicPlayer::gst_AboutToFinishCallback(GstElement*, gpointer user_data) {
-    auto player = static_cast<xMusicPlayer*>(user_data);
-    player->aboutToFinish();
-}
-
-gboolean xMusicPlayer::gst_BusWatchCallback(GstBus*, GstMessage* msg, gpointer user_data) {
-    auto player = static_cast<xMusicPlayer*>(user_data);
-    switch (GST_MESSAGE_TYPE(msg)) {
-        case GST_MESSAGE_EOS:
-            // Handle EOS by moving to the next track if not already handled by about-to-finish.
-            // - EOS used in cases where the sample rate and/or bits per sample has changed.
-            player->musicNextIndex = player->musicCurrentIndex;
-            player->next();
-            break;
-        case GST_MESSAGE_ERROR: {
-            GError* err;
-            gchar* debug;
-            gst_message_parse_error(msg, &err, &debug);
-            qCritical() << "GStreamer error: " << err->message;
-            g_error_free(err);
-            g_free(debug);
-            player->stop();
-            break;
-        }
-        case GST_MESSAGE_STREAM_START: {
-            // Update current track index only when the stream starts.
-            player->musicCurrentIndex = player->musicNextIndex;
-            player->currentTrackSource(player->musicPlaylist[player->musicCurrentIndex]);
-            break;
-        }
-        case GST_MESSAGE_STATE_CHANGED: {
-            if (GST_MESSAGE_SRC(msg) == GST_OBJECT(player->musicPlayer)) {
-                GstState old_state, new_state, pending_state;
-                gst_message_parse_state_changed(msg, &old_state, &new_state, &pending_state);
-                if (new_state == GST_STATE_PLAYING) {
-                    emit player->currentState(player->musicPlayerState = State::PlayingState);
-                } else if (new_state == GST_STATE_PAUSED && pending_state == GST_STATE_VOID_PENDING) {
-                    emit player->currentState(player->musicPlayerState = State::PauseState);
-                }
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return TRUE;
-}
-
 xMusicPlayer::xMusicPlayer(xMusicLibrary* library, QObject* parent):
         QObject(parent),
         pulseAudioControls(xPlayerPulseAudioControls::controls()),
         musicLibrary(library),
         musicPlaylistPermutation(),
+        musicPlaylistFinished(false),
         musicPlayer(nullptr),
         musicPlayerState(State::StopState),
         useShuffleMode(false),
@@ -190,8 +143,8 @@ void xMusicPlayer::queueTracks(const QString& artist, const QString& album, cons
 void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
     bool noMedia = false;
     if (musicLibrary->isLocal()) {
-        // Enable autoplay if playlist is currently empty, and we are in a stopped state.
-        autoPlay = autoPlay && (musicCurrentIndex == -1 && musicPlayerState == State::StopState);
+        // Enable autoplay if playlist is currently empty or finished, and we are in a stopped state.
+        autoPlay = autoPlay && (((musicPlaylistFinished) || (musicCurrentIndex == -1)) && musicPlayerState == State::StopState);
         // Check if there is an invalid or empty file.
         noMedia = (musicCurrentIndex == -1);
 
@@ -213,7 +166,7 @@ void xMusicPlayer::finishedQueueTracks(bool autoPlay) {
         if (autoPlay) {
             if (noMedia) {
                 // Play first song. Use permutation if in shuffle mode.
-                play((useShuffleMode && (!musicPlaylistPermutation.isEmpty())) ? musicPlaylistPermutation[0] : 0);
+                play(useShuffleMode ? musicPlaylistPermutation[0] : 0);
             } else {
                 // Go to next if music player queue is empty but files are in the general queue.
                 next();
@@ -453,9 +406,10 @@ void xMusicPlayer::play(qsizetype index) {
             gst_element_set_state(musicPlayer, GST_STATE_READY);
             musicTimer->stop();
 
-            // Set the URI to the selected track.
             musicCurrentIndex = index;
             musicNextIndex = index;
+            musicPlaylistFinished = false;
+            // Set the URI to the selected track.
             g_object_set(musicPlayer, "uri", musicPlaylist[index].toEncoded().constData(), NULL);
 
             // Play.
@@ -506,7 +460,7 @@ void xMusicPlayer::stop() {
     emit currentState(musicPlayerState = State::StopState);
     if (musicLibrary->isLocal()) {
         gst_element_set_state(musicPlayer, GST_STATE_NULL);
-        //gst_element_set_state(musicPlayer, GST_STATE_READY);
+        // gst_element_set_state(musicPlayer, GST_STATE_READY);
         musicTimer->stop();
     } else {
         xPlayerBluOSControls::controls()->stop();
@@ -561,11 +515,14 @@ void xMusicPlayer::next() {
             }
             // Play the track.
             play(musicCurrentIndex);
+        } else {
+            // Queue is empty, stop playback.
+            stop();
+            musicPlaylistFinished = true;
         }
     } else {
         xPlayerBluOSControls::controls()->next();
     }
-    emit currentState(musicPlayerState = State::PlayingState);
 }
 
 void xMusicPlayer::setMuted(bool mute) {
@@ -799,6 +756,54 @@ void xMusicPlayer::resetPlayed() {
     musicCurrentDuration = -1;
     musicPlayedRecorded = false;
     musicPlayedIndex = -1;
+}
+
+void xMusicPlayer::gst_AboutToFinishCallback(GstElement*, gpointer user_data) {
+    auto player = static_cast<xMusicPlayer*>(user_data);
+    player->aboutToFinish();
+}
+
+gboolean xMusicPlayer::gst_BusWatchCallback(GstBus*, GstMessage* msg, gpointer user_data) {
+    auto player = static_cast<xMusicPlayer*>(user_data);
+    switch (GST_MESSAGE_TYPE(msg)) {
+        case GST_MESSAGE_EOS:
+            // Handle EOS by moving to the next track if not already handled by about-to-finish.
+            // - EOS used in cases where the sample rate and/or bits per sample has changed.
+            player->musicNextIndex = player->musicCurrentIndex;
+            player->next();
+            break;
+        case GST_MESSAGE_ERROR: {
+            GError* err;
+            gchar* debug;
+            gst_message_parse_error(msg, &err, &debug);
+            qCritical() << "GStreamer error: " << err->message;
+            g_error_free(err);
+            g_free(debug);
+            player->stop();
+            break;
+        }
+        case GST_MESSAGE_STREAM_START: {
+            // Update current track index only when the stream starts.
+            player->musicCurrentIndex = player->musicNextIndex;
+            player->currentTrackSource(player->musicPlaylist[player->musicCurrentIndex]);
+            break;
+        }
+        case GST_MESSAGE_STATE_CHANGED: {
+            if (GST_MESSAGE_SRC(msg) == GST_OBJECT(player->musicPlayer)) {
+                GstState old_state, new_state, pending_state;
+                gst_message_parse_state_changed(msg, &old_state, &new_state, &pending_state);
+                if (new_state == GST_STATE_PLAYING) {
+                    emit player->currentState(player->musicPlayerState = State::PlayingState);
+                } else if (new_state == GST_STATE_PAUSED && pending_state == GST_STATE_VOID_PENDING) {
+                    emit player->currentState(player->musicPlayerState = State::PauseState);
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return TRUE;
 }
 
 QVector<qsizetype> xMusicPlayer::computePermutation(qsizetype elements, qsizetype startIndex) {

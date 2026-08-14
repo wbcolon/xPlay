@@ -352,6 +352,7 @@ private:
     QList<QUrl> musicPlaylist;
     QStringList musicPlaylistRemote;
     QVector<qsizetype> musicPlaylistPermutation;
+    bool musicPlaylistFinished;
     GstElement* musicPlayer;
     xMusicPlayer::State musicPlayerState;
     bool useShuffleMode;
