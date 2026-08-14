@@ -249,7 +249,7 @@ void xMainMovieWidget::selectMovie(xPlayerListWidgetItem* movieItem) {
     if ((movieIndex >= 0) && (movieIndex < currentMovies.size())) {
         auto currentMovie = currentMovies[movieIndex];
         updateMovieQueue(movieIndex);
-        emit setMovie(currentMovie->getPath(), currentMovie->getMovieName(), currentMovie->getTagName(), currentMovie->getDirectoryName());
+        emit setMovie(currentMovie);
     }
 }
 
@@ -304,10 +304,10 @@ void xMainMovieWidget::updatedDatabaseMovieOverlay() {
 void xMainMovieWidget::updateMovieQueue(int index) {
     if ((index >= 0) && (index < currentMovies.size())) {
         if (autoPlayNextMovie) {
-            QList<std::pair<std::filesystem::path,QString>> queue;
+            QList<xMovieLibraryEntry*> queue;
             for (auto i = index+1; i < currentMovies.size(); ++i) {
                 qDebug() << "updateMovieQueue: " << movieList->listItem(i)->text();
-                queue.push_back(std::make_pair(currentMovies[i]->getPath(), currentMovies[i]->getMovieName()));
+                queue.push_back(currentMovies[i]);
             }
             emit setMovieQueue(queue);
         } else {

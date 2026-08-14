@@ -53,7 +53,6 @@ xMoviePlayer::xMoviePlayer(QWidget *parent):
 
     // Setup pulseAudio controls.
     pulseAudioControls = xPlayerPulseAudioControls::controls();
-    movieFile = new xMovieFile(this);
     moviePlayer = new QMediaPlayer();
     // Configure the audio device.
     audioOutput = new QAudioOutput();
@@ -201,30 +200,29 @@ void xMoviePlayer::stop() {
     emit currentChapter(0);
 }
 
-void xMoviePlayer::setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory) {
-    QString filePath = QString::fromStdString( path.string() );
+void xMoviePlayer::setMovie(xMovieLibraryEntry* movieEntry) {
+    QString filePath = QString::fromStdString( movieEntry->getPath().string() );
     // Reset movie played.
     movieCurrentPosition = 0;
     movieCurrentPlayed = 0;
     movieCurrentSkip = false;
     moviePlayedRecorded = false;
     // Update current.
-    movieCurrent = std::make_pair(path, name);
-    movieCurrentTag = tag;
-    movieCurrentDirectory = directory;
+    movieCurrentName = movieEntry->getMovieName();
+    movieCurrentTag = movieEntry->getTagName();
+    movieCurrentDirectory = movieEntry->getDirectoryName();
     // Analyze movie file.
-    movieFile->analyze(filePath);
-    movieMediaChapterBegin = movieFile->getChapterBegin();
+    movieMediaChapterBegin = movieEntry->getChapterBegin();
     // Set current movie.
     moviePlayer->setSource(QUrl::fromLocalFile(filePath));
     moviePlayer->play();
     qDebug() << "xMoviePlayer: play: " << filePath;
-    emit currentMovie(path, name, tag, directory);
+    emit currentMovie(movieEntry->getPath(), movieCurrentName, movieCurrentTag, movieCurrentDirectory);
     emit currentState(moviePlayerState = xMoviePlayer::PlayingState);
     availableChapters(movieMediaChapterBegin.size());
 }
 
-void xMoviePlayer::setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue) {
+void xMoviePlayer::setMovieQueue(const QList<xMovieLibraryEntry*>& queue) {
     movieQueue = queue;
 }
 
@@ -345,15 +343,15 @@ void xMoviePlayer::updatedPosition(qint64 movieMediaPos) {
             }
             if (update) {
                 // Update database.
-                auto name = movieCurrent.second;
-                auto result = xPlayerDatabase::database()->updateMovieFile(movieCurrentTag, movieCurrentDirectory, name);
+                auto result = xPlayerDatabase::database()->updateMovieFile(
+                    movieCurrentTag, movieCurrentDirectory, movieCurrentName);
 
-                qDebug() << "xMovie: updatedPosition: db: " << movieCurrentTag << "," << movieCurrentDirectory << "," << name;
+                qDebug() << "xMovie: updatedPosition: db: " << movieCurrentTag << "," << movieCurrentDirectory << "," << movieCurrentName;
                 qDebug() << "xMovie: updatedPosition: db: " << result;
                 if (result.second > 0) {
                     // Update database overlay.
                     emit updatePlayedMovie(movieCurrentTag, movieCurrentDirectory,
-                                           name, result.first, result.second);
+                                           movieCurrentName, result.first, result.second);
                     moviePlayedRecorded = true;
                 }
             }
@@ -388,7 +386,7 @@ void xMoviePlayer::updatedMediaStatus(QMediaPlayer::MediaStatus status) {
         else {
             // Take the next movie out of the queue and directly play it.
             auto nextMovie = movieQueue.takeFirst();
-            setMovie(nextMovie.first, nextMovie.second, movieCurrentTag, movieCurrentDirectory);
+            setMovie(nextMovie);
         }
     }
 }

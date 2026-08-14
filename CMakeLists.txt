@@ -56,11 +56,6 @@ set(CMAKE_REQUIRED_INCLUDES "${TAGLIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_CFLAGS "${TAGLIB_CFLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "${TAGLIB_LIBRARIES}")
 
-pkg_check_modules(VLCLIB libvlc REQUIRED)
-set(CMAKE_REQUIRED_INCLUDES "${VLCLIB_INCLUDE_DIRS}")
-set(CMAKE_REQUIRED_CFLAGS "${VLCLIB_CFLAGS}")
-set(CMAKE_REQUIRED_LIBRARIES "${VLCLIB_LIBRARIES}")
-
 pkg_check_modules(PALIB libpulse REQUIRED)
 set(CMAKE_REQUIRED_INCLUDES "${PALIB_INCLUDE_DIRS}")
 set(CMAKE_REQUIRED_CFLAGS "${PALIB_CFLAGS}")
@@ -78,7 +73,6 @@ include_directories(${SQLITE3_INCLUDE_DIRS})
 
 add_definitions(${PUGIXML_CFLAGS})
 add_definitions(${TAGLIB_CFLAGS})
-add_definitions(${VLCLIB_CFLAGS})
 add_definitions(${PALIB_CFLAGS})
 add_definitions(${GSTREAMER_CFLAGS})
 add_definitions(${GSTREAMER_AUDIO_CFLAGS})
@@ -99,7 +93,6 @@ set(xPlay_sources
         xPlayerDatabase.cpp
         xMusicPlayer.cpp
         xMoviePlayer.cpp
-        xMovieFile.cpp
         xPlayerArtistInfo.cpp
         xPlayerConfigurationDialog.cpp
         xPlayerPlaylistDialog.cpp
@@ -136,7 +129,6 @@ set(xPlay_libraries
         curl
         ${PUGIXML_LIBRARIES}
         ${PALIB_LIBRARIES} pulse-simple
-        ${VLCLIB_LIBRARIES}
         ${GSTREAMER_LIBRARIES}
         ${GSTREAMER_AUDIO_LIBRARIES}
         ${GSTREAMER_PBUTILS_LIBRARIES})

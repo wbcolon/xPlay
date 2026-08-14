@@ -16,7 +16,7 @@
 #define __XMOVIEPLAYER_H__
 
 #include "xPlayerPulseAudioControls.h"
-#include "xMovieFile.h"
+#include "xMovieLibraryEntry.h"
 
 #include <QMediaPlayer>
 #include <QVideoWidget>
@@ -230,13 +230,13 @@ public slots:
      * @param tag the tag for the movie played.
      * @param directory the directory for the movie played.
      */
-    void setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
+    void setMovie(xMovieLibraryEntry* movieEntry);
     /**
      * Set up the queue of movies to be played after the current one.
      *
-     * @param queue list of pairs of path and name to be displayed.
+     * @param queue list of movie entries to be displayed.
      */
-    void setMovieQueue(const QList<std::pair<std::filesystem::path,QString>>& queue);
+    void setMovieQueue(const QList<xMovieLibraryEntry*>& queue);
     /**
      * Clear the queue of movies.
      */
@@ -339,13 +339,12 @@ private:
     void updateCurrentChapter();
 
     xPlayerPulseAudioControls* pulseAudioControls;
-    xMovieFile* movieFile;
     QMediaPlayer* moviePlayer;
     QAudioOutput* audioOutput;
     xMoviePlayer::State moviePlayerState;
     QList<QMediaMetaData> subtitlesMetaData;
     QList<QMediaMetaData> audioChannelsMetaData;
-    QList<std::pair<std::filesystem::path,QString>> movieQueue;
+    QList<xMovieLibraryEntry*> movieQueue;
     qint64 movieMediaLength;
     QVector<qint64> movieMediaChapterBegin;
     int movieMediaChapter;
@@ -358,7 +357,7 @@ private:
     bool movieCurrentSkip;
     bool moviePlayedRecorded;
     QStringList currentChapterDescriptions;
-    std::pair<std::filesystem::path,QString> movieCurrent;
+    QString movieCurrentName;
     QString movieCurrentTag;
     QString movieCurrentDirectory;
     QString movieDefaultAudioLanguage;

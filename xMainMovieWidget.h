@@ -79,18 +79,15 @@ signals:
     /**
      * Signal emitted in order to play a movie.
      *
-     * @param path the absolute path of the movie as string.
-     * @param name the name displayed for the movie.
-     * @param tag the tag for the movie played.
-     * @param directory the directory for the movie played.
+     * @param movieEntry the movie entry to be played.
      */
-    void setMovie(const std::filesystem::path& path, const QString& name, const QString& tag, const QString& directory);
+    void setMovie(xMovieLibraryEntry* movieEntry);
     /**
      * Signal emitted in order to set the movie queue.
      *
-     * @param queue list of pairs of path and name to be displayed.
+     * @param queue list of movie entries to be displayed.
      */
-    void setMovieQueue(const QList<std::pair<std::filesystem::path, QString>>& queue);
+    void setMovieQueue(const QList<xMovieLibraryEntry*>& queue);
     /**
      * Signal emitted in order to clear the movie queue;
      */

@@ -15,41 +15,50 @@
 #include "xMovieLibraryEntry.h"
 #include "xPlayerDatabase.h"
 
-#include <vlc/vlc.h>
-
 #include <QThread>
+#include <QProcess>
 #include <QDebug>
 
-xMovieLibraryEntry::xMovieLibraryEntry():
-        QObject(),
-        entryTag(),
-        entryDirectory(),
-        entryMovie(),
-        entryPath(),
-        entryLength(0),
-        entrySize(0) {
-}
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <filesystem>
+
+xMovieLibraryEntry::xMovieLibraryEntry() :
+    QObject(),
+    entryTag(),
+    entryDirectory(),
+    entryMovie(),
+    entryPath(),
+    entryAnalyzed(false),
+    entryLength(0),
+    entrySize(0),
+    entryChapterBegin(),
+    entryChapterLength() {}
 
 xMovieLibraryEntry::xMovieLibraryEntry(const QString& tag, const QString& directory,
-                                       const QString& movie, const std::filesystem::path& moviePath, QObject* parent):
-        QObject(parent),
-        entryTag(tag),
-        entryDirectory(directory),
-        entryMovie(movie),
-        entryPath(moviePath),
-        entryLength(-1),
-        entrySize(-1) {
-}
+                                       const QString& movie, const std::filesystem::path& moviePath, QObject* parent) :
+    QObject(parent),
+    entryTag(tag),
+    entryDirectory(directory),
+    entryMovie(movie),
+    entryPath(moviePath),
+    entryAnalyzed(false),
+    entryLength(-1),
+    entrySize(-1),
+    entryChapterBegin(),
+    entryChapterLength() {}
 
-xMovieLibraryEntry::xMovieLibraryEntry(const xMovieLibraryEntry& entry):
-        QObject(entry.parent()),
-        entryTag(entry.entryTag),
-        entryDirectory(entry.entryDirectory),
-        entryMovie(entry.entryMovie),
-        entryPath(entry.entryPath),
-        entryLength(entry.entryLength),
-        entrySize(entry.entrySize) {
-}
+xMovieLibraryEntry::xMovieLibraryEntry(const xMovieLibraryEntry& entry) :
+    QObject(entry.parent()),
+    entryTag(entry.entryTag),
+    entryDirectory(entry.entryDirectory),
+    entryMovie(entry.entryMovie),
+    entryPath(entry.entryPath),
+    entryAnalyzed(entry.entryAnalyzed),
+    entryLength(entry.entryLength),
+    entrySize(entry.entrySize),
+    entryChapterBegin(entry.entryChapterBegin),
+    entryChapterLength(entry.entryChapterLength) {}
 
 const QString& xMovieLibraryEntry::getTagName() const {
     return entryTag;
@@ -71,6 +80,16 @@ std::uintmax_t xMovieLibraryEntry::getFileSize() const {
 qint64 xMovieLibraryEntry::getLength() const {
     scan();
     return entryLength;
+}
+
+QVector<qint64> xMovieLibraryEntry::getChapterLength() const {
+    analyze();
+    return entryChapterLength;
+}
+
+QVector<qint64> xMovieLibraryEntry::getChapterBegin() const {
+    analyze();
+    return entryChapterBegin;
 }
 
 const std::filesystem::path& xMovieLibraryEntry::getPath() const {
@@ -97,37 +116,50 @@ void xMovieLibraryEntry::scan() const {
         entryLength = movieLength;
         return;
     }
-    // Determine movie length. Use VLC without video output.
-    // Only instantiate VLC once for movie file entries.
-    static const char* const vlcArgs[] = { "--vout=none", "--quiet" };
-    static auto vlcInstance = libvlc_new(sizeof(vlcArgs)/sizeof(vlcArgs[0]), vlcArgs);
-    auto vlcMedia = libvlc_media_new_path(vlcInstance, entryPath.generic_string().c_str());
-    libvlc_media_parse_with_options(vlcMedia, libvlc_media_parse_network, 1000);
-    auto vlcStatus = libvlc_media_get_parsed_status(vlcMedia);
-    // Wait until parsing complete. Wait for 10 seconds maximum.
-    for (auto vlcStatusLoop = 0; (vlcStatus != libvlc_media_parsed_status_done) &&
-                                 (vlcStatus != libvlc_media_parsed_status_failed) &&
-                                 (vlcStatusLoop < 50); ++vlcStatusLoop) {
-        // Break out of loop if requested.
-        if (QThread::currentThread()->isInterruptionRequested()) {
-            // Release media and vlc instance.
-            libvlc_media_release(vlcMedia);
-            // Reset entrySize to allow scan.
-            entrySize = -1;
-            return;
-        }
-        // Wait for 200ms.
-        QThread::msleep(200);
-        vlcStatus = libvlc_media_get_parsed_status(vlcMedia);
+
+    analyze();
+}
+
+void xMovieLibraryEntry::analyze() const {
+    // Do not analyze if already analyzed.
+    if (entryAnalyzed) {
+        return;
     }
-    entryLength = static_cast<qint64>(libvlc_media_get_duration(vlcMedia));
-    // Release media and vlc instance.
-    libvlc_media_release(vlcMedia);
-    qDebug() << "Scan: length: " << entryLength << ", size: " << entrySize;
-    if (entryLength > 0) {
-        // We only record non-zero length.
-        xPlayerDatabase::database()->updateMovieFileLength(entryTag, entryDirectory, entryMovie, static_cast<qint64>(entrySize), entryLength);
+    entryAnalyzed = true;
+    // Start ffprobe in order to analyze the movie file.
+    auto process = new QProcess();
+    process->setProcessChannelMode(QProcess::MergedChannels);
+    process->start("/usr/bin/ffprobe", { {"-v"}, {"quiet"}, {"-print_format"}, {"json"},
+                                        {"-show_streams"}, {"-show_chapters"}, {"-show_format"}, entryPath.generic_string().c_str() });
+    process->waitForFinished(-1);
+    // Process standard output (includes stderr) and interpret json.
+    std::stringstream processOutput;
+    processOutput << process->readAllStandardOutput().toStdString();
+    // Delete process.
+    delete process;
+    boost::property_tree::ptree movieFileInfo;
+    try {
+        boost::property_tree::read_json(processOutput, movieFileInfo);
+    } catch (boost::property_tree::json_parser_error& e) {
+        qCritical() << "xMovieFile::analyze: unable to read movie file info.";
+        return;
     }
+    entryChapterLength.clear();
+    entryChapterBegin.clear();
+    auto childChapters = movieFileInfo.get_child("chapters");
+    for (boost::property_tree::ptree::value_type& childChapter : childChapters) {
+        // Retrieve start and end time for each track (chapter)
+        auto chapterBegin = childChapter.second.get<double>("start_time", 0.0);
+        auto chapterEnd = childChapter.second.get<double>("end_time", 0.0);
+        // Convert to ms
+        entryChapterBegin.push_back(static_cast<qint64>(chapterBegin*1000));
+        entryChapterLength.push_back(static_cast<qint64>((chapterEnd-chapterBegin)*1000));
+    }
+    auto childFormat = movieFileInfo.get_child("format");
+    auto duration = childFormat.get<double>("duration", 0.0);
+
+    entryLength = static_cast<qint64>(duration*1000);
+    entryAnalyzed = true;
 }
 
 bool xMovieLibraryEntry::isScanned() const {

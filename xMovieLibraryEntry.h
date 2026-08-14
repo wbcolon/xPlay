@@ -62,6 +62,24 @@ public:
      */
     [[nodiscard]] qint64 getLength() const;
     /**
+     * Determine the number of chapters in the movie file.
+     *
+     * @return the number of chapters.
+     */
+    [[nodiscard]] int getChapters() const;
+    /**
+     * Compute the times for each chapter in the movie file.
+     *
+     * @return a vector of chapter length in milliseconds.
+     */
+    [[nodiscard]] QVector<qint64> getChapterLength() const;
+    /**
+     * Compute the beginning of each chapter in the movie file.
+     *
+     * @return a vector of chapter beginning in milliseconds.
+     */
+    [[nodiscard]] QVector<qint64> getChapterBegin() const;
+    /**
      * Get the path for the movie file.
      *
      * @return the filesystem::path to the entry.
@@ -76,13 +94,18 @@ public:
 
 protected:
     void scan() const;
+    void analyze() const;
 
     QString entryTag;
     QString entryDirectory;
     QString entryMovie;
     std::filesystem::path entryPath;
+    // Allow mutable content in order to defer analysis of the movie entry.
+    mutable bool entryAnalyzed;
     mutable qint64 entryLength;
     mutable std::uintmax_t entrySize;
+    mutable QVector<qint64> entryChapterBegin;
+    mutable QVector<qint64> entryChapterLength;
 };
 
 
